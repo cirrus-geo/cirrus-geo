@@ -1,0 +1,130 @@
+Resources:
+  # Main data bucket
+  Data:
+    Type: AWS::S3::Bucket
+  # Bucket for storing input catalogs
+  Catalogs:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 10
+            Prefix: batch/
+            Status: Enabled
+          - ExpirationInDays: 10
+            Prefix: payloads/
+            Status: Enabled
+  # SNS Topic for adding input data to Cirrus
+  QueueTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      TopicName: ${self:service}-${self:provider.stage}-queue
+  # SNS Topic for adding input data to Cirrus
+  PublishTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      TopicName: ${self:service}-${self:provider.stage}-publish
+  # Allow anyone to subscribe to publish topic
+  #PublishTopicPolicy:
+  #  Type: 'AWS::SNS::TopicPolicy'
+  #  Properties:
+  #    Topics:
+  #      - !Ref PublishTopic
+  #    PolicyDocument:
+  #      Statement:
+  #        - Sid: public-sns-subscriptions
+  #          Effect: Allow
+  #          Principal: "*"
+  #          Action:
+  #            - sns:Subscribe
+  #          Resource:
+  #            - arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+  # Validation Queue
+  ValidationDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:service}-${self:provider.stage}-validation-dead-letter
+  ValidationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 1
+      QueueName: ${self:service}-${self:provider.stage}-validation
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ValidationDeadLetterQueue.Arn
+        maxReceiveCount: 2
+  ValidationQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref ValidationQueue
+      PolicyDocument:
+        Statement:
+          - Sid: allow-sqs-sendmessage
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action: SQS:SendMessage
+            Resource: !GetAtt ValidationQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref QueueTopic
+  ValidationSubsciption:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt ValidationQueue.Arn
+      Protocol: sqs
+      Region: "#{AWS::Region}"
+      TopicArn: !Ref QueueTopic
+  # Process Queue
+  ProcessDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:service}-${self:provider.stage}-process-dead-letter
+  ProcessQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 1
+      QueueName: ${self:service}-${self:provider.stage}-process
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
+        maxReceiveCount: 2
+  StateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: input_collections
+          AttributeType: S
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: output_collections
+          AttributeType: S
+        - AttributeName: current_state
+          AttributeType: S
+      KeySchema:
+        - AttributeName: input_collections
+          KeyType: HASH
+        - AttributeName: id
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: "input_state"
+          KeySchema:
+            - AttributeName: input_collections
+              KeyType: HASH
+            - AttributeName: current_state
+              KeyType: RANGE
+          Projection:
+            #NonKeyAttributes:
+            #  - execution
+            #  - output_urls
+            ProjectionType: ALL
+      GlobalSecondaryIndexes:
+        - IndexName: "output_state"
+          KeySchema:
+            - AttributeName: output_collections
+              KeyType: HASH
+            - AttributeName: current_state
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      TableName: ${self:service}-${self:provider.stage}-state

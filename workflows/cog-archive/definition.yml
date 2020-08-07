@@ -1,0 +1,119 @@
+name: ${self:service}-${self:provider.stage}-cog-archive
+definition:
+  Comment: "Create mirror with some cogified assets"
+  StartAt: copy-assets-batch-or-lambda
+  States:
+    # Copy Assets
+    copy-assets-batch-or-lambda:
+      Type: Choice
+      Choices:
+        - Variable: "$.process.tasks.copy-assets.batch"
+          BooleanEquals: false
+          Next: copy-assets
+        - Variable: "$.process.tasks.copy-assets.batch"
+          BooleanEquals: true
+          Next: copy-assets-pre-batch
+    copy-assets-pre-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [pre-batch, Arn]
+      Next: copy-assets-batch
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    copy-assets-batch:
+      Type: Task
+      Resource: arn:aws:states:::batch:submitJob.sync
+      Parameters:
+        JobName: copy-assets-batch
+        JobQueue: "#{BasicSpotJobQueue}"
+        JobDefinition: "#{GeoLambdaAsBatchJob}"
+        Parameters:
+          lambda_function: ${self:service}-${self:provider.stage}-copy-assets
+          url.$: "$.url"
+      Next: copy-assets-post-batch
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    copy-assets-post-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [post-batch, Arn]
+      Next: convert-to-cog-batch-or-lambda        
+    copy-assets:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [copy-assets, Arn]
+      Next: convert-to-cog-batch-or-lambda
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+
+    # Cogify
+    convert-to-cog-batch-or-lambda:
+      Type: Choice
+      Choices:
+        - Variable: "$.process.tasks.convert-to-cog.batch"
+          BooleanEquals: false
+          Next: convert-to-cog
+        - Variable: "$.process.tasks.convert-to-cog.batch"
+          BooleanEquals: true
+          Next: convert-to-cog-pre-batch
+    convert-to-cog-pre-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [pre-batch, Arn]
+      Next: convert-to-cog-batch
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    convert-to-cog-batch:
+      Type: Task
+      Resource: arn:aws:states:::batch:submitJob.sync
+      Parameters:
+        JobName: convert-to-cog-batch
+        JobQueue: "#{BasicSpotJobQueue}"
+        JobDefinition: "#{GeoLambdaAsBatchJob}"
+        #Parameters.$: "$"
+        Parameters:
+          lambda_function: ${self:service}-${self:provider.stage}-convert-to-cog
+          url.$: "$.url"
+      Next: publish
+      Retry:
+        - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
+          IntervalSeconds: 60.0
+          BackoffRate: 3.0
+          MaxAttempts: 3
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    convert-to-cog:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [convert-to-cog, Arn]
+      Next: publish
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    publish:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [publish, Arn]
+      End: True
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    workflow-failed:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [workflow-failed, Arn]
+      Next: failure
+    failure:
+      Type: Fail

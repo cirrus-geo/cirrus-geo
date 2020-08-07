@@ -1,0 +1,22 @@
+{
+  "name": "cirrus",
+  "version": "0.1.0",
+  "description": "",
+  "scripts": {
+    "test": "PYTHONPATH=lambdas/:cirrus-lib/:$PYTHONPATH pytest",
+    "ci": "npm test",
+    "deploy": "sls deploy --conceal"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@repo.element84.com:access/cirrus.git"
+  },
+  "author": "Element 84",
+  "license": "ISC",
+  "devDependencies": {
+    "serverless": "^1.67.3",
+    "serverless-pseudo-parameters": "^2.5.0",
+    "serverless-python-requirements": "^5.1.0",
+    "serverless-step-functions": "^2.11.0"
+  }
+}

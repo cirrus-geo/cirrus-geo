@@ -1,0 +1,327 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+    {
+        "type": "Feature",
+        "stac_version": "0.9.0",
+        "stac_extensions": [
+            "sat",
+            "eo",
+            "view",
+            "proj"
+        ],
+        "id": "S2A_30PZQ_20190713_0_L2A",
+        "collection": "sentinel-s2-l2a",
+        "bbox": [
+            0.17212732217776772,
+            8.03675375646586,
+            0.7259478772678578,
+            9.03106118543408
+        ],
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [
+                        0.7163406098050739,
+                        8.03675375646586
+                    ],
+                    [
+                        0.17212732217776772,
+                        8.041319411706674
+                    ],
+                    [
+                        0.39016527030047127,
+                        9.03106118543408
+                    ],
+                    [
+                        0.7259478772678578,
+                        9.027803658954483
+                    ],
+                    [
+                        0.7163406098050739,
+                        8.03675375646586
+                    ]
+                ]
+            ]
+        },
+        "properties": {
+            "constellation": "sentinel-2",
+            "instruments": [
+                "msi"
+            ],
+            "gsd": 10,
+            "view:off_nadir": 0,
+            "datetime": "2019-07-13T10:28:48.870000+00:00",
+            "platform": "sentinel-2a",
+            "eo:cloud_cover": 0,
+            "proj:epsg": 32630,
+            "sentinel:latitude_band": "P",
+            "sentinel:grid_square": "ZQ",
+            "sentinel:sequence": "0",
+            "sentinel:product_id": "S2A_MSIL2A_20190713T101031_N0213_R022_T30PZQ_20190713T142245",
+            "created": "2020-02-19T22:10:32.765Z",
+            "updated": "2020-02-19T22:10:32.765Z"
+        },
+        "assets": {
+            "thumbnail": {
+                "title": "Thumbnail",
+                "type": "image/png",
+                "roles": [
+                    "thumbnail"
+                ],
+                "href": "https://roda.sentinel-hub.com/sentinel-s2-l1c/tiles/30/P/ZQ/2019/7/13/0/preview.jpg"
+            },
+            "overview": {
+                "title": "Overview",
+                "type": "image/png",
+                "roles": [
+                    "overview"
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/qi/L2A_PVI.jp2"
+            },
+            "info": {
+                "title": "Original JSON metadata",
+                "type": "application/json",
+                "roles": [
+                    "metadata"
+                ],
+                "href": "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/tileInfo.json"
+            },
+            "metadata": {
+                "title": "Original XML metadata",
+                "type": "application/xml",
+                "roles": [
+                    "metadata"
+                ],
+                "href": "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/metadata.xml"
+            },
+            "visual": {
+                "title": "True color image",
+                "type": "image/jp2",
+                "roles": [
+                    "visual"
+                ],
+                "eo:bands": [
+                    3,
+                    2,
+                    1
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R10m/TCI.jp2"
+            },
+            "visual_20m": {
+                "title": "True color image",
+                "type": "image/jp2",
+                "roles": [
+                    "visual"
+                ],
+                "eo:bands": [
+                    3,
+                    2,
+                    1
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R20m/TCI.jp2"
+            },
+            "visual_60m": {
+                "title": "True color image",
+                "type": "image/jp2",
+                "roles": [
+                    "visual"
+                ],
+                "eo:bands": [
+                    3,
+                    2,
+                    1
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R60m/TCI.jp2"
+            },
+            "B01": {
+                "title": "Band 1 (coastal)",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    0
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R60m/B01.jp2"
+            },
+            "B02": {
+                "title": "Band 2 (blue)",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    2
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R10m/B02.jp2"
+            },
+            "B03": {
+                "title": "Band 3 (green)",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    2
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R10m/B03.jp2"
+            },
+            "B04": {
+                "title": "Band 4 (red)",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    3
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R10m/B04.jp2"
+            },
+            "B05": {
+                "title": "Band 5",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    4
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R20m/B05.jp2"
+            },
+            "B06": {
+                "title": "Band 6",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    5
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R20m/B06.jp2"
+            },
+            "B07": {
+                "title": "Band 7",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    6
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R20m/B07.jp2"
+            },
+            "B08": {
+                "title": "Band 8 (nir)",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    7
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R10m/B08.jp2"
+            },
+            "B8A": {
+                "title": "Band 8A",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    8
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R20m/B8A.jp2"
+            },
+            "B09": {
+                "title": "Band 9",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    9
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R60m/B09.jp2"
+            },
+            "B11": {
+                "title": "Band 11 (swir16)",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    11
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R20m/B11.jp2"
+            },
+            "B12": {
+                "title": "Band 12 (swir22)",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "eo:bands": [
+                    12
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R20m/B12.jp2"
+            },
+            "AOT": {
+                "title": "Aerosol Optical Thickness (AOT)",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R60m/AOT.jp2"
+            },
+            "WVP": {
+                "title": "Water Vapour (WVP)",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R10m/WVP.jp2"
+            },
+            "SCL": {
+                "title": "Scene Classification Map (SCL)",
+                "type": "image/jp2",
+                "roles": [
+                    "data"
+                ],
+                "href": "s3://sentinel-s2-l2a/tiles/30/P/ZQ/2019/7/13/0/R20m/SCL.jp2"
+            }
+        },
+        "links": [
+            {
+                "rel": "self",
+                "href": "https://jhj4qxmhwb.execute-api.us-west-2.amazonaws.com/v0/collections/sentinel-s2-l2a/items/S2A_30PZQ_20190713_0_L2A"
+            },
+            {
+                "rel": "parent",
+                "href": "https://jhj4qxmhwb.execute-api.us-west-2.amazonaws.com/v0/collections/sentinel-s2-l2a"
+            },
+            {
+                "rel": "collection",
+                "href": "https://jhj4qxmhwb.execute-api.us-west-2.amazonaws.com/v0/collections/sentinel-s2-l2a"
+            },
+            {
+                "rel": "root",
+                "href": "https://jhj4qxmhwb.execute-api.us-west-2.amazonaws.com/v0/"
+            }
+        ]
+    }
+    ],
+    "process": {
+        "collections": ["sentinel-s2-l2a"],
+        "output_collections": ["sentinel-s2-l2a"],
+        "workflow": "publish-only",
+        "replace": true,
+        "output_options": {
+            "path_template": "/${collection}/${year}/${id}",
+            "collections": {
+                "test": ".*"
+            }
+        }
+    }
+}

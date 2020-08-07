@@ -1,0 +1,21 @@
+name: ${self:service}-${self:provider.stage}-publish-only
+definition:
+  Comment: Simple example that just published input Collections and items
+  StartAt: publish
+  States:
+    publish:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [publish, Arn]
+      End: True
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    workflow-failed:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [workflow-failed, Arn]
+      Next: failure
+    failure:
+      Type: Fail

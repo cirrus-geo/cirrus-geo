@@ -1,0 +1,39 @@
+publish:
+  description: Publish resulting STAC Collections and Items to catalog, and optionally SNS
+  handler: lambda_function.lambda_handler
+  memorySize: 128
+  timeout: 30
+  module: tasks/publish
+
+copy-assets:
+  description: Copy specified assets from Item(s) to an S3 bucket
+  handler: lambda_function.lambda_handler
+  memorySize: 768
+  timeout: 60
+  module: tasks/copy-assets
+
+convert-to-cog:
+  description: Convert specified assets into Cloud Optimized GeoTIFFs
+  handler: lambda_function.lambda_handler
+  memorySize: 1024
+  timeout: 900
+  module: tasks/convert-to-cog
+  environment:
+    GDAL_DATA: /opt/share/gdal
+    PROJ_LIB: /opt/share/proj
+  layers:
+    - arn:aws:lambda:us-west-2:552188055668:layer:geolambda:2
+    - arn:aws:lambda:us-west-2:552188055668:layer:geolambda-python:1
+
+add-preview:
+  description: Create a preview and/or thumbnail from one or more assets
+  handler: lambda_function.lambda_handler
+  memorySize: 1024
+  timeout: 900
+  module: tasks/add-preview
+  environment:
+    GDAL_DATA: /opt/share/gdal
+    PROJ_LIB: /opt/share/proj
+  layers:
+    - arn:aws:lambda:us-west-2:552188055668:layer:geolambda:2
+    - arn:aws:lambda:us-west-2:552188055668:layer:geolambda-python:1
