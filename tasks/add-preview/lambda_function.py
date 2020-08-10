@@ -102,7 +102,7 @@ def lambda_handler(payload, context={}):
 
 def add_thumbnail(item, filename, scale_percent=5):
     """ Add a thumbnail to item, generated from filename """
-    fnout = filename.replace('.tif', '.png')
+    fnout = filename.replace('_preview.tif', '_thumb.png')
     logging.info(f"Creating thumbnail {fnout} from {filename}")
     try:
         gdal.Translate(fnout, filename, format='PNG', widthPct=scale_percent, heightPct=scale_percent)
