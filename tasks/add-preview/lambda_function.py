@@ -69,10 +69,10 @@ def lambda_handler(payload, context={}):
 
             # add preview to item
             
-            add_preview(item, item['assets'][asset]['href'], **config)
+            item = add_preview(item, item['assets'][asset]['href'], **config)
             if thumb:
                 # add thumbnail to item
-                add_thumbnail(item, item['assets']['preview']['href'])
+                item = add_thumbnail(item, item['assets']['preview']['href'])
 
             # put back original href
             item['assets'][asset]['href'] = href
