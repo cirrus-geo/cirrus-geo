@@ -19,13 +19,12 @@ logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'INFO'))
 
 
 def lambda_handler(payload, context={}):
-    logger.debug('Payload: %s' % json.dumps(payload))
-
-    catalog = Catalogs.from_payload(payload)[0]
-
     # if this is batch, output to stdout
     if not hasattr(context, "invoked_function_arn"):
         logger.addHandler(StreamHandler())
+    logger.debug('Payload: %s' % json.dumps(payload))
+
+    catalog = Catalogs.from_payload(payload)[0]
 
     # TODO - make this more general for more items/collections
     item = catalog['features'][0] #, collection=catalog['collections'][0])
