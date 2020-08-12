@@ -1,4 +1,4 @@
-Resources:
+sResources:
   # Main data bucket
   Data:
     Type: AWS::S3::Bucket
@@ -25,20 +25,21 @@ Resources:
     Properties:
       TopicName: ${self:service}-${self:provider.stage}-publish
   # Allow anyone to subscribe to publish topic
-  #PublishTopicPolicy:
-  #  Type: 'AWS::SNS::TopicPolicy'
-  #  Properties:
-  #    Topics:
-  #      - !Ref PublishTopic
-  #    PolicyDocument:
-  #      Statement:
-  #        - Sid: public-sns-subscriptions
-  #          Effect: Allow
-  #          Principal: "*"
-  #          Action:
-  #            - sns:Subscribe
-  #          Resource:
-  #            - arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+  PublishTopicPolicy:
+    Type: 'AWS::SNS::TopicPolicy'
+    Properties:
+      Topics:
+        - !Ref PublishTopic
+      PolicyDocument:
+        Statement:
+          - Sid: public-sns-subscriptions
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - sns:Subscribe
+              - sns:ListSubscriptionsByTopic
+            Resource:
+              - arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
   # Validation Queue
   ValidationDeadLetterQueue:
     Type: AWS::SQS::Queue
