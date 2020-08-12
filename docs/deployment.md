@@ -19,12 +19,12 @@ provider:
 custom:
   batch:
     SecurityGroupIds:
-      - <SECURITY_GROUP_1>
-      - <SECURITY_GROUP_2>
+      - ${env:SECURITY_GROUP_1}
+      - ${env:SECURITY_GROUP_2}
       - ...
     Subnets:
-      - <SUBNET_1>
-      - <SUBNET_2>
+      - ${env:SUBNET_1}
+      - ${env:SUBNET_2}
       - ...
     BasicComputeEnvironments:
       MaxvCpus: 128
@@ -32,7 +32,7 @@ custom:
 
 The default `stage` and `region` in the `provider` block can be changed from `dev` and `us-west-2` (they can also be specified at deploy time). The deployed CloudFormation stack will be named `cirrus-<stage>`, so the stage needs to be changed if there are multiple Cirrus deployments.
 
-The `custom` section contains some additional user defined variables. `SecurityGroupIds` needs to be updated to include an AWS Security Group (EC2->Security Groups in AWS Console). Every AWS account should have a default Security Group which can be used, or a SecurityGroup from a custom VPC. `Subnets` needs to be updated to include 1 or more (preferably 4 or more) Subnets (VPC->Subnets in AWS Console)
+The `custom` section contains some additional user defined variables. `SecurityGroupIds` and `Subnets` reference Environment Variables. Define 1 or more environment variables `SECURITY_GROUP_X` and `SUBNET_X` and edit the serverless yaml file accordingly. `SECURITY_GROUP_X` is an AWS Security Group (EC2->Security Groups in AWS Console). Every AWS account should have a default Security Group which can be used, or SecurityGroup(s) from a custom VPC. `Subnets` are the IDs of 1 or more (preferably 4 or more) Subnets (VPC->Subnets in AWS Console).
 
 The `BasicComputeEnvironments.MaxvCpus` controls the maximum number of Virtual CPUs that can run at one time in AWS Batch. The number of vCPUs, and required memory, for each Batch Job is specified in [jobs.yml](../batch/jobs.yml)
 
