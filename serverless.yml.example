@@ -26,11 +26,12 @@ provider:
 custom:
   batch:
     SecurityGroupIds:
-      - <SECURITY_GROUP_1>
-      - <SECURITY_GROUP_2>
+      - ${env:SECURITY_GROUP_1}
     Subnets:
-      - <SUBNET_1>
-      - <SUBNET_2>
+      - ${env:SUBNET_1}
+      - ${env:SUBNET_2}
+      - ${env:SUBNET_3}
+      - ${env:SUBNET_4}
     BasicComputeEnvironments:
       MaxvCpus: 128
     #CustomComputeEnvironments:
