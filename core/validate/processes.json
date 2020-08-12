@@ -1,7 +1,7 @@
 {
   "sentinel-s2-l2a": {
     "input_collections": ["sentinel-s2-l2a"],
-    "workflow": "mirror-with-cogs",
+    "workflow": "cog-archive",
     "output_options": {
       "path_template": "/${collection}/${year}/${month}/${day}/${id}",
       "public_assets": "ALL",
