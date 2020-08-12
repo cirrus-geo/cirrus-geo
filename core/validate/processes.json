@@ -1,10 +1,9 @@
 {
   "sentinel-s2-l2a": {
     "input_collections": ["sentinel-s2-l2a"],
-    "output_collections": ["sentinel-s2-l2a-cogs"],
     "workflow": "mirror-with-cogs",
     "output_options": {
-      "path_template": "/${collection}/${year}/${id}",
+      "path_template": "/${collection}/${year}/${month}/${day}/${id}",
       "public_assets": "ALL",
       "collections": {
         "sentinel-s2-l2a-cogs": ".*"
@@ -128,10 +127,6 @@
             "overview_blocksize": 256,
             "overview_resampling": "mode"
           }
-        },
-        "credentials": {
-          "requester_pays": true,
-          "region_name": "eu-central-1"
         }
       },
       "publish": {
