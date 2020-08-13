@@ -4,7 +4,7 @@ service: cirrus
 # high level config
 provider:
   name: aws
-  stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage, 'v0'}
   region: ${opt:region, 'us-west-2'}
   runtime: python3.7
   environment:
@@ -79,9 +79,10 @@ functions:
 # workflows
 stepFunctions:
   stateMachines:
-    publish-only: ${file(workflows/publish-only/definition.yml)}
-    mirror: ${file(workflows/mirror/definition.yml)}
-    mirror-with-preview: ${file(workflows/mirror-with-preview/definition.yml)}
+    #publish-only: ${file(workflows/publish-only/definition.yml)}
+    #mirror: ${file(workflows/mirror/definition.yml)}
+    #mirror-with-preview: ${file(workflows/mirror-with-preview/definition.yml)}
+    publish-sentinel: ${file(workflows/publish-sentinel/definition.yml)}
     cog-archive: ${file(workflows/cog-archive/definition.yml)}
   # enable pre-deployment definition validation
   validate: true
