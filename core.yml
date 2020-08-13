@@ -1,4 +1,4 @@
-sResources:
+Resources:
   # Main data bucket
   Data:
     Type: AWS::S3::Bucket
