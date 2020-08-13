@@ -1,0 +1,30 @@
+name: ${self:service}-${self:provider.stage}-publish-sentinel
+definition:
+  Comment: Publish Sentinel data as STAC
+  StartAt: sentinel-to-stac
+  States:
+    sentinel-to-stac:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [sentinel-to-stac, Arn]
+      Next: publish
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    publish:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [publish, Arn]
+      End: True
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    workflow-failed:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [workflow-failed, Arn]
+      Next: failure
+    failure:
+      Type: Fail
