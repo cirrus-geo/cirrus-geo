@@ -159,6 +159,7 @@ def lambda_handler(payload, context={}):
 
             # feed to cirrus through SNS topic
             client = boto3.client('sns')
+            logger.debug(f"Published {json.dumps(catalog)}")
             client.publish(TopicArn=SNS_TOPIC, Message=json.dumps(catalog))
             if ((i+1) % 250) == 0:
                 logger.debug(f"Published {i+1} catalogs to {SNS_TOPIC}")

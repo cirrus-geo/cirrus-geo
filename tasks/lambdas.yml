@@ -37,3 +37,16 @@ add-preview:
   layers:
     - arn:aws:lambda:us-west-2:552188055668:layer:geolambda:2
     - arn:aws:lambda:us-west-2:552188055668:layer:geolambda-python:1
+
+sentinel-to-stac:
+  description: Convert Sentinel data to STAC
+  handler: lambda_function.lambda_handler
+  memorySize: 128
+  timeout: 300
+  module: tasks/sentinel-to-stac
+  environment:
+    GDAL_DATA: /opt/share/gdal
+    PROJ_LIB: /opt/share/proj
+  layers:
+    - arn:aws:lambda:us-west-2:552188055668:layer:geolambda:2
+    - arn:aws:lambda:us-west-2:552188055668:layer:geolambda-python:1
