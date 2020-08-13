@@ -1,0 +1,2 @@
+cirrus-lib==0.1.2
+git+https://github.com/stac-utils/stac-sentinel@develop
