@@ -37,7 +37,7 @@ def lambda_handler(payload, context={}):
     #output_credentials = output_options.get('credentials', {})
 
     # this process assumes single output collection, as it's just converting from original Sentinel to STAC for 1 scene
-    output_collection = catalog['process']['output_options']['collections'].keys()[0]
+    output_collection = list(catalog['process']['output_options']['collections'].keys())[0]
 
     items = []
     # get metadata
