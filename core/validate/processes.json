@@ -3,7 +3,7 @@
     "input_collections": ["sentinel-s2-l2a"],
     "workflow": "cog-archive",
     "output_options": {
-      "path_template": "/${collection}/${year}/${month}/${day}/${id}",
+      "path_template": "s3://sentinel-cogs/${collection}/${year}/${month}/${day}/${id}",
       "public_assets": "ALL",
       "collections": {
         "sentinel-s2-l2a-cogs": ".*"
@@ -16,11 +16,7 @@
       "copy-assets": {
         "batch": false,
         "assets": [],
-        "drop_assets": ["visual_20m", "visual_60m"],
-        "credentials": {
-          "requester_pays": true,
-          "region_name": "eu-central-1"
-        }
+        "drop_assets": ["visual_20m", "visual_60m"]
       },
       "convert-to-cog": {
         "batch": true,

@@ -76,7 +76,7 @@ definition:
       Resource: arn:aws:states:::batch:submitJob.sync
       Parameters:
         JobName: convert-to-cog-batch
-        JobQueue: "#{BasicSpotJobQueue}"
+        JobQueue: "#{CustomSpotJobQueue}"
         JobDefinition: "#{GeoLambdaAsBatchJob}"
         #Parameters.$: "$"
         Parameters:
