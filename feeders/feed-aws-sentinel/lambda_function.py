@@ -70,7 +70,8 @@ PROCESS = {
     "output_options": {
         "path_template": "/${collection}/${year}/${month}/${day}/${id}",
         "collections": {
-            "sentinel-s2-l2a": ".*"
+            "sentinel-s2-l1c": ".*L1C",
+            "sentinel-s2-l2a": ".*L2A"
         }
     },
     "functions": {
