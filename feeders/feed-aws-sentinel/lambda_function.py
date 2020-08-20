@@ -68,7 +68,7 @@ PROCESS = {
     "input_collections": ["sentinel-s2-l2a-aws"],
     "workflow": "publish-sentinel",
     "output_options": {
-        "path_template": "/${collection}/${year}/${month}/${day}/${id}",
+        "path_template": "/${collection}/${sentinel:utm_zone}/${sentinel:latitude_band}/${sentinel:grid_square}/${year}/${month}/${id}",
         "collections": {
             "sentinel-s2-l1c": ".*L1C",
             "sentinel-s2-l2a": ".*L2A"
@@ -139,7 +139,7 @@ def lambda_handler(payload, context={}):
         for i, url in enumerate(payload['urls']):
             # populating catalog with bare minimum
             key = s3().urlparse(s3().https_to_s3(url))['key']
-            id = '-'.join(op.dirname(key).split('/'))
+            id = '-'.join(op.dirname(key).split('/')[1:])
             # TODO - determime input collection from url
             item = {
                 'type': 'Feature',
@@ -147,7 +147,7 @@ def lambda_handler(payload, context={}):
                 'collection': 'sentinel-s2-l2a-aws',
                 'properties': {},
                 'assets': {
-                    'tileInfo': {
+                    'json': {
                         'href': url
                     }
                 }
