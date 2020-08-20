@@ -33,15 +33,15 @@ custom:
       - ${env:SUBNET_3}
       - ${env:SUBNET_4}
     BasicComputeEnvironments:
-      MaxvCpus: 128
+      MaxvCpus: 1000
     CustomComputeEnvironments:
-      MaxvCpus: 10000
+      MaxvCpus: 20000
       ImageId: ami-0762f74aea69d4143
     LambdaAsBatchJob:
       Memory: 2048
       Vcpus: 1
     GeoLambdaAsBatchJob:
-      Memory: 2048
+      Memory: 4000
       Vcpus: 1
   pythonRequirements:
     #dockerizePip: true
@@ -96,6 +96,17 @@ resources:
   - ${file(batch/jobs.yml)}
   - ${file(batch/basic-compute-environments.yml)}
   - ${file(batch/custom-compute-environments.yml)}
+  - Resources:
+      Sentinel2L2ASubsciption:
+        Type: AWS::SNS::Subscription
+        Properties:
+          Endpoint: !GetAtt ValidationQueue.Arn
+          Protocol: sqs
+          Region: "#{AWS::Region}"
+          TopicArn: !Ref PublishTopic
+          FilterPolicy:
+            collection:
+              - sentinel-s2-l2a
 
 package:
   individually: true
