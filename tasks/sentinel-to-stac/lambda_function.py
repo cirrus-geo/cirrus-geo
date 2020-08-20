@@ -37,17 +37,19 @@ def lambda_handler(payload, context={}):
     #output_credentials = output_options.get('credentials', {})
 
     # this process assumes single output collection, as it's just converting from original Sentinel to STAC for 1 scene
-    output_collection = list(catalog['process']['output_options']['collections'].keys())[0]
+    #output_collection = list(catalog['process']['output_options']['collections'].keys())[0]
+    output_collection = 'sentinel-s2-l2a'
 
     items = []
     # get metadata
-    url = catalog['features'][0]['assets']['tileInfo']['href'].rstrip()
+    url = catalog['features'][0]['assets']['json']['href'].rstrip()
     # if this is the FREE URL, get s3 base
     if url[0:5] == 'https':
         base_url = 's3:/' + op.dirname(urlparse(url).path)
     else:
         base_url = op.dirname(url)
 
+    # TODO - handle getting from s3 as well as http?
     # get metadata
     resp = requests.get(url, stream=True)
     if resp.status_code != 200:
