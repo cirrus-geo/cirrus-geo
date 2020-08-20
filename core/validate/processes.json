@@ -3,7 +3,7 @@
     "input_collections": ["sentinel-s2-l2a"],
     "workflow": "cog-archive",
     "output_options": {
-      "path_template": "s3://sentinel-cogs/${collection}/${year}/${month}/${day}/${id}",
+      "path_template": "s3://sentinel-cogs/${collection}/${sentinel:utm_zone}/${sentinel:latitude_band}/${sentinel:grid_square}/${year}/${month}/${id}",
       "public_assets": "ALL",
       "collections": {
         "sentinel-s2-l2a-cogs": ".*"
