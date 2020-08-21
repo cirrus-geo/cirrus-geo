@@ -87,7 +87,7 @@ definition:
         - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
           IntervalSeconds: 60.0
           BackoffRate: 3.0
-          MaxAttempts: 3
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
