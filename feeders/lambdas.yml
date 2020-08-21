@@ -27,13 +27,17 @@ feed-test:
     module: feeders/feed-test
 
 feed-s3-inventory:
-    description: Feed Sentinel AWS inventory data to Cirrus for cataloging
+    description: Feed AWS inventory data to Cirrus for cataloging
     handler: lambda_function.lambda_handler
     memorySize: 128
     timeout: 900
     module: feeders/feed-s3-inventory
 
 feed-aws-sentinel:
+    description: Feed Sentinel AWS inventory data to Cirrus for cataloging
+    handler: lambda_function.lambda_handler
+    memorySize: 128
+    timeout: 900
     module: feeders/feed-aws-sentinel
     events:
         - sns:
