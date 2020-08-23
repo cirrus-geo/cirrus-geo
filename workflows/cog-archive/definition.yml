@@ -18,6 +18,11 @@ definition:
       Resource:
         Fn::GetAtt: [pre-batch, Arn]
       Next: copy-assets-batch
+      Retry:
+        - ErrorEquals: ["TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -41,12 +46,22 @@ definition:
       Type: Task
       Resource:
         Fn::GetAtt: [post-batch, Arn]
-      Next: convert-to-cog-batch-or-lambda        
+      Next: convert-to-cog-batch-or-lambda
+      Retry:
+        - ErrorEquals: ["TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
     copy-assets:
       Type: Task
       Resource:
         Fn::GetAtt: [copy-assets, Arn]
       Next: convert-to-cog-batch-or-lambda
+      Retry:
+        - ErrorEquals: ["TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -67,6 +82,11 @@ definition:
       Resource:
         Fn::GetAtt: [pre-batch, Arn]
       Next: convert-to-cog-batch
+      Retry:
+        - ErrorEquals: ["TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -76,7 +96,7 @@ definition:
       Resource: arn:aws:states:::batch:submitJob.sync
       Parameters:
         JobName: convert-to-cog-batch
-        JobQueue: "#{BasicSpotJobQueue}"
+        JobQueue: "#{CustomSpotJobQueue}"
         JobDefinition: "#{GeoLambdaAsBatchJob}"
         #Parameters.$: "$"
         Parameters:
@@ -97,6 +117,11 @@ definition:
       Resource:
         Fn::GetAtt: [convert-to-cog, Arn]
       Next: publish
+      Retry:
+        - ErrorEquals: ["TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -106,6 +131,11 @@ definition:
       Resource:
         Fn::GetAtt: [publish, Arn]
       End: True
+      Retry:
+        - ErrorEquals: ["TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -114,6 +144,11 @@ definition:
       Type: Task
       Resource:
         Fn::GetAtt: [workflow-failed, Arn]
+      Retry:
+        - ErrorEquals: ["TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Next: failure
     failure:
       Type: Fail
