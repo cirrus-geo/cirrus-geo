@@ -67,7 +67,8 @@ Resources:
             Resource: !GetAtt ValidationQueue.Arn
             Condition:
               ArnEquals:
-                aws:SourceArn: !Ref QueueTopic
+                - !Ref QueueTopic
+                - !Ref PublishTopic
   ValidationSubsciption:
     Type: AWS::SNS::Subscription
     Properties:
