@@ -24,7 +24,6 @@ Resources:
     Type: 'AWS::SNS::Topic'
     Properties:
       TopicName: ${self:service}-${self:provider.stage}-publish
-  # Allow anyone to subscribe to publish topic
   PublishTopicPolicy:
     Type: 'AWS::SNS::TopicPolicy'
     Properties:
@@ -40,24 +39,22 @@ Resources:
               - sns:ListSubscriptionsByTopic
             Resource:
               - arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-  # Validation Queue
-  ValidationDeadLetterQueue:
+  ProcessQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: ${self:service}-${self:provider.stage}-validation-dead-letter
-  ValidationQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      DelaySeconds: 1
-      QueueName: ${self:service}-${self:provider.stage}-validation
+      QueueName: ${self:service}-${self:provider.stage}-process
       RedrivePolicy:
-        deadLetterTargetArn: !GetAtt ValidationDeadLetterQueue.Arn
+        deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
         maxReceiveCount: 2
-  ValidationQueuePolicy:
+  ProcessDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:service}-${self:provider.stage}-process-dead-letter
+  ProcessQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
-        - !Ref ValidationQueue
+        - !Ref ProcessQueue
       PolicyDocument:
         Statement:
           - Sid: allow-sqs-sendmessage
@@ -65,30 +62,18 @@ Resources:
             Principal:
               AWS: "*"
             Action: SQS:SendMessage
-            Resource: !GetAtt ValidationQueue.Arn
+            Resource: !GetAtt ProcessQueue.Arn
             Condition:
               ArnEquals:
-                aws:SourceArn: !Ref QueueTopic
-  ValidationSubsciption:
+                - !Ref QueueTopic
+                - !Ref PublishTopic
+  ProcessQueueSubsciption:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt ValidationQueue.Arn
+      Endpoint: !GetAtt ProcessQueue.Arn
       Protocol: sqs
       Region: "#{AWS::Region}"
       TopicArn: !Ref QueueTopic
-  # Process Queue
-  ProcessDeadLetterQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      QueueName: ${self:service}-${self:provider.stage}-process-dead-letter
-  ProcessQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      DelaySeconds: 1
-      QueueName: ${self:service}-${self:provider.stage}-process
-      RedrivePolicy:
-        deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
-        maxReceiveCount: 2
   StateTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -114,9 +99,6 @@ Resources:
             - AttributeName: current_state
               KeyType: RANGE
           Projection:
-            #NonKeyAttributes:
-            #  - execution
-            #  - output_urls
             ProjectionType: ALL
       GlobalSecondaryIndexes:
         - IndexName: "output_state"

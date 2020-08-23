@@ -1,18 +1,8 @@
-validate:
-  description: Validates Cirrus Input and adds to Cirrus queue
+process:
+  description: Consumes Process Catalogs from queue and invokes workflow
   handler: lambda_function.lambda_handler
   memorySize: 128
-  timeout: 10
-  module: core/validate
-  events:
-    - sqs:
-        arn: !GetAtt ValidationQueue.Arn
-
-start-workflow:
-  description: Ingests Process Catalogs from queue and invokes workflow
-  handler: lambda_function.lambda_handler
-  memorySize: 128
-  module: core/start-workflow
+  module: core/process
   events:
     - sqs:
         arn: !GetAtt ProcessQueue.Arn
