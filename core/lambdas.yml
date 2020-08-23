@@ -19,6 +19,17 @@ start-workflow:
   environment:
     BASE_WORKFLOW_ARN: "arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-"
 
+process:
+  description: Consumes Process Catalogs from queue and invokes workflow
+  handler: lambda_function.lambda_handler
+  memorySize: 128
+  module: core/process
+  events:
+    - sqs:
+        arn: !GetAtt ProcessQueue.Arn
+  environment:
+    BASE_WORKFLOW_ARN: "arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-"
+
 pre-batch:
   description: Pre process batch job by copying input to S3
   handler: lambda_function.lambda_handler
