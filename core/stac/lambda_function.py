@@ -33,7 +33,7 @@ CONSOLE_URL = f"https://{REGION}.console.aws.amazon.com/"
 snsclient = boto3.client('sns')
 
 
-ROOT_URL = f"s3://{DATA_BUCKET}/catalog.json"
+ROOT_URL = f"s3://{DATA_BUCKET}"
 
 
 def s3stac_read(uri):
@@ -61,12 +61,13 @@ def get_root_catalog():
     Returns:
         Dict: STAC root catalog
     """
-    if s3().exists(ROOT_URL):
-        cat = Catalog.from_file(ROOT_URL)
+    caturl = f"{ROOT_URL}/catalog.json"
+    if s3().exists(caturl):
+        cat = Catalog.from_file(caturl)
     else:
         catid = DATA_BUCKET.split('-data-')[0]
         cat = Catalog(id=catid, description=DESCRIPTION)
-        cat.normalize_and_save(ROOT_URL, CatalogType=CatalogType.ABSOLUTE_PUBLISHED)
+        cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
     logger.debug(f"Fetched {cat.describe()}")
     return cat
 
@@ -74,15 +75,15 @@ def get_root_catalog():
 # add this collection to Cirrus catalog
 def add_collection(collection):
     cat = get_root_catalog()
-    col = Collection(**collection)
+    col = Collection.from_dict(collection)
     cat.add_child(col)
-    cat.normalize_and_save(ROOT_URL, CatalogType=CatalogType.ABSOLUTE_PUBLISHED)
+    cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
     return cat
 
 
 def lambda_handler(event, context):
     logger.debug('Event: %s' % json.dumps(event))
-    
+
     # check if collection and if so, add to Cirrus
     if 'extent' in event:
         # add to static catalog
@@ -91,3 +92,12 @@ def lambda_handler(event, context):
         # send to Cirrus Publish SNS
         response = snsclient.publish(TopicArn=PUBLISH_TOPIC, Message=json.dumps(event))
         logger.debug(f"SNS Publish response: {json.dumps(response)}")
+
+    # check if URL to catalog
+    if 'catalog_url' in event:
+        cat = Catalog.from_file(event['catalog_url'])
+
+        for child in cat.get_children():
+            if isinstance(child, Collection):
+                response = snsclient.publish(TopicArn=PUBLISH_TOPIC, Message=json.dumps(child.to_dict()))
+                logger.debug(f"SNS Publish response: {json.dumps(response)}")
