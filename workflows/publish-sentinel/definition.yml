@@ -8,6 +8,11 @@ definition:
       Resource:
         Fn::GetAtt: [sentinel-to-stac, Arn]
       Next: publish
+      Retry:
+        - ErrorEquals: ["TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -17,6 +22,11 @@ definition:
       Resource:
         Fn::GetAtt: [publish, Arn]
       End: True
+      Retry:
+        - ErrorEquals: ["TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -25,6 +35,11 @@ definition:
       Type: Task
       Resource:
         Fn::GetAtt: [workflow-failed, Arn]
+      Retry:
+        - ErrorEquals: ["TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Next: failure
     failure:
       Type: Fail
