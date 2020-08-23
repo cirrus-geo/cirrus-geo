@@ -1,2 +1,2 @@
 cirrus-lib==0.1.3
-git+git://github.com/stac-utils/pystac@develop
+pystac==0.5.2
