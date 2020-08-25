@@ -37,15 +37,17 @@ def lambda_handler(payload, context):
         if record['type'] == 'Feature':
             if record['collection'] not in PROCESSES.keys():
                 raise Exception(f"Default process not provided for collection {record['collection']}")
-            cat = Catalog({
+            cat_json = {
                 'type': 'FeatureCollection',
                 'features': [record],
                 'process': PROCESSES[record['collection']]
-            })
+            }
         else:
-            cat = record
-            if 'process' not in cat:
-                cat['process'] = PROCESSES[cat['collection']]
+            cat_json = record
+            if 'process' not in cat_json:
+                cat_json['process'] = PROCESSES[cat_json['collection']]
+        cat = Catalog(cat_json, update=True)
+        cats.append(cat)
 
     catalogs = Catalogs(cats)
 
