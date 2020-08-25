@@ -66,8 +66,9 @@ Resources:
             Resource: !GetAtt ProcessQueue.Arn
             Condition:
               ArnEquals:
-                - !Ref QueueTopic
-                - !Ref PublishTopic
+                aws:SourceArn:
+                  - !Ref QueueTopic
+                  - !Ref PublishTopic
   ProcessQueueSubsciption:
     Type: AWS::SNS::Subscription
     Properties:
