@@ -92,8 +92,7 @@ resources:
   - Description: Cirrus STAC Processing Framework
   - ${file(core.yml)}
   # Batch
-  - ${file(batch/iam.yml)}
-  - ${file(batch/jobs.yml)}
+  - ${file(tasks/batch-jobs.yml)}
   - ${file(batch/basic-compute-environments.yml)}
   - ${file(batch/custom-compute-environments.yml)}
   - Resources:
