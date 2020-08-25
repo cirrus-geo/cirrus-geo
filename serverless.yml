@@ -100,7 +100,7 @@ resources:
       Sentinel2L2ASubsciption:
         Type: AWS::SNS::Subscription
         Properties:
-          Endpoint: !GetAtt ValidationQueue.Arn
+          Endpoint: !GetAtt ProcessQueue.Arn
           Protocol: sqs
           Region: "#{AWS::Region}"
           TopicArn: !Ref PublishTopic
