@@ -30,6 +30,7 @@ def lambda_handler(payload, context):
     else:
         records = [payload]
 
+    # Make sure FeatureCollection, and Process block included
     cats = []
     for record in records:
         logger.debug(f"Record: {json.dumps(record)}")
@@ -46,21 +47,12 @@ def lambda_handler(payload, context):
             cat_json = record
             if 'process' not in cat_json:
                 cat_json['process'] = PROCESSES[cat_json['collection']]
+        # create Catalog instance, update/add fields as needed (e.g., id)
         cat = Catalog(cat_json, update=True)
         cats.append(cat)
 
     catalogs = Catalogs(cats)
 
-    # check current states and process
-    catids = []
-    states = catalogs.get_states()
-    for cat in catalogs:
-        state = states.get(cat['id'], '')
-        replace = cat['process'].get('replace', False)
-        if state in ['FAILED', ''] or replace:
-            catids.append(cat.process())
-        else:
-            logger.info(f"Skipping {cat['id']}, in {state} state")
-            continue
+    catids = catalogs.process()
 
     return catids
