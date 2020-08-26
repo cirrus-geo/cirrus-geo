@@ -1,2 +1,2 @@
-#git+git://github.com/cirrus-geo/cirrus-lib@develop
-git+git://github.com/cirrus-geo/cirrus-lib@develop
+#cirrus-lib==0.2.0
+cirrus-lib==0.2.0
