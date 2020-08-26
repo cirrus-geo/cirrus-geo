@@ -20,7 +20,7 @@ stac:
   description: Lambda function for interacting with Cirrus static STAC
   handler: lambda_function.lambda_handler
   memorySize: 128
-  timeout: 15
+  timeout: 60
   module: core/stac
 
 api:

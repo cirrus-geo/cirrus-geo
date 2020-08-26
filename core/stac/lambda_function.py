@@ -72,21 +72,15 @@ def get_root_catalog():
     return cat
 
 
-# add this collection to Cirrus catalog
-def add_collection(collection):
-    cat = get_root_catalog()
-    cat.add_child(collection)
-    cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
-    return cat
-
-
 def lambda_handler(event, context):
     logger.debug('Event: %s' % json.dumps(event))
+
+    root_cat = get_root_catalog()
 
     # check if collection and if so, add to Cirrus
     if 'extent' in event:
         # add to static catalog
-        add_collection(event)
+        root_cat.add_child(event)
 
         # send to Cirrus Publish SNS
         response = snsclient.publish(TopicArn=PUBLISH_TOPIC, Message=json.dumps(event))
@@ -98,8 +92,10 @@ def lambda_handler(event, context):
 
         for child in cat.get_children():
             if isinstance(child, Collection):
-                add_collection(child)
+                root_cat.add_child(child)
                 child_json = json.dumps(child.to_dict())
                 logger.debug(f"Publishing {child.id}: {child_json}")
                 response = snsclient.publish(TopicArn=PUBLISH_TOPIC, Message=child_json)
                 logger.debug(f"SNS Publish response: {json.dumps(response)}")
+
+    root_cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
