@@ -75,8 +75,7 @@ def get_root_catalog():
 # add this collection to Cirrus catalog
 def add_collection(collection):
     cat = get_root_catalog()
-    col = Collection.from_dict(collection)
-    cat.add_child(col)
+    cat.add_child(collection)
     cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
     return cat
 
@@ -99,6 +98,7 @@ def lambda_handler(event, context):
 
         for child in cat.get_children():
             if isinstance(child, Collection):
+                add_collection(child)
                 child_json = json.dumps(child.to_dict())
                 logger.debug(f"Publishing {child.id}: {child_json}")
                 response = snsclient.publish(TopicArn=PUBLISH_TOPIC, Message=child_json)
