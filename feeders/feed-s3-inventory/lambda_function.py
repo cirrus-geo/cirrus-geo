@@ -118,7 +118,7 @@ def lambda_handler(payload, context={}):
                     'process': process
                 }
                 batch_payload.update(payload)
-                submit_batch_job(batch_payload, context.invoked_function_arn, definition='lambda-as-batch')
+                submit_batch_job(batch_payload, context.invoked_function_arn, definition='lambda-as-batch', name='feed-s3-inventory')
                 submitted_urls = []
                 njobs += 1
                 # stop if max batches reached (used for testing)
@@ -131,7 +131,7 @@ def lambda_handler(payload, context={}):
                 'process': process
             }
             batch_payload.update(payload)
-            submit_batch_job(batch_payload, context.invoked_function_arn, definition='lambda-as-batch')
+            submit_batch_job(batch_payload, context.invoked_function_arn, definition='lambda-as-batch', name='feed-s3-inventory')
             njobs += 1
         logger.info(f"Submitted {njobs} batch jobs")
         return njobs

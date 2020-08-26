@@ -46,7 +46,7 @@ def lambda_handler(event, context={}):
     process = event['process']
 
     if batch and hasattr(context, "invoked_function_arn"):
-        submit_batch_job(event, context.invoked_function_arn, definition='lambda-as-batch')
+        submit_batch_job(event, context.invoked_function_arn, definition='lambda-as-batch', name='feed-stac-crawl')
         return
 
     cat = Catalog.from_file(url)

@@ -142,11 +142,11 @@ def lambda_handler(event, context={}):
     elif hasattr(context, "invoked_function_arn"):
         nbatches = int(found / max_items_batch) + 1
         if nbatches == 1:
-            submit_batch_job(event, context.invoked_function_arn)
+            submit_batch_job(event, context.invoked_function_arn, name='feed-s3-api')
         else:
             for request in split_request(params, nbatches):
                 event['search'] = request
-                submit_batch_job(event, context.invoked_function_arn)
+                submit_batch_job(event, context.invoked_function_arn, name='feed-s3-api')
         logger.info(f"Submitted {nbatches} batches")
         return
     else:
