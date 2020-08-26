@@ -99,5 +99,7 @@ def lambda_handler(event, context):
 
         for child in cat.get_children():
             if isinstance(child, Collection):
-                response = snsclient.publish(TopicArn=PUBLISH_TOPIC, Message=json.dumps(child.to_dict()))
+                child_json = json.dumps(child.to_dict())
+                logger.debug(f"Publishing {child.id}: {child_json}")
+                response = snsclient.publish(TopicArn=PUBLISH_TOPIC, Message=child_json)
                 logger.debug(f"SNS Publish response: {json.dumps(response)}")
