@@ -65,7 +65,7 @@ def split_request(params, nbatches):
     else:
         stop_date = parse(dates[1])
     td = stop_date - start_date
-    hours_per_batch = math.ceil(td.days/nbatches)
+    hours_per_batch = math.ceil(td.total_seconds()/3600/nbatches)
     ranges = []
     for i in range(0, nbatches-1):
         dt1 = start_date + datetime.timedelta(hours=hours_per_batch*i)
