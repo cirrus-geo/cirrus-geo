@@ -92,6 +92,7 @@ def lambda_handler(event, context):
 
         for child in cat.get_children():
             if isinstance(child, Collection):
+                child.remove_links('child')
                 root_cat.add_child(child)
                 child_json = json.dumps(child.to_dict())
                 logger.debug(f"Publishing {child.id}: {child_json}")
