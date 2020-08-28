@@ -13,7 +13,7 @@ from tempfile import mkdtemp
 from traceback import format_exc
 from urllib.parse import urljoin
 
-from pystac import STAC_IO, Catalog, CatalogType, Collection
+from pystac import STAC_IO, Catalog, CatalogType, Collection, Link
 
 
 # configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
@@ -92,6 +92,9 @@ def lambda_handler(event, context):
 
         for child in cat.get_children():
             if isinstance(child, Collection):
+                child.remove_links('child')
+                link = Link('copied_from', child)
+                child.add_link(link, child.get_self_href())
                 root_cat.add_child(child)
                 child_json = json.dumps(child.to_dict())
                 logger.debug(f"Publishing {child.id}: {child_json}")

@@ -1,6 +1,6 @@
 {
   "name": "cirrus",
-  "version": "0.2.0-b2",
+  "version": "0.2.0",
   "description": "",
   "scripts": {
     "test": "PYTHONPATH=lambdas/:cirrus-lib/:$PYTHONPATH pytest",
