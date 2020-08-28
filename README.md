@@ -12,7 +12,7 @@ Because Cirrus output is published via SNS, a Feeder can be configured to subscr
 
 ## Cirrus Repositories
 
-Cirrus is divided up into several repositories, all under the [cirrusgeo](https://github.com/cirrusgeo) organization on GitHub, with this repository (`cirrus`) the main one of interest to users.
+Cirrus is divided up into several repositories, all under the [cirrus-geo](https://github.com/cirrus-geo) organization on GitHub, with this repository (`cirrus`) the main one of interest to users.
 
 | Repository         | Purpose |
 |:------------------ |---------|
