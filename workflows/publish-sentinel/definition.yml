@@ -9,7 +9,7 @@ definition:
         Fn::GetAtt: [sentinel-to-stac, Arn]
       Next: publish
       Retry:
-        - ErrorEquals: ["TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -23,7 +23,7 @@ definition:
         Fn::GetAtt: [publish, Arn]
       End: True
       Retry:
-        - ErrorEquals: ["TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -36,7 +36,7 @@ definition:
       Resource:
         Fn::GetAtt: [workflow-failed, Arn]
       Retry:
-        - ErrorEquals: ["TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
