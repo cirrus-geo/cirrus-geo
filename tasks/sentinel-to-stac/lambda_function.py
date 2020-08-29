@@ -92,23 +92,21 @@ def lambda_handler(payload, context={}):
             item['properties']['sentinel:valid_cloud_cover'] = True
         else:
             item['properties']['sentinel:valid_cloud_cover'] = False
-
-        # discard if crossing antimeridian
-        if item['bbox'][2] - item['bbox'][0] > 300:
-            msg = f"{item['id']} crosses antimeridian, discarding"
-            logger.error(msg)
-            raise InvalidInput(msg)
-        
         items.append(item)
-
-        # update STAC catalog
-        catalog['collections'] = []
-        catalog['features'] = items
-        logger.debug(f"STAC Output: {json.dumps(catalog)}")
     except Exception as err:
-        msg = f"sentinel-to-stac: failed processing {catalog['id']} ({err})"
+        msg = f"sentinel-to-stac: failed creating STAC for {catalog['id']} ({err})"
         logger.error(msg)
         logger.error(format_exc())
         raise Exception(msg)
+
+    # discard if crossing antimeridian
+    if item['bbox'][2] - item['bbox'][0] > 300:
+        msg = f"{item['id']} crosses antimeridian, discarding"
+        logger.error(msg)
+        raise InvalidInput(msg)
+
+    # update STAC catalog
+    catalog['features'] = items
+    logger.debug(f"STAC Output: {json.dumps(catalog)}")
 
     return catalog
