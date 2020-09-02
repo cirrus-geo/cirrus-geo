@@ -103,11 +103,10 @@ definition:
         JobName: convert-to-cog-batch
         JobQueue: "#{CustomSpotJobQueue}"
         JobDefinition: "#{GeoLambdaAsBatchJob}"
-        #Parameters.$: "$"
         Parameters:
           lambda_function: ${self:service}-${self:provider.stage}-convert-to-cog
           url.$: "$.url"
-      Next: publish
+      Next: convert-to-cog-post-batch
       Retry:
         - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
           IntervalSeconds: 60.0
@@ -117,6 +116,16 @@ definition:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
           Next: workflow-failed
+    convert-to-cog-post-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [post-batch, Arn]
+      Next: publish
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
     convert-to-cog:
       Type: Task
       Resource:
