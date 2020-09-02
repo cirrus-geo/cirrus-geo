@@ -1,2 +1,2 @@
-cirrus-lib==0.2.1
+cirrus-lib==0.3.0
 pystac==0.5.2
