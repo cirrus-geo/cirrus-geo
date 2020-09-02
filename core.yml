@@ -93,7 +93,7 @@ Resources:
           KeyType: HASH
         - AttributeName: id
           KeyType: RANGE
-      LocalSecondaryIndexes:
+      GlobalSecondaryIndexes:
         - IndexName: "input_state"
           KeySchema:
             - AttributeName: input_collections
@@ -102,7 +102,6 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
-      GlobalSecondaryIndexes:
         - IndexName: "output_state"
           KeySchema:
             - AttributeName: output_collections
