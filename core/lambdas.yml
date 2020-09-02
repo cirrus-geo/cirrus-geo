@@ -6,8 +6,6 @@ process:
   events:
     - sqs:
         arn: !GetAtt ProcessQueue.Arn
-  environment:
-    BASE_WORKFLOW_ARN: "arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-"
 
 workflow-failed:
   description: Indicates the end of a workflow

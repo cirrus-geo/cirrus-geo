@@ -29,6 +29,8 @@ Resources:
             Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
           - Name: CIRRUS_PROCESS_QUEUE
             Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
+          - Name: BASE_WORKFLOW_ARN
+            Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
           - Name: AWS_DEFAULT_REGION
             Value: ${self:provider.region}
           - Name: AWS_REGION
@@ -72,6 +74,8 @@ Resources:
             Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
           - Name: CIRRUS_PROCESS_QUEUE
             Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
+          - Name: BASE_WORKFLOW_ARN
+            Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
           - Name: AWS_DEFAULT_REGION
             Value: ${self:provider.region}
           - Name: AWS_REGION
