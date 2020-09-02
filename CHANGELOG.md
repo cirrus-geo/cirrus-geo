@@ -27,12 +27,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `s2-inventory` for creating partial STAC Items (i.e., JSON with assets) from s3 inventory files
 - `feed-stac-crawl` for adding Items by crawling a STAC catalog (using PySTAC)
 - Retries added to all tasks in workflows
+- Added back "post-batch" steps to all workflows
 
 ### Changed
 - Update cirrus-lib to 0.2.0
 - IAM configuration (previously batch/iam.yml) combined into Core resources (core.yml)
 - `pre-batch` and `post-batch` Lambda functions moved from `core` to `tasks` (since they are tasks that can be used in a workflow)
 - `add-preview` now suffixes thumbnails with "_thumb.png" instead of "_preview.png"
+- Batch processes now write output payload back to a new file rather than overwriting the input payload.
 
 ### Removed
 - `validation` and `start-workflow` Lambdas (replace with new `process` Lambda)
