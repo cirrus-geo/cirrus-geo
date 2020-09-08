@@ -5,6 +5,20 @@ publish:
   timeout: 30
   module: tasks/publish
 
+pre-batch:
+  description: Pre process batch job by copying input to S3
+  handler: lambda_function.lambda_handler
+  memorySize: 128
+  timeout: 15
+  module: tasks/pre-batch
+
+post-batch:
+  description: Post process batch job by copying input from S3
+  handler: lambda_function.lambda_handler
+  memorySize: 128
+  timeout: 15
+  module: tasks/post-batch
+
 copy-assets:
   description: Copy specified assets from Item(s) to an S3 bucket
   handler: lambda_function.lambda_handler

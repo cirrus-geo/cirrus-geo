@@ -29,6 +29,8 @@ Resources:
             Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
           - Name: CIRRUS_PROCESS_QUEUE
             Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
+          - Name: BASE_WORKFLOW_ARN
+            Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
           - Name: AWS_DEFAULT_REGION
             Value: ${self:provider.region}
           - Name: AWS_REGION
@@ -39,7 +41,7 @@ Resources:
             Value: /usr/local/share/proj
         Memory: ${self:custom.batch.GeoLambdaAsBatchJob.Memory}
         Vcpus: ${self:custom.batch.GeoLambdaAsBatchJob.Vcpus}
-        Image: 'cirrusgeo/run-geolambda:0.1.0'
+        Image: 'cirrusgeo/run-geolambda:0.1.1'
       RetryStrategy: 
         Attempts: 1
   LambdaAsBatchJob:
@@ -72,12 +74,14 @@ Resources:
             Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
           - Name: CIRRUS_PROCESS_QUEUE
             Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
+          - Name: BASE_WORKFLOW_ARN
+            Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
           - Name: AWS_DEFAULT_REGION
             Value: ${self:provider.region}
           - Name: AWS_REGION
             Value: ${self:provider.region}
         Memory: ${self:custom.batch.LambdaAsBatchJob.Memory}
         Vcpus: ${self:custom.batch.LambdaAsBatchJob.Vcpus}
-        Image: 'cirrusgeo/run-lambda:0.1.0'
+        Image: 'cirrusgeo/run-lambda:0.1.1'
       RetryStrategy: 
         Attempts: 1

@@ -18,6 +18,11 @@ definition:
       Resource:
         Fn::GetAtt: [pre-batch, Arn]
       Next: copy-assets-batch
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -33,6 +38,11 @@ definition:
           lambda_function: ${self:service}-${self:provider.stage}-copy-assets
           url.$: "$.url"
       Next: copy-assets-post-batch
+      Retry:
+        - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
+          IntervalSeconds: 10.0
+          BackoffRate: 2.0
+          MaxAttempts: 3
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -41,12 +51,22 @@ definition:
       Type: Task
       Resource:
         Fn::GetAtt: [post-batch, Arn]
-      Next: convert-to-cog-batch-or-lambda        
+      Next: convert-to-cog-batch-or-lambda
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
     copy-assets:
       Type: Task
       Resource:
         Fn::GetAtt: [copy-assets, Arn]
       Next: convert-to-cog-batch-or-lambda
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -67,6 +87,11 @@ definition:
       Resource:
         Fn::GetAtt: [pre-batch, Arn]
       Next: convert-to-cog-batch
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -76,27 +101,41 @@ definition:
       Resource: arn:aws:states:::batch:submitJob.sync
       Parameters:
         JobName: convert-to-cog-batch
-        JobQueue: "#{BasicSpotJobQueue}"
+        JobQueue: "#{CustomSpotJobQueue}"
         JobDefinition: "#{GeoLambdaAsBatchJob}"
-        #Parameters.$: "$"
         Parameters:
           lambda_function: ${self:service}-${self:provider.stage}-convert-to-cog
           url.$: "$.url"
-      Next: publish
+      Next: convert-to-cog-post-batch
       Retry:
         - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
           IntervalSeconds: 60.0
           BackoffRate: 3.0
-          MaxAttempts: 3
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
           Next: workflow-failed
+    convert-to-cog-post-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [post-batch, Arn]
+      Next: publish
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
     convert-to-cog:
       Type: Task
       Resource:
         Fn::GetAtt: [convert-to-cog, Arn]
       Next: publish
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -106,6 +145,11 @@ definition:
       Resource:
         Fn::GetAtt: [publish, Arn]
       End: True
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -114,6 +158,11 @@ definition:
       Type: Task
       Resource:
         Fn::GetAtt: [workflow-failed, Arn]
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Next: failure
     failure:
       Type: Fail

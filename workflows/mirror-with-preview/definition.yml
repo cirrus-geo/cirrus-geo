@@ -18,6 +18,11 @@ definition:
       Resource:
         Fn::GetAtt: [pre-batch, Arn]
       Next: copy-assets-batch
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -33,6 +38,11 @@ definition:
           lambda_function: ${self:service}-${self:provider.stage}-copy-assets
           url.$: "$.url"
       Next: copy-assets-post-batch
+      Retry:
+        - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
+          IntervalSeconds: 10.0
+          BackoffRate: 2.0
+          MaxAttempts: 3
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -42,6 +52,11 @@ definition:
       Resource:
         Fn::GetAtt: [post-batch, Arn]
       Next: add-preview-batch-or-lambda
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -51,6 +66,11 @@ definition:
       Resource:
         Fn::GetAtt: [copy-assets, Arn]
       Next: add-preview-batch-or-lambda
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -71,6 +91,11 @@ definition:
       Resource:
         Fn::GetAtt: [pre-batch, Arn]
       Next: add-preview-batch
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -85,7 +110,26 @@ definition:
         Parameters:
           lambda_function: ${self:service}-${self:provider.stage}-add-preview
           url.$: "$.url"
+      Next: add-preview-post-batch
+      Retry:
+        - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
+          IntervalSeconds: 10.0
+          BackoffRate: 2.0
+          MaxAttempts: 3
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    add-preview-post-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [post-batch, Arn]
       Next: publish
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -95,6 +139,11 @@ definition:
       Resource:
         Fn::GetAtt: [add-preview, Arn]
       Next: publish
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -106,6 +155,11 @@ definition:
       Resource:
         Fn::GetAtt: [publish, Arn]
       End: True
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -114,6 +168,11 @@ definition:
       Type: Task
       Resource:
         Fn::GetAtt: [workflow-failed, Arn]
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
       Next: failure
     failure:
       Type: Fail

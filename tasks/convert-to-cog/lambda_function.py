@@ -19,13 +19,12 @@ logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'INFO'))
 
 
 def lambda_handler(payload, context={}):
-    logger.debug('Payload: %s' % json.dumps(payload))
-
-    catalog = Catalogs.from_payload(payload)[0]
-
     # if this is batch, output to stdout
     if not hasattr(context, "invoked_function_arn"):
         logger.addHandler(StreamHandler())
+    logger.debug('Payload: %s' % json.dumps(payload))
+
+    catalog = Catalogs.from_payload(payload)[0]
 
     # TODO - make this more general for more items/collections
     item = catalog['features'][0] #, collection=catalog['collections'][0])
@@ -44,6 +43,7 @@ def lambda_handler(payload, context={}):
         for asset in asset_keys:
             # download asset
             item = download_item_assets(item, path=tmpdir, assets=[asset])
+            logger.debug(f"Downloaded item: {json.dumps(item)}")
 
             # cogify
             fn = item['assets'][asset]['href']
@@ -64,7 +64,7 @@ def lambda_handler(payload, context={}):
 
         # add derived_from link
         links = [l['href'] for l in item['links'] if l['rel'] == 'self']
-        if len(links) == 0:
+        if len(links) == 1:
             # add derived from link
             item ['links'].append({
                 'title': 'Source STAC Item',
@@ -77,6 +77,8 @@ def lambda_handler(payload, context={}):
         for asset in [a for a in config.get('drop_assets', []) if a in item['assets'].keys()]:
             logger.info(f"Dropping {asset}")
             item['assets'].pop(asset)
+
+        catalog['features'][0] = item
     except CRSError as err:
         msg = f"convert-to-cog: invalid CRS for {catalog['id']} ({err})"
         logger.error(msg)

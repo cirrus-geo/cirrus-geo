@@ -33,7 +33,7 @@ def lambda_handler(payload, context={}):
 
     # if this is a lambda and batch is set
     if batch and hasattr(context, "invoked_function_arn"):
-        submit_batch_job(payload, context.invoked_function_arn)
+        submit_batch_job(payload, context.invoked_function_arn, name='rerun')
         return
 
     if len(catids) > 0:

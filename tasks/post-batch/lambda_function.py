@@ -15,7 +15,7 @@ def lambda_handler(payload, context):
     logger.debug('Payload: %s' % json.dumps(payload))
 
     # catalog URL
-    url = payload['Parameters']['url']
+    url = payload['Parameters']['url'].replace('.json', '_out.json')
 
     try:
         # copy payload from s3

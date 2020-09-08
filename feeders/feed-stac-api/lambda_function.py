@@ -65,11 +65,11 @@ def split_request(params, nbatches):
     else:
         stop_date = parse(dates[1])
     td = stop_date - start_date
-    days_per_batch = math.ceil(td.days/nbatches)
+    hours_per_batch = math.ceil(td.total_seconds()/3600/nbatches)
     ranges = []
     for i in range(0, nbatches-1):
-        dt1 = start_date + datetime.timedelta(days=days_per_batch*i)
-        dt2 = dt1 + datetime.timedelta(days=days_per_batch) - datetime.timedelta(seconds=1)
+        dt1 = start_date + datetime.timedelta(hours=hours_per_batch*i)
+        dt2 = dt1 + datetime.timedelta(hours=hours_per_batch) - datetime.timedelta(seconds=1)
         ranges.append([dt1, dt2])
     # insert last one
     ranges.append([
@@ -80,7 +80,7 @@ def split_request(params, nbatches):
     requests = []
     for r in ranges:
         request = deepcopy(params)
-        request["datetime"] = f"{r[0].strftime('%Y-%m-%d')}/{r[1].strftime('%Y-%m-%d')}"
+        request["datetime"] = f"{r[0].strftime('%Y-%m-%dT%H:%M:%S')}/{r[1].strftime('%Y-%m-%dT%H:%M:%S')}"
         logger.debug(f"Split date range: {request['datetime']}")
         yield request
     
@@ -142,11 +142,11 @@ def lambda_handler(event, context={}):
     elif hasattr(context, "invoked_function_arn"):
         nbatches = int(found / max_items_batch) + 1
         if nbatches == 1:
-            submit_batch_job(event, context.invoked_function_arn)
+            submit_batch_job(event, context.invoked_function_arn, definition='lambda-as-batch')
         else:
             for request in split_request(params, nbatches):
                 event['search'] = request
-                submit_batch_job(event, context.invoked_function_arn)
+                submit_batch_job(event, context.invoked_function_arn, definition='lambda-as-batch')
         logger.info(f"Submitted {nbatches} batches")
         return
     else:
