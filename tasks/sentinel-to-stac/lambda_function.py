@@ -72,6 +72,11 @@ def lambda_handler(payload, context={}):
             l1c_present = True
             logger.debug(f"sentinel-s2-l1c request response: {resp}")
             _metadata = json.loads(resp.text)
+
+            # tileDataGeometry in L2A but not in L1C
+            if 'tileDataGeometry' not in _metadata and 'tileDataGeometry' in metadata:
+                _metadata['tileDataGeometry'] = metadata['tileDataGeometry']
+
             _item = sentinel_s2_l1c(_metadata, base_url.replace('sentinel-s2-l2a', 'sentinel-s2-l1c'))
             for a in ['thumbnail', 'info', 'metadata']:
                 _item['assets'][a]['href'] = _item['assets'][a]['href'].replace('s3:/', 'https://roda.sentinel-hub.com')
@@ -79,7 +84,11 @@ def lambda_handler(payload, context={}):
             if 'dataCoveragePercentage' not in _metadata and 'dataCoveragePercentage' in metadata:
                 _item['properties']['sentinel:data_coverage'] = float(metadata['dataCoveragePercentage'])
             items.append(_item)
+
+            # use L1C cloudyPixelPercentage
             metadata['cloudyPixelPercentage'] = _metadata['cloudyPixelPercentage']
+
+            # tileDataGeometry in L1C but not L2A
             if 'tileDataGeometry' not in metadata and 'tileDataGeometry' in _metadata:
                 metadata['tileDataGeometry'] = _metadata['tileDataGeometry']
 
