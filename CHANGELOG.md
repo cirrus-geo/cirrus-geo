@@ -6,20 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-### Added
-
-### Changed
-
-### Deprecated
-
-### Removed
+## [v0.2.1] - 2020-09-10
 
 ### Fixed
+- Updated version of batch jobs `geolambda-as-batch` and `lambda-as-batch`
 
-### Security
-
-
-## [v0.2.0] - 2020-09-27
+## [v0.2.0] - 2020-09-08
 
 ### Added
 - `process` Lambda that consumes from ProcessQueue that both validates the payload and starts the workflow.
@@ -30,7 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added back "post-batch" steps to all workflows
 
 ### Changed
-- Update cirrus-lib to 0.2.0
+- Update cirrus-lib to 0.3.0
 - IAM configuration (previously batch/iam.yml) combined into Core resources (core.yml)
 - `pre-batch` and `post-batch` Lambda functions moved from `core` to `tasks` (since they are tasks that can be used in a workflow)
 - `add-preview` now suffixes thumbnails with "_thumb.png" instead of "_preview.png"
