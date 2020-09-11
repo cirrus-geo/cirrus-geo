@@ -1,1 +1,2 @@
 cirrus-lib==0.3.0
+pyorc==0.3.0
