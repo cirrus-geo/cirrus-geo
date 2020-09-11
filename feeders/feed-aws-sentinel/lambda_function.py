@@ -74,7 +74,7 @@ PROCESS = {
             "sentinel-s2-l2a": ".*L2A"
         }
     },
-    "functions": {
+    "tasks": {
         "publish": {
             "public": True
         }
