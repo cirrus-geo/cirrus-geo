@@ -21,6 +21,7 @@ provider:
     CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
     CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
     CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+    CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
   iamRoleStatements:
     ${file(iam.yml):iamRoleStatements}
 
