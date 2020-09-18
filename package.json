@@ -12,7 +12,7 @@
     "url": "git@repo.element84.com:access/cirrus.git"
   },
   "author": "Element 84",
-  "license": "Apache",
+  "license": "Apache-2.0",
   "devDependencies": {
     "serverless": "^1.67.3",
     "serverless-pseudo-parameters": "^2.5.0",
