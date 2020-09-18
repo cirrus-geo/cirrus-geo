@@ -1,0 +1,17 @@
+{
+    "id": "cirrus-v0",
+    "stac_version": "1.0.0-beta.2",
+    "description": "cirrus-v0 STAC",
+    "links": [
+        {
+            "rel": "root",
+            "href": "s3://cirrus-v0-data-1qm7gekzjucbq/catalog.json",
+            "type": "application/json"
+        },
+        {
+            "rel": "self",
+            "href": "s3://cirrus-v0-data-1qm7gekzjucbq/catalog.json",
+            "type": "application/json"
+        }
+    ]
+}

@@ -1,0 +1,3 @@
+cirrus-lib==0.1.3
+python-dateutil>=2.7.0
+pystac[validation]~=0.5

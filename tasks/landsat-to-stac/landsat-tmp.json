@@ -1,0 +1,39 @@
+{
+    "Records": [
+        {
+            "eventVersion": "2.1",
+            "eventSource": "aws:s3",
+            "awsRegion": "us-west-2",
+            "eventTime": "2020-09-12T04:42:25.210Z",
+            "eventName": "ObjectCreated:Put",
+            "userIdentity": {
+                "principalId": "AWS:AIDAJMJHDL5XKNJIWLOFU"
+            },
+            "requestParameters": {
+                "sourceIPAddress": "52.24.76.137"
+            },
+            "responseElements": {
+                "x-amz-request-id": "7779804F7484568F",
+                "x-amz-id-2": "ZF/LKJtuLUqYXs30oDScxWta1LqKDm6i9Z1AaSWR/KQuJ9b/efqurOOSbAi6chZcsQLBB64kUfLmaQGsjIMgJHBNzWK9wwPu"
+            },
+            "s3": {
+                "s3SchemaVersion": "1.0",
+                "configurationId": "C1-NewHTML",
+                "bucket": {
+                    "name": "landsat-pds",
+                    "ownerIdentity": {
+                        "principalId": "A3LZTVCZQ87CNW"
+                    },
+                    "arn": "arn:aws:s3:::landsat-pds"
+                },
+                "object": {
+                    "key": "c1/L8/168/002/LC08_L1TP_168002_20200830_20200906_01_T1/index.html",
+                    "size": 5391,
+                    "eTag": "591bb3c8e80fb33e8a415bb1b9d276bd",
+                    "versionId": "fgLoRSVC9ID1nU2q_s.aNKY2dsfYjmeV",
+                    "sequencer": "005F5C51B1A1359B5E"
+                }
+            }
+        }
+    ]
+}

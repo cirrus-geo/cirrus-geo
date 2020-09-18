@@ -1,0 +1,45 @@
+name: ${self:service}-${self:provider.stage}-publish-landsat
+definition:
+  Comment: Publish Landsat data as STAC
+  StartAt: landsat-to-stac
+  States:
+    landsat-to-stac:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [landsat-to-stac, Arn]
+      Next: publish
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    publish:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [publish, Arn]
+      End: True
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: workflow-failed
+    workflow-failed:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [workflow-failed, Arn]
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Next: failure
+    failure:
+      Type: Fail

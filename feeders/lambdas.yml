@@ -42,3 +42,13 @@ feed-aws-sentinel:
     events:
         - sns:
             arn: arn:aws:sns:eu-central-1:214830741341:SentinelS2L2A
+
+feed-aws-landsat:
+    description: Feed Landsat AWS inventory data to Cirrus for cataloging
+    handler: lambda_function.lambda_handler
+    memorySize: 128
+    timeout: 900
+    module: feeders/feed-aws-landsat
+    events:
+        - sns:
+            arn: arn:aws:sns:us-west-2:274514004127:NewSceneHTML

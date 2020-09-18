@@ -84,6 +84,7 @@ stepFunctions:
     #mirror: ${file(workflows/mirror/definition.yml)}
     #mirror-with-preview: ${file(workflows/mirror-with-preview/definition.yml)}
     publish-sentinel: ${file(workflows/publish-sentinel/definition.yml)}
+    publish-landsat: ${file(workflows/publish-landsat/definition.yml)}
     cog-archive: ${file(workflows/cog-archive/definition.yml)}
   # enable pre-deployment definition validation
   validate: true
