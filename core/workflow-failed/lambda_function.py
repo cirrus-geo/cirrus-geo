@@ -59,9 +59,24 @@ def lambda_handler(payload, context):
 
         if FAILED_TOPIC_ARN is not None:
             item = statedb.dbitem_to_item(statedb.get_dbitem(payload['id']))
+            attrs = {
+                'input_collections': {
+                    'DataType': 'String',
+                    'StringValue': item['input_collections']
+                },
+                'output_collections': {
+                    'DataType': 'String',
+                    'StringValue': item['output_collections']
+                },
+                'workflow': {
+                    'DataType': 'String',
+                    'StringValue': item['workflow']
+                }      
+            }
             logger.info(f"Publishing item {item['catid']} to {FAILED_TOPIC_ARN}")
-            response = snsclient.publish(TopicArn=FAILED_TOPIC_ARN, Message=json.dumps(item))
-            logger.debug(f"Response: {json.dumps(response)}")  
+            response = snsclient.publish(TopicArn=FAILED_TOPIC_ARN, Message=json.dumps(item),
+                                         MessageAttributes=attrs)
+            logger.debug(f"Response: {json.dumps(response)}")
     
         return payload
     except Exception as err:
