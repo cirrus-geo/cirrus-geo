@@ -64,10 +64,6 @@ def lambda_handler(payload, context):
                     'DataType': 'String',
                     'StringValue': item['input_collections']
                 },
-                'output_collections': {
-                    'DataType': 'String',
-                    'StringValue': item['output_collections']
-                },
                 'workflow': {
                     'DataType': 'String',
                     'StringValue': item['workflow']
