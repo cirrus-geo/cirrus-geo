@@ -4,6 +4,7 @@ import itertools
 import json
 import io
 import logging
+import pyorc
 import re
 import requests
 import sys
@@ -29,11 +30,34 @@ BATCH_CLIENT = boto3.client('batch')
 SNS_CLIENT = boto3.client('sns')
 
 
+def read_orc_inventory_file(filename, keys):
+    with open(filename, "rb") as data:
+        reader = pyorc.Reader(data)
+        for row in reader:
+            record = {keys[i].lower(): v for i, v in enumerate(row)}
+            yield record
+
+
+def read_csv_inventory_file(filename, keys):
+    gz = gzip.open(filename, 'rb')
+    for line in io.BufferedReader(gz):
+        l = line.decode('utf-8').replace('"', '').replace('\n', '')
+        record = {keys[i].lower(): v for i, v in enumerate(l.split(','))}
+        yield record
+    gz.close()
+
+
 def read_inventory_file(fname, keys, prefix=None, suffix=None,
                         start_date=None, end_date=None,
                         datetime_regex=None, datetime_key='LastModifiedDate'):
     logger.debug('Reading inventory file %s' % (fname))
-    
+    filename = s3().download(fname, path='/tmp')
+    ext = op.splitext(fname)[-1]
+    if ext == ".gz":
+        records = read_csv_inventory_file(filename, keys)
+    elif ext == ".orc":
+        records = read_orc_inventory_file(filename, keys)
+
     if datetime_regex is not None:
         regex = re.compile(datetime_regex)
     else:
@@ -42,25 +66,23 @@ def read_inventory_file(fname, keys, prefix=None, suffix=None,
     sdate = parse(start_date).date() if start_date else None
     edate = parse(end_date).date() if end_date else None
 
-    filename = s3().download(fname, path='/tmp')
+    
 
     def get_datetime(record):
         if regex is not None:
-            m = regex.match(record['Key']).groupdict()
+            m = regex.match(record['key']).groupdict()
             dt = datetime(int(m['Y']), int(m['m']), int(m['d']))
+        elif isinstance(record[datetime_key], datetime.datetime):
+            dt = record[datetime_key]
         else:
             dt = datetime.strptime(record[datetime_key], "%Y-%m-%dT%H:%M:%S.%fZ")
         return dt.date()
 
-    gz = gzip.open(filename, 'rb')
-    for line in io.BufferedReader(gz):
-        l = line.decode('utf-8').replace('"', '').replace('\n', '')
-        record = {keys[i]: v for i, v in enumerate(l.split(','))}
-
-        if prefix is not None and not record['Key'].startswith(prefix):
+    for record in records:
+        if prefix is not None and not record['key'].startswith(prefix):
             continue
 
-        if suffix is not None and not record['Key'].endswith(suffix):
+        if suffix is not None and not record['key'].endswith(suffix):
             continue
 
         if sdate is not None:
@@ -74,9 +96,7 @@ def read_inventory_file(fname, keys, prefix=None, suffix=None,
                 continue        
 
         # made it here without getting filtered out
-        yield 's3://%s/%s' % (record['Bucket'], record['Key'])
-
-    gz.close()
+        yield 's3://%s/%s' % (record['bucket'], record['key'])
 
 
 def lambda_handler(payload, context={}):
@@ -100,7 +120,11 @@ def lambda_handler(payload, context={}):
         inventory_bucket = s3session.urlparse(inventory_url)['bucket']
         # get manifest and schema
         manifest = s3session.latest_inventory_manifest(inventory_url)
-        keys = [str(key).strip() for key in manifest['fileSchema'].split(',')]
+        schema = manifest['fileSchema']
+        if schema.startswith('struct'):
+            keys = [str(key).strip().split(':')[0] for key in schema[7:-1].split(',')]
+        else:
+            keys = [str(key).strip() for key in schema.split(',')]
 
         # get list of inventory files
         files = manifest.get('files')
@@ -178,9 +202,31 @@ def lambda_handler(payload, context={}):
                 # feed to cirrus through SNS topic
                 SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(catalog))
                 if (len(catids) % 1000) == 0:
-                    logger.debug(f"Published {len(catids)+1} catalogs to {SNS_TOPIC}: {json.dumps(catalog)}")
+                    logger.debug(f"Published {len(catids)} catalogs to {SNS_TOPIC}: {json.dumps(catalog)}")
 
                 catids.append(item['id'])
 
         logger.info(f"Published {len(catids)} catalogs from {len(inventory_files)} inventory files")
         return catids
+
+
+# testing
+if __name__ == "__main__":
+    payload = {
+        "inventory_url": "s3://landsat-pds-inventory/landsat-pds/landsat-pds",
+        "process": {}
+    }
+    payload = {
+        "inventory_files": [
+            "s3://landsat-pds-inventory/landsat-pds/landsat-pds/data/422f6969-87f5-4aa6-a159-3839f155bc88.orc",
+            "s3://landsat-pds-inventory/landsat-pds/landsat-pds/data/2d676b49-2c57-452f-8677-9b0bdba0c79c.orc"
+        ],
+        "keys": ["bucket", "key", "size", "last_modified_date"],
+        "suffix": "MTL.txt",
+        "process": {
+            "input_collections": ["landsat-l1-c1"],
+            "workflow": "test"
+        }
+    }
+
+    lambda_handler(payload)

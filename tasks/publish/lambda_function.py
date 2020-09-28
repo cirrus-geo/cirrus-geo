@@ -38,9 +38,6 @@ def lambda_handler(payload, context):
     # these are the URLs to the canonical records on s3
     s3urls = []
 
-    # assign proper collection names based on ID
-    catalog.assign_collections()
-
     try:
         # publish to s3
         s3urls = catalog.publish_to_s3(DATA_BUCKET, public=public)

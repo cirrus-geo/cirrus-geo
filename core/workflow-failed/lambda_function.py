@@ -1,3 +1,4 @@
+import boto3
 import json
 import logging
 
@@ -11,15 +12,17 @@ logger = logging.getLogger(__name__)
 logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
 
 statedb = StateDB()
+snsclient = boto3.client('sns')
 
-bucket = getenv('CIRRUS_CATALOG_BUCKET', None)
+CATALOG_BUCKET = getenv('CIRRUS_CATALOG_BUCKET', None)
+FAILED_TOPIC_ARN = getenv('CIRRUS_FAILED_TOPIC_ARN', None)
 
 
 def lambda_handler(payload, context):
     logger.debug('Payload: %s' % json.dumps(payload))
 
     # set the event ID if payload is on s3
-    prefix = f"s3://{bucket}/batch/"
+    prefix = f"s3://{CATALOG_BUCKET}/batch/"
     if 'url' in payload:
         # this happens when error happens during batch processing 
         payload['id'] = op.dirname(payload['url'])[len(prefix):]
@@ -53,6 +56,23 @@ def lambda_handler(payload, context):
         else:
             statedb.set_failed(payload['id'], msg)
             logger.debug(f"Set {payload['id']} as failed")
+
+        if FAILED_TOPIC_ARN is not None:
+            item = statedb.dbitem_to_item(statedb.get_dbitem(payload['id']))
+            attrs = {
+                'input_collections': {
+                    'DataType': 'String',
+                    'StringValue': item['input_collections']
+                },
+                'workflow': {
+                    'DataType': 'String',
+                    'StringValue': item['workflow']
+                }      
+            }
+            logger.info(f"Publishing item {item['catid']} to {FAILED_TOPIC_ARN}")
+            response = snsclient.publish(TopicArn=FAILED_TOPIC_ARN, Message=json.dumps(item),
+                                         MessageAttributes=attrs)
+            logger.debug(f"Response: {json.dumps(response)}")
     
         return payload
     except Exception as err:

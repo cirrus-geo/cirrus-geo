@@ -26,9 +26,6 @@ def lambda_handler(payload, context={}):
 
     catalog = Catalogs.from_payload(payload)[0]
 
-    # assign proper collection names based on ID
-    catalog.assign_collections()
-
     # TODO - make this more general for more items/collections
     item = catalog['features'][0] #, collection=catalog['collections'][0])
 

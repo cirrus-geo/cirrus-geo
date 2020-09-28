@@ -2,6 +2,7 @@ import boto3
 import json
 import logging
 import requests
+import sys
 
 from boto3utils import s3
 from boto3.dynamodb.conditions import Key
@@ -72,7 +73,7 @@ def get_root_catalog():
     return cat
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, context={}):
     logger.debug('Event: %s' % json.dumps(event))
 
     root_cat = get_root_catalog()
@@ -102,3 +103,10 @@ def lambda_handler(event, context):
                 logger.debug(f"SNS Publish response: {json.dumps(response)}")
 
     root_cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
+
+
+if __name__ == "__main__":
+    #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    print('fred')
+    payload = {}
+    #lambda_handler(payload)

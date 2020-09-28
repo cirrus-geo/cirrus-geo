@@ -24,6 +24,11 @@ Resources:
     Type: 'AWS::SNS::Topic'
     Properties:
       TopicName: ${self:service}-${self:provider.stage}-publish
+  # SNS Topic for failed workflows
+  FailedTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      TopicName: ${self:service}-${self:provider.stage}-failed
   # Allow anyone to subscribe to publish topic
   #PublishTopicPolicy:
   #  Type: 'AWS::SNS::TopicPolicy'
@@ -44,9 +49,10 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: ${self:service}-${self:provider.stage}-process
+      VisibilityTimeout: 90
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
-        maxReceiveCount: 2
+        maxReceiveCount: 5
   ProcessDeadLetterQueue:
     Type: AWS::SQS::Queue
     Properties:
