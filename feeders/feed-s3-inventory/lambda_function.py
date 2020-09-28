@@ -70,7 +70,7 @@ def read_inventory_file(fname, keys, prefix=None, suffix=None,
 
     def get_datetime(record):
         if regex is not None:
-            m = regex.match(record['Key']).groupdict()
+            m = regex.match(record['key']).groupdict()
             dt = datetime(int(m['Y']), int(m['m']), int(m['d']))
         elif isinstance(record[datetime_key], datetime.datetime):
             dt = record[datetime_key]
@@ -200,9 +200,9 @@ def lambda_handler(payload, context={}):
                 }
 
                 # feed to cirrus through SNS topic
-                #SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(catalog))
+                SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(catalog))
                 if (len(catids) % 1000) == 0:
-                    logger.debug(f"Published {len(catids)+1} catalogs to {SNS_TOPIC}: {json.dumps(catalog)}")
+                    logger.debug(f"Published {len(catids)} catalogs to {SNS_TOPIC}: {json.dumps(catalog)}")
 
                 catids.append(item['id'])
 
