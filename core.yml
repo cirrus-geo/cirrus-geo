@@ -49,9 +49,10 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: ${self:service}-${self:provider.stage}-process
+      VisibilityTimeout: 90
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
-        maxReceiveCount: 2
+        maxReceiveCount: 5
   ProcessDeadLetterQueue:
     Type: AWS::SQS::Queue
     Properties:
