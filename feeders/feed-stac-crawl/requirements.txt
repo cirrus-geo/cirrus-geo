@@ -1,2 +1,2 @@
-cirrus-lib==0.3.0
+cirrus-lib==0.3.1
 git+git://github.com/stac-utils/pystac@develop
