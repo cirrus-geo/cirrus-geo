@@ -8,8 +8,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v0.2.1] - 2020-09-10
 
+### Added
+- Failed workflows publish state db info to new SNS topic: cirrus-<stage>-failed
+- STAC Lambda added for adding collections to the Cirrus root catalog. This is not currently required, but is good practice
+- s3 inventory feeder: added support for s3 orc inventory files
+
+### Removed
+- assigning of collections in the `copy-assets` and `publish` Lambdas - this is done in cirrus-lib when parsing for a payload so this was redundant
+
+### Changed
+- cirrus-lib version updated to 0.3.1
+- VisibilityTimeout and maxReceiveCount fields changed on Cirrus process lambda
+
 ### Fixed
 - Updated version of batch jobs `geolambda-as-batch` and `lambda-as-batch`
+- bug in s3 inventory feeder when using regex to extract date from filename
 
 ## [v0.2.0] - 2020-09-08
 
@@ -43,6 +56,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Initial release
 
 [Unreleased]: https://github.com/cirrus-geo/cirrus/compare/master...develop
+[v0.2.1]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/cirrus-geo/cirrus/cirrus/tree/legacy
 
