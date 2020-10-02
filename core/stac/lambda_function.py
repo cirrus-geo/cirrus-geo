@@ -81,10 +81,11 @@ def lambda_handler(event, context={}):
     # check if collection and if so, add to Cirrus
     if 'extent' in event:
         # add to static catalog
-        root_cat.add_child(event)
+        col = Collection.from_dict(event)
+        root_cat.add_child(col)
 
         # send to Cirrus Publish SNS
-        response = snsclient.publish(TopicArn=PUBLISH_TOPIC, Message=json.dumps(event))
+        response = snsclient.publish(TopicArn=PUBLISH_TOPIC, Message=json.dumps(col.to_dict()))
         logger.debug(f"SNS Publish response: {json.dumps(response)}")
 
     # check if URL to catalog
