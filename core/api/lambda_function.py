@@ -54,7 +54,7 @@ def create_link(url, title, rel, media_type='application/json'):
 
 
 def get_root(root_url=None):
-    caturl = f"s://{DATA_BUCKET}/catalog.json"
+    caturl = f"s3://{DATA_BUCKET}/catalog.json"
     cat = s3().read_json(caturl)
 
     if root_url:

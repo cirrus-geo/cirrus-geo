@@ -35,22 +35,21 @@ snsclient = boto3.client('sns')
 
 
 ROOT_URL = f"s3://{DATA_BUCKET}"
+PUBLIC_ROOT_URL = s3.s3_to_https(ROOT_URL, region=REGION)
 
 
 def s3stac_read(uri):
-    if uri.startswith('s3'):
-        return json.dumps(s3().read_json(uri))
-    else:
-        return STAC_IO.default_read_text_method(uri)
+    if uri.startswith('http'):
+        uri = s3.https_to_s3(uri)
+    return json.dumps(s3().read_json(uri))
 
 def s3stac_write(uri, txt):
     extra = {
         'ContentType': 'application/json'
     }
-    if uri.startswith('s3'):
-        s3().upload_json(json.loads(txt), uri, extra=extra, public=PUBLIC_CATALOG)
-    else:
-        STAC_IO.default_write_text_method(uri, txt)
+    if uri.startswith('http'):
+        uri = s3.https_to_s3(uri)
+    s3().upload_json(json.loads(txt), uri, extra=extra, public=PUBLIC_CATALOG)
 
 STAC_IO.read_text_method = s3stac_read
 STAC_IO.write_text_method = s3stac_write
@@ -68,7 +67,10 @@ def get_root_catalog():
     else:
         catid = DATA_BUCKET.split('-data-')[0]
         cat = Catalog(id=catid, description=DESCRIPTION)
-        cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
+        if PUBLIC_CATALOG:
+            cat.normalize_and_save(PUBLIC_ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
+        else:
+            cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
     logger.debug(f"Fetched {cat.describe()}")
     return cat
 
@@ -103,7 +105,10 @@ def lambda_handler(event, context={}):
                 response = snsclient.publish(TopicArn=PUBLISH_TOPIC, Message=child_json)
                 logger.debug(f"SNS Publish response: {json.dumps(response)}")
 
-    root_cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
+    if PUBLIC_CATALOG:
+        cat.normalize_and_save(PUBLIC_ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
+    else:
+        cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
 
 
 if __name__ == "__main__":
