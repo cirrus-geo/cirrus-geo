@@ -38,7 +38,7 @@ def lambda_handler(payload, context={}):
 
     if len(catids) > 0:
         catalogs = Catalogs.from_catids(catids)
-        logger.debug(f"Rerunning {len(catalogs)} catalogs")
+        logger.debug(f"Rerunning {len(catalogs.catalogs)} catalogs")
         catids = catalogs.process(replace=True)
         logger.info(f"{len(catids)} catalogs rerun")
         return catids
