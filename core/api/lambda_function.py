@@ -19,6 +19,9 @@ db = boto3.resource('dynamodb')
 logger = logging.getLogger(__name__)
 logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
 
+# envvars
+DATA_BUCKET = getenv('CIRRUS_DATA_BUCKET', None)
+
 
 '''
 Endpoints:
@@ -51,33 +54,13 @@ def create_link(url, title, rel, media_type='application/json'):
 
 
 def get_root(root_url=None):
-    links = [
-        create_link(urljoin(root_url, "api"), "OpenAPI Description",
-                    "service-desc", media_type="application/vnd.oai.openapi+json;version=3.0"),
-        create_link(urljoin(root_url, "conformance"), "Conformance", "conformance")
-    ]
+    caturl = f"s://{DATA_BUCKET}/catalog.json"
+    cat = s3().read_json(caturl)
 
     if root_url:
-        links.insert(0, create_link(root_url, "Home", "self"))
-    if PROJECT_HOME:
-        links.append({
-            "title": "Project Home",
-            "rel": "home",
-            "type": "application/json",
-            "href": PROJECT_HOME
-        })
-    if STAC_API_URL:
-        links.append(create_link(STAC_API_URL, "STAC API", "catalog"))
-        cat = requests.get(STAC_API_URL).json()
-        for l in [l for l in cat['links'] if l['rel'] == 'child']:
-            cid = op.basename(l['href'])
-            links.append(create_link(urljoin(root_url, f"output_collections/{cid}"), cid, "collection"))
-    return {
-        "id": "cirrus-api",
-        "description": "Cirrus API",
-        "input_count": statedb.table.item_count,
-        "links": links
-    }
+        cat['links'].insert(0, create_link(root_url, "Home", "self"))
+
+    return cat
 
 
 def lambda_handler(event, context):
