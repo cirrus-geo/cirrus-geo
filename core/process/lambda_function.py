@@ -34,8 +34,12 @@ def lambda_handler(payload, context):
     cats = []
     for record in records:
         logger.debug(f"Record: {json.dumps(record)}")
+        if 'catid' in record:
+            catalogs = Catalogs.from_catids([record['catid']])
+            catalogs.process(replace=True)
+            continue
         # If Item, create Catalog using default process for that collection
-        if record['type'] == 'Feature':
+        if record.get('type', '') == 'Feature':
             if record['collection'] not in PROCESSES.keys():
                 raise Exception(f"Default process not provided for collection {record['collection']}")
             cat_json = {
@@ -51,8 +55,8 @@ def lambda_handler(payload, context):
         cat = Catalog(cat_json, update=True)
         cats.append(cat)
 
-    catalogs = Catalogs(cats)
+    if len(cats) > 0:
+        catalogs = Catalogs(cats)
+        catalogs.process()
 
-    catids = catalogs.process()
-
-    return catids
+    #return catids
