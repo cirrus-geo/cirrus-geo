@@ -2,7 +2,7 @@ process:
   description: Consumes Process Catalogs from queue and invokes workflow
   handler: lambda_function.lambda_handler
   memorySize: 128
-  timeout: 15
+  timeout: 60
   module: core/process
   events:
     - sqs:

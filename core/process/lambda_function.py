@@ -34,8 +34,8 @@ def lambda_handler(payload, context):
     cats = []
     for record in records:
         logger.debug(f"Record: {json.dumps(record)}")
-        if 'catid' in record:
-            catalogs = Catalogs.from_catids([record['catid']])
+        if 'catids' in record:
+            catalogs = Catalogs.from_catids(record['catids'])
             catalogs.process(replace=True)
             continue
         # If Item, create Catalog using default process for that collection
