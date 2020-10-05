@@ -1,10 +1,3 @@
-rerun:
-    description: Rerun items in the database
-    handler: lambda_function.lambda_handler
-    memorySize: 128
-    timeout: 900
-    module: feeders/rerun
-
 feed-stac-s3:
     description: Feed STAC data found on s3 to Cirrus for processing
     handler: lambda_function.lambda_handler
