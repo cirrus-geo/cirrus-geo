@@ -11,7 +11,7 @@ from os import getenv, path as op
 from shutil import rmtree
 from tempfile import mkdtemp
 from traceback import format_exc
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 db = boto3.resource('dynamodb')
 
@@ -53,12 +53,26 @@ def create_link(url, title, rel, media_type='application/json'):
     }
 
 
-def get_root(root_url=None):
+def get_root(root_url):
     caturl = f"s3://{DATA_BUCKET}/catalog.json"
     cat = s3().read_json(caturl)
 
-    if root_url:
-        cat['links'].insert(0, create_link(root_url, "Home", "self"))
+    #for l in cat['links']:
+    #    if l['rel'] in ['self', 'root', 'child']:
+
+    cat['id'] = f"{cat['id']}-state-api"
+    cat['description'] = f"{cat['description']} State API"
+
+    links = []
+    for l in cat['links']:
+        if l['rel'] == 'child':
+            parts = urlparse(l['href'])
+            name = parts.path.split('/')[1]
+            link = create_link(urljoin(root_url, f"collections/{name}"), name, 'child')
+            links.append(link)
+    
+    cat['links'] = links
+    cat['links'].insert(0, create_link(root_url, "Home", "self"))
 
     return cat
 
