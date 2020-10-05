@@ -23,7 +23,6 @@ def lambda_handler(payload, context):
         raise ValueError("Input not from SQS")
     for catalog in [json.loads(r['body']) for r in payload['Records']]:
         catalogs.append(catalog)
-        
 
     # Make sure FeatureCollection, and Process block included
     cats = []

@@ -1,38 +1,16 @@
 import boto3
 import json
 import logging
-import requests
-
-from boto3utils import s3
-from boto3.dynamodb.conditions import Key
-from cirruslib.statedb import StateDB
-from json import dumps
-from os import getenv, path as op
-from shutil import rmtree
-from tempfile import mkdtemp
+import os
 from traceback import format_exc
 from urllib.parse import urljoin, urlparse
 
-db = boto3.resource('dynamodb')
+from cirruslib import StateDB, stac
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
 logger = logging.getLogger(__name__)
-logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
+logger.setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
 
-# envvars
-DATA_BUCKET = getenv('CIRRUS_DATA_BUCKET', None)
-
-
-'''
-Endpoints:
-
-/
-
-'''
-
-PROJECT_HOME = getenv('CIRRUS_PROJECT_HOME')
-STAC_API_URL = getenv('STAC_API_URL')
-
+# Cirrus state database
 statedb = StateDB()
 
 
@@ -54,11 +32,7 @@ def create_link(url, title, rel, media_type='application/json'):
 
 
 def get_root(root_url):
-    caturl = f"s3://{DATA_BUCKET}/catalog.json"
-    cat = s3().read_json(caturl)
-
-    #for l in cat['links']:
-    #    if l['rel'] in ['self', 'root', 'child']:
+    cat = stac.ROOT_CATALOG.to_dict()
 
     cat['id'] = f"{cat['id']}-state-api"
     cat['description'] = f"{cat['description']} State API"
@@ -72,7 +46,7 @@ def get_root(root_url):
             links.append(link)
     
     cat['links'] = links
-    cat['links'].insert(0, create_link(root_url, "Home", "self"))
+    cat['links'].insert(0, create_link(root_url, "home", "self"))
 
     return cat
 
@@ -88,11 +62,12 @@ def lambda_handler(event, context):
     else:
         root_url = None
 
-    # get request path
+    # get path parameters
     path = event.get('path', '').split('/')
     pparams = [p for p in path if p != '']
     logger.info(f"Path Parameters: {pparams}")
 
+    # get query parameters
     qparams = event['queryStringParameters'] if event.get('queryStringParameters') else {}
     logger.info(f"Query Parameters: {qparams}")
     state = qparams.get('state', None)
@@ -130,21 +105,10 @@ def lambda_handler(event, context):
             colid = '/'.join(pparams[1:])
             logger.debug(f"Getting summary from {index} for collection {colid}")
             counts = statedb.get_counts(colid, state=state, since=since, index=index, limit=100000)
-            #counts['total_published'] = stac_item_count(colid)
             return response(counts)
 
     except Exception as err:
         msg = f"api failed: {err}"
-        logger.error(err)
+        logger.error(msg)
         logger.error(format_exc())
-        msg = {
-            'path': path,
-            'query': qparams
-        }
         return response(msg, status_code=400)
-
-
-def stac_item_count(colid):
-    resp = requests.get(f"{STAC_API_URL}/collections/{colid}/items?limit=0")
-    logger.debug(f"STAC API response for {colid} items: {resp.json()}")
-    return resp.json()['context']['matched']
