@@ -106,9 +106,9 @@ def lambda_handler(event, context={}):
                 logger.debug(f"SNS Publish response: {json.dumps(response)}")
 
     if PUBLIC_CATALOG:
-        cat.normalize_and_save(PUBLIC_ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
+        root_cat.normalize_and_save(PUBLIC_ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
     else:
-        cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
+        root_cat.normalize_and_save(ROOT_URL, CatalogType.ABSOLUTE_PUBLISHED)
 
 
 if __name__ == "__main__":
