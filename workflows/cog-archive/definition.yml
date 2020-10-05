@@ -108,8 +108,12 @@ definition:
           url.$: "$.url"
       Next: convert-to-cog-post-batch
       Retry:
-        - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
-          IntervalSeconds: 60.0
+        - ErrorEquals: ["Batch.AWSBatchException"]
+          IntervalSeconds: 300
+          BackoffRate: 2.0
+          MaxAttempts: 3
+        - ErrorEquals: ["States.TaskFailed"]
+          IntervalSeconds: 60
           BackoffRate: 3.0
           MaxAttempts: 5
       Catch:
