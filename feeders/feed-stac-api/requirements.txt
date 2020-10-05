@@ -1,4 +1,4 @@
-cirrus-lib==0.3.1
+git+https://github.com/cirrus-geo/cirrus-lib.git@develop
 sat-search==0.3.0-b4
 #git+git://github.com/sat-utils/sat-search@develop
 python-dateutil~=2.8
