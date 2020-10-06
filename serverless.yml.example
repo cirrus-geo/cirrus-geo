@@ -23,7 +23,7 @@ provider:
     CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
     CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
   iamRoleStatements:
-    ${file(iam.yml):iamRoleStatements}
+    ${file(core/iam.yml):iamRoleStatements}
 
 custom:
   batch:
@@ -91,11 +91,11 @@ stepFunctions:
 # all other resources
 resources:
   - Description: Cirrus STAC Processing Framework
-  - ${file(core.yml)}
+  - ${file(core/resources.yml)}
   # Batch
   - ${file(tasks/batch-jobs.yml)}
-  - ${file(batch/basic-compute-environments.yml)}
-  #- ${file(batch/custom-compute-environments.yml)}
+  - ${file(core/basic-compute-environments.yml)}
+  #- ${file(core/custom-compute-environments.yml)}
 
 package:
   individually: true
