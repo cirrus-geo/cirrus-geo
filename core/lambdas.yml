@@ -8,13 +8,6 @@ process:
     - sqs:
         arn: !GetAtt ProcessQueue.Arn
 
-workflow-failed:
-  description: Indicates the end of a workflow
-  handler: lambda_function.lambda_handler
-  memorySize: 128
-  timeout: 15
-  module: core/workflow-failed
-
 add-collections:
   description: Lambda function for adding new STAC collections to Cirrus
   handler: lambda_function.lambda_handler

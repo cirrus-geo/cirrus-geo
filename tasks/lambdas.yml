@@ -19,6 +19,13 @@ post-batch:
   timeout: 15
   module: tasks/post-batch
 
+workflow-failed:
+  description: Indicates the end of a workflow
+  handler: lambda_function.lambda_handler
+  memorySize: 128
+  timeout: 15
+  module: tasks/workflow-failed
+
 copy-assets:
   description: Copy specified assets from Item(s) to an S3 bucket
   handler: lambda_function.lambda_handler
