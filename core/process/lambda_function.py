@@ -3,6 +3,7 @@ import logging
 import os
 
 from cirruslib import Catalog, Catalogs
+from cirruslib.utils import dict_merge
 
 # configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
 logger = logging.getLogger(__name__)
@@ -21,8 +22,13 @@ def lambda_handler(payload, context):
     # Read SQS payload
     if 'Records' not in payload:
         raise ValueError("Input not from SQS")
-    for catalog in [json.loads(r['body']) for r in payload['Records']]:
-        catalogs.append(catalog)
+    for record in [json.loads(r['body']) for r in payload['Records']]:
+        if 'Message' in record:
+            # SNS
+            catalogs.append(json.loads(record['Message']))
+        else:
+            # SQS
+            catalogs.append(record)
 
     # Make sure FeatureCollection, and Process block included
     cats = []
@@ -31,8 +37,14 @@ def lambda_handler(payload, context):
 
         # existing catalog IDs provided, rerun these
         if 'catids' in catalog:
-            catalogs = Catalogs.from_catids(catalog['catids'])
-            catalogs.process(replace=True)
+            _cats = Catalogs.from_catids(catalog['catids'])
+            if 'process_update' in catalog:
+                logger.debug(f"Process update: {json.dumps(catalog['process_update'])}")
+                for c in _cats:
+                    logger.debug(f"Old process definition: {json.dumps(c['process'])}")
+                    c['process'] = dict_merge(c['process'], catalog['process_update'])
+                    logger.debug(f"New process definition: {json.dumps(c['process'])}")
+            _cats.process(replace=True)
             continue
 
         # If Item, create Catalog using default process for that collection
