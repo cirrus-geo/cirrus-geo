@@ -48,6 +48,9 @@ def get_root(root_url):
     cat['links'] = links
     cat['links'].insert(0, create_link(root_url, "home", "self"))
 
+    cat_url = urljoin(stac.ROOT_URL, "catalog.json")
+    cat['links'].append(create_link(cat_url, "STAC", "stac"))
+
     return cat
 
 
