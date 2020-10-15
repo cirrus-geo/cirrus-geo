@@ -46,6 +46,7 @@ def lambda_handler(payload, context={}):
     limit = payload.get('limit', None)
     batch = payload.get('batch', False)
     process_update = payload.get('process_update', None)
+    catid_batch = 5
 
     # if this is a lambda and batch is set
     if batch and hasattr(context, "invoked_function_arn"):
@@ -60,7 +61,7 @@ def lambda_handler(payload, context={}):
     catids = []
     for i, item in enumerate(items):
         catids.append(item['catid'])
-        if (i % 10) == 0:
+        if (i % catid_batch) == 0:
             submit(catids, process_update=process_update)
             catids = []
         if (i % 1000) == 0:
