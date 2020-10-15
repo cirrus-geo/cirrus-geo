@@ -3,7 +3,7 @@ import rasterio
 
 from cirruslib import Catalogs
 from cirruslib.errors import InvalidInput
-from cirruslib.transfer import download_item_assets, upload_item_assets
+from cirruslib.transfer import download_item_assets, upload_item_assets, s3_sessions
 from logging import getLogger, StreamHandler
 from os import getenv, remove, path as op
 from rasterio.errors import CRSError
@@ -80,15 +80,20 @@ def lambda_handler(payload, context={}):
 
         catalog['features'][0] = item
     except CRSError as err:
-        msg = f"convert-to-cog: invalid CRS for {catalog['id']} ({err})"
+        msg = f"convert-to-cog: invalid CRS ({err})"
+        logger.error(msg)
+        logger.error(format_exc())
+        raise InvalidInput(msg)
+    except s3_sessions[list(s3_sessions)[0]].s3.exceptions.NoSuchKey as err:
+        msg = f"convert-to-cog: failed fetching {asset} asset ({err})"
         logger.error(msg)
         logger.error(format_exc())
         raise InvalidInput(msg)
     except Exception as err:
-        msg = f"convert-to-cog: failed creating COGs for {catalog['id']} ({err})"
+        msg = f"convert-to-cog: failed creating COGs ({err})"
         logger.error(msg)
         logger.error(format_exc())
-        raise Exception(msg) from err
+        raise Exception(msg)
     finally:
         # remove work directory....very important for Lambdas!
         logger.debug('Removing work directory %s' % tmpdir)
