@@ -39,7 +39,7 @@ definition:
           url.$: "$.url"
       Next: copy-assets-post-batch
       Retry:
-        - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
+        - ErrorEquals: ["Batch.AWSBatchException"]
           IntervalSeconds: 10.0
           BackoffRate: 2.0
           MaxAttempts: 3
@@ -109,13 +109,13 @@ definition:
       Next: convert-to-cog-post-batch
       Retry:
         - ErrorEquals: ["Batch.AWSBatchException"]
-          IntervalSeconds: 300
+          IntervalSeconds: 600
           BackoffRate: 2.0
-          MaxAttempts: 3
+          MaxAttempts: 4
         - ErrorEquals: ["States.TaskFailed"]
           IntervalSeconds: 60
           BackoffRate: 3.0
-          MaxAttempts: 5
+          MaxAttempts: 2
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
