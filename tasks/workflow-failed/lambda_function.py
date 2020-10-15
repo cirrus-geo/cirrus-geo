@@ -13,9 +13,23 @@ logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
 
 statedb = StateDB()
 snsclient = boto3.client('sns')
+logclient = boto3.client('logs')
 
 CATALOG_BUCKET = getenv('CIRRUS_CATALOG_BUCKET', None)
 FAILED_TOPIC_ARN = getenv('CIRRUS_FAILED_TOPIC_ARN', None)
+
+
+def get_error_from_batch(logname):
+    try:
+        logs = logclient.get_log_events(logGroupName='/aws/batch/job', logStreamName=logname)
+        msg = logs['events'][-1]['message'].lstrip('cirruslib.errors.')
+        parts = msg.split(':', maxsplit=1)
+        if len(parts) > 1:
+            error_type = parts[0]
+            msg = parts[1]
+        return error_type, msg
+    except Exception:
+        return "Exception", "Failed getting logStream"
 
 
 def lambda_handler(payload, context):
@@ -30,34 +44,48 @@ def lambda_handler(payload, context):
         # this happens when error happens during post-batch processing
         payload['id'] = op.dirname(payload['Parameters']['url'])[len(prefix):]
 
+    # parse errors
+    error = payload.get('error', {})
+
+    # error type
+    error_type = error.get('Error', "unknown")
+
+    # check if cause is JSON
     try:
-        #tb = '-'
-        error = payload.get('error', None)
-        error_type = "Exception"
-        msg = 'Unknown error'
-        if error is not None:
-            if 'Error' in error:
-                error_type = error['Error']
+        cause = json.loads(error['Cause'])
+        error_msg = 'unknown'
+        if 'errorMessage' in cause:
+            error_msg = cause.get('errorMessage', 'unknown')
+        elif 'Attempts' in cause:
             try:
-                cause = json.loads(error['Cause'])
-                if 'errorMessage' in cause:
-                    msg = cause.get('errorMessage', '')
-                    #tb = cause.get('stackTrace', '-')
-                elif 'Attempts' in cause:
-                    msg = f"batch processing failed - {cause['Attempts'][-1]['StatusReason']}"
-            except:
-                msg = error.get('Cause', error)
+                # batch
+                reason = cause['Attempts'][-1]['StatusReason']
+                if 'Essential container in task exited' in reason:
+                    # get the message from batch logs
+                    logname = cause['Attempts'][-1]['Container']['LogStreamName']
+                    error_type, error_msg = get_error_from_batch(logname)
+            except Exception as err:
+                logger.error(err)
+                logger.error(format_exc())
+    except Exception:
+        error_msg = error['Cause']
 
-        logger.info(f"Workflow Failed ({payload['id']}): {msg}")
+    error = f"{error_type}: {error_msg}"
+    logger.info(error)
 
+    try:
         if error_type == "InvalidInput":
-            statedb.set_invalid(payload['id'], msg)
-            logger.debug(f"Set {payload['id']} as invalid")
+            statedb.set_invalid(payload['id'], error)
         else:
-            statedb.set_failed(payload['id'], msg)
-            logger.debug(f"Set {payload['id']} as failed")
+            statedb.set_failed(payload['id'], error)
+    except Exception as err:
+        msg = f"Failed marking as failed: {err}"
+        logger.error(msg)
+        logger.error(format_exc())
+        raise err
 
-        if FAILED_TOPIC_ARN is not None:
+    if FAILED_TOPIC_ARN is not None:
+        try:
             item = statedb.dbitem_to_item(statedb.get_dbitem(payload['id']))
             attrs = {
                 'input_collections': {
@@ -67,18 +95,18 @@ def lambda_handler(payload, context):
                 'workflow': {
                     'DataType': 'String',
                     'StringValue': item['workflow']
-                }      
+                },
+                'error': {
+                    'DataType': 'String',
+                    'StringValue': error
+                }
             }
-            logger.info(f"Publishing item {item['catid']} to {FAILED_TOPIC_ARN}")
-            response = snsclient.publish(TopicArn=FAILED_TOPIC_ARN, Message=json.dumps(item),
-                                         MessageAttributes=attrs)
-            logger.debug(f"Response: {json.dumps(response)}")
+            logger.debug(f"Publishing item {item['catid']} to {FAILED_TOPIC_ARN}")
+            snsclient.publish(TopicArn=FAILED_TOPIC_ARN, Message=json.dumps(item), MessageAttributes=attrs)
+        except Exception as err:
+            msg = f"Failed publishing {payload['id']} to {FAILED_TOPIC_ARN}: {err}"
+            logger.error(msg)
+            logger.error(format_exc())
+            raise err
     
-        return payload
-    except Exception as err:
-        msg = f"Failed marking {payload['id']} as failed: {err}"
-        logger.error(msg)
-        logger.error(format_exc())
-        raise err
-
-    
+    return payload
