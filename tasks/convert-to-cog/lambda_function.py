@@ -4,7 +4,6 @@ import rasterio
 from cirruslib import Catalogs
 from cirruslib.errors import InvalidInput
 from cirruslib.transfer import download_item_assets, upload_item_assets, s3_sessions
-from logging import getLogger, StreamHandler
 from os import getenv, remove, path as op
 from rasterio.errors import CRSError
 from rio_cogeo.cogeo import cog_translate
@@ -13,17 +12,8 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from traceback import format_exc
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = getLogger(__name__)
-logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'INFO'))
-
 
 def lambda_handler(payload, context={}):
-    # if this is batch, output to stdout
-    #if not hasattr(context, "invoked_function_arn"):
-    #    logger.addHandler(StreamHandler())
-    logger.debug('Payload: %s' % json.dumps(payload))
-
     catalog = Catalogs.from_payload(payload)[0]
 
     # TODO - make this more general for more items/collections
@@ -41,9 +31,9 @@ def lambda_handler(payload, context={}):
         asset_keys = [a for a in assets if a in item['assets'].keys()]
         
         for asset in asset_keys:
+            catalog.logger.info(f"Converting {asset} to COG")
             # download asset
             item = download_item_assets(item, path=tmpdir, assets=[asset])
-            logger.debug(f"Downloaded item: {json.dumps(item)}")
 
             # cogify
             fn = item['assets'][asset]['href']
