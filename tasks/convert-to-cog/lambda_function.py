@@ -20,8 +20,8 @@ logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'INFO'))
 
 def lambda_handler(payload, context={}):
     # if this is batch, output to stdout
-    if not hasattr(context, "invoked_function_arn"):
-        logger.addHandler(StreamHandler())
+    #if not hasattr(context, "invoked_function_arn"):
+    #    logger.addHandler(StreamHandler())
     logger.debug('Payload: %s' % json.dumps(payload))
 
     catalog = Catalogs.from_payload(payload)[0]
@@ -75,28 +75,24 @@ def lambda_handler(payload, context={}):
 
         # drop any specified assets
         for asset in [a for a in config.get('drop_assets', []) if a in item['assets'].keys()]:
-            logger.info(f"Dropping {asset}")
             item['assets'].pop(asset)
 
         catalog['features'][0] = item
     except CRSError as err:
         msg = f"convert-to-cog: invalid CRS ({err})"
-        logger.error(msg)
-        logger.error(format_exc())
+        catalog.logger.error(msg, exc_info=True)
         raise InvalidInput(msg)
     except s3_sessions[list(s3_sessions)[0]].s3.exceptions.NoSuchKey as err:
         msg = f"convert-to-cog: failed fetching {asset} asset ({err})"
-        logger.error(msg)
-        logger.error(format_exc())
+        catalog.logger.error(msg, exc_info=True)
         raise InvalidInput(msg)
     except Exception as err:
         msg = f"convert-to-cog: failed creating COGs ({err})"
-        logger.error(msg)
-        logger.error(format_exc())
+        catalog.logger.error(msg, exc_info=True)
         raise Exception(msg)
     finally:
         # remove work directory....very important for Lambdas!
-        logger.debug('Removing work directory %s' % tmpdir)
+        catalog.logger.debug('Removing work directory %s' % tmpdir)
         rmtree(tmpdir)
 
     return catalog
