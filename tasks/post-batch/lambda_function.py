@@ -20,10 +20,8 @@ def lambda_handler(payload, context):
     try:
         # copy payload from s3
         catalog = s3().read_json(url)
-        logger.info(f"Completed post processing batch job for {catalog['id']}")
         return catalog
     except Exception as err:
         msg = f"post-batch: failed post processing batch job for {url} ({err})"
-        logger.error(msg)
-        logger.error(format_exc())
+        logger.error(msg, exc_info=True)
         raise Exception(msg) from err
