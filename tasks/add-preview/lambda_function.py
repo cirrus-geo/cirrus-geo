@@ -21,18 +21,8 @@ from rasterio.io import MemoryFile
 from urllib.parse import urlparse
 from traceback import format_exc
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'INFO'))
-
 
 def lambda_handler(payload, context={}):
-    # if this is batch, output to stdout
-    if not hasattr(context, "invoked_function_arn"):
-        logger.addHandler(logging.StreamHandler())
-
-    logger.debug('Payload: %s' % json.dumps(payload))
-
     catalog = Catalogs.from_payload(payload)[0]
 
     # get step configuration
@@ -42,8 +32,8 @@ def lambda_handler(payload, context={}):
     thumb = config.pop('thumbnail', False)
 
     if assets is None:
-        msg = f"add-preview: no asset specified for preview, skipping {catalog['id']}"
-        logger.error(msg)
+        msg = f"add-preview: no asset specified for preview"
+        catalog.logger.error(msg)
         raise Exception(msg)
 
     # create temporary work directory
@@ -57,68 +47,63 @@ def lambda_handler(payload, context={}):
                 asset = a
                 break
         if asset is None:
-            msg = f"add-preview: no asset specified for preview, skipping {item['id']}"
-            logger.warning(msg)
-            return item
+            msg = f"add-preview: no available asset for preview"
+            catalog.logger.warning(msg)
+            items.append(item)
+            continue
 
         try:
             # keep original href
             href = item['assets'][asset]['href']
+
             # download asset
             item = download_item_assets(item, path=tmpdir, assets=[asset])
 
             # add preview to item
-            
-            item = add_preview(item, item['assets'][asset]['href'], **config)
+            item['assets']['preview'] = create_preview(item, catalog.logger, fnout=item['assets'][asset]['href'], **config)
             if thumb:
                 # add thumbnail to item
-                item = add_thumbnail(item, item['assets']['preview']['href'])
+                item['assets']['thumbnail'] = create_thumbnail(item, item['assets']['preview']['href'], catalog.logger)
 
             # put back original href
             item['assets'][asset]['href'] = href
 
-            # set item in return catalog to this new item
-            #catalog['features'][0] = item._data
             # upload these new assets
             item = upload_item_assets(item, assets=['preview', 'thumbnail'], **outopts)
             items.append(item)
         except Exception as err:
-            msg = f"add-preview: failed creating preview/thumbnail for {catalog['id']} ({err})"
-            logger.error(msg)
-            logger.error(format_exc())
+            msg = f"add-preview: failed creating preview/thumbnail ({err})"
+            catalog.logger.error(msg, exc_info=True)
             # remove work directory....very important for Lambdas!
-            logger.debug('Removing work directory %s' % tmpdir)
             shutil.rmtree(tmpdir)
             raise Exception(msg) from err
 
-    catalog['features'] = items
-
     # remove work directory....very important for Lambdas!
-    logger.debug('Removing work directory %s' % tmpdir)
     shutil.rmtree(tmpdir)
 
+    # return new items
+    catalog['features'] = items
     return catalog      
 
 
-def add_thumbnail(item, filename, scale_percent=5):
+def create_thumbnail(item, filename, logger, scale_percent=5):
     """ Add a thumbnail to item, generated from filename """
     fnout = filename.replace('_preview.tif', '_thumb.png')
-    logging.info(f"Creating thumbnail {fnout} from {filename}")
+    logger.info(f"Creating thumbnail {fnout} from {filename}")
     try:
         gdal.Translate(fnout, filename, format='PNG', widthPct=scale_percent, heightPct=scale_percent)
-        item['assets']['thumbnail'] = {
+        return {
             'title': 'Thumbnail image',
             'type': 'image/png',
             'roles': ['thumbnail'],
             'href': fnout
         }
-        return item
     except Exception as err:
-        logger.error(f"Unable to create thumbnail {filename}: {err}")
+        logger.error(f"Unable to create thumbnail {fnout}: {err}")
         raise(err)
 
 
-def calculate_ccc_values(filename, lo=2.0, hi=96.0, bins=1000):
+def calculate_ccc_values(filename, logger, lo=2.0, hi=96.0, bins=1000):
     """ Determine min and and max values for a Cumulative Count Cut """
     ds = gdal.Open(filename)
     band = ds.GetRasterBand(1)
@@ -137,14 +122,14 @@ def calculate_ccc_values(filename, lo=2.0, hi=96.0, bins=1000):
     return [lo_val, hi_val]
 
 
-def create_preview(filename, fnout=None, preproj=False, ccc=[2.0, 98.0], exp=None, nodata=0, **kwargs):
+def create_preview(filename, logger, fnout=None, preproj=False, ccc=[2.0, 98.0], exp=None, nodata=0, **kwargs):
     if fnout is None:
         fnout = op.splitext(filename)[0] + '_preview.tif'
     fntmp = fnout.replace('.tif', '_tmp.tif')
 
     _filename = filename
     if preproj:
-        reproject(filename, _filename, crs='epsg:4326')
+        reproject(filename, _filename, logger, crs='epsg:4326')
 
     try:
         logger.info(f"Creating preview {fnout} from {filename}")
@@ -159,11 +144,12 @@ def create_preview(filename, fnout=None, preproj=False, ccc=[2.0, 98.0], exp=Non
                        scaleParams=[[inmin, inmax, 1, 255]], exponents=[exp])
         else:
             # ccc stretch
-            inmin, inmax = calculate_ccc_values(_filename, lo=ccc[0], hi=ccc[1])
-            logger.info(f"Stretching {inmin} - {inmax} to 1-255 with ccc={ccc}")
+            inmin, inmax = calculate_ccc_values(_filename, logger, lo=ccc[0], hi=ccc[1])
+            logger.debug(f"Stretching {inmin} - {inmax} to 1-255 with ccc={ccc}")
             gdal.Translate(fntmp, _filename, noData=nodata, format='GTiff', outputType=gdal.GDT_Byte,
                            scaleParams=[[inmin, inmax, 1, 255]])
-        cogify(fntmp, fnout)
+        
+        cogify(fntmp, fnout, logger)
     except Exception as err:
         logger.error(f"Unable to create preview {filename}: {err}")
         raise(err)
@@ -172,28 +158,18 @@ def create_preview(filename, fnout=None, preproj=False, ccc=[2.0, 98.0], exp=Non
             os.remove(fntmp)
         if preproj and op.exists(_filename):
             os.remove(_filename)
-    return fnout
+
+    return {
+        'title': 'Preview image',
+        'type': 'image/tiff; application=geotiff; cloud-optimized=true',
+        'roles': ['overview'],
+        'href': fnout
+    }
 
 
-def add_preview(item, filename, **kwargs):
-    """ Add a preview and thumbnail image to this STAC Item from <filename> """
-    try:
-        fnout = create_preview(filename, **kwargs)
-        item['assets']['preview'] = {
-            'title': 'Preview image',
-            'type': 'image/tiff; application=geotiff; cloud-optimized=true',
-            'roles': ['overview'],
-            'href': fnout
-        }
-        return item
-    except Exception as err:
-        logger.error(err)
-        raise(err)
-
-
-def cogify(fin, fout, nodata=None):
+def cogify(fin, fout, logger, nodata=None):
     """ Turn a geospatial image into a COG """
-    logger.debug(f"Turning {fin} into COG named {fout}")
+    logger.info(f"Turning {fin} into COG named {fout}")
     output_profile = cog_profiles.get('deflate')
     output_profile.update(dict(BIGTIFF=os.environ.get("BIGTIFF", "IF_SAFER")))
     output_profile['blockxsize'] = 256
@@ -212,7 +188,7 @@ def cogify(fin, fout, nodata=None):
     return fout
 
 
-def reproject(fin, fout, crs='EPSG:4326'):
+def reproject(fin, fout, logger, crs='EPSG:4326'):
     """ Reproject file using GCPs into a known projection """
     '''
     # TODO - combine cogify with warping if possible
@@ -225,7 +201,7 @@ def reproject(fin, fout, crs='EPSG:4326'):
         "compress": "DEFLATE",
     }
     '''
-    logger.info('Reprojecting to %s: %s into %s' % (crs, fin, fout))
+    logger.debug('Reprojecting to %s: %s into %s' % (crs, fin, fout))
     with rasterio.open(fin) as src:
         if src.crs:
             transform, width, height = calculate_default_transform(
