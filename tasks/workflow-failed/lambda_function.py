@@ -1,21 +1,15 @@
-import boto3
 import json
 import logging
+from os import getenv
 
+import boto3
 from boto3utils import s3
-from cirruslib.statedb import StateDB
-from os import getenv, path as op
-from traceback import format_exc
-
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
+from cirruslib import Catalog, StateDB
 
 statedb = StateDB()
 snsclient = boto3.client('sns')
 logclient = boto3.client('logs')
 
-CATALOG_BUCKET = getenv('CIRRUS_CATALOG_BUCKET', None)
 FAILED_TOPIC_ARN = getenv('CIRRUS_FAILED_TOPIC_ARN', None)
 
 
@@ -33,15 +27,7 @@ def get_error_from_batch(logname):
 
 
 def lambda_handler(payload, context):
-
-    # set the event ID if payload is on s3
-    prefix = f"s3://{CATALOG_BUCKET}/batch/"
-    if 'url' in payload:
-        # this happens when error happens during batch processing 
-        payload['id'] = op.dirname(payload['url'])[len(prefix):]
-    elif 'Parameters' in payload and 'url' in payload['Parameters']:
-        # this happens when error happens during post-batch processing
-        payload['id'] = op.dirname(payload['Parameters']['url'])[len(prefix):]
+    catalog = Catalog.from_payload(payload)
 
     # parse errors
     error = payload.get('error', {})
@@ -64,13 +50,12 @@ def lambda_handler(payload, context):
                     logname = cause['Attempts'][-1]['Container']['LogStreamName']
                     error_type, error_msg = get_error_from_batch(logname)
             except Exception as err:
-                logger.error(err)
-                logger.error(format_exc())
+                catalog.logger.error(err, exc_info=True)
     except Exception:
         error_msg = error['Cause']
 
     error = f"{error_type}: {error_msg}"
-    logger.info(error)
+    catalog.logger.info(error)
 
     try:
         if error_type == "InvalidInput":
@@ -79,8 +64,7 @@ def lambda_handler(payload, context):
             statedb.set_failed(payload['id'], error)
     except Exception as err:
         msg = f"Failed marking as failed: {err}"
-        logger.error(msg)
-        logger.error(format_exc())
+        catalog.logger.error(msg, exc_info=True)
         raise err
 
     if FAILED_TOPIC_ARN is not None:
@@ -100,12 +84,11 @@ def lambda_handler(payload, context):
                     'StringValue': error
                 }
             }
-            logger.debug(f"Publishing item {item['catid']} to {FAILED_TOPIC_ARN}")
+            catalog.logger.debug(f"Publishing item to {FAILED_TOPIC_ARN}")
             snsclient.publish(TopicArn=FAILED_TOPIC_ARN, Message=json.dumps(item), MessageAttributes=attrs)
         except Exception as err:
             msg = f"Failed publishing {payload['id']} to {FAILED_TOPIC_ARN}: {err}"
-            logger.error(msg)
-            logger.error(format_exc())
+            catalog.logger.error(msg, exc_info=True)
             raise err
     
     return payload
