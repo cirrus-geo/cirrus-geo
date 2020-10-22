@@ -33,7 +33,6 @@ def get_error_from_batch(logname):
 
 
 def lambda_handler(payload, context):
-    logger.debug('Payload: %s' % json.dumps(payload))
 
     # set the event ID if payload is on s3
     prefix = f"s3://{CATALOG_BUCKET}/batch/"

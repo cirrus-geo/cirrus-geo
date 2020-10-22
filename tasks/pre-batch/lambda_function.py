@@ -2,14 +2,14 @@ import uuid
 from os import getenv
 
 from boto3utils import s3
-from cirruslib import Catalogs
+from cirruslib import Catalog
 
 # envvars
 CATALOG_BUCKET = getenv('CIRRUS_CATALOG_BUCKET')
 
 
 def lambda_handler(payload, context):
-    catalog = Catalogs.from_payload(payload)[0]
+    catalog = Catalog.from_payload(payload)
 
     url = f"s3://{CATALOG_BUCKET}/batch/{catalog['id']}/{uuid.uuid1()}.json"
 

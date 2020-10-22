@@ -5,7 +5,7 @@ import logging
 
 from boto3 import Session
 from boto3utils import s3
-from cirruslib import Catalogs
+from cirruslib import Catalog
 from cirruslib.transfer import download_item_assets, upload_item_assets
 from os import getenv, environ, path as op
 from shutil import rmtree
@@ -15,7 +15,7 @@ from traceback import format_exc
 
 def lambda_handler(payload, context={}):
 
-    catalog = Catalogs.from_payload(payload)[0]
+    catalog = Catalog.from_payload(payload)
 
     # TODO - make this more general for more items/collections
     item = catalog['features'][0] #, collection=catalog['collections'][0])

@@ -4,7 +4,7 @@ import os.path as op
 import re
 import requests
 
-from cirruslib import Catalog, Catalogs, StateDB
+from cirruslib import Catalog, StateDB
 from cirruslib.transfer import get_s3_session
 from logging import getLogger
 from os import getenv
@@ -19,7 +19,7 @@ statedb = StateDB()
 
 
 def lambda_handler(payload, context):
-    catalog = Catalogs.from_payload(payload)[0]
+    catalog = Catalog.from_payload(payload)
 
     config = catalog['process']['tasks'].get('publish', {})
     public = config.get('public', False)

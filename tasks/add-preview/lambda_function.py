@@ -9,7 +9,7 @@ import tempfile
 from boto3utils import s3
 from os import getenv, path as op
 import gdal
-from cirruslib import Catalogs
+from cirruslib import Catalog
 from cirruslib.transfer import download_item_assets, upload_item_assets
 
 import os
@@ -23,7 +23,7 @@ from traceback import format_exc
 
 
 def lambda_handler(payload, context={}):
-    catalog = Catalogs.from_payload(payload)[0]
+    catalog = Catalog.from_payload(payload)
 
     # get step configuration
     config = catalog['process']['tasks'].get('add-preview', {})
