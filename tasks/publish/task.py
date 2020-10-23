@@ -18,7 +18,7 @@ PUBLISH_TOPICS = getenv('CIRRUS_PUBLISH_SNS', None)
 statedb = StateDB()
 
 
-def lambda_handler(payload, context):
+def handler(payload, context):
     catalog = Catalog.from_payload(payload)
 
     config = catalog['process']['tasks'].get('publish', {})

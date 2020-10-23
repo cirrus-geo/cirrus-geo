@@ -1,41 +1,41 @@
 publish:
   description: Publish resulting STAC Collections and Items to catalog, and optionally SNS
-  handler: lambda_function.lambda_handler
+  handler: task.handler
   memorySize: 128
   timeout: 30
   module: tasks/publish
 
 pre-batch:
   description: Pre process batch job by copying input to S3
-  handler: lambda_function.lambda_handler
+  handler: task.handler
   memorySize: 128
   timeout: 15
   module: tasks/pre-batch
 
 post-batch:
   description: Post process batch job by copying input from S3
-  handler: lambda_function.lambda_handler
+  handler: task.handler
   memorySize: 128
   timeout: 15
   module: tasks/post-batch
 
 workflow-failed:
   description: Indicates the end of a workflow
-  handler: lambda_function.lambda_handler
+  handler: task.handler
   memorySize: 128
   timeout: 15
   module: tasks/workflow-failed
 
 copy-assets:
   description: Copy specified assets from Item(s) to an S3 bucket
-  handler: lambda_function.lambda_handler
+  handler: task.handler
   memorySize: 768
   timeout: 60
   module: tasks/copy-assets
 
 convert-to-cog:
   description: Convert specified assets into Cloud Optimized GeoTIFFs
-  handler: lambda_function.lambda_handler
+  handler: task.handler
   memorySize: 1024
   timeout: 900
   module: tasks/convert-to-cog
@@ -48,7 +48,7 @@ convert-to-cog:
 
 add-preview:
   description: Create a preview and/or thumbnail from one or more assets
-  handler: lambda_function.lambda_handler
+  handler: task.handler
   memorySize: 1024
   timeout: 900
   module: tasks/add-preview

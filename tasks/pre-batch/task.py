@@ -8,7 +8,7 @@ from cirruslib import Catalog
 CATALOG_BUCKET = getenv('CIRRUS_CATALOG_BUCKET')
 
 
-def lambda_handler(payload, context):
+def handler(payload, context):
     catalog = Catalog.from_payload(payload)
 
     url = f"s3://{CATALOG_BUCKET}/batch/{catalog['id']}/{uuid.uuid1()}.json"

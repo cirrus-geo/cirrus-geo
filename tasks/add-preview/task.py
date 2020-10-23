@@ -22,7 +22,7 @@ from urllib.parse import urlparse
 from traceback import format_exc
 
 
-def lambda_handler(payload, context={}):
+def handler(payload, context={}):
     catalog = Catalog.from_payload(payload)
 
     # get step configuration

@@ -26,7 +26,7 @@ def get_error_from_batch(logname):
         return "Exception", "Failed getting logStream"
 
 
-def lambda_handler(payload, context):
+def handler(payload, context):
     catalog = Catalog.from_payload(payload)
 
     # parse errors
