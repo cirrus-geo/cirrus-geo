@@ -2,7 +2,6 @@ import boto3
 import json
 import logging
 import os
-from traceback import format_exc
 from urllib.parse import urljoin, urlparse
 
 from cirruslib import StateDB, stac
@@ -112,6 +111,5 @@ def lambda_handler(event, context):
 
     except Exception as err:
         msg = f"api failed: {err}"
-        logger.error(msg)
-        logger.error(format_exc())
+        logger.error(msg, exc_info=True)
         return response(msg, status_code=400)

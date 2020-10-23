@@ -35,10 +35,6 @@ def submit(ids, process_update=None):
 def lambda_handler(payload, context={}):
     logger.debug('Payload: %s' % json.dumps(payload))
 
-    # if this is batch, output to stdout
-    if not hasattr(context, "invoked_function_arn"):
-        logger.addHandler(logging.StreamHandler())
-
     collections = payload.get('collections')
     index = payload.get('index', 'input_state')
     state = payload.get('state', 'FAILED')
