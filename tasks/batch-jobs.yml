@@ -41,7 +41,7 @@ Resources:
             Value: /usr/local/share/proj
         Memory: ${self:custom.batch.GeoLambdaAsBatchJob.Memory}
         Vcpus: ${self:custom.batch.GeoLambdaAsBatchJob.Vcpus}
-        Image: 'cirrusgeo/run-geolambda:0.2.0'
+        Image: 'cirrusgeo/run-geolambda:0.2.1'
       RetryStrategy: 
         Attempts: 1
   LambdaAsBatchJob:
@@ -82,6 +82,6 @@ Resources:
             Value: ${self:provider.region}
         Memory: ${self:custom.batch.LambdaAsBatchJob.Memory}
         Vcpus: ${self:custom.batch.LambdaAsBatchJob.Vcpus}
-        Image: 'cirrusgeo/run-lambda:0.2.0'
+        Image: 'cirrusgeo/run-lambda:0.2.1'
       RetryStrategy: 
         Attempts: 1
