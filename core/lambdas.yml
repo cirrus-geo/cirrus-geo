@@ -24,10 +24,3 @@ api:
   events:
     - http: GET /
     - http: GET {proxy+}
-
-rerun:
-  description: Rerun items in the database
-  handler: lambda_function.lambda_handler
-  memorySize: 128
-  timeout: 900
-  module: core/rerun

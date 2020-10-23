@@ -32,7 +32,7 @@ def submit(ids, process_update=None):
     SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(payload))
 
 
-def lambda_handler(payload, context={}):
+def handler(payload, context={}):
     logger.debug('Payload: %s' % json.dumps(payload))
 
     collections = payload.get('collections')
