@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+- Structured logging, providing additional context to logs
+
+### Changed
+- Lambda code files renamed from lambda_function.py to feeder.py for feeders and task.py for tasks, allowing better logging
+- Lambda handler functions renamed from `lambda_handler` to `handler` since they could be Batch rather than lambdas
+
+
+
 ## [v0.2.1] - 2020-09-10
 
 ### Added
