@@ -117,7 +117,7 @@ def run(params, url, sleep=None, process=None):
             run(params, url, process=process)
 
 
-def lambda_handler(event, context={}):
+def handler(event, context={}):
     logger.debug('Event: %s' % json.dumps(event))
 
     # if this is batch, output to stdout
@@ -181,7 +181,7 @@ def cli():
     with open(args['payload']) as f:
         payload = json.loads(f.read())
     #import pdb; pdb.set_trace()
-    lambda_handler(payload)
+    handler(payload)
 
 
 if __name__ == "__main__":

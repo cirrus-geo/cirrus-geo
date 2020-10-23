@@ -16,7 +16,7 @@ SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN', None)
 SNS_CLIENT = boto3.client('sns') if SNS_TOPIC else None
 
 
-def lambda_handler(payload, context):
+def handler(payload, context):
     logger.debug('Payload: %s' % json.dumps(payload))
 
     payloads = []

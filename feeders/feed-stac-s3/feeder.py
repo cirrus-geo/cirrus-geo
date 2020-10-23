@@ -32,7 +32,7 @@ logger.setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'INFO'))
 '''
 
 
-def lambda_handler(event, context={}):
+def handler(event, context={}):
     logger.debug('Event: %s' % json.dumps(event))
 
     # parse input
@@ -94,7 +94,7 @@ def parse_args(args):
 
 
 def cli():
-    lambda_handler(parse_args(sys.argv[1:]))
+    handler(parse_args(sys.argv[1:]))
 
 
 if __name__ == "__main__":

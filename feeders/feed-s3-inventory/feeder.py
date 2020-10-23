@@ -99,7 +99,7 @@ def read_inventory_file(fname, keys, prefix=None, suffix=None,
         yield 's3://%s/%s' % (record['bucket'], record['key'])
 
 
-def lambda_handler(payload, context={}):
+def handler(payload, context={}):
     # if this is batch, output to stdout
     if not hasattr(context, "invoked_function_arn"):
         logger.addHandler(logging.StreamHandler())
@@ -229,4 +229,4 @@ if __name__ == "__main__":
         }
     }
 
-    lambda_handler(payload)
+    handler(payload)

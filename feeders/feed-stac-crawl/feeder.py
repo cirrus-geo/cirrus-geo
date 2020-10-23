@@ -33,7 +33,7 @@ BATCH_CLIENT = boto3.client('batch')
 SNS_CLIENT = boto3.client('sns')
     
 
-def lambda_handler(event, context={}):
+def handler(event, context={}):
     # if this is batch, output to stdout
     if not hasattr(context, "invoked_function_arn"):
         logger.addHandler(logging.StreamHandler())
