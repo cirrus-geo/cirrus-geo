@@ -5,7 +5,7 @@ import logging
 
 from boto3 import Session
 from boto3utils import s3
-from cirruslib import Catalog
+from cirruslib import Catalog, get_task_logger
 from cirruslib.transfer import download_item_assets, upload_item_assets
 from os import getenv, environ, path as op
 from shutil import rmtree
@@ -14,8 +14,8 @@ from traceback import format_exc
 
 
 def handler(payload, context={}):
-
     catalog = Catalog.from_payload(payload)
+    logger = get_task_logger(f"{__name__}.convert-to-cog", catalog=catalog)
 
     # TODO - make this more general for more items/collections
     item = catalog['features'][0] #, collection=catalog['collections'][0])
@@ -29,7 +29,7 @@ def handler(payload, context={}):
     drop_assets = config.get('drop_assets', [])
     # drop specified assets
     for asset in [a for a in drop_assets if a in item['assets'].keys()]:
-        catalog.logger.debug(f'Dropping asset {asset}')
+        logger.debug(f'Dropping asset {asset}')
         item['assets'].pop(asset)
     if type(assets) is str and assets == 'ALL':
         assets = item['assets'].keys()
@@ -50,11 +50,11 @@ def handler(payload, context={}):
         catalog['features'][0] = item
     except Exception as err:
         msg = f"copy-assets: failed processing {catalog['id']} ({err})"
-        catalog.logger.error(msg, exc_info=True)
+        logger.error(msg, exc_info=True)
         raise Exception(msg) from err
     finally:
         # remove work directory....very important for Lambdas!
-        catalog.logger.debug('Removing work directory %s' % tmpdir)
+        logger.debug('Removing work directory %s' % tmpdir)
         rmtree(tmpdir)
 
     return catalog

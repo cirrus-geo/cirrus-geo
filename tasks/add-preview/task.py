@@ -9,7 +9,7 @@ import tempfile
 from boto3utils import s3
 from os import getenv, path as op
 import gdal
-from cirruslib import Catalog
+from cirruslib import Catalog, get_task_logger
 from cirruslib.transfer import download_item_assets, upload_item_assets
 
 import os
@@ -24,6 +24,7 @@ from traceback import format_exc
 
 def handler(payload, context={}):
     catalog = Catalog.from_payload(payload)
+    logger = get_task_logger(f"{__name__}.add-preview", catalog=catalog)
 
     # get step configuration
     config = catalog['process']['tasks'].get('add-preview', {})
@@ -33,7 +34,7 @@ def handler(payload, context={}):
 
     if assets is None:
         msg = f"add-preview: no asset specified for preview"
-        catalog.logger.error(msg)
+        logger.error(msg)
         raise Exception(msg)
 
     # create temporary work directory
@@ -48,7 +49,7 @@ def handler(payload, context={}):
                 break
         if asset is None:
             msg = f"add-preview: no available asset for preview"
-            catalog.logger.warning(msg)
+            logger.warning(msg)
             items.append(item)
             continue
 
@@ -60,10 +61,10 @@ def handler(payload, context={}):
             item = download_item_assets(item, path=tmpdir, assets=[asset])
 
             # add preview to item
-            item['assets']['preview'] = create_preview(item, catalog.logger, fnout=item['assets'][asset]['href'], **config)
+            item['assets']['preview'] = create_preview(item, logger, fnout=item['assets'][asset]['href'], **config)
             if thumb:
                 # add thumbnail to item
-                item['assets']['thumbnail'] = create_thumbnail(item, item['assets']['preview']['href'], catalog.logger)
+                item['assets']['thumbnail'] = create_thumbnail(item, item['assets']['preview']['href'], logger)
 
             # put back original href
             item['assets'][asset]['href'] = href
@@ -73,7 +74,7 @@ def handler(payload, context={}):
             items.append(item)
         except Exception as err:
             msg = f"add-preview: failed creating preview/thumbnail ({err})"
-            catalog.logger.error(msg, exc_info=True)
+            logger.error(msg, exc_info=True)
             # remove work directory....very important for Lambdas!
             shutil.rmtree(tmpdir)
             raise Exception(msg) from err

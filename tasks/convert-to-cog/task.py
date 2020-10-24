@@ -1,7 +1,7 @@
 import json
 import rasterio
 
-from cirruslib import Catalog
+from cirruslib import Catalog, get_task_logger
 from cirruslib.errors import InvalidInput
 from cirruslib.transfer import download_item_assets, upload_item_assets, s3_sessions
 from os import getenv, remove, path as op
@@ -15,6 +15,7 @@ from traceback import format_exc
 
 def handler(payload, context={}):
     catalog = Catalog.from_payload(payload)
+    logger = get_task_logger(f"{__name__}.convert-to-cog", catalog=catalog)
 
     # TODO - make this more general for more items/collections
     item = catalog['features'][0] #, collection=catalog['collections'][0])
@@ -31,7 +32,7 @@ def handler(payload, context={}):
         asset_keys = [a for a in assets if a in item['assets'].keys()]
         
         for asset in asset_keys:
-            catalog.logger.info(f"Converting {asset} to COG")
+            logger.info(f"Converting {asset} to COG")
             # download asset
             item = download_item_assets(item, path=tmpdir, assets=[asset])
 
@@ -70,19 +71,19 @@ def handler(payload, context={}):
         catalog['features'][0] = item
     except CRSError as err:
         msg = f"convert-to-cog: invalid CRS ({err})"
-        catalog.logger.error(msg, exc_info=True)
+        logger.error(msg, exc_info=True)
         raise InvalidInput(msg)
     except s3_sessions[list(s3_sessions)[0]].s3.exceptions.NoSuchKey as err:
         msg = f"convert-to-cog: failed fetching {asset} asset ({err})"
-        catalog.logger.error(msg, exc_info=True)
+        logger.error(msg, exc_info=True)
         raise InvalidInput(msg)
     except Exception as err:
         msg = f"convert-to-cog: failed creating COGs ({err})"
-        catalog.logger.error(msg, exc_info=True)
+        logger.error(msg, exc_info=True)
         raise Exception(msg)
     finally:
         # remove work directory....very important for Lambdas!
-        catalog.logger.debug('Removing work directory %s' % tmpdir)
+        logger.debug('Removing work directory %s' % tmpdir)
         rmtree(tmpdir)
 
     return catalog

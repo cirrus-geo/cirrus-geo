@@ -4,7 +4,7 @@ from os import getenv
 
 import boto3
 from boto3utils import s3
-from cirruslib import Catalog, StateDB
+from cirruslib import Catalog, StateDB, get_task_logger
 
 statedb = StateDB()
 snsclient = boto3.client('sns')
@@ -28,6 +28,7 @@ def get_error_from_batch(logname):
 
 def handler(payload, context):
     catalog = Catalog.from_payload(payload)
+    logger = get_task_logger(f"{__name__}.convert-to-cog", catalog=catalog)
 
     # parse errors
     error = payload.get('error', {})
@@ -50,12 +51,12 @@ def handler(payload, context):
                     logname = cause['Attempts'][-1]['Container']['LogStreamName']
                     error_type, error_msg = get_error_from_batch(logname)
             except Exception as err:
-                catalog.logger.error(err, exc_info=True)
+                logger.error(err, exc_info=True)
     except Exception:
         error_msg = error['Cause']
 
     error = f"{error_type}: {error_msg}"
-    catalog.logger.info(error)
+    logger.info(error)
 
     try:
         if error_type == "InvalidInput":
@@ -64,7 +65,7 @@ def handler(payload, context):
             statedb.set_failed(catalog['id'], error)
     except Exception as err:
         msg = f"Failed marking as failed: {err}"
-        catalog.logger.error(msg, exc_info=True)
+        logger.error(msg, exc_info=True)
         raise err
 
     if FAILED_TOPIC_ARN is not None:
@@ -84,11 +85,11 @@ def handler(payload, context):
                     'StringValue': error
                 }
             }
-            catalog.logger.debug(f"Publishing item to {FAILED_TOPIC_ARN}")
+            logger.debug(f"Publishing item to {FAILED_TOPIC_ARN}")
             snsclient.publish(TopicArn=FAILED_TOPIC_ARN, Message=json.dumps(item), MessageAttributes=attrs)
         except Exception as err:
-            msg = f"Failed publishing {catalog['id']} to {FAILED_TOPIC_ARN}: {err}"
-            catalog.logger.error(msg, exc_info=True)
+            msg = f"Failed publishing to {FAILED_TOPIC_ARN}: {err}"
+            logger.error(msg, exc_info=True)
             raise err
     
     return catalog

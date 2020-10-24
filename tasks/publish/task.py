@@ -4,7 +4,7 @@ import os.path as op
 import re
 import requests
 
-from cirruslib import Catalog, StateDB
+from cirruslib import Catalog, StateDB, get_task_logger
 from cirruslib.transfer import get_s3_session
 from logging import getLogger
 from os import getenv
@@ -20,6 +20,7 @@ statedb = StateDB()
 
 def handler(payload, context):
     catalog = Catalog.from_payload(payload)
+    logger = get_task_logger(f"{__name__}.convert-to-cog", catalog=catalog)
 
     config = catalog['process']['tasks'].get('publish', {})
     public = config.get('public', False)
@@ -30,7 +31,7 @@ def handler(payload, context):
     s3urls = []
 
     try:
-        catalog.logger.debug("Publishing items to s3 and SNS")
+        logger.debug("Publishing items to s3 and SNS")
 
         # publish to s3
         s3urls = catalog.publish_to_s3(DATA_BUCKET, public=public)
@@ -47,7 +48,7 @@ def handler(payload, context):
             catalog.publish_to_sns(t)
     except Exception as err:
         msg = f"publish: failed publishing output items ({err})"
-        catalog.logger.error(msg, exc_info=True)
+        logger.error(msg, exc_info=True)
         raise Exception(msg) from err
 
     try:
@@ -55,7 +56,7 @@ def handler(payload, context):
         statedb.set_completed(catalog['id'], s3urls)
     except Exception as err:
         msg = f"publish: failed setting as complete ({err})"
-        catalog.logger.error(msg, exc_info=True)
+        logger.error(msg, exc_info=True)
         raise Exception(msg) from err        
 
     return catalog
