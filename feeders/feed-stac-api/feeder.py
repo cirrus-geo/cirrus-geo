@@ -19,14 +19,6 @@ from dateutil.parser import parse
 from satsearch import Search, config
 
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
-
-# add logs for sat-search
-logging.getLogger('satsearch').setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'INFO'))
-logger.addHandler(logging.StreamHandler())
-
 # envvars
 SNS_TOPIC = os.getenv('CIRRUS_QUEUE_TOPIC_ARN')
 CATALOG_BUCKET = os.getenv('CIRRUS_CATALOG_BUCKET')
@@ -36,6 +28,10 @@ MAX_ITEMS_REQUEST = 5000
 # AWS clients
 BATCH_CLIENT = boto3.client('batch')
 SNS_CLIENT = boto3.client('sns')
+
+# logging
+logger = logging.getLogger(f"{__name__}.feed-stac-api")
+
 
 # Process configuration
 '''

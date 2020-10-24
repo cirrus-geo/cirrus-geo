@@ -9,9 +9,9 @@ import sys
 from cirruslib.transfer import get_s3_session
 
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'INFO'))
+
+# logging
+logger = logging.getLogger(f"{__name__}.feed-stac-s3")
 
 
 # Process configuration

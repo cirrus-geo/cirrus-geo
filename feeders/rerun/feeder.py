@@ -11,16 +11,16 @@ from json import dumps
 from os import getenv
 from traceback import format_exc
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
-
 # envvars
 SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN')
 
 # clients
 statedb = StateDB()
 SNS_CLIENT = boto3.client('sns')
+
+# logging
+logger = logging.getLogger(f"{__name__}.rerun")
+
 
 
 def submit(ids, process_update=None):

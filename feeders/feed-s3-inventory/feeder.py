@@ -16,18 +16,19 @@ from datetime import datetime
 from dateutil.parser import parse
 from os import getenv, path as op
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'INFO'))
-
+# envvars
 SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN')
 LAMBDA_NAME = getenv('AWS_LAMBDA_FUNCTION_NAME')
 CIRRUS_STACK = getenv('CIRRUS_STACK')
 CATALOG_BUCKET = getenv('CIRRUS_CATALOG_BUCKET')
 BASE_URL = "https://roda.sentinel-hub.com"
 
+# clients
 BATCH_CLIENT = boto3.client('batch')
 SNS_CLIENT = boto3.client('sns')
+
+# logging
+logger = logging.getLogger(f"{__name__}.feed-s3-inventory")
 
 
 def read_orc_inventory_file(filename, keys):
@@ -100,10 +101,6 @@ def read_inventory_file(fname, keys, prefix=None, suffix=None,
 
 
 def handler(payload, context={}):
-    # if this is batch, output to stdout
-    if not hasattr(context, "invoked_function_arn"):
-        logger.addHandler(logging.StreamHandler())
-
     logger.info('Payload: %s' % json.dumps(payload))
 
     # get payload variables

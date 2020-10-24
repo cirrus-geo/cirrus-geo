@@ -7,13 +7,12 @@ from boto3utils import s3
 from os import getenv
 from traceback import format_exc
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'INFO'))
-
 # environment variables
 SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN', None)
 SNS_CLIENT = boto3.client('sns') if SNS_TOPIC else None
+
+# logging
+logger = logging.getLogger(f"{__name__}.feed-test")
 
 
 def handler(payload, context):
