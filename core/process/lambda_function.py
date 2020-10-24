@@ -14,13 +14,17 @@ with open(os.path.join(os.path.dirname(__file__), 'processes.json')) as f:
     PROCESSES = json.loads(f.read())
 
 
-def lambda_handler(payload, context):    
+def lambda_handler(payload, context):
+    logger.debug(json.dumps(payload))
+
     # Read SQS payload
     if 'Records' not in payload:
         raise ValueError("Input not from SQS")
     
     catalogs = []
-    for cat in [json.loads(r['body']) for r in payload['Records']]:
+    for record in [json.loads(r['body']) for r in payload['Records']]:
+        cat = json.loads(record['Message'])
+        logger.debug('cat: %s' % json.dumps(cat))
         # expand catids to full catalogs
         if 'catids' in cat:
             _cats = Catalogs.from_catids(cat['catids'])
@@ -29,9 +33,8 @@ def lambda_handler(payload, context):
                 for c in _cats:
                     c['process'] = dict_merge(c['process'], cat['process_update'])
             catalogs += _cats
-
+        elif cat.get('type', '') == 'Feature':
         # If Item, create Catalog and use default process for that collection
-        if cat.get('type', '') == 'Feature':
             if cat['collection'] not in PROCESSES.keys():
                 raise ValueError(f"Default process not provided for collection {cat['collection']}")
             cat_json = {
@@ -40,8 +43,11 @@ def lambda_handler(payload, context):
                 'process': PROCESSES[cat['collection']]
             }
             catalogs.append(Catalog(cat_json, update=True))
-    
+        else:
+            catalogs.append(Catalog(cat, update=True))
+
     if len(catalogs) > 0:
-        catalogs.process()
+        cats = Catalogs(catalogs)
+        cats.process()
 
     return len(catalogs)

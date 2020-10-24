@@ -59,9 +59,9 @@ def handler(payload, context):
 
     try:
         if error_type == "InvalidInput":
-            statedb.set_invalid(payload['id'], error)
+            statedb.set_invalid(catalog['id'], error)
         else:
-            statedb.set_failed(payload['id'], error)
+            statedb.set_failed(catalog['id'], error)
     except Exception as err:
         msg = f"Failed marking as failed: {err}"
         catalog.logger.error(msg, exc_info=True)
@@ -69,7 +69,7 @@ def handler(payload, context):
 
     if FAILED_TOPIC_ARN is not None:
         try:
-            item = statedb.dbitem_to_item(statedb.get_dbitem(payload['id']))
+            item = statedb.dbitem_to_item(statedb.get_dbitem(catalog['id']))
             attrs = {
                 'input_collections': {
                     'DataType': 'String',
@@ -87,8 +87,8 @@ def handler(payload, context):
             catalog.logger.debug(f"Publishing item to {FAILED_TOPIC_ARN}")
             snsclient.publish(TopicArn=FAILED_TOPIC_ARN, Message=json.dumps(item), MessageAttributes=attrs)
         except Exception as err:
-            msg = f"Failed publishing {payload['id']} to {FAILED_TOPIC_ARN}: {err}"
+            msg = f"Failed publishing {catalog['id']} to {FAILED_TOPIC_ARN}: {err}"
             catalog.logger.error(msg, exc_info=True)
             raise err
     
-    return payload
+    return catalog
