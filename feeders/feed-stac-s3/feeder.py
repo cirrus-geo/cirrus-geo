@@ -11,7 +11,7 @@ from cirruslib.transfer import get_s3_session
 
 
 # logging
-logger = logging.getLogger(f"{__name__}.feed-stac-s3")
+logger = logging.getLogger(f"{__name__}.stac-s3")
 
 
 # Process configuration

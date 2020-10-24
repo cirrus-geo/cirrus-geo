@@ -28,7 +28,7 @@ BATCH_CLIENT = boto3.client('batch')
 SNS_CLIENT = boto3.client('sns')
 
 # logging
-logger = logging.getLogger(f"{__name__}.feed-stac-crawl")
+logger = logging.getLogger(f"{__name__}.stac-crawl")
 
 
 def handler(event, context={}):

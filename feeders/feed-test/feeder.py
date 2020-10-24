@@ -12,7 +12,7 @@ SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN', None)
 SNS_CLIENT = boto3.client('sns') if SNS_TOPIC else None
 
 # logging
-logger = logging.getLogger(f"{__name__}.feed-test")
+logger = logging.getLogger(f"{__name__}.test")
 
 
 def handler(payload, context):

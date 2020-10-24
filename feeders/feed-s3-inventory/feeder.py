@@ -28,7 +28,7 @@ BATCH_CLIENT = boto3.client('batch')
 SNS_CLIENT = boto3.client('sns')
 
 # logging
-logger = logging.getLogger(f"{__name__}.feed-s3-inventory")
+logger = logging.getLogger(f"{__name__}.s3-inventory")
 
 
 def read_orc_inventory_file(filename, keys):
