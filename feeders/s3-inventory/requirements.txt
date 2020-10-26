@@ -1,2 +1,2 @@
-git+https://github.com/cirrus-geo/cirrus-lib.git@develop
+cirrus-lib~=0.3
 pyorc==0.3.0
