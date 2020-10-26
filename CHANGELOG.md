@@ -6,14 +6,29 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.3.0] - 2020-10-26
+
 ### Added
 - Structured logging, providing additional context to logs
+- `add-collections` Lambda function for adding Collections to the Cirrus static STAC catalog
+- `process` Lambda updated to accept `catids` as an argument which it will replace with that Catalog's original input file
+- `process_update` parameter added to `rerun` to allow for partial updated of process definition in reruns
 
 ### Changed
+- Update `cirrus-lib` to 0.3.2
 - Lambda code files renamed from lambda_function.py to feeder.py for feeders and task.py for tasks, allowing better logging
 - Lambda handler functions renamed from `lambda_handler` to `handler` since they could be Batch rather than lambdas
+- Batch Compute Environment definitions moved to core/ directory
+- API Lambda refactored to return collections in Cirrus static STAC catalog
+- Handler function names changed for feeders to `feeder.handler`
+- Handler function names changed for tasks to `task.handler`
+- Logging refactored to do structured (JSON) logging
 
+### Fixed
+- Errors from batch now correctly reported to StateDB
 
+### Removed
+- `catids` no longer valid argument `rerun`  payload - publish array of `catids` directly to Cirrus queue instead
 
 ## [v0.2.1] - 2020-09-10
 
@@ -65,6 +80,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Initial release
 
 [Unreleased]: https://github.com/cirrus-geo/cirrus/compare/master...develop
+[v0.3.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.2.1...v0.3.0
 [v0.2.1]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/cirrus-geo/cirrus/cirrus/tree/legacy
