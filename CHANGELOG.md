@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `process_update` parameter added to `rerun` to allow for partial updated of process definition in reruns
 
 ### Changed
-- Update `cirrus-lib` to 0.3.2
+- Update `cirrus-lib` to 0.3.3
 - Lambda code files renamed from lambda_function.py to feeder.py for feeders and task.py for tasks, allowing better logging
 - Lambda handler functions renamed from `lambda_handler` to `handler` since they could be Batch rather than lambdas
 - Batch Compute Environment definitions moved to core/ directory
