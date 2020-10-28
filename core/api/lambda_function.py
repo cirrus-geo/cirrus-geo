@@ -65,8 +65,9 @@ def lambda_handler(event, context):
         root_url = None
 
     # get path parameters
+    stage = event.get('requestContext', {}).get('stage', '')
     path = event.get('path', '').split('/')
-    pparams = [p for p in path if p != '']
+    pparams = [p for p in path if p != '' and p != stage]
     logger.info(f"Path Parameters: {pparams}")
 
     # get query parameters
@@ -82,32 +83,30 @@ def lambda_handler(event, context):
         if len(pparams) == 0:
             return response(get_root(root_url))
 
-        # get single item by catalog ID
+        # get single item by catalog ID (deprecated)
         if pparams[0] == "item" and len(pparams) > 1:
             catid = '/'.join(pparams[1:])
             return response(statedb.get_dbitem(catid))
-
         # determine index (input or output collections)
-        index = None
-        if pparams[0] == 'collections':
-            index = 'input_state'
-        elif pparams[0] == 'output_collections':
-            index = 'output_state'
-
-        # get items
-        if index and pparams[-1] == 'items' and len(pparams) > 2:
-            colid = '/'.join(pparams[1:-1])
-            logger.debug(f"Getting items from {index} for collections {colid}, state={state}, since={since}")
-            resp = statedb.get_items_page(colid, state=state, since=since, index=index,
-                                          limit=limit, nextkey=nextkey)
+        if pparams[0] == 'catid':
+            resp = statedb.dbitem_to_item(statedb.get_dbitem('/'.join(pparams[1:])))
             return response(resp)
-    
-        # get summary of collection
-        if index and len(pparams) > 1:
-            colid = '/'.join(pparams[1:])
-            logger.debug(f"Getting summary from {index} for collection {colid}")
-            counts = statedb.get_counts(colid, state=state, since=since, index=index, limit=100000)
-            return response(counts)
+        elif pparams[0] == 'collections':
+            index = 'input_state'
+            # get items
+            if pparams[-1] == 'items' and len(pparams) > 2:
+                colid = '/'.join(pparams[1:-1])
+                logger.debug(f"Getting items from {index} for collections {colid}, state={state}, since={since}")
+                resp = statedb.get_items_page(colid, state=state, since=since, index=index,
+                                            limit=limit, nextkey=nextkey)
+                return response(resp)
+        
+            # get summary of collection
+            if len(pparams) > 1:
+                colid = '/'.join(pparams[1:])
+                logger.debug(f"Getting summary from {index} for collection {colid}")
+                counts = statedb.get_counts(colid, state=state, since=since, index=index, limit=100000)
+                return response(counts)
 
     except Exception as err:
         msg = f"api failed: {err}"
