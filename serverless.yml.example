@@ -10,6 +10,7 @@ provider:
   environment:
     CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
     CIRRUS_PUBLIC_CATALOG: false
+    #CIRRUS_API: https:
     CIRRUS_STAC_VERSION: 1.0.0-beta.2
     CIRRUS_LOG_LEVEL: DEBUG
     CIRRUS_BUCKET: !Ref ServerlessDeploymentBucket
