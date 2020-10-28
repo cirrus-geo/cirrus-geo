@@ -15,7 +15,7 @@ from traceback import format_exc
 
 def handler(payload, context={}):
     catalog = Catalog.from_payload(payload)
-    logger = get_task_logger(f"{__name__}.convert-to-cog", catalog=catalog)
+    logger = get_task_logger(f"{__name__}.copy-assets", catalog=catalog)
 
     # TODO - make this more general for more items/collections
     item = catalog['features'][0] #, collection=catalog['collections'][0])

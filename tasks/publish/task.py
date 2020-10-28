@@ -20,7 +20,7 @@ statedb = StateDB()
 
 def handler(payload, context):
     catalog = Catalog.from_payload(payload)
-    logger = get_task_logger(f"{__name__}.convert-to-cog", catalog=catalog)
+    logger = get_task_logger(f"{__name__}.publish", catalog=catalog)
 
     config = catalog['process']['tasks'].get('publish', {})
     public = config.get('public', False)

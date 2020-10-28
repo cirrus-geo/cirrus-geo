@@ -10,7 +10,7 @@ CATALOG_BUCKET = getenv('CIRRUS_CATALOG_BUCKET')
 
 def handler(payload, context):
     catalog = Catalog.from_payload(payload)
-    logger = get_task_logger(f"{__name__}.convert-to-cog", catalog=catalog)
+    logger = get_task_logger(f"{__name__}.pre-batch", catalog=catalog)
 
     url = f"s3://{CATALOG_BUCKET}/batch/{catalog['id']}/{uuid.uuid1()}.json"
 
