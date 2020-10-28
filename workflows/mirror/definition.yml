@@ -19,7 +19,7 @@ definition:
         Fn::GetAtt: [pre-batch, Arn]
       Next: copy-assets-batch
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -53,7 +53,7 @@ definition:
         Fn::GetAtt: [post-batch, Arn]
       Next: publish
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -67,7 +67,7 @@ definition:
         Fn::GetAtt: [copy-assets, Arn]
       Next: publish
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -83,7 +83,7 @@ definition:
         Fn::GetAtt: [publish, Arn]
       End: True
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -97,7 +97,7 @@ definition:
       Resource:
         Fn::GetAtt: [workflow-failed, Arn]
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
