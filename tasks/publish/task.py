@@ -11,6 +11,7 @@ from os import getenv
 
 # envvars
 DATA_BUCKET = getenv('CIRRUS_DATA_BUCKET')
+API_URL = getenv('CIRRUS_API_URL', None)
 # DEPRECATED - additional topics
 PUBLISH_TOPICS = getenv('CIRRUS_PUBLISH_SNS', None)
 
@@ -32,6 +33,17 @@ def handler(payload, context):
 
     try:
         logger.debug("Publishing items to s3 and SNS")
+
+        if API_URL is not None:
+            link = {
+                'title': catalog['id'],
+                'rel': 'via-cirrus',
+                'href': f"{API_URL}/catid/{catalog['id']}"
+            }
+            logger.debug(json.dumps(link))
+            # add cirrus-source relation
+            for item in catalog['features']:
+                item['links'].append(link)
 
         # publish to s3
         s3urls = catalog.publish_to_s3(DATA_BUCKET, public=public)
