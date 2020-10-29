@@ -45,3 +45,8 @@ iamRoleStatements:
     Resource:
       - arn:aws:batch:#{AWS::Region}:#{AWS::AccountId}:job-definition/cirrus*
       - arn:aws:batch:#{AWS::Region}:#{AWS::AccountId}:job-queue/cirrus*
+  - Effect: "Allow"
+    Action:
+      - logs:GetLogEvents
+    Resource:
+      - arn:aws:logs:#{AWS::Region}:#{AWS::AccountId}:log-group:/aws/batch/*

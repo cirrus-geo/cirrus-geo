@@ -19,14 +19,6 @@ from dateutil.parser import parse
 from satsearch import Search, config
 
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
-
-# add logs for sat-search
-logging.getLogger('satsearch').setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'INFO'))
-logger.addHandler(logging.StreamHandler())
-
 # envvars
 SNS_TOPIC = os.getenv('CIRRUS_QUEUE_TOPIC_ARN')
 CATALOG_BUCKET = os.getenv('CIRRUS_CATALOG_BUCKET')
@@ -36,6 +28,10 @@ MAX_ITEMS_REQUEST = 5000
 # AWS clients
 BATCH_CLIENT = boto3.client('batch')
 SNS_CLIENT = boto3.client('sns')
+
+# logging
+logger = logging.getLogger(f"{__name__}.stac-api")
+
 
 # Process configuration
 '''
@@ -85,7 +81,7 @@ def split_request(params, nbatches):
         yield request
     
 
-def run(params, url, sleep=None):
+def run(params, url, sleep=None, process=None):
     search = Search(api_url=url, **params)
     logger.debug(f"Searching {url}")    
     found = search.found()
@@ -95,7 +91,13 @@ def run(params, url, sleep=None):
         logger.info(f"Making single request for {found} items")
         items = search.items()
         for i, item in enumerate(items):
-            resp = SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(item._data))
+            payload = {
+                'type': 'FeatureCollection',
+                'features': [item._data]
+            }
+            if process:
+                payload['process'] = process
+            resp = SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(payload))
             if (i % 500) == 0:
                 logger.debug(f"Added {i+1} items to Cirrus")
             #if resp['StatusCode'] != 200:
@@ -108,10 +110,10 @@ def run(params, url, sleep=None):
         nbatches = 2
         logger.info(f"Too many Items for single request, splitting into {nbatches} batches by date range")
         for params in split_request(params, nbatches):
-            run(params, url)
+            run(params, url, process=process)
 
 
-def lambda_handler(event, context={}):
+def handler(event, context={}):
     logger.debug('Event: %s' % json.dumps(event))
 
     # if this is batch, output to stdout
@@ -129,6 +131,7 @@ def lambda_handler(event, context={}):
     params = event.get('search', {})
     max_items_batch = event.get('max_items_batch', 15000)
     sleep = event.get('sleep', None)
+    process = event.get('process', None)
 
     # search API
     search = Search(api_url=url, **params)
@@ -138,7 +141,7 @@ def lambda_handler(event, context={}):
     logger.debug(f"Total items found: {found}")
 
     if found <= MAX_ITEMS_REQUEST:
-        return run(params, url, sleep=sleep)
+        return run(params, url, sleep=sleep, process=process)
     elif hasattr(context, "invoked_function_arn"):
         nbatches = int(found / max_items_batch) + 1
         if nbatches == 1:
@@ -150,7 +153,7 @@ def lambda_handler(event, context={}):
         logger.info(f"Submitted {nbatches} batches")
         return
     else:
-        run(params, url, sleep=sleep)
+        run(params, url, sleep=sleep, process=process)
 
 
 def parse_args(args):
@@ -174,7 +177,7 @@ def cli():
     with open(args['payload']) as f:
         payload = json.loads(f.read())
     #import pdb; pdb.set_trace()
-    lambda_handler(payload)
+    handler(payload)
 
 
 if __name__ == "__main__":

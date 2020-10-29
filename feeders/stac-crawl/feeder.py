@@ -18,11 +18,6 @@ from cirruslib.utils import submit_batch_job
 from dateutil.parser import parse
 from pystac import Catalog
 
-
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
-
 # envvars
 SNS_TOPIC = os.getenv('CIRRUS_QUEUE_TOPIC_ARN')
 CATALOG_BUCKET = os.getenv('CIRRUS_CATALOG_BUCKET')
@@ -31,9 +26,12 @@ CIRRUS_STACK = os.getenv('CIRRUS_STACK')
 # AWS clients
 BATCH_CLIENT = boto3.client('batch')
 SNS_CLIENT = boto3.client('sns')
-    
 
-def lambda_handler(event, context={}):
+# logging
+logger = logging.getLogger(f"{__name__}.stac-crawl")
+
+
+def handler(event, context={}):
     # if this is batch, output to stdout
     if not hasattr(context, "invoked_function_arn"):
         logger.addHandler(logging.StreamHandler())

@@ -5,26 +5,17 @@ import logging
 
 from boto3 import Session
 from boto3utils import s3
-from cirruslib import Catalogs
+from cirruslib import Catalog, get_task_logger
 from cirruslib.transfer import download_item_assets, upload_item_assets
 from os import getenv, environ, path as op
 from shutil import rmtree
 from tempfile import mkdtemp
 from traceback import format_exc
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
-#logger.addHandler(logging.StreamHandler())
 
-
-def lambda_handler(payload, context={}):
-    # if this is batch, output to stdout
-    if not hasattr(context, "invoked_function_arn"):
-        logger.addHandler(logging.StreamHandler())
-    logger.debug('Payload: %s' % json.dumps(payload))
-
-    catalog = Catalogs.from_payload(payload)[0]
+def handler(payload, context={}):
+    catalog = Catalog.from_payload(payload)
+    logger = get_task_logger(f"{__name__}.copy-assets", catalog=catalog)
 
     # TODO - make this more general for more items/collections
     item = catalog['features'][0] #, collection=catalog['collections'][0])
@@ -59,8 +50,7 @@ def lambda_handler(payload, context={}):
         catalog['features'][0] = item
     except Exception as err:
         msg = f"copy-assets: failed processing {catalog['id']} ({err})"
-        logger.error(msg)
-        logger.error(format_exc())
+        logger.error(msg, exc_info=True)
         raise Exception(msg) from err
     finally:
         # remove work directory....very important for Lambdas!

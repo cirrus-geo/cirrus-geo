@@ -19,7 +19,7 @@ definition:
         Fn::GetAtt: [pre-batch, Arn]
       Next: copy-assets-batch
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -39,7 +39,7 @@ definition:
           url.$: "$.url"
       Next: copy-assets-post-batch
       Retry:
-        - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
+        - ErrorEquals: ["Batch.AWSBatchException"]
           IntervalSeconds: 10.0
           BackoffRate: 2.0
           MaxAttempts: 3
@@ -53,7 +53,7 @@ definition:
         Fn::GetAtt: [post-batch, Arn]
       Next: convert-to-cog-batch-or-lambda
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -63,7 +63,7 @@ definition:
         Fn::GetAtt: [copy-assets, Arn]
       Next: convert-to-cog-batch-or-lambda
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -88,7 +88,7 @@ definition:
         Fn::GetAtt: [pre-batch, Arn]
       Next: convert-to-cog-batch
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -108,10 +108,14 @@ definition:
           url.$: "$.url"
       Next: convert-to-cog-post-batch
       Retry:
-        - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
-          IntervalSeconds: 60.0
+        - ErrorEquals: ["Batch.AWSBatchException"]
+          IntervalSeconds: 600
+          BackoffRate: 2.0
+          MaxAttempts: 4
+        - ErrorEquals: ["States.TaskFailed"]
+          IntervalSeconds: 60
           BackoffRate: 3.0
-          MaxAttempts: 5
+          MaxAttempts: 2
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
@@ -122,7 +126,7 @@ definition:
         Fn::GetAtt: [post-batch, Arn]
       Next: publish
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -132,7 +136,7 @@ definition:
         Fn::GetAtt: [convert-to-cog, Arn]
       Next: publish
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -146,7 +150,7 @@ definition:
         Fn::GetAtt: [publish, Arn]
       End: True
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -159,7 +163,7 @@ definition:
       Resource:
         Fn::GetAtt: [workflow-failed, Arn]
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5

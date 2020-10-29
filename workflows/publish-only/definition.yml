@@ -9,7 +9,7 @@ definition:
         Fn::GetAtt: [publish, Arn]
       End: True
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5
@@ -22,7 +22,7 @@ definition:
       Resource:
         Fn::GetAtt: [workflow-failed, Arn]
       Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException"]
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
           IntervalSeconds: 1
           BackoffRate: 2.0
           MaxAttempts: 5

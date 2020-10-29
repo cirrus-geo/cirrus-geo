@@ -1,10 +1,9 @@
 import json
 import rasterio
 
-from cirruslib import Catalogs
+from cirruslib import Catalog, get_task_logger
 from cirruslib.errors import InvalidInput
-from cirruslib.transfer import download_item_assets, upload_item_assets
-from logging import getLogger, StreamHandler
+from cirruslib.transfer import download_item_assets, upload_item_assets, s3_sessions
 from os import getenv, remove, path as op
 from rasterio.errors import CRSError
 from rio_cogeo.cogeo import cog_translate
@@ -13,18 +12,10 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from traceback import format_exc
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
-logger = getLogger(__name__)
-logger.setLevel(getenv('CIRRUS_LOG_LEVEL', 'INFO'))
 
-
-def lambda_handler(payload, context={}):
-    # if this is batch, output to stdout
-    if not hasattr(context, "invoked_function_arn"):
-        logger.addHandler(StreamHandler())
-    logger.debug('Payload: %s' % json.dumps(payload))
-
-    catalog = Catalogs.from_payload(payload)[0]
+def handler(payload, context={}):
+    catalog = Catalog.from_payload(payload)
+    logger = get_task_logger(f"{__name__}.convert-to-cog", catalog=catalog)
 
     # TODO - make this more general for more items/collections
     item = catalog['features'][0] #, collection=catalog['collections'][0])
@@ -41,9 +32,9 @@ def lambda_handler(payload, context={}):
         asset_keys = [a for a in assets if a in item['assets'].keys()]
         
         for asset in asset_keys:
+            logger.info(f"Converting {asset} to COG")
             # download asset
             item = download_item_assets(item, path=tmpdir, assets=[asset])
-            logger.debug(f"Downloaded item: {json.dumps(item)}")
 
             # cogify
             fn = item['assets'][asset]['href']
@@ -75,20 +66,21 @@ def lambda_handler(payload, context={}):
 
         # drop any specified assets
         for asset in [a for a in config.get('drop_assets', []) if a in item['assets'].keys()]:
-            logger.info(f"Dropping {asset}")
             item['assets'].pop(asset)
 
         catalog['features'][0] = item
     except CRSError as err:
-        msg = f"convert-to-cog: invalid CRS for {catalog['id']} ({err})"
-        logger.error(msg)
-        logger.error(format_exc())
+        msg = f"convert-to-cog: invalid CRS ({err})"
+        logger.error(msg, exc_info=True)
+        raise InvalidInput(msg)
+    except s3_sessions[list(s3_sessions)[0]].s3.exceptions.NoSuchKey as err:
+        msg = f"convert-to-cog: failed fetching {asset} asset ({err})"
+        logger.error(msg, exc_info=True)
         raise InvalidInput(msg)
     except Exception as err:
-        msg = f"convert-to-cog: failed creating COGs for {catalog['id']} ({err})"
-        logger.error(msg)
-        logger.error(format_exc())
-        raise Exception(msg) from err
+        msg = f"convert-to-cog: failed creating COGs ({err})"
+        logger.error(msg, exc_info=True)
+        raise Exception(msg)
     finally:
         # remove work directory....very important for Lambdas!
         logger.debug('Removing work directory %s' % tmpdir)

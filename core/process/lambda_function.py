@@ -3,6 +3,7 @@ import logging
 import os
 
 from cirruslib import Catalog, Catalogs
+from cirruslib.utils import dict_merge
 
 # configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
 logger = logging.getLogger(__name__)
@@ -14,45 +15,39 @@ with open(os.path.join(os.path.dirname(__file__), 'processes.json')) as f:
 
 
 def lambda_handler(payload, context):
-    logger.debug('Payload: %s' % json.dumps(payload))
+    logger.debug(json.dumps(payload))
 
-    records = []
+    # Read SQS payload
+    if 'Records' not in payload:
+        raise ValueError("Input not from SQS")
     
-    # TODO - should be SQS only
-    if 'Records' in payload:
-        for record in [json.loads(r['body']) for r in payload['Records']]:
-            if 'Message' in record:
-                # SNS
-                records.append(json.loads(record['Message']))
-            else:
-                # SQS
-                records.append(record)
-    else:
-        records = [payload]
-
-    # Make sure FeatureCollection, and Process block included
-    cats = []
-    for record in records:
-        logger.debug(f"Record: {json.dumps(record)}")
-        # If Item, create Catalog using default process for that collection
-        if record['type'] == 'Feature':
-            if record['collection'] not in PROCESSES.keys():
-                raise Exception(f"Default process not provided for collection {record['collection']}")
+    catalogs = []
+    for record in [json.loads(r['body']) for r in payload['Records']]:
+        cat = json.loads(record['Message'])
+        logger.debug('cat: %s' % json.dumps(cat))
+        # expand catids to full catalogs
+        if 'catids' in cat:
+            _cats = Catalogs.from_catids(cat['catids'])
+            if 'process_update' in cat:
+                logger.debug(f"Process update: {json.dumps(cat['process_update'])}")
+                for c in _cats:
+                    c['process'] = dict_merge(c['process'], cat['process_update'])
+            catalogs += _cats
+        elif cat.get('type', '') == 'Feature':
+        # If Item, create Catalog and use default process for that collection
+            if cat['collection'] not in PROCESSES.keys():
+                raise ValueError(f"Default process not provided for collection {cat['collection']}")
             cat_json = {
                 'type': 'FeatureCollection',
-                'features': [record],
-                'process': PROCESSES[record['collection']]
+                'features': [cat],
+                'process': PROCESSES[cat['collection']]
             }
+            catalogs.append(Catalog(cat_json, update=True))
         else:
-            cat_json = record
-            if 'process' not in cat_json:
-                cat_json['process'] = PROCESSES[cat_json['collection']]
-        # create Catalog instance, update/add fields as needed (e.g., id)
-        cat = Catalog(cat_json, update=True)
-        cats.append(cat)
+            catalogs.append(Catalog(cat, update=True))
 
-    catalogs = Catalogs(cats)
+    if len(catalogs) > 0:
+        cats = Catalogs(catalogs)
+        cats.process()
 
-    catids = catalogs.process()
-
-    return catids
+    return len(catalogs)
