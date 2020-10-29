@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `process` Lambda updated to accept `catids` as an argument which it will replace with that Catalog's original input file
 - `process_update` parameter added to `rerun` to allow for partial updated of process definition in reruns
 - Additional retry logic added in workflows, Unknown Lambda errors retried
+- /catid/<catalog_id> endpoint added to Cirrus API
+- Link relation type `via-cirrus` added to output items where title is the Catalog ID and the href links to that catalog ID in the Cirrus API
 
 ### Changed
 - Update `cirrus-lib` to 0.3.3
