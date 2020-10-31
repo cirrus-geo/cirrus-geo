@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+- feeder.test Lambda moved to core/publish-test Lambda and defaults to being subscribed to the Cirrus Publish SNS. The Lambda only logs the payload
+
 ## [v0.3.0] - 2020-10-26
 
 ### Added
