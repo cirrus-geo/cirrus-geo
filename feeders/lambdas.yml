@@ -11,13 +11,6 @@ feed-stac-api:
     memorySize: 128
     timeout: 900
     module: feeders/stac-api
-    
-feed-test:
-    description: Test Feeder data
-    handler: feeder.handler
-    memorySize: 128
-    timeout: 60
-    module: feeders/test
 
 feed-s3-inventory:
     description: Feed Sentinel AWS inventory data to Cirrus for cataloging

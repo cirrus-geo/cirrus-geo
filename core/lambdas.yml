@@ -24,3 +24,10 @@ api:
   events:
     - http: GET /
     - http: GET {proxy+}
+
+publish-test:
+  description: Test Feeder data
+  handler: feeder.handler
+  memorySize: 128
+  timeout: 60
+  module: feeders/publish-test
