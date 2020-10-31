@@ -31,3 +31,5 @@ publish-test:
   memorySize: 128
   timeout: 60
   module: feeders/publish-test
+  events:
+    - sns: !Ref PublishTopic
