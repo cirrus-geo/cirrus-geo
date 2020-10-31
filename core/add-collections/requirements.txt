@@ -1,2 +1,2 @@
-cirrus-lib~=0.3
+git+git://github.com/cirrus-geo/cirrus-lib.git@develop
 pystac~=0.5

@@ -1,2 +1,2 @@
-cirrus-lib~=0.3
+git+git://github.com/cirrus-geo/cirrus-lib.git@develop
 git+git://github.com/stac-utils/pystac@develop
