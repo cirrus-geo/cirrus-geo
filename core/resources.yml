@@ -90,9 +90,9 @@ Resources:
           AttributeType: S
         - AttributeName: id
           AttributeType: S
-        - AttributeName: output_collections
-          AttributeType: S
         - AttributeName: current_state
+          AttributeType: S
+        - AttributeName: updated_at
           AttributeType: S
       KeySchema:
         - AttributeName: input_collections
@@ -100,7 +100,7 @@ Resources:
         - AttributeName: id
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        - IndexName: "input_state"
+        - IndexName: "input"
           KeySchema:
             - AttributeName: input_collections
               KeyType: HASH
@@ -108,11 +108,11 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
-        - IndexName: "output_state"
+        - IndexName: "datetime"
           KeySchema:
-            - AttributeName: output_collections
+            - AttributeName: input_collections
               KeyType: HASH
-            - AttributeName: current_state
+            - AttributeName: updated_at
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
