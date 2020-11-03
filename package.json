@@ -17,6 +17,6 @@
     "serverless": "^1.67.3",
     "serverless-pseudo-parameters": "^2.5.0",
     "serverless-python-requirements": "^5.1.0",
-    "serverless-step-functions": "^2.11.0"
+    "serverless-step-functions": "^2.27.1"
   }
 }
