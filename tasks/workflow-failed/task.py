@@ -1,21 +1,23 @@
+import boto3
 import json
-import logging
 from os import getenv
 
-import boto3
-from boto3utils import s3
 from cirruslib import Catalog, StateDB, get_task_logger
 
-statedb = StateDB()
-snsclient = boto3.client('sns')
-logclient = boto3.client('logs')
-
+# envvars
 FAILED_TOPIC_ARN = getenv('CIRRUS_FAILED_TOPIC_ARN', None)
+
+# boto3 clients
+SNS_CLIENT = boto3.client('sns')
+LOG_CLIENT = boto3.client('logs')
+
+# Cirrus state database
+statedb = StateDB()
 
 
 def get_error_from_batch(logname):
     try:
-        logs = logclient.get_log_events(logGroupName='/aws/batch/job', logStreamName=logname)
+        logs = LOG_CLIENT.get_log_events(logGroupName='/aws/batch/job', logStreamName=logname)
         msg = logs['events'][-1]['message'].lstrip('cirruslib.errors.')
         parts = msg.split(':', maxsplit=1)
         if len(parts) > 1:
@@ -86,7 +88,7 @@ def handler(payload, context):
                 }
             }
             logger.debug(f"Publishing item to {FAILED_TOPIC_ARN}")
-            snsclient.publish(TopicArn=FAILED_TOPIC_ARN, Message=json.dumps(item), MessageAttributes=attrs)
+            SNS_CLIENT.publish(TopicArn=FAILED_TOPIC_ARN, Message=json.dumps(item), MessageAttributes=attrs)
         except Exception as err:
             msg = f"Failed publishing to {FAILED_TOPIC_ARN}: {err}"
             logger.error(msg, exc_info=True)

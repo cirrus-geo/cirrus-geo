@@ -1,13 +1,7 @@
-import boto3
 import json
-import os.path as op
-import re
-import requests
+from os import getenv
 
 from cirruslib import Catalog, StateDB, get_task_logger
-from cirruslib.transfer import get_s3_session
-from logging import getLogger
-from os import getenv
 
 # envvars
 DATA_BUCKET = getenv('CIRRUS_DATA_BUCKET')
@@ -15,7 +9,7 @@ API_URL = getenv('CIRRUS_API_URL', None)
 # DEPRECATED - additional topics
 PUBLISH_TOPICS = getenv('CIRRUS_PUBLISH_SNS', None)
 
-# clients
+# Cirrus state db
 statedb = StateDB()
 
 
@@ -65,7 +59,7 @@ def handler(payload, context):
 
     try:
         # update processing in table
-        statedb.set_completed(catalog['id'], s3urls)
+        statedb.set_completed(catalog['id'], outputs=s3urls)
     except Exception as err:
         msg = f"publish: failed setting as complete ({err})"
         logger.error(msg, exc_info=True)

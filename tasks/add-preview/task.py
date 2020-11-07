@@ -1,25 +1,16 @@
-import boto3
-import json
-import logging
 import numpy
-import requests
+import os
 import shutil
 import tempfile
 
-from boto3utils import s3
-from os import getenv, path as op
 import gdal
+import rasterio
+from boto3utils import s3
 from cirruslib import Catalog, get_task_logger
 from cirruslib.transfer import download_item_assets, upload_item_assets
-
-import os
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
-import rasterio
 from rasterio.warp import calculate_default_transform, reproject as _reproject, Resampling
-from rasterio.io import MemoryFile
-from urllib.parse import urlparse
-from traceback import format_exc
 
 
 def handler(payload, context={}):
@@ -125,7 +116,7 @@ def calculate_ccc_values(filename, logger, lo=2.0, hi=96.0, bins=1000):
 
 def create_preview(filename, logger, fnout=None, preproj=False, ccc=[2.0, 98.0], exp=None, nodata=0, **kwargs):
     if fnout is None:
-        fnout = op.splitext(filename)[0] + '_preview.tif'
+        fnout = os.path.splitext(filename)[0] + '_preview.tif'
     fntmp = fnout.replace('.tif', '_tmp.tif')
 
     _filename = filename
@@ -155,9 +146,9 @@ def create_preview(filename, logger, fnout=None, preproj=False, ccc=[2.0, 98.0],
         logger.error(f"Unable to create preview {filename}: {err}")
         raise(err)
     finally:
-        if op.exists(fntmp):
+        if os.path.exists(fntmp):
             os.remove(fntmp)
-        if preproj and op.exists(_filename):
+        if preproj and os.path.exists(_filename):
             os.remove(_filename)
 
     return {
