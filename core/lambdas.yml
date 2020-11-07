@@ -37,9 +37,9 @@ api:
 
 publish-test:
   description: Test Feeder data
-  handler: feeder.handler
+  handler: lambda_function.handler
   memorySize: 128
   timeout: 60
-  module: feeders/publish-test
+  module: core/publish-test
   events:
     - sns: !Ref PublishTopic

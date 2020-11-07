@@ -7,7 +7,6 @@ from urllib.parse import urljoin, urlparse
 from cirruslib import StateDB, stac
 
 logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
 
 # Cirrus state database
 statedb = StateDB()
