@@ -36,8 +36,8 @@ def handler(payload, context={}):
     logger.debug('Payload: %s' % json.dumps(payload))
 
     collections = payload.get('collections')
-    index = payload.get('index', 'input_state')
-    state = payload.get('state', 'FAILED')
+    workflow = payload.get('workflow')
+    state = payload.get('state', None)
     since = payload.get('since', None)
     limit = payload.get('limit', None)
     batch = payload.get('batch', False)
@@ -49,7 +49,7 @@ def handler(payload, context={}):
         submit_batch_job(payload, context.invoked_function_arn, name='rerun')
         return
 
-    items = statedb.get_items(collections, state, since, index, limit=limit)
+    items = statedb.get_items(f"{collections}_{workflow}", state=state, since=since, limit=limit)
 
     nitems = len(items)
     logger.debug(f"Rerunning {nitems} catalogs")
