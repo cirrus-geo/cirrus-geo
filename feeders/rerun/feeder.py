@@ -1,6 +1,8 @@
+import argparse
 import boto3
 import json
 import logging
+import sys
 import uuid
 
 from boto3utils import s3
@@ -14,13 +16,14 @@ from traceback import format_exc
 # envvars
 SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN')
 
-# clients
-statedb = StateDB()
+# boto clients
 SNS_CLIENT = boto3.client('sns')
+
+# Cirrus state DB
+statedb = StateDB()
 
 # logging
 logger = logging.getLogger(f"{__name__}.rerun")
-
 
 
 def submit(ids, process_update=None):
@@ -68,3 +71,16 @@ def handler(payload, context={}):
     return {
         "found": nitems
     }
+
+
+if __name__ == "__main__":
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+    # argparse
+    parser = argparse.ArgumentParser(description='feeder')
+    parser.add_argument('payload', help='Payload file')
+    args = parser.parse_args(sys.argv[1:])
+
+    with open(args.payload) as f:
+        payload = json.loads(f.read())
+    handler(payload)

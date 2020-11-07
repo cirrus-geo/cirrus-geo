@@ -9,43 +9,23 @@ import requests
 import sys
 import time
 import uuid
-
-import os.path as op
+from copy import deepcopy
+from dateutil.parser import parse
 
 from boto3utils import s3
-from copy import deepcopy
 from cirruslib.utils import submit_batch_job
-from dateutil.parser import parse
-from satsearch import Search, config
+from satsearch import Search
 
 
 # envvars
 SNS_TOPIC = os.getenv('CIRRUS_QUEUE_TOPIC_ARN')
-CATALOG_BUCKET = os.getenv('CIRRUS_CATALOG_BUCKET')
-CIRRUS_STACK = os.getenv('CIRRUS_STACK')
 MAX_ITEMS_REQUEST = 5000
 
-# AWS clients
-BATCH_CLIENT = boto3.client('batch')
+# boto clients
 SNS_CLIENT = boto3.client('sns')
 
 # logging
 logger = logging.getLogger(f"{__name__}.stac-api")
-
-
-# Process configuration
-'''
-{
-    "url": "https://stac-api-endpoint",
-    "search": {
-        <stac-api-search-params>
-    },
-    "sleep": 10,
-    "process": {
-        <process-block>
-    }
-}
-'''
 
 
 def split_request(params, nbatches):
@@ -73,7 +53,6 @@ def split_request(params, nbatches):
         stop_date
     ])
 
-    requests = []
     for r in ranges:
         request = deepcopy(params)
         request["datetime"] = f"{r[0].strftime('%Y-%m-%dT%H:%M:%S')}/{r[1].strftime('%Y-%m-%dT%H:%M:%S')}"
@@ -116,17 +95,6 @@ def run(params, url, sleep=None, process=None):
 def handler(event, context={}):
     logger.debug('Event: %s' % json.dumps(event))
 
-    # if this is batch, output to stdout
-    if not hasattr(context, "invoked_function_arn"):
-        logger.addHandler(logging.StreamHandler())
-
-    # parse input
-    #s3urls = event['s3urls']
-    #suffix = event.get('suffix', 'json')
-    #credentials = event.get('credentials', {})
-    #requester_pays = credentials.pop('requester_pays', False)
-
-    ######
     url = event.get('url')
     params = event.get('search', {})
     max_items_batch = event.get('max_items_batch', 15000)
@@ -156,29 +124,14 @@ def handler(event, context={}):
         run(params, url, sleep=sleep, process=process)
 
 
-def parse_args(args):
-    desc = 'feeder'
-    dhf = argparse.ArgumentDefaultsHelpFormatter
-    parser = argparse.ArgumentParser(description=desc, formatter_class=dhf)
-    parser.add_argument('payload', help='Payload file')
-    #parser.add_argument('--source_profile', help='Name of AWS profile to use to get data', default=None)
-    #parser.add_argument('--workdir', help='Work directory', default='')
-    #parser.add_argument('--queue', help='Name of Cirrus Queue Lambda', default=None)
-    #parser.add_argument('--output_url', help='S3 URL prefix for uploading data', default=None)
-    
-    #parser.add_argument('--cirrus_profile', help='Name of AWS profile to use for queuing to Cirrus', default=None)
-
-    return vars(parser.parse_args(args))
-
-
-def cli():
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    args = parse_args(sys.argv[1:])
-    with open(args['payload']) as f:
-        payload = json.loads(f.read())
-    #import pdb; pdb.set_trace()
-    handler(payload)
-
-
 if __name__ == "__main__":
-    cli()
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+    # argparse
+    parser = argparse.ArgumentParser(description='feeder')
+    parser.add_argument('payload', help='Payload file')
+    args = parser.parse_args(sys.argv[1:])
+
+    with open(args.payload) as f:
+        payload = json.loads(f.read())
+    handler(payload)
