@@ -52,6 +52,28 @@ def get_root(root_url):
 
     return cat
 
+'''
+def dbitem_to_item_legacy(dbitem: Dict, region: str=os.getenv('AWS_REGION', 'us-west-2')) -> Dict:
+    state, updated = dbitem['state_updated'].split('_')
+    collections, workflow = dbitem['collections_workflow'].rsplit('_', maxsplit=1)
+    item = {
+        "catid": cls.key_to_catid(dbitem),
+        "workflow": workflow,
+        "input_collections": collections,
+        "state": state,
+        "created_at": dbitem['created'],
+        "updated_at": updated,
+        "input_catalog": cls.get_input_catalog_url(dbitem)
+    }
+    if 'execution' in dbitem:
+        exe_url = f"https://{region}.console.aws.amazon.com/states/home?region={region}#/executions/details/{dbitem['execution'][-1]}"
+        item['execution'] = exe_url
+    if 'error_message' in dbitem:
+        item['error'] = dbitem['error']
+    if 'outputs' in dbitem:
+        item['items'] = dbitem['outputs']
+    return item
+'''
 
 def lambda_handler(event, context):
     logger.debug('Event: %s' % json.dumps(event))
