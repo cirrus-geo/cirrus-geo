@@ -25,16 +25,6 @@ api:
     - http: GET /
     - http: GET {proxy+}
 
-api:
-  description: Cirrus State API
-  handler: lambda_function.lambda_handler
-  memorySize: 128
-  timeout: 10
-  module: core/state-api
-  events:
-    - http: GET /
-    - http: GET {proxy+}
-
 publish-test:
   description: Test Feeder data
   handler: lambda_function.handler
