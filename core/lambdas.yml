@@ -32,4 +32,4 @@ publish-test:
   timeout: 60
   module: core/publish-test
   events:
-    - sns: !Ref PublishTopic
+    - sns: ${self:provider.environment.CIRRUS_PUBLISH_TOPIC_ARN}
