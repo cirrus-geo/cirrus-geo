@@ -88,8 +88,6 @@ Resources:
       AttributeDefinitions:
         - AttributeName: collections_workflow
           AttributeType: S
-        - AttributeName: id
-          AttributeType: S
         - AttributeName: itemids
           AttributeType: S
         - AttributeName: state_updated
