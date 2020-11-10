@@ -93,11 +93,11 @@ def lambda_handler(event, context):
             if pparams[-1] == 'items' and len(pparams) > 2:
                 colid = '/'.join(pparams[1:-1])
                 logger.debug(f"Getting items for {colid}, state={state}, since={since}")
-                resp = statedb.get_items_page(colid, state=state, since=since,
+                items = statedb.get_items_page(colid, state=state, since=since,
                                               limit=limit, nextkey=nextkey)
                 if legacy:
                     legacy_items = []
-                    for item in resp:
+                    for item in items:
                         _item = {
                             'catid': item['catid'],
                             'input_collections': item['collections'],
@@ -112,32 +112,12 @@ def lambda_handler(event, context):
                             _item['items'] = item['outputs']
                         if 'last_error' in item:
                             _item['error_message'] = item['last_error']
+                        legacy_items.append(_item)
+                    items = legacy_items
 
-'''
-    state, updated = dbitem['state_updated'].split('_')
-    collections, workflow = dbitem['collections_workflow'].rsplit('_', maxsplit=1)
-    item = {
-        "catid": cls.key_to_catid(dbitem),
-        "workflow": workflow,
-        "input_collections": collections,
-        "state": state,
-        "created_at": dbitem['created'],
-        "updated_at": updated,
-        "input_catalog": cls.get_input_catalog_url(dbitem)
-    }
-    if 'execution' in dbitem:
-        exe_url = f"https://{region}.console.aws.amazon.com/states/home?region={region}#/executions/details/{dbitem['execution'][-1]}"
-        item['execution'] = exe_url
-    if 'error_message' in dbitem:
-        item['error'] = dbitem['error']
-    if 'outputs' in dbitem:
-        item['items'] = dbitem['outputs']
-'''
-
-                return response(resp)
-        
-            # get summary of collection
-            if len(pparams) > 1:
+                return response(items)
+            elif len(pparams) > 1:
+                # get summary of collection
                 collection = '/'.join(pparams[1:])
                 logger.debug(f"Getting summary for {collection}")
                 counts = statedb.get_counts(collection, state=state, since=since, limit=count_limit)
