@@ -22,6 +22,7 @@ def handler(payload, context={}):
     outopts = catalog['process'].get('output_options', {})
     assets = config.pop('assets', None)
     thumb = config.pop('thumbnail', False)
+    config.pop('batch')
 
     if assets is None:
         msg = f"add-preview: no asset specified for preview"
