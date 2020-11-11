@@ -1,9 +1,10 @@
-import boto3
 import json
 import logging
 import os
+from copy import deepcopy
 from urllib.parse import urljoin, urlparse
 
+import boto3
 from cirruslib import StateDB, stac, STATES
 
 logger = logging.getLogger(__name__)
@@ -13,9 +14,10 @@ statedb = StateDB()
 
 
 def response(body, status_code=200, headers={}):
+    _headers = deepcopy(headers)
     return {
         "statusCode": status_code,
-        "headers": headers,
+        "headers": _headers,
         "body": json.dumps(body)
     }
 
