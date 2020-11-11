@@ -78,9 +78,9 @@ def lambda_handler(event, context):
 
     # get path parameters
     stage = event.get('requestContext', {}).get('stage', '')
-    path = event.get('path', '').split('/')
-    pparams = [p for p in path if p != '' and p != stage]
-    logger.info(f"Path Parameters: {pparams}")
+
+    catid = event.get('path', '').rstrip('/').rstrip(stage)
+    logger.info(f"Path parameters: {catid}")
 
     # get query parameters
     qparams = event['queryStringParameters'] if event.get('queryStringParameters') else {}
@@ -92,49 +92,45 @@ def lambda_handler(event, context):
     count_limit = int(qparams.get('count_limit', 100000))
     legacy = qparams.get('legacy', False)
 
-    try:
-        # root endpoint
-        if len(pparams) == 0:
-            return response(get_root(root_url))
+    # root endpoint
+    if catid == '':
+        return response(get_root(root_url))
 
-        # determine index (input or output collections)
-        if pparams[0] == 'catid':
-            resp = statedb.dbitem_to_item(statedb.get_dbitem('/'.join(pparams[1:])))
-            return response(resp)
-        elif pparams[0] == 'collections':
-            # get items
-            if pparams[-1] == 'items' and len(pparams) > 2:
-                colid = '/'.join(pparams[1:-1])
-                logger.debug(f"Getting items for {colid}, state={state}, since={since}")
-                items = statedb.get_items_page(colid, state=state, since=since,
-                                              limit=limit, nextkey=nextkey)
-                if legacy:
-                    legacy_items = []
-                    for item in items:
-                        _item = {
-                            'catid': item['catid'],
-                            'input_collections': item['collections'],
-                            'state': item['state'],
-                            'created_at': item['created'],
-                            'updated_at': item['updated'],
-                            'input_catalog': item['catalog']
-                        }
-                        if 'executions' in item:
-                            _item['execution'] = item['executions'][-1]
-                        if 'outputs' in item:
-                            _item['items'] = item['outputs']
-                        if 'last_error' in item:
-                            _item['error_message'] = item['last_error']
-                        legacy_items.append(_item)
-                    items = legacy_items
+    if '/workflow-' not in catid:
+        return response(f"{path} not found", status_code=400)
+        
+    key = statedb.catid_to_key(catid)
 
-                return response(items)
-            elif len(pparams) > 1:
-                # get summary of collection
-                collection = '/'.join(pparams[1:])
-                return response(summary(collection, since=since, limit=limit))
+    if key['itemids'] == '':
+        # get summary of collection
+        return response(summary(catid, since=since, limit=limit))
+    elif key['itemids'] == 'items':
+        # get items
+        logger.debug(f"Getting items for {key['collections_workflow']}, state={state}, since={since}")
+        items = statedb.get_items_page(key['collections_workflow'], state=state, since=since,
+                                        limit=limit, nextkey=nextkey)
+        if legacy:
+            legacy_items = []
+            for item in items:
+                _item = {
+                    'catid': item['catid'],
+                    'input_collections': item['collections'],
+                    'state': item['state'],
+                    'created_at': item['created'],
+                    'updated_at': item['updated'],
+                    'input_catalog': item['catalog']
+                }
+                if 'executions' in item:
+                    _item['execution'] = item['executions'][-1]
+                if 'outputs' in item:
+                    _item['items'] = item['outputs']
+                if 'last_error' in item:
+                    _item['error_message'] = item['last_error']
+                legacy_items.append(_item)
+            items = legacy_items
 
-    except Exception as err:
-        msg = f"api failed: {err}"
-        logger.error(msg, exc_info=True)
-        return response(msg, status_code=400)
+        return response(items)
+    else:
+        # get individual item
+        resp = statedb.dbitem_to_item(statedb.get_dbitem('/'.join(catid)))
+        return response(resp)
