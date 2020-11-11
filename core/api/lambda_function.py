@@ -79,7 +79,7 @@ def lambda_handler(event, context):
     # get path parameters
     stage = event.get('requestContext', {}).get('stage', '')
 
-    catid = event.get('path', '').rstrip('/').rstrip(stage).rstrip('/')
+    catid = event.get('path', '').lstrip('/').lstrip(stage).lstrip('/')
     logger.info(f"Path parameters: {catid}")
 
     # get query parameters
@@ -103,7 +103,7 @@ def lambda_handler(event, context):
 
     if key['itemids'] == '':
         # get summary of collection
-        return response(summary(catid, since=since, limit=limit))
+        return response(summary(key['collections_workflow'], since=since, limit=limit))
     elif key['itemids'] == 'items':
         # get items
         logger.debug(f"Getting items for {key['collections_workflow']}, state={state}, since={since}")
