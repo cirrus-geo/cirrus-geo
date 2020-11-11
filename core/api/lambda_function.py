@@ -15,6 +15,11 @@ statedb = StateDB()
 
 def response(body, status_code=200, headers={}):
     _headers = deepcopy(headers)
+    # cors
+    _headers.update({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': True
+    })
     return {
         "statusCode": status_code,
         "headers": _headers,
