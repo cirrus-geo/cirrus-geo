@@ -4,7 +4,7 @@ import logging
 import os
 from urllib.parse import urljoin, urlparse
 
-from cirruslib import StateDB, stac
+from cirruslib import StateDB, stac, STATES
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +31,7 @@ def create_link(url, title, rel, media_type='application/json'):
 
 def get_root(root_url):
     cat = stac.ROOT_CATALOG.to_dict()
-
-    cat['id'] = f"{cat['id']}-state-api"
-    cat['description'] = f"{cat['description']} State API"
+    cat_url = urljoin(stac.ROOT_URL, "catalog.json")
 
     links = []
     for l in cat['links']:
@@ -42,14 +40,29 @@ def get_root(root_url):
             name = parts.path.split('/')[1]
             link = create_link(urljoin(root_url, f"collections/{name}"), name, 'child')
             links.append(link)
-    
-    cat['links'] = links
-    cat['links'].insert(0, create_link(root_url, "home", "self"))
+    links.insert(0, create_link(root_url, "home", "self"))
+    links.append(create_link(cat_url, "STAC", "stac"))
 
-    cat_url = urljoin(stac.ROOT_URL, "catalog.json")
-    cat['links'].append(create_link(cat_url, "STAC", "stac"))
+    root = {
+        "id": f"{cat['id']}-state-api",
+        "description": f"{cat['description']} State API",
+        "links": links
+    }
 
-    return cat
+    return root
+
+
+def summary(collections_workflow, since, limit):
+    parts = collections_workflow.rsplit('_', maxsplit=1)
+    logger.debug(f"Getting summary for {collections_workflow}")
+    counts = {}
+    for s in STATES:
+        counts[s] = statedb.get_counts(collections_workflow, state=s, since=since, limit=limit)
+    return {
+        "collections": parts[0],
+        "workflow": parts[1],
+        "counts": counts
+    }
 
 
 def lambda_handler(event, context):
@@ -119,9 +132,7 @@ def lambda_handler(event, context):
             elif len(pparams) > 1:
                 # get summary of collection
                 collection = '/'.join(pparams[1:])
-                logger.debug(f"Getting summary for {collection}")
-                counts = statedb.get_counts(collection, state=state, since=since, limit=count_limit)
-                return response(counts)
+                return response(summary(collection, since=since, limit=limit))
 
     except Exception as err:
         msg = f"api failed: {err}"
