@@ -79,7 +79,7 @@ def lambda_handler(event, context):
     # get path parameters
     stage = event.get('requestContext', {}).get('stage', '')
 
-    catid = event.get('path', '').rstrip('/').rstrip(stage)
+    catid = event.get('path', '').rstrip('/').rstrip(stage).rstrip('/')
     logger.info(f"Path parameters: {catid}")
 
     # get query parameters
