@@ -53,7 +53,7 @@ def get_root(root_url):
 
 
 def summary(collections_workflow, since, limit):
-    parts = collections_workflow.rsplit('_', maxsplit=1)
+    parts = collections_workflow.rsplit('/workflow-', maxsplit=1)
     logger.debug(f"Getting summary for {collections_workflow}")
     counts = {}
     for s in STATES:
