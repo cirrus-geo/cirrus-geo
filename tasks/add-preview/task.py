@@ -50,12 +50,14 @@ def handler(payload, context={}):
 
             # download asset
             item = download_item_assets(item, path=tmpdir, assets=[asset])
+            filename = item['assets'][asset]['href']
 
             # add preview to item
-            item['assets']['preview'] = create_preview(item, logger, fnout=item['assets'][asset]['href'], **config)
+            item['assets']['preview'] = create_preview(filename, logger, fnout=item['assets'][asset]['href'], **config)
             if thumb:
+                filename = item['assets']['preview']['href']
                 # add thumbnail to item
-                item['assets']['thumbnail'] = create_thumbnail(item, item['assets']['preview']['href'], logger)
+                item['assets']['thumbnail'] = create_thumbnail(filename, item['assets']['preview']['href'], logger)
 
             # put back original href
             item['assets'][asset]['href'] = href
