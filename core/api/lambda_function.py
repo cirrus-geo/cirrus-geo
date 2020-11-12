@@ -41,12 +41,13 @@ def get_root(root_url):
     cat_url = urljoin(stac.ROOT_URL, "catalog.json")
 
     links = []
-    for l in cat['links']:
-        if l['rel'] == 'child':
-            parts = urlparse(l['href'])
-            name = parts.path.split('/')[1]
-            link = create_link(urljoin(root_url, f"collections/{name}"), name, 'child')
+    workflows = cat.get('cirrus', {}).get('workflows', {})
+    for col in workflows:
+        for wf in workflows[col]:
+            name = f"{col} - {wf}"
+            link = create_link(urljoin(root_url, f"{col}/workflow-{wf}"), name, 'child')
             links.append(link)
+
     links.insert(0, create_link(root_url, "home", "self"))
     links.append(create_link(cat_url, "STAC", "stac"))
 
