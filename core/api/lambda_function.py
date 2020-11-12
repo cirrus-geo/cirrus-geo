@@ -145,8 +145,10 @@ def lambda_handler(event, context):
 
 def to_legacy(item):
     _item = {
+        'id': item['catid'],
         'catid': item['catid'],
         'input_collections': item['collections'],
+        'current_state': f"{item['state']}_{item['updated']}",
         'state': item['state'],
         'created_at': item['created'],
         'updated_at': item['updated'],
