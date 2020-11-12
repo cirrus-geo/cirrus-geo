@@ -74,9 +74,9 @@ def handler(payload, context):
         try:
             item = statedb.dbitem_to_item(statedb.get_dbitem(catalog['id']))
             attrs = {
-                'input_collections': {
+                'collections': {
                     'DataType': 'String',
-                    'StringValue': item['input_collections']
+                    'StringValue': item['collections']
                 },
                 'workflow': {
                     'DataType': 'String',
