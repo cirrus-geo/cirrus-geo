@@ -88,8 +88,9 @@ def lambda_handler(event, context):
     stage = event.get('requestContext', {}).get('stage', '')
 
     parts = [p for p in event.get('path', '').split('/') if p != '']
-    if parts[0] in [stage, 'item', 'collections'] and len(parts) > 1:
-        parts = parts[1:]
+    if len(parts) > 0:
+        if parts[0] in [stage, 'item', 'collections'] and len(parts) > 1:
+            parts = parts[1:]
     catid = '/'.join(parts)
 
     logger.info(f"Path parameters: {catid}")
