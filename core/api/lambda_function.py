@@ -9,6 +9,9 @@ from cirruslib import StateDB, stac, STATES
 
 logger = logging.getLogger(__name__)
 
+# envvars
+DATA_BUCKET = os.getenv('CIRRUS_DATA_BUCKET', None)
+
 # Cirrus state database
 statedb = StateDB()
 
@@ -37,7 +40,7 @@ def create_link(url, title, rel, media_type='application/json'):
 
 
 def get_root(root_url):
-    cat_url = urljoin(stac.ROOT_URL, "catalog.json")
+    cat_url = f"s3://{DATA_BUCKET}/catalog.json"
     logger.debug(f"Root catalog: {cat_url}")
     cat = s3().read_json(cat_url)
 
@@ -124,27 +127,29 @@ def lambda_handler(event, context):
         items = statedb.get_items_page(key['collections_workflow'], state=state, since=since,
                                         limit=limit, nextkey=nextkey)
         if legacy:
-            legacy_items = []
-            for item in items:
-                _item = {
-                    'catid': item['catid'],
-                    'input_collections': item['collections'],
-                    'state': item['state'],
-                    'created_at': item['created'],
-                    'updated_at': item['updated'],
-                    'input_catalog': item['catalog']
-                }
-                if 'executions' in item:
-                    _item['execution'] = item['executions'][-1]
-                if 'outputs' in item:
-                    _item['items'] = item['outputs']
-                if 'last_error' in item:
-                    _item['error_message'] = item['last_error']
-                legacy_items.append(_item)
-            items = legacy_items
+            items = [to_legacy(item) for item in items]
 
         return response(items)
     else:
         # get individual item
-        resp = statedb.dbitem_to_item(statedb.get_dbitem(catid))
-        return response(resp)
+        item = statedb.dbitem_to_item(statedb.get_dbitem(catid))
+        if legacy:
+            item = to_legacy(item)
+        return response(item)
+
+def to_legacy(item):
+    _item = {
+        'catid': item['catid'],
+        'input_collections': item['collections'],
+        'state': item['state'],
+        'created_at': item['created'],
+        'updated_at': item['updated'],
+        'input_catalog': item['catalog']
+    }
+    if 'executions' in item:
+        _item['execution'] = item['executions'][-1]
+    if 'outputs' in item:
+        _item['items'] = item['outputs']
+    if 'last_error' in item:
+        _item['error_message'] = item['last_error']
+    return _item
