@@ -98,7 +98,7 @@ def lambda_handler(event, context):
     state = qparams.get('state', None)
     since = qparams.get('since', None)
     nextkey = qparams.get('nextkey', None)
-    limit = int(qparams.get('limit', 100))
+    limit = int(qparams.get('limit', 100000))
     #count_limit = int(qparams.get('count_limit', 100000))
     legacy = qparams.get('legacy', False)
 
