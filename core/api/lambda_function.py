@@ -25,7 +25,7 @@ def response(body, status_code=200, headers={}):
         "headers": _headers,
         "body": json.dumps(body)
     }
-
+ 
 
 def create_link(url, title, rel, media_type='application/json'):
     return {
@@ -87,7 +87,7 @@ def lambda_handler(event, context):
     # get path parameters
     stage = event.get('requestContext', {}).get('stage', '')
 
-    parts = [p for p in event.get('path', '').split('/') if p not in [stage, 'item', 'collections']]
+    parts = [p for p in event.get('path', '').split('/') if p not in [stage, '', 'item', 'collections']]
     catid = '/'.join(parts)
 
     logger.info(f"Path parameters: {catid}")
