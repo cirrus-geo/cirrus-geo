@@ -145,5 +145,5 @@ def lambda_handler(event, context):
         return response(items)
     else:
         # get individual item
-        resp = statedb.dbitem_to_item(statedb.get_dbitem('/'.join(catid)))
+        resp = statedb.dbitem_to_item(statedb.get_dbitem(catid))
         return response(resp)
