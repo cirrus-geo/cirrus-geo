@@ -38,6 +38,7 @@ def create_link(url, title, rel, media_type='application/json'):
 
 def get_root(root_url):
     cat_url = urljoin(stac.ROOT_URL, "catalog.json")
+    logger.debug(f"Root catalog: {cat_url}")
     cat = s3().read_json(cat_url)
 
     links = []
