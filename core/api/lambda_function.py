@@ -4,7 +4,7 @@ import os
 from copy import deepcopy
 from urllib.parse import urljoin, urlparse
 
-import boto3
+from boto3utils import s3
 from cirruslib import StateDB, stac, STATES
 
 logger = logging.getLogger(__name__)
@@ -37,8 +37,8 @@ def create_link(url, title, rel, media_type='application/json'):
 
 
 def get_root(root_url):
-    cat = stac.ROOT_CATALOG.to_dict()
     cat_url = urljoin(stac.ROOT_URL, "catalog.json")
+    cat = s3().read_json(cat_url)
 
     links = []
     workflows = cat.get('cirrus', {}).get('workflows', {})
