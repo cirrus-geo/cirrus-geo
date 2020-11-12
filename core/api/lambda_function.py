@@ -97,12 +97,12 @@ def lambda_handler(event, context):
     catid = '/'.join(parts)
 
     legacy = False
-    if catid.startswith('items'):
+    if catid.startswith('item'):
         legacy = True
-        catid = catid.replace('items', '')
+        catid = catid.replace('item', '', 1)
     if catid.startswith('collections'):
         legacy = True
-        catid = catid.replace('collections', '')
+        catid = catid.replace('collections', '', 1)
     logger.info(f"Path parameters: {catid}")
 
     # get query parameters
