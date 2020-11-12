@@ -92,11 +92,17 @@ def lambda_handler(event, context):
     stage = event.get('requestContext', {}).get('stage', '')
 
     parts = [p for p in event.get('path', '').split('/') if p != '']
-    if len(parts) > 0:
-        if parts[0] in [stage, 'item', 'collections'] and len(parts) > 1:
-            parts = parts[1:]
+    if len(parts) > 0 and parts[0] == stage:
+        parts = parts[1:]
     catid = '/'.join(parts)
 
+    legacy = False
+    if catid.startswith('items'):
+        legacy = True
+        catid = catid.replace('items', '')
+    if catid.startswith('collections'):
+        legacy = True
+        catid = catid.replace('collections', '')
     logger.info(f"Path parameters: {catid}")
 
     # get query parameters
@@ -107,7 +113,7 @@ def lambda_handler(event, context):
     nextkey = qparams.get('nextkey', None)
     limit = int(qparams.get('limit', 100000))
     #count_limit = int(qparams.get('count_limit', 100000))
-    legacy = qparams.get('legacy', False)
+    #legacy = qparams.get('legacy', False)
 
     # root endpoint
     if catid == '':
