@@ -1,1 +1,1 @@
-git+git://github.com/cirrus-geo/cirrus-lib.git@develop
+cirrus-lib~=0.4

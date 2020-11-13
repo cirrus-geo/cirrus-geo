@@ -1,3 +1,3 @@
-git+git://github.com/cirrus-geo/cirrus-lib.git@develop
+cirrus-lib~=0.4
 sat-search~=0.3.0
 python-dateutil~=2.8
