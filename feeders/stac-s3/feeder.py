@@ -8,28 +8,14 @@ import sys
 
 from cirruslib.transfer import get_s3_session
 
+# envvars
+SNS_TOPIC = os.getenv('CIRRUS_QUEUE_TOPIC_ARN')
 
+# boto clients
+SNS_CLIENT = boto3.client('sns')
 
 # logging
 logger = logging.getLogger(f"{__name__}.stac-s3")
-
-
-# Process configuration
-'''
-{
-    "s3urls": ["s3://bucket/key"],
-    "suffix": "json",
-    "process": {
-        "collection": "<collectionId>",
-        "workflow": "mirror"
-        "tasks": {
-            "copy-assets": {
-                ...
-            }
-        }
-    }
-}
-'''
 
 
 def handler(event, context={}):
@@ -67,9 +53,8 @@ def handler(event, context={}):
             }
 
             # feed to cirrus through SNS topic
-            client = boto3.client('sns')
-            SNS_TOPIC = os.getenv('CIRRUS_QUEUE_TOPIC_ARN')
-            client.publish(TopicArn=SNS_TOPIC, Message=json.dumps(catalog))
+
+            SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(catalog))
             if (num % 500) == 0:
                 logger.debug(f"Added {num+1} items to Cirrus")
             num+=1
@@ -78,24 +63,14 @@ def handler(event, context={}):
     return num
 
 
-def parse_args(args):
-    desc = 'feeder'
-    dhf = argparse.ArgumentDefaultsHelpFormatter
-    parser = argparse.ArgumentParser(description=desc, formatter_class=dhf)
-    parser.add_argument('s3url', help='S3 URL to crawl for STAC JSON files')
-    parser.add_argument('--source_profile', help='Name of AWS profile to use to get data', default=None)
-    #parser.add_argument('--workdir', help='Work directory', default='')
-    #parser.add_argument('--queue', help='Name of Cirrus Queue Lambda', default=None)
-    #parser.add_argument('--output_url', help='S3 URL prefix for uploading data', default=None)
-    
-    #parser.add_argument('--cirrus_profile', help='Name of AWS profile to use for queuing to Cirrus', default=None)
-
-    return vars(parser.parse_args(args))
-
-
-def cli():
-    handler(parse_args(sys.argv[1:]))
-
-
 if __name__ == "__main__":
-    cli()
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+    # argparse
+    parser = argparse.ArgumentParser(description='feeder')
+    parser.add_argument('payload', help='Payload file')
+    args = parser.parse_args(sys.argv[1:])
+
+    with open(args.payload) as f:
+        payload = json.loads(f.read())
+    handler(payload)

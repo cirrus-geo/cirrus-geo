@@ -1,25 +1,34 @@
-import boto3
 import json
 import logging
 import os
+from copy import deepcopy
 from urllib.parse import urljoin, urlparse
 
-from cirruslib import StateDB, stac
+from boto3utils import s3
+from cirruslib import StateDB, stac, STATES
 
 logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
+
+# envvars
+DATA_BUCKET = os.getenv('CIRRUS_DATA_BUCKET', None)
 
 # Cirrus state database
 statedb = StateDB()
 
 
 def response(body, status_code=200, headers={}):
+    _headers = deepcopy(headers)
+    # cors
+    _headers.update({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': True
+    })
     return {
         "statusCode": status_code,
-        "headers": headers,
+        "headers": _headers,
         "body": json.dumps(body)
     }
-
+ 
 
 def create_link(url, title, rel, media_type='application/json'):
     return {
@@ -31,26 +40,41 @@ def create_link(url, title, rel, media_type='application/json'):
 
 
 def get_root(root_url):
-    cat = stac.ROOT_CATALOG.to_dict()
-
-    cat['id'] = f"{cat['id']}-state-api"
-    cat['description'] = f"{cat['description']} State API"
+    cat_url = f"s3://{DATA_BUCKET}/catalog.json"
+    logger.debug(f"Root catalog: {cat_url}")
+    cat = s3().read_json(cat_url)
 
     links = []
-    for l in cat['links']:
-        if l['rel'] == 'child':
-            parts = urlparse(l['href'])
-            name = parts.path.split('/')[1]
-            link = create_link(urljoin(root_url, f"collections/{name}"), name, 'child')
+    workflows = cat.get('cirrus', {}).get('workflows', {})
+    for col in workflows:
+        for wf in workflows[col]:
+            name = f"{col} - {wf}"
+            link = create_link(urljoin(root_url, f"{col}/workflow-{wf}"), name, 'child')
             links.append(link)
-    
-    cat['links'] = links
-    cat['links'].insert(0, create_link(root_url, "home", "self"))
 
-    cat_url = urljoin(stac.ROOT_URL, "catalog.json")
-    cat['links'].append(create_link(cat_url, "STAC", "stac"))
+    links.insert(0, create_link(root_url, "home", "self"))
+    links.append(create_link(cat_url, "STAC", "stac"))
 
-    return cat
+    root = {
+        "id": f"{cat['id']}-state-api",
+        "description": f"{cat['description']} State API",
+        "links": links
+    }
+
+    return root
+
+
+def summary(collections_workflow, since, limit):
+    parts = collections_workflow.rsplit('_', maxsplit=1)
+    logger.debug(f"Getting summary for {collections_workflow}")
+    counts = {}
+    for s in STATES:
+        counts[s] = statedb.get_counts(collections_workflow, state=s, since=since, limit=limit)
+    return {
+        "collections": parts[0],
+        "workflow": parts[1],
+        "counts": counts
+    }
 
 
 def lambda_handler(event, context):
@@ -66,9 +90,20 @@ def lambda_handler(event, context):
 
     # get path parameters
     stage = event.get('requestContext', {}).get('stage', '')
-    path = event.get('path', '').split('/')
-    pparams = [p for p in path if p != '' and p != stage]
-    logger.info(f"Path Parameters: {pparams}")
+
+    parts = [p for p in event.get('path', '').split('/') if p != '']
+    if len(parts) > 0 and parts[0] == stage:
+        parts = parts[1:]
+    catid = '/'.join(parts)
+
+    legacy = False
+    if catid.startswith('item'):
+        legacy = True
+        catid = catid.replace('item/', '', 1)
+    if catid.startswith('collections'):
+        legacy = True
+        catid = catid.replace('collections/', '', 1)
+    logger.info(f"Path parameters: {catid}")
 
     # get query parameters
     qparams = event['queryStringParameters'] if event.get('queryStringParameters') else {}
@@ -76,39 +111,53 @@ def lambda_handler(event, context):
     state = qparams.get('state', None)
     since = qparams.get('since', None)
     nextkey = qparams.get('nextkey', None)
-    limit = int(qparams.get('limit', 100))
+    limit = int(qparams.get('limit', 100000))
+    #count_limit = int(qparams.get('count_limit', 100000))
+    #legacy = qparams.get('legacy', False)
 
-    try:
-        # root endpoint
-        if len(pparams) == 0:
-            return response(get_root(root_url))
+    # root endpoint
+    if catid == '':
+        return response(get_root(root_url))
 
-        # get single item by catalog ID (deprecated)
-        if pparams[0] == "item" and len(pparams) > 1:
-            catid = '/'.join(pparams[1:])
-            return response(statedb.get_dbitem(catid))
-        # determine index (input or output collections)
-        if pparams[0] == 'catid':
-            resp = statedb.dbitem_to_item(statedb.get_dbitem('/'.join(pparams[1:])))
-            return response(resp)
-        elif pparams[0] == 'collections':
-            index = 'input_state'
-            # get items
-            if pparams[-1] == 'items' and len(pparams) > 2:
-                colid = '/'.join(pparams[1:-1])
-                logger.debug(f"Getting items from {index} for collections {colid}, state={state}, since={since}")
-                resp = statedb.get_items_page(colid, state=state, since=since, index=index,
-                                            limit=limit, nextkey=nextkey)
-                return response(resp)
+    if '/workflow-' not in catid:
+        return response(f"{path} not found", status_code=400)
         
-            # get summary of collection
-            if len(pparams) > 1:
-                colid = '/'.join(pparams[1:])
-                logger.debug(f"Getting summary from {index} for collection {colid}")
-                counts = statedb.get_counts(colid, state=state, since=since, index=index, limit=100000)
-                return response(counts)
+    key = statedb.catid_to_key(catid)
 
-    except Exception as err:
-        msg = f"api failed: {err}"
-        logger.error(msg, exc_info=True)
-        return response(msg, status_code=400)
+    if key['itemids'] == '':
+        # get summary of collection
+        return response(summary(key['collections_workflow'], since=since, limit=limit))
+    elif key['itemids'] == 'items':
+        # get items
+        logger.debug(f"Getting items for {key['collections_workflow']}, state={state}, since={since}")
+        items = statedb.get_items_page(key['collections_workflow'], state=state, since=since,
+                                        limit=limit, nextkey=nextkey)
+        if legacy:
+            items = [to_legacy(item) for item in items]
+
+        return response(items)
+    else:
+        # get individual item
+        item = statedb.dbitem_to_item(statedb.get_dbitem(catid))
+        if legacy:
+            item = to_legacy(item)
+        return response(item)
+
+def to_legacy(item):
+    _item = {
+        'id': item['catid'],
+        'catid': item['catid'],
+        'input_collections': item['collections'],
+        'current_state': f"{item['state']}_{item['updated']}",
+        'state': item['state'],
+        'created_at': item['created'],
+        'updated_at': item['updated'],
+        'input_catalog': item['catalog']
+    }
+    if 'executions' in item:
+        _item['execution'] = item['executions'][-1]
+    if 'outputs' in item:
+        _item['items'] = item['outputs']
+    if 'last_error' in item:
+        _item['error_message'] = item['last_error']
+    return _item

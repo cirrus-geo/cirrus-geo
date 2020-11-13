@@ -1,18 +1,8 @@
-import boto3
 import json
 import logging
-import os.path as op
-
-from boto3utils import s3
-from os import getenv
-from traceback import format_exc
-
-# environment variables
-SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN', None)
-SNS_CLIENT = boto3.client('sns') if SNS_TOPIC else None
 
 # logging
-logger = logging.getLogger(f"{__name__}.test")
+logger = logging.getLogger(f"{__name__}.publish-test")
 
 
 def handler(payload, context):
@@ -32,7 +22,3 @@ def handler(payload, context):
 
     for p in payloads:
         logger.debug(f"Message: {json.dumps(p)}")
-
-    #if SNS_CLIENT:
-    #    resp = SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(item._data))
-    #    logger.debug(f"SNS Publish Response: {resp}")

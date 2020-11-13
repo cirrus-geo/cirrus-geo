@@ -8,6 +8,9 @@ definition:
       Type: Choice
       Choices:
         - Variable: "$.process.tasks.copy-assets.batch"
+          IsPresent: false
+          Next: copy-assets
+        - Variable: "$.process.tasks.copy-assets.batch"
           BooleanEquals: false
           Next: copy-assets
         - Variable: "$.process.tasks.copy-assets.batch"
@@ -80,6 +83,9 @@ definition:
     add-preview-batch-or-lambda:
       Type: Choice
       Choices:
+        - Variable: "$.process.tasks.add-preview.batch"
+          IsPresent: false
+          Next: add-preview
         - Variable: "$.process.tasks.add-preview.batch"
           BooleanEquals: false
           Next: add-preview

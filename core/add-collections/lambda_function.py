@@ -9,7 +9,6 @@ from pystac import Catalog, Collection
 
 # configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
 logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'DEBUG'))
 
 
 def lambda_handler(event, context={}):

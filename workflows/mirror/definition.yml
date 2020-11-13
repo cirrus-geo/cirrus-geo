@@ -8,6 +8,9 @@ definition:
       Type: Choice
       Choices:
         - Variable: "$.process.tasks.copy-assets.batch"
+          IsPresent: false
+          Next: copy-assets
+        - Variable: "$.process.tasks.copy-assets.batch"
           BooleanEquals: false
           Next: copy-assets
         - Variable: "$.process.tasks.copy-assets.batch"

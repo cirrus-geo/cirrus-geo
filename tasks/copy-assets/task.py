@@ -1,16 +1,9 @@
 #!/usr/bin/env python
-import boto3
-import json
-import logging
 
-from boto3 import Session
-from boto3utils import s3
 from cirruslib import Catalog, get_task_logger
 from cirruslib.transfer import download_item_assets, upload_item_assets
-from os import getenv, environ, path as op
 from shutil import rmtree
 from tempfile import mkdtemp
-from traceback import format_exc
 
 
 def handler(payload, context={}):

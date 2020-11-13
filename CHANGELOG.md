@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.4.0] - 2020-11-13
+
+### Added
+- API root now returns child links to summaries if configured in the Cirrus root catalog
+- `status` field added to attributes of published SNS messages, `created` if new STAC Item (not in Cirrus catalog), or `updated` if it already exists
+- `created` and `updated` properties added to STAC Items when adding to Cirrus static catalog on s3
+
+### Changed
+- feeder.test Lambda moved to core/publish-test Lambda and defaults to being subscribed to the Cirrus Publish SNS. The Lambda only logs the payload
+- API changes: get single catalog is now `/<catid>`, collection names now include collections + workflow, Item response updated as detailed in cirrus-lib 0.4
+- State Schema changes, see `cirrus-lib`
+- `publish-test` moved to core lambdas, and auto subscribes to Cirrus endpoint
+- Feeders cleaned up, updated to cirrus-lib 0.4 where needed
+
 ## [v0.3.0] - 2020-10-26
 
 ### Added
@@ -83,6 +97,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Initial release
 
 [Unreleased]: https://github.com/cirrus-geo/cirrus/compare/master...develop
+[v0.4.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.3.0...v0.4.0
 [v0.3.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.2.1...v0.3.0
 [v0.2.1]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.1.0...v0.2.0

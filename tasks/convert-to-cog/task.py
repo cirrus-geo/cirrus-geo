@@ -1,16 +1,15 @@
 import json
-import rasterio
+import os
+from shutil import rmtree
+from tempfile import mkdtemp
 
+import rasterio
 from cirruslib import Catalog, get_task_logger
 from cirruslib.errors import InvalidInput
 from cirruslib.transfer import download_item_assets, upload_item_assets, s3_sessions
-from os import getenv, remove, path as op
 from rasterio.errors import CRSError
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
-from shutil import rmtree
-from tempfile import mkdtemp
-from traceback import format_exc
 
 
 def handler(payload, context={}):
@@ -38,7 +37,7 @@ def handler(payload, context={}):
 
             # cogify
             fn = item['assets'][asset]['href']
-            fnout = cogify(fn, op.splitext(fn)[0] + '.tif', **assets[asset])
+            fnout = cogify(fn, os.path.splitext(fn)[0] + '.tif', **assets[asset])
             item['assets'][asset]['href'] = fnout
             item['assets'][asset]['type'] = "image/tiff; application=geotiff; profile=cloud-optimized"
             with rasterio.open(fnout) as src:
@@ -48,10 +47,10 @@ def handler(payload, context={}):
             # upload assets
             item = upload_item_assets(item, assets=[asset], **outopts)
             # cleanup files
-            if op.exists(fn):
-                remove(fn)
-            if op.exists(fnout):
-                remove(fnout)
+            if os.path.exists(fn):
+                os.remove(fn)
+            if os.path.exists(fnout):
+                os.remove(fnout)
 
         # add derived_from link
         links = [l['href'] for l in item['links'] if l['rel'] == 'self']
@@ -94,7 +93,7 @@ def cogify(fin, fout, nodata=None, web_optimized=False, blocksize=256,
     """ Turn a geospatial image into a COG """
     output_profile = cog_profiles.get('deflate')
     output_profile.update({
-        "BIGTIFF": getenv("BIGTIFF", "IF_SAFER"),
+        "BIGTIFF": os.getenv("BIGTIFF", "IF_SAFER"),
         "blockxsize": blocksize,
         "blockysize": blocksize,
         "PREDICTOR": 2
@@ -102,7 +101,7 @@ def cogify(fin, fout, nodata=None, web_optimized=False, blocksize=256,
 
     config = {
         "NUM_THREADS": "ALL_CPUS",
-        "GDAL_TIFF_INTERNAL_MASK": getenv("GDAL_TIFF_INTERNAL_MASK", True),
+        "GDAL_TIFF_INTERNAL_MASK": os.getenv("GDAL_TIFF_INTERNAL_MASK", True),
         "GDAL_TIFF_OVR_BLOCKSIZE": str(overview_blocksize)
     }
     cog_translate(fin, fout, output_profile, config=config,

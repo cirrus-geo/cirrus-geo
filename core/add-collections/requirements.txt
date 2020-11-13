@@ -1,2 +1,2 @@
-cirrus-lib~=0.3
+cirrus-lib~=0.4
 pystac~=0.5

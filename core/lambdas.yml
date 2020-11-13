@@ -24,3 +24,12 @@ api:
   events:
     - http: GET /
     - http: GET {proxy+}
+
+publish-test:
+  description: Test Feeder data
+  handler: lambda_function.handler
+  memorySize: 128
+  timeout: 60
+  module: core/publish-test
+  events:
+    - sns: ${self:provider.environment.CIRRUS_PUBLISH_TOPIC_ARN}

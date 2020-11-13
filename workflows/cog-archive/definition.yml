@@ -8,6 +8,9 @@ definition:
       Type: Choice
       Choices:
         - Variable: "$.process.tasks.copy-assets.batch"
+          IsPresent: false
+          Next: copy-assets
+        - Variable: "$.process.tasks.copy-assets.batch"
           BooleanEquals: false
           Next: copy-assets
         - Variable: "$.process.tasks.copy-assets.batch"
@@ -76,6 +79,9 @@ definition:
     convert-to-cog-batch-or-lambda:
       Type: Choice
       Choices:
+        - Variable: "$.process.tasks.convert-to-cog.batch"
+          IsPresent: false
+          Next: convert-to-cog
         - Variable: "$.process.tasks.convert-to-cog.batch"
           BooleanEquals: false
           Next: convert-to-cog

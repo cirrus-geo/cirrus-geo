@@ -5,9 +5,7 @@ import os
 from cirruslib import Catalog, Catalogs
 from cirruslib.utils import dict_merge
 
-# configure logger - CRITICAL, ERROR, WARNING, INFO, DEBUG
 logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('CIRRUS_LOG_LEVEL', 'INFO'))
 
 # Default PROCESSES
 with open(os.path.join(os.path.dirname(__file__), 'processes.json')) as f:

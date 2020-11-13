@@ -314,7 +314,6 @@
     ],
     "process": {
         "collections": ["sentinel-s2-l2a"],
-        "output_collections": ["sentinel-s2-l2a"],
         "workflow": "publish-only",
         "replace": true,
         "output_options": {

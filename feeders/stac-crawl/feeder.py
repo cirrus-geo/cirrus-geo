@@ -10,8 +10,6 @@ import sys
 import time
 import uuid
 
-import os.path as op
-
 from boto3utils import s3
 from copy import deepcopy
 from cirruslib.utils import submit_batch_job
@@ -20,11 +18,8 @@ from pystac import Catalog
 
 # envvars
 SNS_TOPIC = os.getenv('CIRRUS_QUEUE_TOPIC_ARN')
-CATALOG_BUCKET = os.getenv('CIRRUS_CATALOG_BUCKET')
-CIRRUS_STACK = os.getenv('CIRRUS_STACK')
 
-# AWS clients
-BATCH_CLIENT = boto3.client('batch')
+# clients
 SNS_CLIENT = boto3.client('sns')
 
 # logging
@@ -32,10 +27,6 @@ logger = logging.getLogger(f"{__name__}.stac-crawl")
 
 
 def handler(event, context={}):
-    # if this is batch, output to stdout
-    if not hasattr(context, "invoked_function_arn"):
-        logger.addHandler(logging.StreamHandler())
-
     logger.debug('Event: %s' % json.dumps(event))
 
     # parse input
@@ -56,3 +47,16 @@ def handler(event, context={}):
             'process': process
         }
         SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(payload))
+
+
+if __name__ == "__main__":
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+    # argparse
+    parser = argparse.ArgumentParser(description='feeder')
+    parser.add_argument('payload', help='Payload file')
+    args = parser.parse_args(sys.argv[1:])
+
+    with open(args.payload) as f:
+        payload = json.loads(f.read())
+    handler(payload)

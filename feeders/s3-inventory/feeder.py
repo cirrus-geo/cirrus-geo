@@ -1,30 +1,27 @@
+import argparse
 import boto3
 import gzip
 import itertools
 import json
 import io
 import logging
-import pyorc
 import re
 import requests
 import sys
 import uuid
-
-from boto3utils import s3
-from cirruslib.utils import submit_batch_job
 from datetime import datetime
 from dateutil.parser import parse
 from os import getenv, path as op
 
+import pyorc
+from boto3utils import s3
+from cirruslib.utils import submit_batch_job
+
+
 # envvars
 SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN')
-LAMBDA_NAME = getenv('AWS_LAMBDA_FUNCTION_NAME')
-CIRRUS_STACK = getenv('CIRRUS_STACK')
-CATALOG_BUCKET = getenv('CIRRUS_CATALOG_BUCKET')
-BASE_URL = "https://roda.sentinel-hub.com"
 
 # clients
-BATCH_CLIENT = boto3.client('batch')
 SNS_CLIENT = boto3.client('sns')
 
 # logging
@@ -66,8 +63,6 @@ def read_inventory_file(fname, keys, prefix=None, suffix=None,
 
     sdate = parse(start_date).date() if start_date else None
     edate = parse(end_date).date() if end_date else None
-
-    
 
     def get_datetime(record):
         if regex is not None:
@@ -207,23 +202,14 @@ def handler(payload, context={}):
         return catids
 
 
-# testing
 if __name__ == "__main__":
-    payload = {
-        "inventory_url": "s3://landsat-pds-inventory/landsat-pds/landsat-pds",
-        "process": {}
-    }
-    payload = {
-        "inventory_files": [
-            "s3://landsat-pds-inventory/landsat-pds/landsat-pds/data/422f6969-87f5-4aa6-a159-3839f155bc88.orc",
-            "s3://landsat-pds-inventory/landsat-pds/landsat-pds/data/2d676b49-2c57-452f-8677-9b0bdba0c79c.orc"
-        ],
-        "keys": ["bucket", "key", "size", "last_modified_date"],
-        "suffix": "MTL.txt",
-        "process": {
-            "input_collections": ["landsat-l1-c1"],
-            "workflow": "test"
-        }
-    }
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
+    # argparse
+    parser = argparse.ArgumentParser(description='feeder')
+    parser.add_argument('payload', help='Payload file')
+    args = parser.parse_args(sys.argv[1:])
+
+    with open(args.payload) as f:
+        payload = json.loads(f.read())
     handler(payload)
