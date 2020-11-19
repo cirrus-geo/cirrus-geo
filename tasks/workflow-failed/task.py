@@ -23,9 +23,10 @@ def get_error_from_batch(logname):
         if len(parts) > 1:
             error_type = parts[0]
             msg = parts[1]
-        return error_type, msg
+            return error_type, msg
+        return "Unknown", msg
     except Exception:
-        return "Exception", "Failed getting logStream"
+        return "Exception", "Unable to get Error Log"
 
 
 def handler(payload, context):

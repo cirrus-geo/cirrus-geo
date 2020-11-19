@@ -54,11 +54,10 @@ def handler(payload, context={}):
             filename = item['assets'][asset]['href']
 
             # add preview to item
-            item['assets']['preview'] = create_preview(filename, logger, fnout=item['assets'][asset]['href'], **config)
+            item['assets']['preview'] = create_preview(filename, logger, **config)
             if thumb:
-                filename = item['assets']['preview']['href']
                 # add thumbnail to item
-                item['assets']['thumbnail'] = create_thumbnail(filename, item['assets']['preview']['href'], logger)
+                item['assets']['thumbnail'] = create_thumbnail(item['assets']['preview']['href'], logger)
 
             # put back original href
             item['assets'][asset]['href'] = href
@@ -81,7 +80,7 @@ def handler(payload, context={}):
     return catalog      
 
 
-def create_thumbnail(item, filename, logger, scale_percent=5):
+def create_thumbnail(filename, logger, scale_percent=5):
     """ Add a thumbnail to item, generated from filename """
     fnout = filename.replace('_preview.tif', '_thumb.png')
     logger.info(f"Creating thumbnail {fnout} from {filename}")

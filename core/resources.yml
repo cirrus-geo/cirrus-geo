@@ -110,7 +110,7 @@ Resources:
             ProjectionType: ALL
         - IndexName: "updated"
           KeySchema:
-            - AttributeName: state_updated
+            - AttributeName: collections_workflow
               KeyType: HASH
             - AttributeName: updated
               KeyType: RANGE
