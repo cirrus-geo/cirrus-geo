@@ -30,7 +30,8 @@ def lambda_handler(payload, context):
                 logger.debug(f"Process update: {json.dumps(cat['process_update'])}")
                 for c in _cats:
                     c['process'] = dict_merge(c['process'], cat['process_update'])
-            catalogs += _cats
+            cats = Catalogs(_cats)
+            cats.process(replace=True)
         elif cat.get('type', '') == 'Feature':
         # If Item, create Catalog and use default process for that collection
             if cat['collection'] not in PROCESSES.keys():
