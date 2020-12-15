@@ -61,7 +61,7 @@ def split_request(params, nbatches):
     
 
 def run(params, url, sleep=None, process=None):
-    search = Search(api_url=url, **params)
+    search = Search(url=url, **params)
     logger.debug(f"Searching {url}")    
     found = search.found()
     logger.debug(f"Total items found: {found}")
@@ -102,7 +102,7 @@ def handler(event, context={}):
     process = event.get('process', None)
 
     # search API
-    search = Search(api_url=url, **params)
+    search = Search(url=url, **params)
     logger.debug(f"Searching {url}")
 
     found = search.found()

@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+- stac-api feeder (broken when providing STAC API URL)
+
 ## [v0.4.1] - 2020-11-19
 
 ### Fixed
