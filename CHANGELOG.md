@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - stac-api feeder (broken when providing STAC API URL)
+- publish-test Lambda correctly logs
 
 ## [v0.4.1] - 2020-11-19
 
