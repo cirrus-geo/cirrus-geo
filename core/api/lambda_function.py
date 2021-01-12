@@ -112,6 +112,8 @@ def lambda_handler(event, context):
     since = qparams.get('since', None)
     nextkey = qparams.get('nextkey', None)
     limit = int(qparams.get('limit', 100000))
+    sort_ascending = bool(qparams.get('sort_ascending', None))
+    sort_index = qparams.get('sort_index', None)
     #count_limit = int(qparams.get('count_limit', 100000))
     #legacy = qparams.get('legacy', False)
 
@@ -131,7 +133,8 @@ def lambda_handler(event, context):
         # get items
         logger.debug(f"Getting items for {key['collections_workflow']}, state={state}, since={since}")
         items = statedb.get_items_page(key['collections_workflow'], state=state, since=since,
-                                        limit=limit, nextkey=nextkey)
+                                        limit=limit, nextkey=nextkey, sort_ascending=sort_ascending,
+                                        sort_index=sort_index)
         if legacy:
             items = [to_legacy(item) for item in items]
 
