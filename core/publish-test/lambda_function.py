@@ -1,6 +1,8 @@
 import json
 import logging
 
+import cirruslib.logging
+
 # logging
 logger = logging.getLogger(f"{__name__}.publish-test")
 
