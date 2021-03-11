@@ -17,11 +17,10 @@ Cirrus is divided up into several repositories, all under the [cirrus-geo](https
 | Repository         | Purpose |
 |:------------------ |---------|
 | cirrus             | Main Cirrus repo containing serverless config and deployment files, along with the standard set of Lambda functions |
-| [cirrus-dashboard](https://github.com/cirrus-geo/cirrus-dashboard)   | A front-end interface to the Cirrus API |
 | [cirrus-lib](https://github.com/cirrus-geo/cirrus-lib) | A Python library of convenience functions to interact with Cirrus. Lambda functions are kept lightweight |
 | [cirrus-task-images](https://github.com/cirrus-geo/cirrus-task-images)  | Dockerfiles and code for publishing Cirrus Docker images to Docker Hub that are used in Cirrus Batch tasks |
 
-The `cirrus` repository is what users would clone, modify and deploy. The `cirrus-dashboard` repo is for users to deploy if they want a web-app for tracking stats of data through Cirrus. The pip-installable python library `cirrus-lib` is used from all Cirrus Lambdas and tasks and is available to developers for writing their own tasks.
+The `cirrus` repository is what users would clone, modify and deploy. The pip-installable python library `cirrus-lib` is used from all Cirrus Lambdas and tasks and is available to developers for writing their own tasks.
 
 ## Cirrus Repository Structure
 
