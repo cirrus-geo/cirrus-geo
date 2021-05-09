@@ -1,2 +1,1 @@
 cirrus-lib~=0.4
-pystac-client~=0.1.1
