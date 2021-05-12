@@ -114,7 +114,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 Initial release
 
-[Unreleased]: https://github.com/cirrus-geo/cirrus/compare/master...develop
+[Unreleased]: https://github.com/cirrus-geo/cirrus/compare/v0.4.2...main
+[v0.4.2]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.4.1...v0.4.2
 [v0.4.1]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.3.0...v0.4.0
 [v0.3.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.2.1...v0.3.0
