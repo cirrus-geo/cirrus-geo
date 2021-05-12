@@ -94,7 +94,6 @@ A `feeder` is the process that publishes Input Catalogs to Cirrus to start workf
 The `feeder` programs deployed with Cirrus include:
 
 - `feed-stac-api`: Search a STAC compliant endpoint for Items, combine with provided `process` configuration
-- `feed-stac-s3`: Search an s3 prefix for STAC Item JSON files, combine with provided `process` configuration
 - `rerun`: Query the internal Cirrus StateDB, and rerun those Input Catalogs regardless of current state
 - `feed-test`: Use the test Feeder to test out subscribing to an SNS topic, such as `cirrus-<stage>-publish` in order to queue up new Input Catalogs
 

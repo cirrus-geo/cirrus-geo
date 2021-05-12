@@ -11,7 +11,6 @@ Users operate *feeders*, programs that create STAC input catalogs and add them t
 Cirrus feeders are the most likely component of Cirrus to be customized by a user. Several general use Lambda feeders are included with Cirrus:
 
 - `feed-stac-api`: Query a specific STAC API for Items, create a Cirrus Input Catalog for each one and add to Cirrus with a user-specified processing parameters
-- `feed-stac-s3`: Search for STAC Items in a provided bucket with a specified key prefix, create a Cirrus Input Catalog for each one and add to Cirrus with a user-specified processing parameters
 - `feed-stac-test`: Subscribe to an SNS topic that published STAC Items and log the result (used to test subscriptions to an SNS topic that publishes STAC Items, such as this or some other instance of Cirrus). Useful as a template for creating new feeders.
 
 ### Batch feeders
