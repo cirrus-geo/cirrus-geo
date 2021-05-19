@@ -49,4 +49,4 @@ Documentation for deploying, using, and customizing Cirrus is contained within t
 - [Customize](docs/customize.md) Cirrus by adding tasks, workflows, and compute environments
 
 ## About
-Cirrus is an Open-Source pipeline for processing geospatial data in AWS. Cirrus was developed by [Element 84](https://element84.com/) originally under a [NASA ACCESS project](https://earthdata.nasa.gov/esds/competitive-programs/access).
+Cirrus is an Open-Source pipeline for processing geospatial data in AWS. Cirrus was developed by [Element 84](https://element84.com/) originally under a [NASA ACCESS project](https://earthdata.nasa.gov/esds/competitive-programs/access) called [Community Tools for Analysis of NASA Earth Observation System Data in the Cloud](https://earthdata.nasa.gov/esds/competitive-programs/access/eos-data-cloud).
