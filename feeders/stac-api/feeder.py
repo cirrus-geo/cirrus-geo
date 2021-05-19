@@ -14,7 +14,7 @@ from dateutil.parser import parse
 
 from boto3utils import s3
 from cirruslib.utils import submit_batch_job
-from satsearch import Search
+from pystac_client import Client
 
 
 # envvars
@@ -61,7 +61,7 @@ def split_request(params, nbatches):
     
 
 def run(params, url, sleep=None, process=None):
-    search = Search(url=url, **params)
+    search = Client.open(url, **params)
     logger.debug(f"Searching {url}")    
     found = search.found()
     logger.debug(f"Total items found: {found}")
@@ -102,7 +102,7 @@ def handler(event, context={}):
     process = event.get('process', None)
 
     # search API
-    search = Search(url=url, **params)
+    search = Client.open(url, **params)
     logger.debug(f"Searching {url}")
 
     found = search.found()
