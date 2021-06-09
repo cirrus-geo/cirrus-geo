@@ -4,7 +4,7 @@ Copies specified Assets from Source STAC Item(s) and copies to s3 and updates It
 
 ## Configuration Parameters
 
-Configuration parameters are passed in `payload['process']['tasks']['add-preview']`:
+Configuration parameters are passed in `payload['process']['tasks']['copy-assets']`:
 
 | Field     | Type     | Description |
 | --------- | -------- | ----------- |
