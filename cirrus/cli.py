@@ -3,6 +3,9 @@ import sys
 
 from cirrus import commands
 
+PROG='cirrus'
+DESC='Cirrus: severless STAC-based processing pipeline'
+
 
 class CLI(object):
     def __init__(self, prog, description):
@@ -40,8 +43,8 @@ class CLI(object):
 
 def main(argv=None):
     cli = CLI(
-        prog='ggw',
-        description='GRACE GroundWater (ggw) exploration tool',
+        prog=PROG,
+        description=DESC,
     )
     cli.add_cmd(commands.Build())
 

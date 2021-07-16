@@ -4,6 +4,8 @@ import os.path
 
 from setuptools import setup, find_packages
 
+from cirrus.cli import DESC
+
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 URL = 'https://github.com/cirrus-geo/cirrus'
@@ -24,7 +26,7 @@ setup(
     name='cirrus',
     packages=find_packages(exclude=['docs', 'test*']),
     version=VERSION,
-    description=('Cirrus: severless STAC-based processing pipeline'),
+    description=(DESC),
     long_description=readme,
     author='Matthew Hanson (matthewhanson), Jarrett Keifer (jkeifer), Element 84',
     url='URL',
