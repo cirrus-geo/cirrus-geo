@@ -1,0 +1,6 @@
+rerun:
+    description: Rerun items in the database
+    handler: feeder.handler
+    memorySize: 128
+    timeout: 900
+    module: feeders/rerun
