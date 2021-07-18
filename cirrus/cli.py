@@ -2,6 +2,8 @@ import argparse
 import sys
 
 from cirrus import commands
+from cirrus.feeders.feeder import print_feeders
+
 
 PROG='cirrus'
 DESC='Cirrus: severless STAC-based processing pipeline'
@@ -46,7 +48,9 @@ def main(argv=None):
         prog=PROG,
         description=DESC,
     )
-    cli.add_cmd(commands.Build())
+
+    #cli.add_cmd(commands.Build())
+    print_feeders()
 
     return cli(argv)
 

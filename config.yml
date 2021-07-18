@@ -1,0 +1,9 @@
+cirrus:
+  backend: serverless
+  sources:
+    feeders:
+      -
+    tasks:
+      -
+    workflows:
+      -

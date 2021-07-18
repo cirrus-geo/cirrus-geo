@@ -1,0 +1,6 @@
+workflow-failed:
+  description: Indicates the end of a workflow
+  handler: task.handler
+  memorySize: 128
+  timeout: 15
+  module: tasks/workflow-failed

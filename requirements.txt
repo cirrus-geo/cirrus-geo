@@ -1,1 +1,2 @@
 cirrus-lib~=0.4.5
+pyyaml~=5.4.1
