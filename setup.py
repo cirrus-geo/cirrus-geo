@@ -9,8 +9,6 @@ from cirrus.constants import SUPPORTED_BACKENDS
 
 
 HERE = os.path.abspath(os.path.dirname(__file__))
-URL = 'https://github.com/cirrus-geo/cirrus'
-DOWNLOAD_URL = '{}/tarball/{}'.format
 VERSION = os.environ.get('CIRRUS_VERSION', '0.0.0')
 
 
@@ -40,8 +38,7 @@ setup(
     description=(DESC),
     long_description=readme,
     author='Matthew Hanson (matthewhanson), Jarrett Keifer (jkeifer), Element 84',
-    url='URL',
-    download_url=DOWNLOAD_URL(URL, VERSION),
+    url='https://github.com/cirrus-geo/cirrus',
     install_requires=install_requires,
     dependency_links=dependency_links,
         classifiers=[

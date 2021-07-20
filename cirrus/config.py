@@ -19,6 +19,20 @@ DEFAULT_CONFIG = {
 }
 
 
+DEFAULT_CONFIG_YML = '''
+backend: serverless
+feeders:
+  sources:
+    - ./feeders/
+tasks:
+  sources:
+    - ./tasks/
+workflows:
+  sources:
+    - ./workflows
+'''
+
+
 class NestedNamespace(SimpleNamespace):
     def __init__(self, d: dict, **kwargs):
         super().__init__(**kwargs)
@@ -54,10 +68,7 @@ class Config(NestedNamespace):
 
     @classmethod
     def from_yaml(cls, yml: str):
-        try:
-            return cls(yaml.safe_load(yml)['cirrus'])
-        except KeyError:
-            raise ConfigError("Configuration does not define 'cirrus' settings")
+        return cls(yaml.safe_load(yml))
 
     def __repr__(self):
         return 'Config{}'.format(self.__dict__.__repr__())

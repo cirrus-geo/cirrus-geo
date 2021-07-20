@@ -1,9 +1,11 @@
 import argparse
 import sys
+import logging
 
 from cirrus import commands
-from cirrus.feeders.feeder import print_feeders
 
+
+logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 PROG='cirrus'
 DESC='Cirrus: severless STAC-based processing pipeline'
@@ -49,8 +51,7 @@ def main(argv=None):
         description=DESC,
     )
 
-    #cli.add_cmd(commands.Build())
-    print_feeders()
+    cli.add_cmd(commands.Init())
 
     return cli(argv)
 

@@ -8,20 +8,16 @@ DEFAULT_INCLUDE = Path(__file__).parent.joinpath('config')
 
 
 class Workflow(resource.ResourceBase):
-    required_files = [
-        resource.Definition,
-    ]
-    optional_files = [
-        # TODO: Readme should be required
-        # once we have one per workflow
-        resource.Readme,
-    ]
+    default_search_dir = DEFAULT_INCLUDE
+    definition = resource.ResourceFile(filename='definition.yml')
+    # TODO: Readme should be required once we have one per task
+    readme = resource.ResourceFile(filename='README.md', optional=True)
 
 
 def print_workflows():
     workflows = []
     for _dir in [DEFAULT_INCLUDE]: # + config.sources.workflows:
-        workflows.extend(resource.get_resources_from_dir(_dir, Workflow))
+        workflows.extend(Workflow.from_dir(_dir))
 
     for workflow in workflows:
         print(workflow.name)

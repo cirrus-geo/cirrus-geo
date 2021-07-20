@@ -7,27 +7,22 @@ from cirrus.config import config
 DEFAULT_INCLUDE = Path(__file__).parent.joinpath('config')
 
 
-class TaskPython(resource.ResourceFileBase):
-    filename = 'task.py'
+# TODO: batch-jobs.yml
 
 
 class Task(resource.ResourceBase):
-    required_files = [
-        resource.Definition,
-        TaskPython,
-    ]
-    optional_files = [
-        # TODO: Readme should be required
-        # once we have one per workflow
-        resource.Readme,
-        resource.Requirements,
-    ]
+    default_search_dir = DEFAULT_INCLUDE
+    task_py = resource.ResourceFile(filename='task.py')
+    definition = resource.ResourceFile(filename='definition.yml')
+    # TODO: Readme should be required once we have one per task
+    readme = resource.ResourceFile(filename='README.md', optional=True)
+    requirements = resource.ResourceFile(filename='requirements.txt', optional=True)
 
 
 def print_tasks():
     tasks = []
     for _dir in [DEFAULT_INCLUDE]: # + config.sources.tasks:
-        tasks.extend(resource.get_resources_from_dir(_dir, Task))
+        tasks.extend(Task.from_dir(_dir))
 
     for task in tasks:
         print(task.name)

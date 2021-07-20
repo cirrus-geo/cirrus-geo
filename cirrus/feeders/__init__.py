@@ -7,25 +7,18 @@ from cirrus.config import config
 DEFAULT_INCLUDE = Path(__file__).parent.joinpath('config')
 
 
-class FeederPython(resource.ResourceFileBase):
-    filename = 'feeder.py'
-
-
 class Feeder(resource.ResourceBase):
-    required_files = [
-        resource.Definition,
-        resource.Readme,
-        FeederPython,
-    ]
-    optional_files = [
-        resource.Requirements,
-    ]
+    default_search_dir = DEFAULT_INCLUDE
+    python = resource.ResourceFile(filename='feeder.py')
+    definition = resource.ResourceFile(filename='definition.yml')
+    readme = resource.ResourceFile(filename='README.md')
+    requirements = resource.ResourceFile(filename='requirements.txt', optional=True)
 
 
 def print_feeders():
     feeders = []
     for _dir in [DEFAULT_INCLUDE]: # + config.sources.feeders:
-        feeders.extend(resource.get_resources_from_dir(_dir, Feeder))
+        feeders.extend(Feeder.from_dir(_dir))
 
     for feeder in feeders:
         print(feeder.name)
