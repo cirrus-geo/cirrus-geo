@@ -1,5 +1,7 @@
+import os
 import shlex
 
+from click.testing import CliRunner
 from pathlib import Path
 
 from cirrus import cli
@@ -7,12 +9,21 @@ from cirrus.project import Project
 
 
 def test_init(tmpdir):
-    cmd = shlex.split(f'init {tmpdir}')
-    cli.main(cmd)
+    os.chdir(tmpdir)
+    runner = CliRunner()
+    result = runner.invoke(cli.main, 'init')
+    print(result.stdout)
+    print(os.system('pwd'))
+    print(os.system('ls -l'))
+    assert result.exit_code == 0
     Project.from_dir(Path(tmpdir))
 
+
 def test_reinit(tmpdir):
+    runner = CliRunner()
     cmd = shlex.split(f'init {tmpdir}')
-    cli.main(cmd)
-    cli.main(cmd)
+    result = runner.invoke(cli.main, cmd)
+    assert result.exit_code == 0
+    result = runner.invoke(cli.main, cmd)
+    assert result.exit_code == 0
     Project.from_dir(Path(tmpdir))

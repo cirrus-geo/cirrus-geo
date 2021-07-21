@@ -1,8 +1,10 @@
 import os
 import yaml
 
+from pathlib import Path
 from types import SimpleNamespace
 
+from cirrus.constants import DEFAULT_CONFIG_FILENAME
 from cirrus.exceptions import ConfigError
 
 
@@ -70,6 +72,10 @@ class Config(NestedNamespace):
     def from_yaml(cls, yml: str):
         return cls(yaml.safe_load(yml))
 
+    @classmethod
+    def from_file(cls, f: Path):
+        return cls.from_yaml(f.read_text(encoding='utf-8'))
+
     def __repr__(self):
         return 'Config{}'.format(self.__dict__.__repr__())
 
@@ -77,19 +83,32 @@ class Config(NestedNamespace):
 # Inspired by Django settings
 class LazyConfig:
     def __init__(self):
-        self._wrapped = None
+        _wrapped = None
+        _source = None
 
-    def _load_config(self):
-        config = os.environ.get(CONFIG_VAR)
-        if not config:
-            raise ConfigError(
-                "No configuration defined. "
-                f"Set the environment variable '{CONFIG_VAR}' before accessing config."
-            )
+    def _load_config(self, source: str=None):
+        if source:
+            self._source = Path(source)
+        elif self._source:
+            source = self._source
+        else:
+            source = self._source = Path(os.environ.get(CONFIG_VAR))
 
-        with open(config) as f:
-            self._wrapped = Config.from_yaml(f.read())
+        if not source:
+            raise ConfigError("No configuration source defined.")
 
+        self._wrapped = Config.from_file(source)
+
+    def set_source(self, source: str):
+        self._source = Path(source)
+
+    def resolve(self, d: Path=Path(os.getcwd())):
+        d = d.resolve()
+        for parent in [d] + d.parents:
+            config = parent.joinpath(DEFAULT_CONFIG_FILENAME)
+            if config.is_file():
+                self._source = config
+                return
 
     def __repr__(self):
         name = self.__class__.__name__
@@ -98,14 +117,14 @@ class LazyConfig:
         return self._wrapped.__repr__()
 
     def __getattr__(self, name: str):
-        if name == '_wrapped':
+        if name in ('_wrapped', '_source'):
             return super().__getattr__(name)
         if self._wrapped is None:
             self._load_config()
         return getattr(self._wrapped, name)
 
     def __setattr__(self, name: str, val):
-        if name == '_wrapped':
+        if name in ('_wrapped', '_source'):
             return super().__setattr__(name, val)
         if self._wrapped is None:
             self._load_config()

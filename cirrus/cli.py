@@ -1,59 +1,31 @@
-import argparse
 import sys
-import logging
+import click
 
-from cirrus import commands
+from cirrus.config import config as _config, CONFIG_VAR
+from cirrus.project import init
 
-
-logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 PROG='cirrus'
-DESC='Cirrus: severless STAC-based processing pipeline'
+DESC=''
 
 
-class CLI(object):
-    def __init__(self, prog, description):
-        self.parser = argparse.ArgumentParser(
-            prog=prog,
-            description=description,
-        )
-        self._subparsers = self.parser.add_subparsers(
-            title='subcommands',
-            dest='subcommand',
-        )
-        self._subparsers.metavar = '{command}'
-        self._show_list = []
-
-    def add_cmd(self, cmd):
-        name = cmd.get('name', cmd.__class__.__name__.lower())
-        parser = self._subparsers.add_parser(name, help=cmd.get('help', None), aliases=cmd.get('aliases', []))
-        cmd.collect_args(parser)
-        parser.set_defaults(_cmd=cmd)
-
-    def __call__(self, argv=None, ns=None):
-        # TODO: fix command hiding, this doesn't really work
-        # overriding subparser metavar to prevent display of 'hidden' commands
-        #self._subparsers.metavar = '{%s}'%','.join(self._show_list)
-        args = self.parser.parse_args(argv, ns)
-
-        if args.subcommand is None:
-            print('error: subcommand required')
-            self.parser.print_help()
-            sys.exit(2)
-
-        args._cmd.postprocess_args(self.parser, args)
-        return args._cmd(args)
+@click.group()
+@click.option(
+    '-c',
+    '--config',
+    envvar=CONFIG_VAR,
+)
+def main(config=None):
+    '''
+    cli for cirrus, a severless STAC-based processing pipeline
+    '''
+    if config:
+        _config.set_source(config)
+    else:
+        _config.resolve()
 
 
-def main(argv=None):
-    cli = CLI(
-        prog=PROG,
-        description=DESC,
-    )
-
-    cli.add_cmd(commands.Init())
-
-    return cli(argv)
+main.add_command(init)
 
 
 if __name__ == '__main__':
