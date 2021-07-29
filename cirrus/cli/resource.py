@@ -23,65 +23,66 @@ class ResourceMeta(ABCMeta):
 
         self.cli_group_name = self.plural_name
         self.cli_help = f'Commands for managing {self.resource_type} resources'
-        self.cli = build_resouce_cli(self)
+        self._build_cli()
 
     @property
     def default_user_dir(self):
         return project.path.joinpath(self.default_user_dir_name)
 
+    def _build_cli(self) -> None:
+        @click.group(
+            name=self.cli_group_name,
+            help=self.cli_help,
+        )
+        def cli():
+            pass
 
-def build_resouce_cli(cls: Type[ResourceMeta]):
-    @click.group(
-        name=cls.cli_group_name,
-        help=cls.cli_help,
-    )
-    def cli():
-        pass
+        self.cli = cli
+        self.build_cli()
 
-    @cli.command()
-    def list():
-        for resource in cls.find():
-            click.echo('{}{}'.format(
-                resource.name,
-                ' (built-in)' if resource.is_core_resource else '',
-            ))
+    def build_cli(self):
+        @self.cli.command()
+        def list():
+            for resource in self.find():
+                click.echo('{}{}'.format(
+                    resource.name,
+                    ' (built-in)' if resource.is_core_resource else '',
+                ))
 
-    @cli.command()
-    @click.argument(
-        'name',
-        metavar=f'{cls.resource_type}-name',
-    )
-    def new(name):
-        pass
-        #cls.new(name)
-
-    if hasattr(cls, 'readme'):
-        @cli.command()
+        @self.cli.command()
         @click.argument(
             'name',
-            metavar=f'{cls.resource_type}-name',
+            metavar=f'{self.resource_type}-name',
         )
-        def readme(name):
-            resource = cls.find_first(name)
-            if not resource:
-                click.secho(
-                    f"Unable to find {cls.resource_type} with name '{name}'.",
-                    err=True,
-                    fg='red',
-                )
-                return
+        def new(name):
+            pass
+            #self.new(name)
 
-            if resource.readme.content is None:
-                click.secho(
-                    f"{cls.resource_type.capitalize()} '{name}' has no README.",
-                    err=True,
-                    fg='red',
-                )
-                return
+        if hasattr(self, 'readme'):
+            @self.cli.command()
+            @click.argument(
+                'name',
+                metavar=f'{self.resource_type}-name',
+            )
+            def readme(name):
+                resource = self.find_first(name)
+                if not resource:
+                    click.secho(
+                        f"Unable to find {self.resource_type} with name '{name}'.",
+                        err=True,
+                        fg='red',
+                    )
+                    return
 
-            console.print(Markdown(resource.readme.content))
+                if resource.readme.content is None:
+                    click.secho(
+                        f"{self.resource_type.capitalize()} '{name}' has no README.",
+                        err=True,
+                        fg='red',
+                    )
+                    return
 
-    return cli
+                console.print(Markdown(resource.readme.content))
 
 
 T = TypeVar('T', bound='ResourceBase')
