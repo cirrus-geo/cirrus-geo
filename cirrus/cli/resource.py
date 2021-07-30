@@ -5,12 +5,12 @@ import click
 from typing import Type, TypeVar
 from abc import ABCMeta
 from pathlib import Path
-from rich.markdown import Markdown
 
 from cirrus.cli.config import Config
 from cirrus.cli.exceptions import CirrusError, ResourceLoadError
 from cirrus.cli.project import project
-from cirrus.cli.console import console
+from cirrus.cli.utils.console import console
+from cirrus.cli.utils.markdown import _Markdown
 
 
 class ResourceMeta(ABCMeta):
