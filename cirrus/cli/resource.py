@@ -55,10 +55,16 @@ class ResourceMeta(ABCMeta):
             metavar=f'{self.resource_type}-name',
         )
         def new(name):
+            # TODO: extract project path check into requires_project decorator
+            if project._path is None:
+                # TODO: custom exception handler for click exceptions that supports colors
+                click.secho('Cannot create resource: not in a cirrus project', err=True, fg='red')
+                sys.exit(1)
             try:
                 self.create(name)
             except ResourceError as e:
                 click.secho(e, err=True, fg='red')
+                sys.exit(1)
             else:
                 click.secho(f'{self.resource_type} {name} created', err=True, fg='green')
 
