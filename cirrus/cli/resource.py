@@ -2,12 +2,12 @@ import sys
 import copy
 import click
 
-from typing import Type, TypeVar
+from typing import Type, TypeVar, Callable
 from abc import ABCMeta
 from pathlib import Path
 
 from cirrus.cli.config import Config
-from cirrus.cli.exceptions import CirrusError, ResourceLoadError
+from cirrus.cli.exceptions import CirrusError, ResourceLoadError, ResourceError
 from cirrus.cli.project import project
 from cirrus.cli.utils.console import console
 from cirrus.cli.utils.markdown import _Markdown
@@ -55,8 +55,12 @@ class ResourceMeta(ABCMeta):
             metavar=f'{self.resource_type}-name',
         )
         def new(name):
-            pass
-            #self.new(name)
+            try:
+                self.create(name)
+            except ResourceError as e:
+                click.secho(e, err=True, fg='red')
+            else:
+                click.secho(f'{self.resource_type} {name} created', err=True, fg='green')
 
         if hasattr(self, 'readme'):
             @self.cli.command()
@@ -87,22 +91,49 @@ class ResourceMeta(ABCMeta):
 
 T = TypeVar('T', bound='ResourceBase')
 class ResourceBase(metaclass=ResourceMeta):
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, load: bool=True) -> None:
         self.path = path
+        self.name = path.name
+        self.files = []
+        self.is_core_resource = self.path.parent.samefile(self.__class__.core_dir)
+        self._loaded = False
+        if load:
+            self._load()
 
+    def _load(self):
         if not self.path.is_dir():
             raise ResourceLoadError(
-                f"Cannot load {self.__class__.__name__} from '{self.path}': not a directory"
+                f"Cannot load {self.__class__.__name__} from '{self.path}': not a directory."
             )
 
-        self.name = path.name
-
-        self.is_core_resource = self.path.parent.samefile(self.__class__.core_dir)
-
-        self.files = []
         for attr, val in self.__class__.__dict__.items():
             if hasattr(val, 'copy_to_resource'):
                 val.copy_to_resource(self, attr)
+        self._loaded = True
+
+    def _create(self):
+        if self._loaded:
+            raise ResourceError(f'Cannot create a loaded {self.__class__.__name__}.')
+
+        try:
+            self.path.mkdir()
+        except FileExistsError:
+            raise ResourceError(
+                f"Cannot create {self.__class__.__name__} at '{self.path}': already exists."
+            )
+
+        for attr, val in self.__class__.__dict__.items():
+            if hasattr(val, 'copy_to_resource'):
+                val.init(self)
+                val.copy_to_resource(self, attr)
+        self._loaded = True
+
+    @classmethod
+    def create(cls, name: str) -> Type[T]:
+        path = cls.default_user_dir.joinpath(name)
+        new = cls(path, load=False)
+        new._create()
+        return new
 
     @classmethod
     def from_dir(cls, d: Path, name: str=None) -> Type[T]:
@@ -142,11 +173,21 @@ class ResourceBase(metaclass=ResourceMeta):
 
 T = TypeVar('T', bound='ResourceFile')
 class ResourceFile:
-    def __init__(self, filename: str=None, optional: bool=False) -> None:
+    def __init__(
+        self,
+        filename:
+        str=None,
+        optional: bool=False,
+        content_fn: Callable[[Type[ResourceBase]], str]=None,
+    ) -> None:
         self.filename = filename
         self.required = not optional
+        self.content_fn = content_fn
 
-    def _copy(self, parent_resource: Type[ResourceBase], name: str) -> T:
+        if self.required and not self.content_fn:
+            raise ValueError('Required files must have a content_fn defined.')
+
+    def _copy_to_resource(self, parent_resource: Type[ResourceBase], name: str) -> T:
         self.set_filename(name)
         self = copy.copy(self)
         self.path = parent_resource.path.joinpath(self.filename)
@@ -167,6 +208,12 @@ class ResourceFile:
         self.filename = self.filename or name
 
     def copy_to_resource(self, resource: Type[ResourceBase], name: str) -> None:
-        self = self._copy(resource, name)
+        self = self._copy_to_resource(resource, name)
         setattr(resource, name, self)
         resource.files.append(self)
+
+    def init(self, parent_resource: Type[ResourceBase]) -> None:
+        if self.content_fn is None:
+            return
+        path = parent_resource.path.joinpath(self.filename)
+        path.write_text(self.content_fn(parent_resource))
