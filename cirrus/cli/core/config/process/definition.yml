@@ -1,0 +1,9 @@
+process:
+  description: Consumes Process Catalogs from queue and invokes workflow
+  handler: task.handler
+  memorySize: 128
+  timeout: 60
+  module: core/process
+  events:
+    - sqs:
+        arn: !GetAtt ProcessQueue.Arn

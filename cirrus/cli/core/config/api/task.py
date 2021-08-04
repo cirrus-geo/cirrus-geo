@@ -28,7 +28,7 @@ def response(body, status_code=200, headers={}):
         "headers": _headers,
         "body": json.dumps(body)
     }
- 
+
 
 def create_link(url, title, rel, media_type='application/json'):
     return {
@@ -77,9 +77,9 @@ def summary(collections_workflow, since, limit):
     }
 
 
-def lambda_handler(event, context):
+def handler(event, context):
     logger.debug('Event: %s' % json.dumps(event))
-    
+
     # get request URL
     domain = event.get('requestContext', {}).get('domainName', '')
     if domain != '':
@@ -112,8 +112,8 @@ def lambda_handler(event, context):
     since = qparams.get('since', None)
     nextkey = qparams.get('nextkey', None)
     limit = int(qparams.get('limit', 100000))
-    sort_ascending = bool(qparams.get('sort_ascending', None))
-    sort_index = qparams.get('sort_index', None)
+    sort_ascending = bool(int(qparams.get('sort_ascending', 0)))
+    sort_index = qparams.get('sort_index', 'updated')
     #count_limit = int(qparams.get('count_limit', 100000))
     #legacy = qparams.get('legacy', False)
 
@@ -123,7 +123,7 @@ def lambda_handler(event, context):
 
     if '/workflow-' not in catid:
         return response(f"{path} not found", status_code=400)
-        
+
     key = statedb.catid_to_key(catid)
 
     if key['itemids'] == '':

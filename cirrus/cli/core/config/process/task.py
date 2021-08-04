@@ -12,13 +12,13 @@ with open(os.path.join(os.path.dirname(__file__), 'processes.json')) as f:
     PROCESSES = json.loads(f.read())
 
 
-def lambda_handler(payload, context):
+def handler(payload, context):
     logger.debug(json.dumps(payload))
 
     # Read SQS payload
     if 'Records' not in payload:
         raise ValueError("Input not from SQS")
-    
+
     catalogs = []
     for record in [json.loads(r['body']) for r in payload['Records']]:
         cat = json.loads(record['Message'])

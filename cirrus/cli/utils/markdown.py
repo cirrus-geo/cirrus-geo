@@ -1,7 +1,16 @@
 import copy
+import re
 
-from commonmark.node import Node, NodeWalker, is_container
+from commonmark import node as cm_node
+from commonmark.node import Node
+
 from rich.markdown import TextElement, Markdown as _Markdown
+
+
+cm_node.reContainer = re.compile(
+    r'(document|block_quote|list|item|paragraph|'
+    r'heading|emph|strong|link|image|'
+    r'custom_inline|custom_block|table|tablerow|tablecell)')
 
 
 class NotTableError(Exception):
@@ -15,7 +24,7 @@ def _new__next__(self):
     if cur is None:
         raise StopIteration
 
-    container = is_container(cur)
+    container = cm_node.is_container(cur)
 
     if entering and container:
         if cur.first_child:
@@ -36,7 +45,7 @@ def _new__next__(self):
     return cur, entering
 
 
-NodeWalker.__next__ = _new__next__
+cm_node.NodeWalker.__next__ = _new__next__
 
 
 class Table(TextElement):
@@ -84,6 +93,12 @@ class TableCell(TextElement):
     style_name = "markdown.tablecell"
 
 
+def next_paragraph(nodewalker):
+    for node,entering in nodewalker:
+        if node.t == 'paragraph':
+            return node
+
+
 def print_node_walker(node):
     print(f'---- node walker {node} ----')
     for node, entering in node.walker():
@@ -92,149 +107,102 @@ def print_node_walker(node):
 
 
 def yield_rows(node):
-    #print_node_walker(node)
-    walker = node.walker()
-    parent = node.parent
-    for node, entering in walker:
+    while node:
         first_node = node
-        last_node = None
-        while node.t != 'softbreak' and node != parent:
-            last_node = node
-            try:
-                node, entering = next(walker)
-            except StopIteration:
+        last_node = node
+        while node:
+            if node.t == 'softbreak':
+                node = node.nxt
                 break
-        # TODO: validate row
-        # must start and end with text node
-        # start text node must start with |
-        # end text node must end with |, stripped
-        yield first_node, last_node
+            last_node = node
+            node = node.nxt
+        yield new_row(first_node, last_node)
+
+
+def new_row(first_node: Node, last_node: Node) -> Node:
+    if first_node.t != 'text':
+        raise NotTableError(1)
+    if last_node.t != 'text':
+        raise NotTableError(2)
+    if not first_node.literal.startswith('|'):
+        raise NotTableError(3)
+    if not last_node.literal.rstrip().endswith('|'):
+        raise NotTableError(4)
+
+    first_node.literal = first_node.literal[1:].lstrip()
+    last_node.literal = last_node.literal.rstrip()[:-1].rstrip()
+
+    if first_node.literal == '':
+        if first_node.nxt is None:
+            raise NotTableError(5)
+        first_node = first_node.nxt
+
+    if last_node.literal == '':
+        if last_node.prv is None:
+            raise NotTableError(6)
+        last_node = last_node.prv
+
+    row = Node('tablerow', None)
+    for cell in yield_cells(first_node, last_node):
+        row.append_child(cell)
+    return row
+
+
+def new_cell(first_node: Node, last_node: Node) -> Node:
+    node = first_node
+    cell = Node('tablecell', None)
+    while node:
+        if node.t != 'text' or not '|' in node.literal:
+            cell.append_child(copy.copy(node))
+            if node == last_node:
+                node = None
+            else:
+                node = node.nxt
+        else:
+            _node = node
+            node = copy.copy(node)
+            new_node = Node('text', None)
+            text, remainder = node.literal.split('|', 1)
+            node.literal = remainder.lstrip()
+            new_node.literal = text.rstrip()
+            if not node.literal:
+                if _node == last_node:
+                    node = None
+                else:
+                    node = node.nxt
+            if new_node.literal:
+                cell.append_child(new_node)
+            break
+    return cell, node
 
 
 def yield_cells(first_node, last_node):
-    # TODO: validate row
-    #print_node_walker(first_node)
-    walker = first_node.walker()
-    for node, entering in walker:
-        cell_first_node = None
-        cell_last_node = None
-        # make sure is text else is first node
-        # step through each char in node, testing for |
-        # save start and end indicies
-        # use to get substring and strip
-        # if starts with | and ends without | last text is first node
-        # if ends with | then is last node
-        # if no | then keep going
-        while node.t != 'text':
-            if cell_first_node is None:
-                cell_first_node = node
-            cell_last_node = node
-            try:
-                node, entering = next(walker)
-            except StopIteration:
-                break
-            if node == last_node:
-                return cell_first_node, cell_last_node
-
-        cur = 0
-        start = 0
-        first = True
-        while cur < len(node.literal):
-            char = node.literal[cur]
-            cur += 1
-            if char != '|':
-                continue
-
-            if start == cur - 1:
-                raise NotTableError(1)
-
-            text = node.literal[start:cur-1].strip()
-            start = cur
-
-            if first and not text:
-                first = False
-                yield cell_first_node, cell_last_node
-                continue
-
-            if not text and start != len(node.literal):
-                raise NotTableError(2)
-
-            text_node = Node('text', None)
-            text_node.literal = text
-
-            if cell_last_node:
-                text_node.previous = cell_last_node
-                cell_last_node.nxt = text_node
-
-            yield cell_first_node if cell_first_node else text_node, text_node
-        else:
-            text = node.literal[start:].strip()
-
-            if not text:
-                continue
-
-            text_node = Node('text', None)
-            text_node.literal = text
-
-            if cell_last_node:
-                text_node.previous = cell_last_node
-                cell_last_node.nxt = text_node
-
-            yield cell_first_node if cell_first_node else text_node, text_node
+    while True:
+        cell, first_node = new_cell(first_node, last_node)
+        yield cell
+        if first_node is None:
+            break
 
 
 def convert_paragraph_to_table(original_node, entering):
     if not entering or original_node.t != 'paragraph':
         return
 
-    #new_node = copy.deepcopy(original_node)
+    copy_node = copy.deepcopy(original_node)
     new_node = Node('table', None)
     new_node.parent = original_node
 
-    print_node_walker(original_node)
-    #print_node_walker(original_node.first_child)
+    for row in yield_rows(copy_node.first_child):
+        new_node.append_child(row)
 
-    last_row = None
-    last_cell = None
-    for row_first_node, row_last_node in yield_rows(original_node.first_child):
-        row = Node('tablerow', None)
-        row.parent = new_node
-
-        if last_row == None:
-            new_node.first_child = row
-
-        last_row = row
-
-        last_cell = None
-        for cell_first_node, cell_last_node in yield_cells(row_first_node, row_last_node):
-            cell = Node('tablecell', None)
-            cell.parent = last_row
-
-            if last_cell == None:
-                last_row.first_child = cell
-
-            cell.first_child = cell_first_node
-            cell.last_child = cell_last_node
-
-            for node, entering in cell_first_node.walker():
-                node.parent = cell
-
-            last_cell = cell
-
-        last_row.last_child = last_cell
-
-    new_node.last_child = last_row
-
-    #original_node.__dict__ = new_node.__dict__
     print_node_walker(new_node)
-    if not last_cell:
+    if new_node.first_child is None:
         return
     original_node.first_child = new_node
     original_node.last_child = new_node
 
 
 class Markdown(_Markdown):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

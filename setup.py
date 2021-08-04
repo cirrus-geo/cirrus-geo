@@ -4,7 +4,7 @@ import os.path
 
 from setuptools import setup, find_packages
 
-from cirrus.cli.commands import DESC
+from cirrus.cli.constants import DESC
 from cirrus.cli.constants import SUPPORTED_BACKENDS
 
 
@@ -24,6 +24,7 @@ dependency_links = [x.strip().replace('git+', '') for x in all_reqs if 'git+' no
 
 package_data = {
     'cirrus': [
+        'cli/core/config/**/*',
         'cli/feeders/config/**/*',
         'cli/tasks/config/**/*',
         'cli/workflows/config/**/*',

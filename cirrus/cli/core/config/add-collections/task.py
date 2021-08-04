@@ -11,7 +11,7 @@ from pystac import Catalog, Collection
 logger = logging.getLogger(__name__)
 
 
-def lambda_handler(event, context={}):
+def handler(event, context={}):
     logger.debug('Event: %s' % json.dumps(event))
 
     # check if collection and if so, add to Cirrus

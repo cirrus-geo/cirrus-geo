@@ -2,6 +2,7 @@ import os
 import click
 
 from pathlib import Path
+from cirrus.cli import constants
 from cirrus.cli.project import project
 from cirrus.cli.feeders import Feeder
 from cirrus.cli.tasks import Task
@@ -10,13 +11,9 @@ from cirrus.cli.workflows import Workflow
 #from cirrus.cli.workflows.commands import cli as cli_workflows
 
 
-PROG = 'cirrus'
-DESC = 'cli for cirrus, a severless STAC-based processing pipeline'
-
-
 @click.group(
-    name=PROG,
-    help=DESC,
+    name=constants.PROG,
+    help=constants.DESC,
 )
 @click.option(
     '--cirrus-dir',

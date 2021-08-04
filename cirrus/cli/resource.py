@@ -5,12 +5,13 @@ import click
 from typing import Type, TypeVar, Callable
 from abc import ABCMeta
 from pathlib import Path
+from rich.markdown import Markdown
 
 from cirrus.cli.config import Config
 from cirrus.cli.exceptions import CirrusError, ResourceLoadError, ResourceError
 from cirrus.cli.project import project
 from cirrus.cli.utils.console import console
-from cirrus.cli.utils.markdown import _Markdown
+#from cirrus.cli.utils.markdown import Markdown
 
 
 class ResourceMeta(ABCMeta):
@@ -21,9 +22,10 @@ class ResourceMeta(ABCMeta):
         self.default_user_dir_name = self.plural_name
         self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
 
-        self.cli_group_name = self.plural_name
-        self.cli_help = f'Commands for managing {self.resource_type} resources'
-        self._build_cli()
+        if self.enable_cli:
+            self.cli_group_name = self.plural_name
+            self.cli_help = f'Commands for managing {self.resource_type} resources'
+            self._build_cli()
 
     @property
     def default_user_dir(self):
@@ -97,6 +99,8 @@ class ResourceMeta(ABCMeta):
 
 T = TypeVar('T', bound='ResourceBase')
 class ResourceBase(metaclass=ResourceMeta):
+    enable_cli = True
+
     def __init__(self, path: Path, load: bool=True) -> None:
         self.path = path
         self.name = path.name
