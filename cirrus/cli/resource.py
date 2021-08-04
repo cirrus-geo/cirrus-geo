@@ -46,9 +46,10 @@ class ResourceMeta(ABCMeta):
         @self.cli.command()
         def list():
             for resource in self.find():
-                click.echo('{}{}'.format(
+                click.echo('{}{}{}'.format(
                     resource.name,
                     ' (built-in)' if resource.is_core_resource else '',
+                    f': {resource.description}' if resource.description else '',
                 ))
 
         @self.cli.command()
@@ -105,38 +106,48 @@ class ResourceBase(metaclass=ResourceMeta):
         self.path = path
         self.name = path.name
         self.files = []
+        self.config = None
+        self.description = ''
         self.is_core_resource = self.path.parent.samefile(self.__class__.core_dir)
         self._loaded = False
         if load:
             self._load()
 
-    def _load(self):
+    def _load(self, init_resources=False):
         if not self.path.is_dir():
             raise ResourceLoadError(
-                f"Cannot load {self.__class__.__name__} from '{self.path}': not a directory."
+                f"Cannot load {self.resource_type} from '{self.path}': not a directory."
             )
 
         for attr, val in self.__class__.__dict__.items():
             if hasattr(val, 'copy_to_resource'):
+                if init_resources:
+                    val.init()
                 val.copy_to_resource(self, attr)
+
+        if hasattr(self, 'definition'):
+            self.config = Config.from_yaml(self.definition.content)
+            self.process_config()
         self._loaded = True
+
+    def process_config(self):
+        if not hasattr(self.config, 'module'):
+            self.config.module = f'{self.resource_type}/{self.name}'
+        if not hasattr(self.config, 'handler'):
+            self.config.handler = f'{self.resource_type}.handler'
+        if hasattr(self.config, 'description'):
+            self.description = self.config.description
 
     def _create(self):
         if self._loaded:
             raise ResourceError(f'Cannot create a loaded {self.__class__.__name__}.')
-
         try:
             self.path.mkdir()
         except FileExistsError:
             raise ResourceError(
                 f"Cannot create {self.__class__.__name__} at '{self.path}': already exists."
             )
-
-        for attr, val in self.__class__.__dict__.items():
-            if hasattr(val, 'copy_to_resource'):
-                val.init(self)
-                val.copy_to_resource(self, attr)
-        self._loaded = True
+        self._load(init_resources=True)
 
     @classmethod
     def create(cls, name: str) -> Type[T]:

@@ -1,6 +1,3 @@
-publish:
-  description: Publish resulting STAC Collections and Items to catalog, and optionally SNS
-  handler: task.handler
-  memorySize: 128
-  timeout: 30
-  module: tasks/publish
+description: Publish resulting STAC Collections and Items to catalog, and optionally SNS
+memorySize: 128
+timeout: 30

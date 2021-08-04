@@ -1,6 +1,5 @@
-feed-stac-api:
-    description: Feed data from a STAC API to Cirrus for processing
-    handler: feeder.handler
-    memorySize: 128
-    timeout: 900
-    module: feeders/stac-api
+description: Feed data from a STAC API to Cirrus for processing
+handler: feeder.handler
+memorySize: 128
+timeout: 900
+module: feeders/stac-api
