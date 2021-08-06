@@ -7,11 +7,11 @@ from abc import ABCMeta
 from pathlib import Path
 from rich.markdown import Markdown
 
-from cirrus.cli.config import Config
-from cirrus.cli.exceptions import CirrusError, ResourceLoadError, ResourceError
+from cirrus.cli.exceptions import CirrusError, ResourceError
 from cirrus.cli.project import project
 from cirrus.cli.utils.console import console
 #from cirrus.cli.utils.markdown import Markdown
+from cirrus.cli.utils.yaml import NamedYamlable
 
 
 class ResourceMeta(ABCMeta):
@@ -29,7 +29,9 @@ class ResourceMeta(ABCMeta):
 
     @property
     def default_user_dir(self):
-        return project.path.joinpath(self.default_user_dir_name)
+        if self.user_extendable:
+            return project.path.joinpath(self.default_user_dir_name)
+        return None
 
     def _build_cli(self) -> None:
         @click.group(
@@ -101,6 +103,7 @@ class ResourceMeta(ABCMeta):
 T = TypeVar('T', bound='ResourceBase')
 class ResourceBase(metaclass=ResourceMeta):
     enable_cli = True
+    user_extendable = True
 
     def __init__(self, path: Path, load: bool=True) -> None:
         self.path = path
@@ -115,7 +118,7 @@ class ResourceBase(metaclass=ResourceMeta):
 
     def _load(self, init_resources=False):
         if not self.path.is_dir():
-            raise ResourceLoadError(
+            raise ResourceError(
                 f"Cannot load {self.resource_type} from '{self.path}': not a directory."
             )
 
@@ -126,13 +129,13 @@ class ResourceBase(metaclass=ResourceMeta):
                 val.copy_to_resource(self, attr)
 
         if hasattr(self, 'definition'):
-            self.config = Config.from_yaml(self.definition.content)
+            self.config = NamedYamlable.from_yaml(self.definition.content)
             self.process_config()
         self._loaded = True
 
     def process_config(self):
         if not hasattr(self.config, 'module'):
-            self.config.module = f'{self.resource_type}/{self.name}'
+            self.config.module = f'{self.plural_name}/{self.name}'
         if not hasattr(self.config, 'handler'):
             self.config.handler = f'{self.resource_type}.handler'
         if hasattr(self.config, 'description'):
@@ -143,14 +146,18 @@ class ResourceBase(metaclass=ResourceMeta):
             raise ResourceError(f'Cannot create a loaded {self.__class__.__name__}.')
         try:
             self.path.mkdir()
-        except FileExistsError:
+        except FileExistsError as e:
             raise ResourceError(
                 f"Cannot create {self.__class__.__name__} at '{self.path}': already exists."
-            )
+            ) from e
         self._load(init_resources=True)
 
     @classmethod
     def create(cls, name: str) -> Type[T]:
+        if not cls.user_extendable:
+            raise ResourceError(
+                f"Resource {self.resource_type} does not support creation"
+            )
         path = cls.default_user_dir.joinpath(name)
         new = cls(path, load=False)
         new._create()
@@ -163,7 +170,7 @@ class ResourceBase(metaclass=ResourceMeta):
                 continue
             try:
                 yield cls(resource_dir)
-            except ResourceLoadError:
+            except ResourceError:
                 # TODO: logging of skipped dirs
                 continue
 
@@ -173,10 +180,11 @@ class ResourceBase(metaclass=ResourceMeta):
         # implementation if a resource name is specified
         search_dirs = []
 
-        try:
-            search_dirs.append(cls.default_user_dir)
-        except CirrusError:
-            pass
+        if cls.user_extendable:
+            try:
+                search_dirs.append(cls.default_user_dir)
+            except CirrusError:
+                pass
 
         search_dirs.append(cls.core_dir)
 
@@ -204,25 +212,34 @@ class ResourceFile:
         self.filename = filename
         self.required = not optional
         self.content_fn = content_fn
+        self._content = None
 
         if self.required and not self.content_fn:
             raise ValueError('Required files must have a content_fn defined.')
+
+    @property
+    def content(self):
+        if self._content is None:
+            try:
+                self._content = self.path.read_text()
+            except FileNotFoundError as e:
+                if self.required:
+                    raise ResourceError(
+                            f"{self.__class__.__name__} at '{self.path}': unable to open for read"
+                    ) from e
+                else:
+                    # log something about defaulting content to None
+                    self._content = ''
+        return self._content
 
     def _copy_to_resource(self, parent_resource: Type[ResourceBase], name: str) -> T:
         self.set_filename(name)
         self = copy.copy(self)
         self.path = parent_resource.path.joinpath(self.filename)
-        try:
-            with self.path.open() as f:
-                self.content = f.read()
-        except FileNotFoundError as e:
-            if self.required:
-                raise ResourceLoadError(
-                        f"Cannot load {self.__class__.__name__} from '{self.path}': unable to open for read"
-                ) from e
-            else:
-                # log something about defaulting content to None
-                self.content = None
+        if self.required and not self.path.is_file():
+            raise ResourceError(
+                f"Cannot load {self.__class__.__name__} from '{self.path}': not a file"
+            )
         return self
 
     def set_filename(self, name: str) -> None:

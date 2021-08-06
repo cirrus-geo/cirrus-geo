@@ -8,6 +8,3 @@ class ConfigError(CirrusError):
 
 class ResourceError(CirrusError):
     pass
-
-class ResourceLoadError(FileNotFoundError):
-    pass

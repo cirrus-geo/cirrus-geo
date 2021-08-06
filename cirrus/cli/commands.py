@@ -62,6 +62,15 @@ def init(directory=None):
     )
 
 
+@cli.command()
+def build():
+    '''
+    Build the cirrus configuration into one consumable by
+    the specified backend.
+    '''
+    project.build()
+
+
 cli.add_command(Feeder.cli)
 cli.add_command(Task.cli)
 cli.add_command(Workflow.cli)
