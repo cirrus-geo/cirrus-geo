@@ -1,5 +1,6 @@
 import os
 import click
+import logging
 
 from pathlib import Path
 from cirrus.cli import constants
@@ -7,8 +8,11 @@ from cirrus.cli.project import project
 from cirrus.cli.feeders import Feeder
 from cirrus.cli.tasks import Task
 from cirrus.cli.workflows import Workflow
-#from cirrus.cli.tasks.commands import cli as cli_tasks
-#from cirrus.cli.workflows.commands import cli as cli_workflows
+from cirrus.cli.utils.logging import ClickHandler
+
+
+logging.basicConfig(handlers=[ClickHandler()])
+logger = logging.getLogger(__name__)
 
 
 @click.group(
@@ -26,6 +30,7 @@ from cirrus.cli.workflows import Workflow
     ),
 
 )
+# TODO: logging verbosity option
 def cli(cirrus_dir=None):
     if cirrus_dir:
         project.set_path(cirrus_dir)
@@ -68,6 +73,7 @@ def build():
     Build the cirrus configuration into one consumable by
     the specified backend.
     '''
+    project.initialized_or_exit()
     project.build()
 
 

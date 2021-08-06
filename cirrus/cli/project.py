@@ -1,5 +1,7 @@
 import os
+import sys
 import yaml
+import logging
 
 from typing import List, TypeVar
 from pathlib import Path
@@ -14,6 +16,9 @@ from cirrus.cli.constants import (
 from cirrus.cli.config import Config, DEFAULT_CONFIG
 from cirrus.cli.exceptions import CirrusError
 from cirrus.cli.utils.yaml import NamedYamlable
+
+
+logger = logging.getLogger(__name__)
 
 
 C = TypeVar('C', bound='cirrus.cli.core.CoreTask')
@@ -59,13 +64,15 @@ class Project:
     @property
     def path(self) -> Path:
         if self._path is None:
-            # TODO: convert to click logging
-            utils.cli_only_secho(
-                'No cirrus project specified; limited to built-in resources.',
-                err=True,
-                fg='yellow',
-            )
             raise CirrusError('Cirrus project path not set. Project is not initialized.')
+        return self._path
+
+    @property
+    def path_safe(self) -> Path:
+        if self._path is None:
+            logger.warning(
+                'No cirrus project specified; limited to built-in resources.',
+            )
         return self._path
 
     @path.setter
@@ -155,6 +162,13 @@ class Project:
             pass
         else:
             conf.write_text(yaml.dump(DEFAULT_CONFIG))
+
+    def initialized_or_exit(self):
+        try:
+            self.path
+        except CirrusError:
+            logger.error('Error: no cirrus project specified')
+            sys.exit(1)
 
     def build(self) -> None:
         from cirrus.cli.core import core_resources

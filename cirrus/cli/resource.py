@@ -30,7 +30,10 @@ class ResourceMeta(ABCMeta):
     @property
     def default_user_dir(self):
         if self.user_extendable:
-            return project.path.joinpath(self.default_user_dir_name)
+            try:
+                return project.path_safe.joinpath(self.default_user_dir_name)
+            except AttributeError:
+                pass
         return None
 
     def _build_cli(self) -> None:
@@ -180,11 +183,9 @@ class ResourceBase(metaclass=ResourceMeta):
         # implementation if a resource name is specified
         search_dirs = []
 
-        if cls.user_extendable:
-            try:
-                search_dirs.append(cls.default_user_dir)
-            except CirrusError:
-                pass
+        user_dir = cls.default_user_dir
+        if user_dir is not None:
+            search_dirs.append(user_dir)
 
         search_dirs.append(cls.core_dir)
 
