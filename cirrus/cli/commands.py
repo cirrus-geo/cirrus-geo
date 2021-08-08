@@ -1,6 +1,5 @@
 import os
 import click
-import logging
 
 from pathlib import Path
 from cirrus.cli import constants
@@ -8,10 +7,9 @@ from cirrus.cli.project import project
 from cirrus.cli.feeders import Feeder
 from cirrus.cli.tasks import Task
 from cirrus.cli.workflows import Workflow
-from cirrus.cli.utils.logging import ClickHandler
+from cirrus.cli.utils import logging
 
 
-logging.basicConfig(handlers=[ClickHandler()])
 logger = logging.getLogger(__name__)
 
 
@@ -30,8 +28,9 @@ logger = logging.getLogger(__name__)
     ),
 
 )
-# TODO: logging verbosity option
-def cli(cirrus_dir=None):
+@logging.verbosity()
+def cli(verbose, cirrus_dir=None):
+    logger.debug(5678)
     if cirrus_dir:
         project.set_path(cirrus_dir)
     else:
