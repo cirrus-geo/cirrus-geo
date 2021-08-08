@@ -8,12 +8,11 @@ from pathlib import Path
 
 from cirrus.cli import utils
 from cirrus.cli.constants import (
+    DEFAULT_BUILD_DIR_NAME,
     DEFAULT_CONFIG_FILENAME,
     DEFAULT_SERVERLESS_FILENAME,
-    DEFAULT_BUILD_DIR_NAME,
-    SERVERLESS_PLUGINS
 )
-from cirrus.cli.config import Config, DEFAULT_CONFIG
+from cirrus.cli.config import Config
 from cirrus.cli.exceptions import CirrusError
 from cirrus.cli.utils.yaml import NamedYamlable
 
@@ -31,12 +30,14 @@ class Project:
     def __init__(self,
                  d: Path=None,
                  config: Config=None,
+                 core_resources: List[NamedYamlable]=None,
                  core_tasks: List[F]=None,
                  feeders: List[F]=None,
                  tasks: List[T]=None,
                  workflows: List[W]=None,
                  ) -> None:
         self._config = config
+        self._core_resources = core_resources
         self._core_tasks = core_tasks
         self._feeders = feeders
         self._tasks = tasks
@@ -87,21 +88,15 @@ class Project:
     def config(self) -> Config:
         if self._config is None:
             # TODO: what happens if no config file?
-            self._config = Config.from_file(
-                self.path.joinpath(DEFAULT_CONFIG_FILENAME),
-            )
+            self._config = Config.from_project(self)
         return self._config
 
     @property
-    def serverless(self) -> Config:
-        if self._serverless is None:
-            # TODO: what happens if no serverless file?
-            self._serverless = Config.from_file(
-                self.path.joinpath(DEFAULT_SERVERLESS_FILENAME),
-            )
-            self._serverless.functions = Config()
-            self._serverless.stepFunctions.stateMachines = Config()
-        return self._serverless
+    def core_resources(self) -> List[NamedYamlable]:
+        if self._core_resources is None:
+            from cirrus.cli.core import core_resources
+            self._core_resources = list(core_resources())
+        return self._core_resources
 
     @property
     def core_tasks(self) -> List[C]:
@@ -171,57 +166,9 @@ class Project:
             sys.exit(1)
 
     def build(self) -> None:
-        from cirrus.cli.core import core_resources
-        sls = self.serverless
-
-        # TODO: refactor into convenience methods
-        # add all lambda functions
-        for task in self.core_tasks:
-            if not hasattr(sls.functions, task.name):
-                setattr(sls.functions, task.name, task.config)
-            else:
-                # TODO: log warning here
-                pass
-
-        for task in self.tasks:
-            if not hasattr(sls.functions, task.name):
-                setattr(sls.functions, task.name, task.config)
-            else:
-                # TODO: log warning here
-                pass
-
-        for feeder in self.feeders:
-            if not hasattr(sls.functions, feeder.name):
-                setattr(sls.functions, feeder.name, feeder.config)
-            else:
-                # TODO: log warning here
-                pass
-
-        # add all state machine step functions
-        for workflow in self.workflows:
-            if not hasattr(sls.stepFunctions.stateMachines, workflow.name):
-                setattr(sls.stepFunctions.stateMachines, workflow.name, workflow.config)
-            else:
-                # TODO: log warning here
-                pass
-
-        # populate required plugin list
-        try:
-            sls.plugins.extend(SERVERLESS_PLUGINS)
-        except AttributeError:
-            sls.plugins = SERVERLESS_PLUGINS
-        else:
-            # deduplicate
-            sls.plugins = list(set(sls.plugins))
-
-        # include core and custom resource files
-        sls.resources.Resources = sls.resources.get('Resources', {})
-        for cr in core_resources():
-            sls.resources.Resources.update(cr)
-
         bd = self.build_dir
         bd.mkdir(exist_ok=True)
-        sls.to_file(bd.joinpath(DEFAULT_SERVERLESS_FILENAME))
+        self.config.to_file(bd.joinpath(DEFAULT_SERVERLESS_FILENAME))
 
 
 project = Project()

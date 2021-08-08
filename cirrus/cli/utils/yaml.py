@@ -90,7 +90,7 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
         if name == '_dict':
             return super().__setattr__(name, val)
         if isinstance(val, dict):
-            self._dict[name] = type(self)(val)
+            self._dict[name] = NamedYamlable(val)
         elif isinstance(val, list):
             self._dict[name] = YamlableList(*val)
         else:

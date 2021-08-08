@@ -51,9 +51,8 @@ class ResourceMeta(ABCMeta):
         @self.cli.command()
         def list():
             for resource in self.find():
-                click.echo('{}{}{}'.format(
-                    resource.name,
-                    ' (built-in)' if resource.is_core_resource else '',
+                click.echo('{}{}'.format(
+                    resource.display_name,
                     f': {resource.description}' if resource.description else '',
                 ))
 
@@ -118,6 +117,13 @@ class ResourceBase(metaclass=ResourceMeta):
         self._loaded = False
         if load:
             self._load()
+
+    @property
+    def display_name(self):
+        return '{}{}'.format(
+            self.name,
+            ' (built-in)' if self.is_core_resource else '',
+        )
 
     def _load(self, init_resources=False):
         if not self.path.is_dir():
