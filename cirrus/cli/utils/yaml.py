@@ -57,7 +57,7 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
     _dict_type = odict.ODict
 
     def __init__(self, dict=None, /, **kwargs):
-        self._dict = NamedYamlable._dict_type()
+        self._dict = type(self)._dict_type()
         if dict is not None:
             self.update(dict)
         if kwargs:
@@ -67,7 +67,9 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
     @classmethod
     def from_yaml(cls, yml: str):
         self = cls()
-        self._dict = yaml.load(yml, Loader=yaml_loader.CfnYamlLoader)._dict
+        loaded = yaml.load(yml, Loader=yaml_loader.CfnYamlLoader)
+        if loaded is not None:
+            self._dict = loaded._dict
         return self
 
     @classmethod

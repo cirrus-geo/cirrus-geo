@@ -6,5 +6,5 @@ class ConfigError(CirrusError):
     pass
 
 
-class ResourceError(CirrusError):
+class ComponentError(CirrusError):
     pass

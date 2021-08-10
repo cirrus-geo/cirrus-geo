@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from cirrus.cli import resource
+from cirrus.cli import component
 
 
-class Workflow(resource.ResourceBase):
-    definition = resource.ResourceFile(filename='definition.yml', content_fn=lambda x: '')
+class Workflow(component.ComponentBase):
+    definition = component.ComponentFile(filename='definition.yml', content_fn=lambda x: '')
     # TODO: Readme should be required once we have one per task
-    readme = resource.ResourceFile(filename='README.md', optional=True, content_fn=lambda x: '')
+    readme = component.ComponentFile(filename='README.md', optional=True, content_fn=lambda x: '')
 
     def process_config(self):
         try:

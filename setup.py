@@ -26,6 +26,7 @@ package_data = {
     'cirrus': [
         'cli/core/config/**/*',
         'cli/feeders/config/**/*',
+        'cli/resources/config/**/*',
         'cli/tasks/config/**/*',
         'cli/workflows/config/**/*',
         'cli/config/*',

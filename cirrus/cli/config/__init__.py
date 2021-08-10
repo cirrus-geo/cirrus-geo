@@ -48,31 +48,25 @@ class Config(NamedYamlable):
             self.register_workflow(workflow)
 
         # include core and custom resource files
-        for cr in project.core_resources:
-            self.register_resources(cr)
+        self.register_resources(project.core_resources)
 
         return self
 
-    def register_function(self, lambda_resource) -> None:
-        if lambda_resource.name in self.functions and not lambda_resource.is_core_resource:
+    def register_function(self, lambda_component) -> None:
+        if lambda_component.name in self.functions and not lambda_component.is_core_component:
             logging.warning(
-                f"Duplicate function declaration: '{lambda_resource.display_name}', skipping",
+                f"Duplicate function declaration: '{lambda_component.display_name}', skipping",
             )
             return
-        self.functions[lambda_resource.name] = lambda_resource.config
+        self.functions[lambda_component.name] = lambda_component.config
 
     def register_workflow(self, workflow) -> None:
-        if workflow.name in self.stepFunctions.stateMachines and not workflow.is_core_resource:
+        if workflow.name in self.stepFunctions.stateMachines and not workflow.is_core_component:
             logging.warning(
                 f"Duplicate workflow declaration '{workflow.display_name}', skipping",
             )
             return
         self.stepFunctions.stateMachines[workflow.name] = workflow.config
 
-    def register_resources(self, resource_config: NamedYamlable) -> None:
-        for resource, config in resource_config.items():
-            if resource in self.resources.Resources:
-                logging.warning(
-                    f"Duplicate resource declaration '{resource}', overriding",
-                )
-            self.resources.Resources[resource] = config
+    def register_resources(self, resources) -> None:
+        self.resources.Resources = resources

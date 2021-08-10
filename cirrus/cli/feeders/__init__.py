@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from cirrus.cli import resource
+from cirrus.cli import component
 
 
-class Feeder(resource.ResourceBase):
-    python = resource.ResourceFile(filename='feeder.py', content_fn=lambda x: '')
-    definition = resource.ResourceFile(filename='definition.yml', content_fn=lambda x: '')
+class Feeder(component.ComponentBase):
+    python = component.ComponentFile(filename='feeder.py', content_fn=lambda x: '')
+    definition = component.ComponentFile(filename='definition.yml', content_fn=lambda x: '')
     # make this optional once we have them
-    readme = resource.ResourceFile(filename='README.md', optional=True, content_fn=lambda x: '')
-    requirements = resource.ResourceFile(filename='requirements.txt', optional=True)
+    readme = component.ComponentFile(filename='README.md', optional=True, content_fn=lambda x: '')
+    requirements = component.ComponentFile(filename='requirements.txt', optional=True)

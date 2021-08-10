@@ -1,12 +1,10 @@
 import os
 import sys
 import yaml
-import logging
 
 from typing import List, TypeVar
 from pathlib import Path
 
-from cirrus.cli import utils
 from cirrus.cli.constants import (
     DEFAULT_BUILD_DIR_NAME,
     DEFAULT_CONFIG_FILENAME,
@@ -14,6 +12,7 @@ from cirrus.cli.constants import (
 )
 from cirrus.cli.config import Config
 from cirrus.cli.exceptions import CirrusError
+from cirrus.cli.utils import logging
 from cirrus.cli.utils.yaml import NamedYamlable
 
 
@@ -70,9 +69,11 @@ class Project:
 
     @property
     def path_safe(self) -> Path:
+        from functools import cache
         if self._path is None:
+            #logging.once(
             logger.warning(
-                'No cirrus project specified; limited to built-in resources.',
+                'No cirrus project specified; limited to built-in components/resources.',
             )
         return self._path
 
@@ -94,8 +95,15 @@ class Project:
     @property
     def core_resources(self) -> List[NamedYamlable]:
         if self._core_resources is None:
-            from cirrus.cli.core import core_resources
-            self._core_resources = list(core_resources())
+            from cirrus.cli.resources import core_resources
+            self._core_resources = {}
+            for resources in core_resources():
+                for name, config in resources.items():
+                    if name in self._core_resources:
+                        logger.warning(
+                            f"Duplicate resource declaration '{name}', overriding",
+                        )
+                    self._core_resources[name] = config
         return self._core_resources
 
     @property
@@ -147,8 +155,8 @@ class Project:
 
     @staticmethod
     def new(d: Path) -> None:
-        for resource in ('feeders', 'tasks', 'workflows'):
-            d.joinpath(resource).mkdir(exist_ok=True)
+        for component_type in ('feeders', 'tasks', 'workflows'):
+            d.joinpath(component_type).mkdir(exist_ok=True)
 
         conf = d.joinpath(DEFAULT_CONFIG_FILENAME)
         try:
@@ -169,6 +177,11 @@ class Project:
         bd = self.build_dir
         bd.mkdir(exist_ok=True)
         self.config.to_file(bd.joinpath(DEFAULT_SERVERLESS_FILENAME))
+        # make dirs: core, feeders, tasks
+        # rm all links
+        # add links from core
+        # add/replace links from user
+        # TODO: add python requirements to definition.yml
 
 
 project = Project()

@@ -1,26 +1,11 @@
-from pathlib import Path
-
-from cirrus.cli import resource
-from cirrus.cli.project import project
-from cirrus.cli.utils.yaml import NamedYamlable
+from cirrus.cli import component
 
 
-class CoreTask(resource.ResourceBase):
+class CoreTask(component.ComponentBase):
     enable_cli = False
     user_extendable = False
-    python = resource.ResourceFile(filename='task.py', content_fn=lambda x: '')
-    definition = resource.ResourceFile(filename='definition.yml', content_fn=lambda x: '')
+    python = component.ComponentFile(filename='task.py', content_fn=lambda x: '')
+    definition = component.ComponentFile(filename='definition.yml', content_fn=lambda x: '')
     # make this optional once we have them
-    readme = resource.ResourceFile(filename='README.md', optional=True)
-    requirements = resource.ResourceFile(filename='requirements.txt', optional=True)
-
-
-def core_resources():
-    search_dirs = []
-    for d in (CoreTask.core_dir, project.path.joinpath('custom')):
-        for yml in d.glob('*.yml'):
-            yml = NamedYamlable.from_file(yml)
-            try:
-                yield yml['Resources']
-            except KeyError:
-                yield yml
+    readme = component.ComponentFile(filename='README.md', optional=True)
+    requirements = component.ComponentFile(filename='requirements.txt', optional=True)
