@@ -1,5 +1,6 @@
 import logging
 
+from pathlib import Path
 from cirrus.cli.constants import (
     DEFAULT_CONFIG_FILENAME,
     SERVERLESS_PLUGINS,
@@ -10,32 +11,22 @@ from cirrus.cli.utils.yaml import NamedYamlable
 logger = logging.getLogger(__name__)
 
 
+DEFAULT_CONFIG_PATH = Path(__file__).parent.joinpath('default.yml')
+
+
 class Config(NamedYamlable):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    @classmethod
+    def default(cls):
+        return cls.from_file(DEFAULT_CONFIG_PATH)
 
     @classmethod
     def from_project(cls, project):
         self = cls.from_file(
             project.path.joinpath(DEFAULT_CONFIG_FILENAME),
         )
-
-        # set defaults
-        self.functions = {}
-        self.stepFunctions = dict(validate=True, stateMachines={})
-        self.resources = dict(
-            Description='Cirrus STAC Processing Framework',
-            Resources={},
-        )
-
-        # populate required plugin list
-        try:
-            self.plugins.extend(SERVERLESS_PLUGINS)
-        except AttributeError:
-            self.plugins = SERVERLESS_PLUGINS
-        else:
-            # deduplicate
-            self.plugins = list(set(self.plugins))
 
         # add all lambda functions
         function_types = (project.core_tasks, project.tasks, project.feeders)
@@ -49,6 +40,29 @@ class Config(NamedYamlable):
 
         # include core and custom resource files
         self.register_resources(project.core_resources)
+
+        return self
+
+    @classmethod
+    def from_file(cls, file: Path):
+        self = cls.from_file(file)
+
+        # set defaults
+        self.functions = {}
+        self.stepFunctions = dict(validate=True, stateMachines={})
+        self.resources = dict(
+            Description='Cirrus STAC Processing Framework',
+            Resources={},
+        )
+
+        # populate required plugin list
+        try:
+            self.plugins.extend(SERVERLESS_PLUGINS.keys())
+        except AttributeError:
+            self.plugins = serverless_plugins.keys()
+        else:
+            # deduplicate
+            self.plugins = list(set(self.plugins))
 
         return self
 

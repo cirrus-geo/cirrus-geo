@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import yaml
 
 from typing import List, TypeVar
@@ -9,8 +10,9 @@ from cirrus.cli.constants import (
     DEFAULT_BUILD_DIR_NAME,
     DEFAULT_CONFIG_FILENAME,
     DEFAULT_SERVERLESS_FILENAME,
+    SERVERLESS_PLUGINS
 )
-from cirrus.cli.config import Config
+from cirrus.cli.config import Config, DEFAULT_CONFIG_PATH
 from cirrus.cli.exceptions import CirrusError
 from cirrus.cli.utils import logging
 from cirrus.cli.utils.yaml import NamedYamlable
@@ -155,23 +157,26 @@ class Project:
 
     @staticmethod
     def new(d: Path) -> None:
-        for component_type in ('feeders', 'tasks', 'workflows'):
-            d.joinpath(component_type).mkdir(exist_ok=True)
+        for dirname in ('feeders', 'tasks', 'workflows', 'resources'):
+            d.joinpath(dirname).mkdir(exist_ok=True)
 
-        conf = d.joinpath(DEFAULT_CONFIG_FILENAME)
-        try:
-            conf.touch()
-        except FileExistsError:
-            pass
-        else:
-            conf.write_text(yaml.dump(DEFAULT_CONFIG))
+        def maybe_write_file(name, content):
+            f = d.joinpath(name)
+            if f.exists():
+                logger.info(f'{name} already exists, skipping')
+            else:
+                f.write_text(content)
 
-    def initialized_or_exit(self):
-        try:
-            self.path
-        except CirrusError:
-            logger.error('Error: no cirrus project specified')
-            sys.exit(1)
+        maybe_write_file(DEFAULT_CONFIG_FILENAME, DEFAULT_CONFIG_PATH.read_text())
+        maybe_write_file('package.json', json.dumps(
+            {
+                'name': 'cirrus',
+                'version': '0.0.0',
+                'description': '',
+                'devDependencies': SERVERLESS_PLUGINS,
+            },
+            indent=2,
+        ))
 
     def build(self) -> None:
         bd = self.build_dir

@@ -80,7 +80,6 @@ def build():
     '''
     Build the cirrus configuration into a serverless.yml.
     '''
-    project.initialized_or_exit()
     project.build()
 
 
