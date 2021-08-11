@@ -207,12 +207,12 @@ class Lambda(ComponentBase):
 
     def load_config(self):
         self.config = NamedYamlable.from_yaml(self.definition.content)
+        self.description = self.config.get(description, '')
+        self.python_requirements = self.config.pop('python_requirements', {})
         if not hasattr(self.config, 'module'):
             self.config.module = f'{self.plural_name}/{self.name}'
         if not hasattr(self.config, 'handler'):
             self.config.handler = f'{self.component_type}.handler'
-        if hasattr(self.config, 'description'):
-            self.description = self.config.description
 
     # TODO: not sure, but I think we should include the default
     # lambda files and have methods on the class to define the

@@ -3,3 +3,5 @@ handler: feeder.handler
 memorySize: 128
 timeout: 900
 module: feeders/s3-inventory
+python-requirements:
+  - pyorc==0.3.0
