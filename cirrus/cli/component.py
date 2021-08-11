@@ -207,8 +207,8 @@ class Lambda(ComponentBase):
 
     def load_config(self):
         self.config = NamedYamlable.from_yaml(self.definition.content)
-        self.description = self.config.get(description, '')
-        self.python_requirements = self.config.pop('python_requirements', {})
+        self.description = self.config.get('description', '')
+        self.python_requirements = self.config.pop('python_requirements', [])
         if not hasattr(self.config, 'module'):
             self.config.module = f'{self.plural_name}/{self.name}'
         if not hasattr(self.config, 'handler'):

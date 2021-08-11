@@ -179,14 +179,47 @@ class Project:
         ))
 
     def build(self) -> None:
+        import shutil
+        from cirrus.cli.utils import misc
+
+        # get our cirrus-lib version to inject in each lambda
+        cirrus_req = misc.get_cirrus_lib_requirement()
+
+        # delete old build dir, and make it again
         bd = self.build_dir
-        bd.mkdir(exist_ok=True)
+        shutil.rmtree(bd)
+        bd.mkdir()
+
+        # write serverless config
         self.config.to_file(bd.joinpath(DEFAULT_SERVERLESS_FILENAME))
-        # make dirs: core, feeders, tasks
-        # rm all links
-        # add links from core
-        # add/replace links from user
-        # TODO: add python requirements to definition.yml
+
+        # create and setup dirs for all lambdas
+        fn_types = (self.feeders, self.tasks, self.core_tasks)
+        for fns in fn_types:
+            for fn in fns:
+                fndir = bd.joinpath(fn.config.module)
+                try:
+                    fndir.mkdir(parents=True)
+                except FileExistsError:
+                    logger.debug(
+                        f"Skipping linking lambda '{fn.name}': already exists",
+                    )
+                    continue
+
+                for _file in fn.path.glob('*'):
+                    if _file.name == fn.definition.filename:
+                        logger.debug('Skipping linking definition file')
+                        continue
+                    # TODO: could have a problem on windows
+                    # if lambda has a directory in it
+                    fndir.joinpath(_file.name).symlink_to(_file)
+
+                # write requirements file
+                # TODO: make + work with YamlableList
+                reqs = list(fn.python_requirements) + [cirrus_req]
+                fndir.joinpath('requirements.txt').write_text(
+                    '\n'.join(reqs),
+                )
 
 
 project = Project()

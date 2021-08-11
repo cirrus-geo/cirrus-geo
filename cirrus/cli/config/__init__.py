@@ -28,16 +28,17 @@ class Config(NamedYamlable):
             project.path.joinpath(DEFAULT_CONFIG_FILENAME),
         )
 
-        # add all lambda functions
+        # add all lambda functions and step functions
         # TODO: use the registered types and iterate through them
-        function_types = (project.core_tasks, project.tasks, project.feeders)
-        for ftype in function_types:
-            for fn in ftype:
-                self.register(fn)
-
-        # add all state machine step functions
-        for workflow in project.workflows:
-            self.register(workflow)
+        component_types = (
+            project.core_tasks,
+            project.tasks,
+            project.feeders,
+            project.workflows,
+        )
+        for components in component_types:
+            for component in components:
+                self.register(component)
 
         # include core and custom resource files
         self.register_resources(project.core_resources)

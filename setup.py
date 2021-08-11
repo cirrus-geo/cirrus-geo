@@ -5,7 +5,6 @@ import os.path
 from setuptools import setup, find_packages
 
 from cirrus.cli.constants import DESC
-from cirrus.cli.constants import SUPPORTED_BACKENDS
 
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -16,10 +15,10 @@ with open(os.path.join(HERE, 'README.md'), encoding='utf-8') as f:
     readme = f.read()
 
 with open(os.path.join(HERE, 'requirements.txt'), encoding='utf-8') as f:
-    all_reqs = f.read().split('\n')
+    reqs = f.read().split('\n')
 
-install_requires = [x.strip() for x in all_reqs if 'git+' not in x]
-dependency_links = [x.strip().replace('git+', '') for x in all_reqs if 'git+' not in x]
+install_requires = [x.strip() for x in reqs if 'git+' not in x]
+dependency_links = [x.strip().replace('git+', '') for x in reqs if 'git+' not in x]
 
 
 package_data = {
