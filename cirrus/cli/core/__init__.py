@@ -1,7 +1,7 @@
 from cirrus.cli import component
 
 
-class CoreTask(component.ComponentBase):
+class CoreTask(component.Lambda):
     enable_cli = False
     user_extendable = False
     python = component.ComponentFile(filename='task.py', content_fn=lambda x: '')

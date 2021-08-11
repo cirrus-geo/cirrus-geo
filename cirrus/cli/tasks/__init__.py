@@ -3,7 +3,7 @@ from pathlib import Path
 from cirrus.cli import component
 
 
-class Task(component.ComponentBase):
+class Task(component.Lambda):
     task_py = component.ComponentFile(filename='task.py', content_fn=lambda x: '')
     definition = component.ComponentFile(filename='definition.yml', content_fn=lambda x: '')
     # TODO: Readme should be required once we have one per task

@@ -29,14 +29,15 @@ class Config(NamedYamlable):
         )
 
         # add all lambda functions
+        # TODO: use the registered types and iterate through them
         function_types = (project.core_tasks, project.tasks, project.feeders)
         for ftype in function_types:
             for fn in ftype:
-                self.register_function(fn)
+                self.register(fn)
 
         # add all state machine step functions
         for workflow in project.workflows:
-            self.register_workflow(workflow)
+            self.register(workflow)
 
         # include core and custom resource files
         self.register_resources(project.core_resources)
@@ -45,7 +46,7 @@ class Config(NamedYamlable):
 
     @classmethod
     def from_file(cls, file: Path):
-        self = cls.from_file(file)
+        self = super().from_file(file)
 
         # set defaults
         self.functions = {}
@@ -66,21 +67,32 @@ class Config(NamedYamlable):
 
         return self
 
-    def register_function(self, lambda_component) -> None:
+    def register(self, component) -> None:
+        from cirrus.cli.component import Lambda, StepFunction
+        if isinstance(component, Lambda):
+            return self.register_lambda(component)
+        elif isinstance(component, StepFunction):
+            return self.register_stepFunction(component)
+        else:
+            raise ConfigError(
+                f"Unable to register component type '{component.__class__.__name__}'",
+            )
+
+    def register_lambda(self, lambda_component) -> None:
         if lambda_component.name in self.functions and not lambda_component.is_core_component:
             logging.warning(
-                f"Duplicate function declaration: '{lambda_component.display_name}', skipping",
+                f"Duplicate lambda declaration: '{lambda_component.display_name}', skipping",
             )
             return
         self.functions[lambda_component.name] = lambda_component.config
 
-    def register_workflow(self, workflow) -> None:
-        if workflow.name in self.stepFunctions.stateMachines and not workflow.is_core_component:
+    def register_stepFunction(self, sf_component) -> None:
+        if sf_component.name in self.stepFunctions.stateMachines and not sf_component.is_core_component:
             logging.warning(
-                f"Duplicate workflow declaration '{workflow.display_name}', skipping",
+                f"Duplicate step function declaration '{sf_component.display_name}', skipping",
             )
             return
-        self.stepFunctions.stateMachines[workflow.name] = workflow.config
+        self.stepFunctions.stateMachines[sf_component.name] = sf_component.config
 
     def register_resources(self, resources) -> None:
         self.resources.Resources = resources

@@ -81,18 +81,11 @@ class ComponentBase(metaclass=ComponentMeta):
                     val.init(self)
                 val.copy_to_component(self, attr)
 
-        if hasattr(self, 'definition'):
-            self.config = NamedYamlable.from_yaml(self.definition.content)
-            self.process_config()
+        self.load_config()
         self._loaded = True
 
-    def process_config(self):
-        if not hasattr(self.config, 'module'):
-            self.config.module = f'{self.plural_name}/{self.name}'
-        if not hasattr(self.config, 'handler'):
-            self.config.handler = f'{self.component_type}.handler'
-        if hasattr(self.config, 'description'):
-            self.description = self.config.description
+    def load_config(self):
+        pass
 
     def _create(self):
         if self._loaded:
@@ -207,3 +200,41 @@ class ComponentFile:
             return
         path = parent_component.path.joinpath(self.filename)
         path.write_text(self.content_fn(parent_component))
+
+
+class Lambda(ComponentBase):
+    abstract = True
+
+    def load_config(self):
+        self.config = NamedYamlable.from_yaml(self.definition.content)
+        if not hasattr(self.config, 'module'):
+            self.config.module = f'{self.plural_name}/{self.name}'
+        if not hasattr(self.config, 'handler'):
+            self.config.handler = f'{self.component_type}.handler'
+        if hasattr(self.config, 'description'):
+            self.description = self.config.description
+
+    # TODO: not sure, but I think we should include the default
+    # lambda files and have methods on the class to define the
+    # content, which can be overriden as approprite by subclasses
+    @property
+    def definition(self):
+        raise NotImplementedError("Must define a file named 'definition'")
+
+
+class StepFunction(ComponentBase):
+    abstract = True
+
+    def load_config(self):
+        self.config = NamedYamlable.from_yaml(self.definition.content)
+        try:
+            self.description = self.config.definition.Comment
+        except AttributeError:
+            pass
+
+    # TODO: same as the note on lambdas above, may make more sense
+    # to have default files declared here and methods on the class
+    # that can be overriden to provide default content
+    @property
+    def definition(self):
+        raise NotImplementedError("Must define a file named 'definition'")
