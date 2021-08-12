@@ -10,7 +10,8 @@ from cirrus.cli.constants import (
     DEFAULT_BUILD_DIR_NAME,
     DEFAULT_CONFIG_FILENAME,
     DEFAULT_SERVERLESS_FILENAME,
-    SERVERLESS_PLUGINS
+    SERVERLESS,
+    SERVERLESS_PLUGINS,
 )
 from cirrus.cli.config import Config, DEFAULT_CONFIG_PATH
 from cirrus.cli.exceptions import CirrusError
@@ -178,13 +179,16 @@ class Project:
             else:
                 f.write_text(content)
 
+        deps = SERVERLESS.copy()
+        deps.update(SERVERLESS_PLUGINS)
+
         maybe_write_file(DEFAULT_CONFIG_FILENAME, DEFAULT_CONFIG_PATH.read_text())
         maybe_write_file('package.json', json.dumps(
             {
                 'name': 'cirrus',
                 'version': '0.0.0',
                 'description': '',
-                'devDependencies': SERVERLESS_PLUGINS,
+                'devDependencies': deps,
             },
             indent=2,
         ))
