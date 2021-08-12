@@ -40,8 +40,11 @@ class Config(NamedYamlable):
             for component in components:
                 self.register(component)
 
+        # IAM settings
+        self.provider.iamRoleStatements = project.iam_resources
+
         # include core and custom resource files
-        self.register_resources(project.core_resources)
+        self.resources.Resources = project.core_resources
 
         return self
 
@@ -56,6 +59,7 @@ class Config(NamedYamlable):
             Description='Cirrus STAC Processing Framework',
             Resources={},
         )
+        self.provider.iamRoleStatements = []
 
         # populate required plugin list
         try:
@@ -94,6 +98,3 @@ class Config(NamedYamlable):
             )
             return
         self.stepFunctions.stateMachines[sf_component.name] = sf_component.config
-
-    def register_resources(self, resources) -> None:
-        self.resources.Resources = resources

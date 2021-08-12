@@ -23,9 +23,6 @@ provider:
     CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
     CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
     CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-  # TODO: not handling iam.yml correctly
-  iamRoleStatements:
-    ${file(core/iam.yml):iamRoleStatements}
 
 custom:
   batch:

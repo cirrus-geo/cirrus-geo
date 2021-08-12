@@ -32,6 +32,7 @@ class Project:
                  d: Path=None,
                  config: Config=None,
                  core_resources: List[NamedYamlable]=None,
+                 iam_resources: List[NamedYamlable]=None,
                  core_tasks: List[F]=None,
                  feeders: List[F]=None,
                  tasks: List[T]=None,
@@ -39,6 +40,7 @@ class Project:
                  ) -> None:
         self._config = config
         self._core_resources = core_resources
+        self._iam_resources = iam_resources
         self._core_tasks = core_tasks
         self._feeders = feeders
         self._tasks = tasks
@@ -107,6 +109,15 @@ class Project:
                         )
                     self._core_resources[name] = config
         return self._core_resources
+
+    @property
+    def iam_resources(self) -> List[NamedYamlable]:
+        if self._iam_resources is None:
+            from cirrus.cli.iam import iam_resources
+            self._iam_resources = []
+            for resources in iam_resources():
+                self._iam_resources.extend(resources)
+        return self._iam_resources
 
     @property
     def core_tasks(self) -> List[C]:
