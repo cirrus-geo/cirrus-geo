@@ -10,8 +10,10 @@ from cirrus.cli.component import (
     registered_component_types,
     registered_component_types_plural,
 )
-from cirrus.cli.utils import logging
-from cirrus.cli.utils.decorators import requires_project
+from cirrus.cli.utils import (
+    logging,
+    click as utils_click,
+)
 
 # unused, but imports required so they register
 from cirrus.cli.feeders import Feeder
@@ -25,6 +27,7 @@ logger = logging.getLogger(__name__)
 @click.group(
     name=constants.PROG,
     help=constants.DESC,
+    cls=utils_click.AliasedShortMatchGroup,
 )
 @click.option(
     '--cirrus-dir',
@@ -75,7 +78,7 @@ def init(directory=None):
 
 
 @cli.command()
-@requires_project
+@utils_click.requires_project
 def build():
     '''
     Build the cirrus configuration into a serverless.yml.
@@ -139,7 +142,7 @@ def _list(component_types):
     'component-name',
     metavar='component-name',
 )
-@requires_project
+@utils_click.requires_project
 def new(component_type, component_name):
     '''
     Create a new COMPONENT_TYPE of name COMPONENT_NAME.
