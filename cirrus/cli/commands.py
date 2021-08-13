@@ -86,6 +86,15 @@ def build():
     project.build()
 
 
+@cli.command()
+@utils_click.requires_project
+def clean():
+    '''
+    Build the cirrus configuration into a serverless.yml.
+    '''
+    project.clean()
+
+
 @cli.command(name='list')
 @click.argument(
     'component-types',

@@ -198,43 +198,59 @@ class Project:
         from cirrus.cli.utils import misc
 
         # get our cirrus-lib version to inject in each lambda
-        cirrus_req = misc.get_cirrus_lib_requirement()
+        cirrus_req = [misc.get_cirrus_lib_requirement()]
 
-        # delete old build dir, and make it again
+        # make build dir or clean it up
         bd = self.build_dir
-        shutil.rmtree(bd)
-        bd.mkdir()
+        try:
+            bd.mkdir()
+        except FileExistsError:
+            pass
+
+        # find existing lambda dirs, if any
+        existing_dirs = set()
+        for f in bd.iterdir():
+            if not f.is_dir():
+                continue
+            if f.name == '.serverless':
+                continue
+            for d in f.iterdir():
+                if not d.is_dir():
+                    continue
+                existing_dirs.add(d.resolve())
 
         # write serverless config
         self.config.to_file(bd.joinpath(DEFAULT_SERVERLESS_FILENAME))
 
-        # create and setup dirs for all lambdas
+        # setup all required lambda dirs
+        fn_dirs = set()
         fn_types = (self.feeders, self.tasks, self.core_tasks)
         for fns in fn_types:
             for fn in fns:
-                fndir = bd.joinpath(fn.config.module)
-                try:
-                    fndir.mkdir(parents=True)
-                except FileExistsError:
+                outdir = fn.get_outdir(bd).resolve()
+                if outdir in fn_dirs:
                     logger.debug(
-                        f"Skipping linking lambda '{fn.name}': already exists",
+                        f"Duplicate function name '{fn.name}': skipping",
                     )
                     continue
 
-                for _file in fn.path.glob('*'):
-                    if _file.name == fn.definition.filename:
-                        logger.debug('Skipping linking definition file')
-                        continue
-                    # TODO: could have a problem on windows
-                    # if lambda has a directory in it
-                    fndir.joinpath(_file.name).symlink_to(_file)
+                fn_dirs.add(outdir)
+                fn.link_to_outdir(outdir, cirrus_req)
 
-                # write requirements file
-                # TODO: make + work with YamlableList
-                reqs = list(fn.python_requirements) + [cirrus_req]
-                fndir.joinpath('requirements.txt').write_text(
-                    '\n'.join(reqs),
-                )
+        # clean up existing but no longer used lambda dirs
+        for d in existing_dirs - fn_dirs:
+            shutil.rmtree(d)
+
+    def clean(self) -> None:
+        import shutil
+        bd = self.build_dir
+        if not bd.is_dir():
+            return
+        for f in self.build_dir.iterdir():
+            if f.is_dir():
+                shutil.rmtree(f)
+            else:
+                f.unlink()
 
 
 project = Project()

@@ -46,6 +46,9 @@ class YamlableList(MutableSequence):
     def __repr__(self):
         return str(self.list)
 
+    def __add__(self, other):
+        return self.list + other
+
 
 class NamedYamlableMeta(type(MutableMapping)):
     def __init__(self, *args, **kwargs):

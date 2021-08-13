@@ -2,7 +2,7 @@ import sys
 import copy
 import logging
 
-from typing import Type, TypeVar, Callable
+from typing import Type, TypeVar, Callable, List
 from abc import ABCMeta
 from pathlib import Path
 
@@ -170,10 +170,12 @@ class ComponentFile:
             except FileNotFoundError as e:
                 if self.required:
                     raise ComponentError(
-                            f"{self.__class__.__name__} at '{self.path}': unable to open for read"
+                        f"{self.__class__.__name__} at '{self.path}': unable to open for read"
                     ) from e
                 else:
-                    # log something about defaulting content to None
+                    logging.debug(
+                        f"{self.__class__.__name__} at '{self.path}': unable to open for read, defaulting to empty",
+                    )
                     self._content = ''
         return self._content
 
@@ -220,6 +222,39 @@ class Lambda(ComponentBase):
     @property
     def definition(self):
         raise NotImplementedError("Must define a file named 'definition'")
+
+    def get_outdir(self, project_build_dir: Path) -> Path:
+        return project_build_dir.joinpath(self.config.module)
+
+    def link_to_outdir(self, outdir: Path, project_python_requirements: List[str]) -> None:
+        try:
+            outdir.mkdir(parents=True)
+        except FileExistsError:
+            self.clean_outdir(outdir)
+
+        for _file in self.path.iterdir():
+            if _file.name == self.definition.filename:
+                logger.debug('Skipping linking definition file')
+                continue
+            # TODO: could have a problem on windows
+            # if lambda has a directory in it
+            # probably affects handler default too
+            outdir.joinpath(_file.name).symlink_to(_file)
+
+        # write requirements file
+        reqs = self.python_requirements + project_python_requirements
+        outdir.joinpath('requirements.txt').write_text(
+            '\n'.join(reqs),
+        )
+
+    def clean_outdir(self, outdir: Path):
+        try:
+            contents = outdir.iterdir()
+        except FileNotFoundError:
+            return
+
+        for _file in contents:
+            _file.unlink()
 
 
 class StepFunction(ComponentBase):
