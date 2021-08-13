@@ -15,9 +15,6 @@ DEFAULT_CONFIG_PATH = Path(__file__).parent.joinpath('default.yml')
 
 
 class Config(NamedYamlable):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @classmethod
     def default(cls):
         return cls.from_file(DEFAULT_CONFIG_PATH)
@@ -48,10 +45,7 @@ class Config(NamedYamlable):
 
         return self
 
-    @classmethod
-    def from_file(cls, file: Path):
-        self = super().from_file(file)
-
+    def validate(self) -> None:
         # set defaults
         self.functions = {}
         self.stepFunctions = dict(validate=True, stateMachines={})
@@ -69,8 +63,6 @@ class Config(NamedYamlable):
         else:
             # deduplicate
             self.plugins = list(set(self.plugins))
-
-        return self
 
     def register(self, component) -> None:
         from cirrus.cli.component import Lambda, StepFunction

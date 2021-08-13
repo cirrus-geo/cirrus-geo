@@ -65,19 +65,18 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
             self.update(dict)
         if kwargs:
             self.update(kwargs)
-        # TODO: validation and setting required keys if missing
+        self.validate()
 
     @classmethod
     def from_yaml(cls, yml: str):
-        self = cls()
-        loaded = yaml.load(yml, Loader=yaml_loader.CfnYamlLoader)
-        if loaded is not None:
-            self._dict = loaded._dict
-        return self
+        return cls(yaml.load(yml, Loader=yaml_loader.CfnYamlLoader))
 
     @classmethod
     def from_file(cls, f: Path):
         return cls.from_yaml(f.read_text(encoding='utf-8'))
+
+    def validate(self) -> None:
+        pass
 
     def _dump(self, *args, **kwargs) -> str:
         return yaml.dump(self._dict, *args, Dumper=yaml_dumper.CfnYamlDumper, **kwargs)
