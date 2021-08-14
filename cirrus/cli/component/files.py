@@ -1,6 +1,11 @@
 import logging
 
+from rich.markdown import Markdown
+
 from .file_base import ComponentFile
+
+
+logger = logging.getLogger(__name__)
 
 
 default_readme = '''#{name}
@@ -89,6 +94,16 @@ class Readme(ComponentFile):
             name=component.name,
             type=component.component_type,
         )
+
+    def show(self):
+        if self.content is None:
+            logger.error(
+                "%s '%s' has no README.",
+                self.parent.component_type.capitalize(),
+                self.parent.name
+            )
+            return
+        self.console.print(Markdown(self.content))
 
 
 class Python(ComponentFile):

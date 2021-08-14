@@ -195,12 +195,9 @@ def readme(component_type, component_name):
     from cirrus.cli.utils.console import console
     from rich.markdown import Markdown
     component = Component.resolve_component(component_type, component_name)
+    component.readme.show()
 
-    if component.readme.content is None:
-        logger.error(f"{component.component_type.capitalize()} '{component_name}' has no README.")
-        return
 
-    console.print(Markdown(component.readme.content))
 
 
 if __name__ == '__main__':

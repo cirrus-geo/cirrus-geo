@@ -54,6 +54,7 @@ class ComponentFile:
     def _copy_to_component(self, parent_component: Type[Component], name: str) -> T:
         self = copy.copy(self)
         self.path = parent_component.path.joinpath(self.name)
+        self.parent = parent_component
         if self.required and not self.path.is_file():
             raise ComponentError(
                 f"Cannot load {self.__class__.__name__} from '{self.path}': not a file"
