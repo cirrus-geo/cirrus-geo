@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from cirrus.cli import component
+from cirrus.cli.component import Lambda, files
 
 
-class Task(component.Lambda):
-    task_py = component.ComponentFile(filename='task.py', content_fn=lambda x: '')
-    definition = component.ComponentFile(filename='definition.yml', content_fn=lambda x: '')
+class Task(Lambda):
+    python = files.Python()
+    definition = files.Definition()
     # TODO: Readme should be required once we have one per task
-    readme = component.ComponentFile(filename='README.md', optional=True, content_fn=lambda x: '')
+    readme = files.Readme(optional=True)

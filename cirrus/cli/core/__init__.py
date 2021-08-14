@@ -1,10 +1,11 @@
-from cirrus.cli import component
+from cirrus.cli.component import Lambda, files
 
 
-class CoreTask(component.Lambda):
+class CoreTask(Lambda):
     enable_cli = False
     user_extendable = False
-    python = component.ComponentFile(filename='task.py', content_fn=lambda x: '')
-    definition = component.ComponentFile(filename='definition.yml', content_fn=lambda x: '')
-    # make this optional once we have them
-    readme = component.ComponentFile(filename='README.md', optional=True)
+
+    python = files.Python()
+    definition = files.Definition()
+    # make this not optional once we have them
+    readme = files.Readme(optional=True)

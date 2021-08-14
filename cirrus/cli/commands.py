@@ -6,10 +6,7 @@ from pathlib import Path
 from cirrus.cli import constants
 from cirrus.cli.project import project
 from cirrus.cli.exceptions import ComponentError
-from cirrus.cli.component import (
-    registered_component_types,
-    registered_component_types_plural,
-)
+from cirrus.cli.component import Component
 from cirrus.cli.utils import (
     logging,
     click as utils_click,
@@ -102,7 +99,7 @@ def clean():
     required=True,
     nargs=-1,
     type=click.Choice(
-        ['all'] + list(registered_component_types_plural.keys()),
+        ['all'] + list(Component.registered_component_types_plural.keys()),
         case_sensitive=False,
     )
 )
@@ -114,7 +111,7 @@ def _list(component_types):
     special type 'all' which will list all components of all TYPEs.
     '''
     if 'all' in component_types:
-        component_types = registered_component_types_plural
+        component_types = Component.registered_component_types_plural
 
     display_type = len(component_types) > 1
     for index, component_type in enumerate(component_types):
@@ -124,7 +121,7 @@ def _list(component_types):
                 fg='green',
             )
 
-        component_type = registered_component_types_plural[component_type]
+        component_type = Component.resolve_component_type(component_type)
 
         for component in component_type.find():
             click.echo('{}{}'.format(
@@ -143,7 +140,7 @@ def _list(component_types):
     metavar='component-type',
     required=True,
     type=click.Choice(
-        list(registered_component_types.keys()),
+        list(Component.registered_component_types.keys()),
         case_sensitive=False,
     )
 )
@@ -156,7 +153,7 @@ def new(component_type, component_name):
     '''
     Create a new COMPONENT_TYPE of name COMPONENT_NAME.
     '''
-    _component_type = registered_component_types[component_type]
+    _component_type = Component.resolve_component_type(component_type)
     try:
         _component_type.create(component_name)
     except ComponentError as e:
@@ -177,7 +174,7 @@ def new(component_type, component_name):
     metavar='component-type',
     required=True,
     type=click.Choice(
-        [k for k, v in registered_component_types.items() if hasattr(v, 'readme')],
+        [k for k, v in Component.registered_component_types.items() if hasattr(v, 'readme')],
         case_sensitive=False,
     )
 )
@@ -197,14 +194,10 @@ def readme(component_type, component_name):
     #    cirrus show resource [ NAME ]
     from cirrus.cli.utils.console import console
     from rich.markdown import Markdown
-    component_type = registered_component_types[component_type]
-    component = component_type.find_first(component_name)
-    if not component:
-        logger.error(f"Unable to find {self.component_type} with name '{name}'.")
-        return
+    component = Component.resolve_component(component_type, component_name)
 
     if component.readme.content is None:
-        logger.error(f"{self.component_type.capitalize()} '{name}' has no README.")
+        logger.error(f"{component.component_type.capitalize()} '{component_name}' has no README.")
         return
 
     console.print(Markdown(component.readme.content))

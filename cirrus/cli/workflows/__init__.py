@@ -1,15 +1,9 @@
 from pathlib import Path
 
-from cirrus.cli import component
+from cirrus.cli.component import files, StepFunction
 
 
-class Workflow(component.StepFunction):
-    definition = component.ComponentFile(filename='definition.yml', content_fn=lambda x: '')
+class Workflow(StepFunction):
+    definition = files.Definition()
     # TODO: Readme should be required once we have one per task
-    readme = component.ComponentFile(filename='README.md', optional=True, content_fn=lambda x: '')
-
-    def process_config(self):
-        try:
-            self.description = self.config.definition.Comment
-        except AttributeError:
-            pass
+    readme = files.Readme(optional=True)

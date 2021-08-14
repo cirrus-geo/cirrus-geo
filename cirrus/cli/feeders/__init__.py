@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from cirrus.cli import component
+from cirrus.cli.component import files, Lambda
 
 
-class Feeder(component.Lambda):
-    python = component.ComponentFile(filename='feeder.py', content_fn=lambda x: '')
-    definition = component.ComponentFile(filename='definition.yml', content_fn=lambda x: '')
+class Feeder(Lambda):
+    python = files.Python(name='feeder.py')
+    definition = files.Definition()
     # make this optional once we have them
-    readme = component.ComponentFile(filename='README.md', optional=True, content_fn=lambda x: '')
+    readme = files.Readme(optional=True)
