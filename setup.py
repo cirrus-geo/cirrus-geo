@@ -23,11 +23,8 @@ dependency_links = [x.strip().replace('git+', '') for x in reqs if 'git+' not in
 
 package_data = {
     'cirrus': [
-        'cli/core/config/**/*',
-        'cli/feeders/config/**/*',
-        'cli/resources/config/**/*',
-        'cli/tasks/config/**/*',
-        'cli/workflows/config/**/*',
+        'cli/components/**/config/**/*',
+        'cli/resources/**/config/**/*',
         'cli/config/*',
     ],
 }

@@ -1,9 +1,10 @@
 import logging
+import click
 
 from typing import List
 from pathlib import Path
 
-from .base import Component
+from .component import Component
 from cirrus.cli.utils.yaml import NamedYamlable
 
 
@@ -28,6 +29,10 @@ class Lambda(Component):
     @property
     def definition(self):
         raise NotImplementedError("Must define a file named 'definition'")
+
+    @click.command()
+    def show(self):
+        click.echo(self.files)
 
     def get_outdir(self, project_build_dir: Path) -> Path:
         return project_build_dir.joinpath(self.config.module)

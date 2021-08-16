@@ -2,7 +2,7 @@ import logging
 
 from rich.markdown import Markdown
 
-from .file_base import ComponentFile
+from .base.file import ComponentFile
 
 
 logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 import logging
 
-from .base import Component
+from .component import Component
 from cirrus.cli.utils.yaml import NamedYamlable
 
 

@@ -5,8 +5,8 @@ from typing import Type, TypeVar, Callable
 from pathlib import Path
 
 from cirrus.cli.exceptions import ComponentError
-from cirrus.cli.component import Component
 from cirrus.cli.utils.console import console
+from .component import Component
 
 
 logger = logging.getLogger(__name__)

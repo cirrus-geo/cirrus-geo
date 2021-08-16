@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from cirrus.cli.component import files, Lambda
+from .. import files
+from ..base import Lambda
 
 
 class Feeder(Lambda):

@@ -1,21 +1,13 @@
-import os
 import click
-import sys
 
 from pathlib import Path
 from cirrus.cli import constants
 from cirrus.cli.project import project
-from cirrus.cli.exceptions import ComponentError
-from cirrus.cli.component import Component
+from cirrus.cli.components import Component
 from cirrus.cli.utils import (
     logging,
     click as utils_click,
 )
-
-# unused, but imports required so they register
-from cirrus.cli.feeders import Feeder
-from cirrus.cli.tasks import Task
-from cirrus.cli.workflows import Workflow
 
 
 logger = logging.getLogger(__name__)
@@ -64,6 +56,8 @@ def init(directory=None):
 
     DIRECTORY defaults to the current working directory.
     '''
+    import os
+
     if not directory:
         directory = Path(os.getcwd())
     project.new(directory)
@@ -99,7 +93,7 @@ def clean():
     required=True,
     nargs=-1,
     type=click.Choice(
-        ['all'] + list(Component.registered_component_types_plural.keys()),
+        ['all'] + list(Component.registered_types_plural.keys()),
         case_sensitive=False,
     )
 )
@@ -111,17 +105,17 @@ def _list(component_types):
     special type 'all' which will list all components of all TYPEs.
     '''
     if 'all' in component_types:
-        component_types = Component.registered_component_types_plural
+        component_types = Component.registered_types_plural.keys()
 
     display_type = len(component_types) > 1
     for index, component_type in enumerate(component_types):
+        component_type = Component.resolve_type_plural(component_type)
+
         if display_type:
             click.secho(
-                f'{component_type.capitalize()}',
+                f'{component_type.display_type_plural}',
                 fg='green',
             )
-
-        component_type = Component.resolve_component_type(component_type)
 
         for component in component_type.find():
             click.echo('{}{}'.format(
@@ -140,7 +134,7 @@ def _list(component_types):
     metavar='component-type',
     required=True,
     type=click.Choice(
-        list(Component.registered_component_types.keys()),
+        [k for k, v in Component.registered_types.items() if v.user_extendable],
         case_sensitive=False,
     )
 )
@@ -149,11 +143,14 @@ def _list(component_types):
     metavar='component-name',
 )
 @utils_click.requires_project
-def new(component_type, component_name):
+def create(component_type, component_name):
     '''
     Create a new COMPONENT_TYPE of name COMPONENT_NAME.
     '''
-    _component_type = Component.resolve_component_type(component_type)
+    import sys
+    from cirrus.cli.exceptions import ComponentError
+
+    _component_type = Component.resolve_type(component_type)
     try:
         _component_type.create(component_name)
     except ComponentError as e:
@@ -174,7 +171,7 @@ def new(component_type, component_name):
     metavar='component-type',
     required=True,
     type=click.Choice(
-        [k for k, v in Component.registered_component_types.items() if hasattr(v, 'readme')],
+        [k for k, v in Component.registered_types.items() if hasattr(v, 'readme')],
         case_sensitive=False,
     )
 )
@@ -194,7 +191,7 @@ def readme(component_type, component_name):
     #    cirrus show resource [ NAME ]
     from cirrus.cli.utils.console import console
     from rich.markdown import Markdown
-    component = Component.resolve_component(component_type, component_name)
+    component = Component.resolve(component_type, component_name)
     component.readme.show()
 
 

@@ -123,28 +123,28 @@ class Project:
     @property
     def core_tasks(self) -> List[C]:
         if self._core_tasks is None:
-            from cirrus.cli.core import CoreTask
+            from cirrus.cli.components import CoreTask
             self._core_tasks = list(CoreTask.find())
         return self._core_tasks
 
     @property
     def feeders(self) -> List[F]:
         if self._feeders is None:
-            from cirrus.cli.feeders import Feeder
+            from cirrus.cli.components import Feeder
             self._feeders = list(Feeder.find())
         return self._feeders
 
     @property
     def tasks(self) -> List[T]:
         if self._tasks is None:
-            from cirrus.cli.tasks import Task
+            from cirrus.cli.components import Task
             self._tasks = list(Task.find())
         return self._tasks
 
     @property
     def workflows(self) -> List[W]:
         if self._workflows is None:
-            from cirrus.cli.workflows import Workflow
+            from cirrus.cli.components import Workflow
             self._workflows = list(Workflow.find())
         return self._workflows
 

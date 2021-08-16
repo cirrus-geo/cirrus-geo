@@ -14,24 +14,28 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar('T', bound='Component')
 class ComponentMeta(ABCMeta):
-    registered_component_types_plural = {}
-    registered_component_types = {}
+    registered_types_plural = {}
+    registered_types = {}
 
     def __new__(cls, name, bases, attrs, **kwargs):
         if not 'abstract' in attrs:
             attrs['abstract'] = False
+        if not 'display_type' in attrs:
+            attrs['display_type'] = name
+        if not 'display_type_plural' in attrs:
+            attrs['display_type_plural'] = f"{attrs['display_type']}s"
         return super().__new__(cls, name, bases, attrs, **kwargs)
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.component_type=self.__name__.lower()
+        self.component_type = self.__name__.lower()
         self.plural_name = f'{self.component_type}s'
         self.default_user_dir_name = self.plural_name
         self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
 
         if not self.abstract:
-            self.registered_component_types_plural[self.plural_name] = self
-            self.registered_component_types[self.component_type] = self
+            self.registered_types_plural[self.plural_name] = self
+            self.registered_types[self.component_type] = self
 
     @property
     def default_user_dir(self):
@@ -42,20 +46,20 @@ class ComponentMeta(ABCMeta):
                 pass
         return None
 
-    def resolve_component_type_plural(self, plural_component_type: str):
+    def resolve_type_plural(self, plural_component_type: str):
         try:
-            return self.registered_component_types_plural[component_type]
+            return self.registered_types_plural[plural_component_type]
         except KeyError:
-            raise ValueError(f"Unknown component type: '{plural_component_type}'")
+            raise ValueError(f"Unknown component type: '{plural_component_type}'") from None
 
-    def resolve_component_type(self, component_type: str):
+    def resolve_type(self, component_type: str):
         try:
-            return self.registered_component_types[component_type]
+            return self.registered_types[component_type]
         except KeyError:
-            raise ValueError(f"Unknown component type: '{component_type}'")
+            raise ValueError(f"Unknown component type: '{component_type}'") from None
 
-    def resolve_component(self, component_type: str, component_name: str) -> Type[T]:
-        component_type = self.resolve_component_type(component_type)
+    def resolve(self, component_type: str, component_name: str) -> Type[T]:
+        component_type = self.resolve_type(component_type)
         component = component_type.find_first(component_name)
         if not component:
             raise ValueError(f"Unknown {component_type.component_type}: '{component_name}'")
