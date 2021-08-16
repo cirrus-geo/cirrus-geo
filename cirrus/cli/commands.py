@@ -3,7 +3,6 @@ import click
 from pathlib import Path
 from cirrus.cli import constants
 from cirrus.cli.project import project
-from cirrus.cli.components import Component
 from cirrus.cli.utils import (
     logging,
     click as utils_click,
@@ -81,120 +80,89 @@ def build():
 @utils_click.requires_project
 def clean():
     '''
-    Build the cirrus configuration into a serverless.yml.
+    Remove all files from the cirrus build directory.
     '''
     project.clean()
 
 
-@cli.command(name='list')
-@click.argument(
-    'component-types',
-    metavar='component-type(s)',
-    required=True,
-    nargs=-1,
-    type=click.Choice(
-        ['all'] + list(Component.registered_types_plural.keys()),
-        case_sensitive=False,
+@cli.group()
+@utils_click.requires_project
+def create():
+    '''
+    Create a new component in the project.
+    '''
+    pass
+
+
+def add_component_create(component_type):
+    if not component_type.user_extendable:
+        return
+
+    @create.command(
+        name=component_type.component_type,
     )
-)
-def _list(component_types):
-    '''
-    List all components of the given TYPE(s).
+    @click.argument(
+        'name',
+        metavar='name',
+    )
+    def _show(name):
+        import sys
+        from cirrus.cli.exceptions import ComponentError
 
-    TYPEs include 'feeders', 'tasks', and 'workflows', as well as the
-    special type 'all' which will list all components of all TYPEs.
-    '''
-    if 'all' in component_types:
-        component_types = Component.registered_types_plural.keys()
-
-    display_type = len(component_types) > 1
-    for index, component_type in enumerate(component_types):
-        component_type = Component.resolve_type_plural(component_type)
-
-        if display_type:
+        try:
+            component_type.create(name)
+        except ComponentError as e:
+            logger.error(e)
+            sys.exit(1)
+        else:
+            # TODO: logging level for "success" on par with warning?
             click.secho(
-                f'{component_type.display_type_plural}',
+                f'{component_type.component_type} {name} created',
+                err=True,
                 fg='green',
             )
 
-        for component in component_type.find():
-            click.echo('{}{}'.format(
-                click.style(f'{component.display_name}:', fg='blue'),
-                f' {component.description}' if component.description else '',
-            ))
 
-        if index + 1 < len(component_types):
-            click.echo('')
+@cli.group()
+def show():
+    '''
+    Multifunction command to list/show components/files/resources.
+    '''
+    pass
 
 
-# TODO: decorators for component_type and component_types
-@cli.command()
-@click.argument(
-    'component-type',
-    metavar='component-type',
-    required=True,
-    type=click.Choice(
-        [k for k, v in Component.registered_types.items() if v.user_extendable],
-        case_sensitive=False,
+def add_component_show(component_type):
+    @show.command(
+        name=component_type.component_type,
     )
-)
-@click.argument(
-    'component-name',
-    metavar='component-name',
-)
-@utils_click.requires_project
-def create(component_type, component_name):
-    '''
-    Create a new COMPONENT_TYPE of name COMPONENT_NAME.
-    '''
-    import sys
-    from cirrus.cli.exceptions import ComponentError
-
-    _component_type = Component.resolve_type(component_type)
-    try:
-        _component_type.create(component_name)
-    except ComponentError as e:
-        logger.error(e)
-        sys.exit(1)
-    else:
-        # TODO: logging level for "success" on par with warning?
-        click.secho(
-            f'{component_type} {component_name} created',
-            err=True,
-            fg='green',
-        )
-
-
-@cli.command()
-@click.argument(
-    'component-type',
-    metavar='component-type',
-    required=True,
-    type=click.Choice(
-        [k for k, v in Component.registered_types.items() if hasattr(v, 'readme')],
-        case_sensitive=False,
+    @click.argument(
+        'name',
+        metavar='name',
+        required=False,
     )
-)
-@click.argument(
-    'component-name',
-    metavar='component-name',
-)
-def readme(component_type, component_name):
-    '''
-    Display a component README.
-    '''
-    # TODO: make this a 'show' command with the usage like
-    #    cirrus show feeder feed-stac-s3 [ FILES... ]
-    #  and use rich to determine how to show files if in terminal
-    #
-    #  Should support "showing" nont component resources like
-    #    cirrus show resource [ NAME ]
-    from cirrus.cli.utils.console import console
-    from rich.markdown import Markdown
-    component = Component.resolve(component_type, component_name)
-    component.readme.show()
+    @click.argument(
+        'filename',
+        metavar='filename',
+        required=False,
+    )
+    def _show(name=None, filename=None):
+        components = component_type.find(name=name)
+        if name is None:
+            for component in components:
+                component.list_display()
+            return
 
+        component = next(components)
+        if filename is None:
+            component.detail_display()
+            return
 
+        try:
+            component.files[filename].show()
+        except KeyError:
+            logger.error("Cannot show: unknown file '%s'", filename)
+
+# TODO: add show for resources
 
 
 if __name__ == '__main__':

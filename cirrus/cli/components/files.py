@@ -37,17 +37,17 @@ Providing an example is often best.
 
 Example:
 ```
-"copy-metadata": {
+"copy-metadata": {{
   "mappings":[
-    {
-      "source":"GEO",
-      "destination":"SLC",
-      "metadata":{
+    {{
+      "source": "GEO",
+      "destination": "SLC",
+      "metadata": {{
         "assets": ["preview", "thumbnail"]
-      }
-    }
+      }}
+    }}
   ]
-}
+}}
 ```
 
 ## Detail any other options
@@ -58,17 +58,17 @@ Maybe your {type} also REQUIRES the following parameters
 supplied in `payload['process']['item-queries']`:
 
 ```
-"item-queries": {
-  "GEO":{
+"item-queries": {{
+  "GEO": {{
     "sar:product_type": "GEO"
-    },
-  "SLC":{
+    }},
+  "SLC": {{
     "sar:product_type": "SLC"
-    },
-  "SICD":{
+    }},
+  "SICD": {{
     "sar:product_type": "SICD"
-  }
-}
+  }}
+}}
 ```
 '''.format
 
@@ -77,7 +77,7 @@ default_lambda = '''#!/usr/bin/env python
 from cirruslib import Catalog, get_task_logger
 
 
-def handler(payload, context={{})}:
+def handler(payload, context={{}}):
     catalog = Catalog.from_payload(payload)
     logger = get_task_logger(f"{{__name__}}.{name}", catalog=catalog)
     return catalog
@@ -121,12 +121,12 @@ class Definition(ComponentFile):
 
     @staticmethod
     def content_fn(component) -> str:
-        import json
-        return json.dumps({
+        from cirrus.cli.utils import yaml
+        return yaml.NamedYamlable({
             'description': '',
             'memorySize': 128,
             'timeout': 60,
             # TODO: figure out most basic permissions
             'iamRoleStatements': [],
             'python_requirements': [],
-        })
+        }).to_yaml()

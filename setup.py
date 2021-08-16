@@ -52,6 +52,6 @@ setup(
     package_data=package_data,
     entry_points='''
         [console_scripts]
-        cirrus=cirrus.cli.commands:cli
+        cirrus=cirrus.cli.__main__:main
     ''',
 )

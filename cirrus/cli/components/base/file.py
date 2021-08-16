@@ -51,7 +51,7 @@ class ComponentFile:
                     self._content = ''
         return self._content
 
-    def _copy_to_component(self, parent_component: Type[Component], name: str) -> T:
+    def _copy_to_component(self, parent_component: Type[Component]) -> T:
         self = copy.copy(self)
         self.path = parent_component.path.joinpath(self.name)
         self.parent = parent_component
@@ -62,9 +62,9 @@ class ComponentFile:
         return self
 
     def copy_to_component(self, component: Type[Component], name: str) -> None:
-        self = self._copy_to_component(component, name)
+        self = self._copy_to_component(component)
         setattr(component, name, self)
-        component.files.append(self)
+        component.files[name] = self
 
     def init(self, parent_component: Type[Component]) -> None:
         if self.content_fn is None:

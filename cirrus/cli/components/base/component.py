@@ -1,10 +1,12 @@
 import sys
 import logging
+import click
 
 from typing import Type, TypeVar
 from abc import ABCMeta
 from pathlib import Path
 
+from cirrus.cli import commands
 from cirrus.cli.exceptions import ComponentError
 from cirrus.cli.project import project
 
@@ -14,9 +16,6 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar('T', bound='Component')
 class ComponentMeta(ABCMeta):
-    registered_types_plural = {}
-    registered_types = {}
-
     def __new__(cls, name, bases, attrs, **kwargs):
         if not 'abstract' in attrs:
             attrs['abstract'] = False
@@ -33,9 +32,9 @@ class ComponentMeta(ABCMeta):
         self.default_user_dir_name = self.plural_name
         self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
 
-        if not self.abstract:
-            self.registered_types_plural[self.plural_name] = self
-            self.registered_types[self.component_type] = self
+        if not self.abstract and self.enable_cli:
+            commands.add_component_create(self)
+            commands.add_component_show(self)
 
     @property
     def default_user_dir(self):
@@ -46,25 +45,6 @@ class ComponentMeta(ABCMeta):
                 pass
         return None
 
-    def resolve_type_plural(self, plural_component_type: str):
-        try:
-            return self.registered_types_plural[plural_component_type]
-        except KeyError:
-            raise ValueError(f"Unknown component type: '{plural_component_type}'") from None
-
-    def resolve_type(self, component_type: str):
-        try:
-            return self.registered_types[component_type]
-        except KeyError:
-            raise ValueError(f"Unknown component type: '{component_type}'") from None
-
-    def resolve(self, component_type: str, component_name: str) -> Type[T]:
-        component_type = self.resolve_type(component_type)
-        component = component_type.find_first(component_name)
-        if not component:
-            raise ValueError(f"Unknown {component_type.component_type}: '{component_name}'")
-        return component
-
 
 class Component(metaclass=ComponentMeta):
     abstract = True
@@ -74,10 +54,11 @@ class Component(metaclass=ComponentMeta):
     def __init__(self, path: Path, load: bool=True) -> None:
         self.path = path
         self.name = path.name
-        self.files = []
+        self.files = {}
         self.config = None
         self.description = ''
         self.is_core_component = self.path.parent.samefile(self.__class__.core_dir)
+
         self._loaded = False
         if load:
             self._load()
@@ -126,7 +107,19 @@ class Component(metaclass=ComponentMeta):
             )
         path = cls.default_user_dir.joinpath(name)
         new = cls(path, load=False)
-        new._create()
+        try:
+            new._create()
+        except ComponentError:
+            raise
+        except Exception as e:
+            # want to clean up anything
+            # we created if we failed
+            import shutil
+            try:
+                shutil.rmtree(new.path)
+            except FileNotFoundError:
+                pass
+            raise
         return new
 
     @classmethod
@@ -163,3 +156,24 @@ class Component(metaclass=ComponentMeta):
             return next(cls.find(name=name))
         except StopIteration:
             return None
+
+    def list_display(self):
+        click.echo('{}{}'.format(
+            click.style(
+                f'{self.display_name}:',
+                fg='blue',
+            ),
+            f' {self.description}'
+            if self.description else '',
+        ))
+
+    def detail_display(self):
+        click.secho(self.display_name, fg='blue')
+        if self.description:
+            click.echo(self.description)
+        click.echo("\nFiles:")
+        for name, f in self.files.items():
+            click.echo("  {}: {}".format(
+                click.style(name, fg='yellow'),
+                f.name,
+            ))
