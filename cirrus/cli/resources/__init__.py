@@ -72,18 +72,20 @@ class Resource():
             metavar='name',
             required=False,
         )
-        def _show(name=None):
-            if name is None:
-                for element in collection.values():
+        def _show(name=''):
+            name = name.lower()
+            elements = []
+            for element in collection.values():
+                if not name or name in element.name.lower():
+                    elements.append(element)
+
+            if len(elements) > 1:
+                for element in elements:
                     element.list_display()
-                return
-
-            try:
-                element = collection[name]
-            except KeyError:
-                logger.error("Cannot show: unknown %s '%s'", collection.element_class.name, name)
-
-            element.detail_display()
+            elif len(elements) == 1:
+                elements[0].detail_display()
+            else:
+                logger.error("Cannot show %s: no matches for '%s'", collection.element_class.name, name)
 
 
 resources = Collection(
