@@ -8,8 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class StepFunction(Component):
-    abstract = True
-
     def load_config(self):
         self.config = NamedYamlable.from_yaml(self.definition.content)
         try:

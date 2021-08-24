@@ -1,10 +1,12 @@
 import logging
 
 from pathlib import Path
+
 from cirrus.cli.constants import (
     DEFAULT_CONFIG_FILENAME,
     SERVERLESS_PLUGINS,
 )
+from cirrus.cli.exceptions import ConfigError
 from cirrus.cli.utils.yaml import NamedYamlable
 
 
@@ -26,22 +28,9 @@ class Config(NamedYamlable):
         )
 
         # add all lambda functions and step functions
-        # TODO: use the registered types and iterate through them
-        component_types = (
-            project.core_tasks,
-            project.tasks,
-            project.feeders,
-            project.workflows,
-        )
-        for components in component_types:
-            for component in components:
-                self.register(component)
-
-        # IAM settings
-        self.provider.iamRoleStatements = project.iam_resources
-
-        # include core and custom resource files
-        self.resources.Resources = project.core_resources
+        # and all resources
+        for collection in project.collections:
+            self.register(collection)
 
         return self
 
@@ -53,27 +42,33 @@ class Config(NamedYamlable):
             Description='Cirrus STAC Processing Framework',
             Resources={},
         )
-        self.provider.iamRoleStatements = []
 
         # populate required plugin list
         try:
             self.plugins.extend(SERVERLESS_PLUGINS.keys())
         except AttributeError:
-            self.plugins = serverless_plugins.keys()
+            self.plugins = list(SERVERLESS_PLUGINS.keys())
         else:
             # deduplicate
             self.plugins = list(set(self.plugins))
 
-    def register(self, component) -> None:
-        from cirrus.cli.component import Lambda, StepFunction
-        if isinstance(component, Lambda):
-            return self.register_lambda(component)
-        elif isinstance(component, StepFunction):
-            return self.register_stepFunction(component)
+    def register(self, collection) -> None:
+        from cirrus.cli.components.base import Lambda, StepFunction
+        from cirrus.cli.resources import Resource
+        if issubclass(collection.element_class, Lambda):
+            self.register_lambda_collection(collection)
+        elif issubclass(collection.element_class, StepFunction):
+            self.register_step_function_collection(collection)
+        elif issubclass(collection.element_class, Resource):
+            self.resources.Resources = {e.name: e.definition for e in collection.values()}
         else:
             raise ConfigError(
-                f"Unable to register component type '{component.__class__.__name__}'",
+                f"Unable to register collection '{collection.name}': unknown element class '{collection.element_class.name}'",
             )
+
+    def register_lambda_collection(self, lambda_collection) -> None:
+        for lambda_component in lambda_collection.values():
+            self.register_lambda(lambda_component)
 
     def register_lambda(self, lambda_component) -> None:
         if lambda_component.name in self.functions and not lambda_component.is_core_component:
@@ -83,7 +78,11 @@ class Config(NamedYamlable):
             return
         self.functions[lambda_component.name] = lambda_component.config
 
-    def register_stepFunction(self, sf_component) -> None:
+    def register_step_function_collection(self, sf_collection) -> None:
+        for sf_component in sf_collection.values():
+            self.register_step_function(sf_component)
+
+    def register_step_function(self, sf_component) -> None:
         if sf_component.name in self.stepFunctions.stateMachines and not sf_component.is_core_component:
             logging.warning(
                 f"Duplicate step function declaration '{sf_component.display_name}', skipping",

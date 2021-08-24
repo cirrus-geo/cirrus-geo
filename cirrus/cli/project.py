@@ -3,7 +3,6 @@ import sys
 import json
 import yaml
 
-from typing import List, TypeVar
 from pathlib import Path
 
 from cirrus.cli.constants import (
@@ -22,35 +21,15 @@ from cirrus.cli.utils.yaml import NamedYamlable
 logger = logging.getLogger(__name__)
 
 
-C = TypeVar('C', bound='cirrus.cli.core.CoreTask')
-F = TypeVar('F', bound='cirrus.cli.feeders.Feeder')
-T = TypeVar('T', bound='cirrus.cli.tasks.Task')
-W = TypeVar('W', bound='cirrus.cli.workflows.Workflow')
-
-
 class Project:
-    def __init__(self,
-                 d: Path=None,
-                 config: Config=None,
-                 core_resources: List[NamedYamlable]=None,
-                 iam_resources: List[NamedYamlable]=None,
-                 core_tasks: List[F]=None,
-                 feeders: List[F]=None,
-                 tasks: List[T]=None,
-                 workflows: List[W]=None,
-                 ) -> None:
+    def __init__(self, d: Path=None, config: Config=None) -> None:
         self._config = config
-        self._core_resources = core_resources
-        self._iam_resources = iam_resources
-        self._core_tasks = core_tasks
-        self._feeders = feeders
-        self._tasks = tasks
-        self._workflows = workflows
         self._serverless = None
         self._dynamic_attrs = [k[1:] for k in self.__dict__.keys() if k.startswith('_')]
         # do this after dynamic attrs
         # as we don't want it included
         self._path = d
+        self.collections = []
 
     def __repr__(self):
         name = self.__class__.__name__
@@ -98,59 +77,27 @@ class Project:
         return self._config
 
     @property
-    def core_resources(self) -> List[NamedYamlable]:
-        if self._core_resources is None:
-            from cirrus.cli.resources import core_resources
-            self._core_resources = {}
-            for resources in core_resources():
-                for name, config in resources.items():
-                    if name in self._core_resources:
-                        logger.warning(
-                            f"Duplicate resource declaration '{name}', overriding",
-                        )
-                    self._core_resources[name] = config
-        return self._core_resources
-
-    @property
-    def iam_resources(self) -> List[NamedYamlable]:
-        if self._iam_resources is None:
-            from cirrus.cli.iam import iam_resources
-            self._iam_resources = []
-            for resources in iam_resources():
-                self._iam_resources.extend(resources)
-        return self._iam_resources
-
-    @property
-    def core_tasks(self) -> List[C]:
-        if self._core_tasks is None:
-            from cirrus.cli.components import CoreTask
-            self._core_tasks = list(CoreTask.find())
-        return self._core_tasks
-
-    @property
-    def feeders(self) -> List[F]:
-        if self._feeders is None:
-            from cirrus.cli.components import Feeder
-            self._feeders = list(Feeder.find())
-        return self._feeders
-
-    @property
-    def tasks(self) -> List[T]:
-        if self._tasks is None:
-            from cirrus.cli.components import Task
-            self._tasks = list(Task.find())
-        return self._tasks
-
-    @property
-    def workflows(self) -> List[W]:
-        if self._workflows is None:
-            from cirrus.cli.components import Workflow
-            self._workflows = list(Workflow.find())
-        return self._workflows
-
-    @property
     def build_dir(self) -> Path:
         return self.path.joinpath(DEFAULT_BUILD_DIR_NAME)
+
+    @property
+    def lambda_collections(self):
+        from cirrus.cli.components.base import Lambda
+        return [c for c in self.collections if issubclass(c.element_class, Lambda)]
+
+    @property
+    def stepfunction_collections(self):
+        from cirrus.cli.components.base import StepFunction
+        return [c for c in self.collections if issubclass(c.element_class, StepFunction)]
+
+    @property
+    def extendable_collections(self):
+        return [c for c in self.collections if c.user_extendable]
+
+    @property
+    def resource_collections(self):
+        from cirrus.cli.resources import Resource
+        return [c for c in self.collections if issubclass(c.element_class, Resource)]
 
     def resolve(self, d: Path=Path(os.getcwd())):
         d = d.resolve()
@@ -169,8 +116,8 @@ class Project:
 
     @staticmethod
     def new(d: Path) -> None:
-        for dirname in ('feeders', 'tasks', 'workflows', 'resources'):
-            d.joinpath(dirname).mkdir(exist_ok=True)
+        for collection in self.extendable_collections:
+            d.joinpath(collection.usr_dir_name).mkdir(exist_ok=True)
 
         def maybe_write_file(name, content):
             f = d.joinpath(name)
@@ -224,9 +171,8 @@ class Project:
 
         # setup all required lambda dirs
         fn_dirs = set()
-        fn_types = (self.feeders, self.tasks, self.core_tasks)
-        for fns in fn_types:
-            for fn in fns:
+        for collection in self.lambda_collections:
+            for fn in collection.values():
                 outdir = fn.get_outdir(bd).resolve()
                 if outdir in fn_dirs:
                     logger.debug(

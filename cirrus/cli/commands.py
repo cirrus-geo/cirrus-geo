@@ -55,10 +55,8 @@ def init(directory=None):
 
     DIRECTORY defaults to the current working directory.
     '''
-    import os
-
     if not directory:
-        directory = Path(os.getcwd())
+        directory = Path.cwd()
     project.new(directory)
     click.secho(
         f"Succesfully initialized project in '{directory}'.",
@@ -85,7 +83,35 @@ def clean():
     project.clean()
 
 
-@cli.group()
+@cli.command(
+    aliases=['sls'],
+    context_settings=dict(
+        ignore_unknown_options=True,
+    ),
+)
+@click.argument('sls_args', nargs=-1, type=click.UNPROCESSED)
+@utils_click.requires_project
+def serverless(sls_args):
+    '''
+    Run serverless within the cirrus build directory.
+    '''
+    import os
+
+    bd = project.build_dir
+    if not bd.is_dir():
+        logger.error('No build directory; have you run a build?')
+        return
+
+    sls = project.path.joinpath('node_modules', 'serverless', 'bin', 'serverless.js')
+    if not sls.is_file():
+        logger.error('No serverless binary; have you run `npm install`?')
+        return
+
+    os.chdir(bd)
+    os.execv(sls, ['serverless'] + list(sls_args))
+
+
+@cli.group(cls=utils_click.AliasedShortMatchGroup)
 @utils_click.requires_project
 def create():
     '''
@@ -94,75 +120,12 @@ def create():
     pass
 
 
-def add_component_create(component_type):
-    if not component_type.user_extendable:
-        return
-
-    @create.command(
-        name=component_type.component_type,
-    )
-    @click.argument(
-        'name',
-        metavar='name',
-    )
-    def _show(name):
-        import sys
-        from cirrus.cli.exceptions import ComponentError
-
-        try:
-            component_type.create(name)
-        except ComponentError as e:
-            logger.error(e)
-            sys.exit(1)
-        else:
-            # TODO: logging level for "success" on par with warning?
-            click.secho(
-                f'{component_type.component_type} {name} created',
-                err=True,
-                fg='green',
-            )
-
-
-@cli.group()
+@cli.group(cls=utils_click.AliasedShortMatchGroup)
 def show():
     '''
-    Multifunction command to list/show components/files/resources.
+    Multifunction command to list/show components, component files, and resources.
     '''
     pass
-
-
-def add_component_show(component_type):
-    @show.command(
-        name=component_type.component_type,
-    )
-    @click.argument(
-        'name',
-        metavar='name',
-        required=False,
-    )
-    @click.argument(
-        'filename',
-        metavar='filename',
-        required=False,
-    )
-    def _show(name=None, filename=None):
-        components = component_type.find(name=name)
-        if name is None:
-            for component in components:
-                component.list_display()
-            return
-
-        component = next(components)
-        if filename is None:
-            component.detail_display()
-            return
-
-        try:
-            component.files[filename].show()
-        except KeyError:
-            logger.error("Cannot show: unknown file '%s'", filename)
-
-# TODO: add show for resources
 
 
 if __name__ == '__main__':

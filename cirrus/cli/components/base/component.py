@@ -17,40 +17,29 @@ logger = logging.getLogger(__name__)
 T = TypeVar('T', bound='Component')
 class ComponentMeta(ABCMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
-        if not 'abstract' in attrs:
-            attrs['abstract'] = False
-        if not 'display_type' in attrs:
-            attrs['display_type'] = name
-        if not 'display_type_plural' in attrs:
-            attrs['display_type_plural'] = f"{attrs['display_type']}s"
+        if not 'user_extendable' in attrs:
+            attrs['user_extendable'] = True
         return super().__new__(cls, name, bases, attrs, **kwargs)
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        # TODO: better name attr, clean up the others
         self.component_type = self.__name__.lower()
-        self.plural_name = f'{self.component_type}s'
-        self.default_user_dir_name = self.plural_name
+        self.name = self.__name__.lower()
+        self.user_dir_name = f'{self.name}s'
         self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
 
-        if not self.abstract and self.enable_cli:
-            commands.add_component_create(self)
-            commands.add_component_show(self)
-
     @property
-    def default_user_dir(self):
+    def user_dir(self):
         if self.user_extendable:
             try:
-                return project.path_safe.joinpath(self.default_user_dir_name)
+                return project.path_safe.joinpath(self.user_dir_name)
             except AttributeError:
                 pass
         return None
 
 
 class Component(metaclass=ComponentMeta):
-    abstract = True
-    enable_cli = True
-    user_extendable = True
-
     def __init__(self, path: Path, load: bool=True) -> None:
         self.path = path
         self.name = path.name
@@ -105,7 +94,7 @@ class Component(metaclass=ComponentMeta):
             raise ComponentError(
                 f"Component {self.component_type} does not support creation"
             )
-        path = cls.default_user_dir.joinpath(name)
+        path = cls.user_dir.joinpath(name)
         new = cls(path, load=False)
         try:
             new._create()
@@ -137,25 +126,14 @@ class Component(metaclass=ComponentMeta):
 
     @classmethod
     def find(cls, name: str=None) -> Type[T]:
-        # search user dir first, as we prefer a user
-        # implementation if a component name is specified
-        search_dirs = []
+        search_dirs = [cls.core_dir]
 
-        user_dir = cls.default_user_dir
+        user_dir = cls.user_dir
         if user_dir is not None:
             search_dirs.append(user_dir)
 
-        search_dirs.append(cls.core_dir)
-
         for _dir in search_dirs:
             yield from cls.from_dir(_dir, name=name)
-
-    @classmethod
-    def find_first(cls, name: str) -> Type[T]:
-        try:
-            return next(cls.find(name=name))
-        except StopIteration:
-            return None
 
     def list_display(self):
         click.echo('{}{}'.format(
@@ -177,3 +155,67 @@ class Component(metaclass=ComponentMeta):
                 click.style(name, fg='yellow'),
                 f.name,
             ))
+
+    @classmethod
+    def add_create_command(cls):
+        if not cls.user_extendable:
+            return
+
+        @commands.create.command(
+            name=cls.component_type
+        )
+        @click.argument(
+            'name',
+            metavar='name',
+        )
+        def _create(name):
+            import sys
+            from cirrus.cli.exceptions import ComponentError
+
+            try:
+                cls.create(name)
+            except ComponentError as e:
+                logger.error(e)
+                sys.exit(1)
+            else:
+                # TODO: logging level for "success" on par with warning?
+                click.secho(
+                    f'{cls.component_type} {name} created',
+                    err=True,
+                    fg='green',
+                )
+
+    @classmethod
+    def add_show_command(cls, collection):
+        @commands.show.command(
+            name=collection.name,
+        )
+        @click.argument(
+            'name',
+            metavar='name',
+            required=False,
+        )
+        @click.argument(
+            'filename',
+            metavar='filename',
+            required=False,
+        )
+        def _show(name=None, filename=None):
+            if name is None:
+                for element in collection.values():
+                    element.list_display()
+                return
+
+            try:
+                element = collection[name]
+            except KeyError:
+                logger.error("Cannot show: unknown %s '%s'", collection.element_class.name, name)
+
+            if filename is None:
+                element.detail_display()
+                return
+
+            try:
+                element.files[filename].show()
+            except KeyError:
+                logger.error("Cannot show: unknown file '%s'", filename)

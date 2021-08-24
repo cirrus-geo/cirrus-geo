@@ -1,4 +1,4 @@
-from cirrus.cli import components
+from cirrus.cli import components, resources
 from cirrus.cli.commands import cli
 
 def main():

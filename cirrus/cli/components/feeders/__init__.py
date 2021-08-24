@@ -1,7 +1,6 @@
-from pathlib import Path
-
 from .. import files
 from ..base import Lambda
+from cirrus.cli.collection import Collection
 
 
 class Feeder(Lambda):
@@ -9,3 +8,9 @@ class Feeder(Lambda):
     definition = files.Definition()
     # make this optional once we have them
     readme = files.Readme(optional=True)
+
+
+feeders = Collection(
+    'feeders',
+    Feeder,
+)

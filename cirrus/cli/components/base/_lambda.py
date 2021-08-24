@@ -12,14 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 class Lambda(Component):
-    abstract = True
-
     def load_config(self):
         self.config = NamedYamlable.from_yaml(self.definition.content)
         self.description = self.config.get('description', '')
         self.python_requirements = self.config.pop('python_requirements', [])
         if not hasattr(self.config, 'module'):
-            self.config.module = f'{self.plural_name}/{self.name}'
+            self.config.module = f'{self.user_dir_name}/{self.name}'
         if not hasattr(self.config, 'handler'):
             self.config.handler = f'{self.component_type}.handler'
 
