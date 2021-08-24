@@ -71,9 +71,10 @@ class Resource():
             'name',
             metavar='name',
             required=False,
+            default='',
+            callback=lambda ctx, param, val: val.lower(),
         )
-        def _show(name=''):
-            name = name.lower()
+        def _show(name):
             elements = []
             for element in collection.values():
                 if not name or name in element.name.lower():
