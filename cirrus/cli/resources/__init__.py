@@ -49,10 +49,10 @@ class Resource():
 
     @property
     def display_name(self):
-        return '{}{}{}'.format(
+        return '{}{} ({})'.format(
             self.name,
             f' [{self.type}]' if self.type else '',
-            ' (built-in)' if self.is_core_component else '',
+            'built-in' if self.is_core_component else self.file.relative_to(project.path),
         )
 
     def list_display(self):
