@@ -1,5 +1,3 @@
 description: Post process batch job by copying input from S3
-handler: task.handler
 memorySize: 128
 timeout: 15
-module: tasks/post-batch

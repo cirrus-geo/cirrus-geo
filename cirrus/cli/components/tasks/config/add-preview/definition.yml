@@ -1,8 +1,6 @@
 description: Create a preview and/or thumbnail from one or more assets
-handler: task.handler
 memorySize: 1024
 timeout: 900
-module: tasks/add-preview
 environment:
   GDAL_DATA: /opt/share/gdal
   PROJ_LIB: /opt/share/proj

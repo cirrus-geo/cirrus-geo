@@ -1,5 +1,3 @@
 description: Pre process batch job by copying input to S3
-handler: task.handler
 memorySize: 128
 timeout: 15
-module: tasks/pre-batch

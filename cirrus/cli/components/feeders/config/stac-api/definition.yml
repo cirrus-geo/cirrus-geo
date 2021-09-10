@@ -1,8 +1,6 @@
 description: Feed data from a STAC API to Cirrus for processing
-handler: feeder.handler
 memorySize: 128
 timeout: 900
-module: feeders/stac-api
 python_requirements:
   #- sat-search~=0.3.0
   - python-dateutil~=2.8

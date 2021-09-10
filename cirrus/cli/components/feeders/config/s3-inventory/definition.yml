@@ -1,7 +1,5 @@
 description: Feed Sentinel AWS inventory data to Cirrus for cataloging
-handler: feeder.handler
 memorySize: 128
 timeout: 900
-module: feeders/s3-inventory
 python-requirements:
   - pyorc==0.3.0

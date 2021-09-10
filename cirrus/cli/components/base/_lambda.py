@@ -4,6 +4,7 @@ import click
 from typing import List
 from pathlib import Path
 
+from .. import files
 from .component import Component
 from cirrus.cli.utils.yaml import NamedYamlable
 
@@ -12,6 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 class Lambda(Component):
+    handler = files.PythonHandler()
+    definition = files.LambdaDefinition()
+    # TODO: Readme should be required once we have one per task
+    readme = files.Readme(optional=True)
+
     def load_config(self):
         self.config = NamedYamlable.from_yaml(self.definition.content)
         self.description = self.config.get('description', '')
@@ -20,13 +26,6 @@ class Lambda(Component):
             self.config.module = f'{self.user_dir_name}/{self.name}'
         if not hasattr(self.config, 'handler'):
             self.config.handler = f'{self.component_type}.handler'
-
-    # TODO: not sure, but I think we should include the default
-    # lambda files and have methods on the class to define the
-    # content, which can be overriden as approprite by subclasses
-    @property
-    def definition(self):
-        raise NotImplementedError("Must define a file named 'definition'")
 
     @click.command()
     def show(self):

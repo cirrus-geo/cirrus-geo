@@ -6,6 +6,7 @@ from typing import Type, TypeVar
 from abc import ABCMeta
 from pathlib import Path
 
+from ..files import ComponentFile
 from cirrus.cli import commands
 from cirrus.cli.exceptions import ComponentError
 from cirrus.cli.project import project
@@ -17,8 +18,27 @@ logger = logging.getLogger(__name__)
 T = TypeVar('T', bound='Component')
 class ComponentMeta(ABCMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
+        files = attrs.get('files', {})
+
+        # copy file attrs to files
+        for attr_name, attr in attrs.items():
+            if isinstance(attr, ComponentFile):
+                files[attr_name] = attr
+
+        # copy parent class files to child,
+        # if not overridden on child
+        for base in bases:
+            if hasattr(base, 'files'):
+                for fname, f in base.files.items():
+                    if fname not in attrs:
+                        attrs[fname] = f
+                        files[fname] = f
+
+        attrs['files'] = files
+
         if not 'user_extendable' in attrs:
             attrs['user_extendable'] = True
+
         return super().__new__(cls, name, bases, attrs, **kwargs)
 
     def __init__(self, *args, **kwargs) -> None:
@@ -43,10 +63,13 @@ class Component(metaclass=ComponentMeta):
     def __init__(self, path: Path, load: bool=True) -> None:
         self.path = path
         self.name = path.name
-        self.files = {}
         self.config = None
         self.description = ''
         self.is_core_component = self.path.parent.samefile(self.__class__.core_dir)
+
+        self.files = {}
+        for fname, f in self.__class__.files.items():
+            f.copy_to_component(self, fname)
 
         self._loaded = False
         if load:
@@ -59,17 +82,18 @@ class Component(metaclass=ComponentMeta):
             ' (built-in)' if self.is_core_component else '',
         )
 
-    def _load(self, init_components=False):
+    def _load(self, init_files=False):
         if not self.path.is_dir():
             raise ComponentError(
                 f"Cannot load {self.component_type} from '{self.path}': not a directory."
             )
 
-        for attr, val in self.__class__.__dict__.items():
-            if hasattr(val, 'copy_to_component'):
-                if init_components:
-                    val.init(self)
-                val.copy_to_component(self, attr)
+        # TODO: this whole load/init thing
+        # needs some heavy cleanup
+        for f in self.files.values():
+            if init_files:
+                f.init(self)
+            f.validate()
 
         self.load_config()
         self._loaded = True
@@ -86,7 +110,7 @@ class Component(metaclass=ComponentMeta):
             raise ComponentError(
                 f"Cannot create {self.__class__.__name__} at '{self.path}': already exists."
             ) from e
-        self._load(init_components=True)
+        self._load(init_files=True)
 
     @classmethod
     def create(cls, name: str) -> Type[T]:

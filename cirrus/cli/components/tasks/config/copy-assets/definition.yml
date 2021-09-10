@@ -1,5 +1,3 @@
 description: Copy specified assets from Item(s) to an S3 bucket
-handler: task.handler
 memorySize: 768
 timeout: 60
-module: tasks/copy-assets

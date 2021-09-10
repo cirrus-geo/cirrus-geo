@@ -1,8 +1,6 @@
 description: Cirrus API
-handler: task.handler
 memorySize: 128
 timeout: 10
-module: core/api
 events:
   - http: GET /
   - http: GET {proxy+}
