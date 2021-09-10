@@ -4,8 +4,8 @@ from cirrus.cli.collection import Collection
 
 
 class Task(Lambda):
-    python = files.Python()
-    definition = files.Definition()
+    handler = files.PythonHandler()
+    definition = files.LambdaDefinition()
     # TODO: Readme should be required once we have one per task
     readme = files.Readme(optional=True)
 

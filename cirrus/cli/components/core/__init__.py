@@ -7,8 +7,8 @@ class CoreTask(Lambda):
     user_extendable = False
     display_type = 'Core Task'
 
-    python = files.Python()
-    definition = files.Definition()
+    handler = files.PythonHandler()
+    definition = files.LambdaDefinition()
     # make this not optional once we have them
     readme = files.Readme(optional=True)
 
