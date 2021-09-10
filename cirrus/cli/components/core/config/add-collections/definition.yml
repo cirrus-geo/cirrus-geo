@@ -1,7 +1,0 @@
-description: Lambda function for adding new STAC collections to Cirrus
-handler: task.handler
-memorySize: 128
-timeout: 60
-module: core/add-collections
-python_requirements:
-  - pystac~=0.5
