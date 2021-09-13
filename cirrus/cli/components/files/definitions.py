@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: figure out most basic permissions
-default_lambda_def = '''description: 'fill in a description here'
+default_lambda = '''description: 'fill in a description here'
 memorySize: 128
 timeout: 60
 iamRoleStatements: []
@@ -55,8 +55,7 @@ class LambdaDefinition(ComponentFile):
 
     @staticmethod
     def content_fn(component) -> str:
-        from cirrus.cli.utils import yaml
-        return yaml.NamedYamlable(default_lambda_def).to_yaml()
+        return default_lambda
 
 
 class StepFunctionDefinition(ComponentFile):
@@ -65,5 +64,4 @@ class StepFunctionDefinition(ComponentFile):
 
     @staticmethod
     def content_fn(component) -> str:
-        from cirrus.cli.utils import yaml
-        return yaml.NamedYamlable(default_workflow(name=component.name)).to_yaml()
+        return default_workflow(name=component.name)

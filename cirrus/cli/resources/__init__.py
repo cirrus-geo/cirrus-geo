@@ -18,6 +18,7 @@ CORE_DIR = Path(__file__).parent.joinpath('config')
 class Resource():
     name = 'resource'
     top_level_key = 'Resources'
+    user_extendable = True
 
     def __init__(self, name, definition, file: Path=None) -> None:
         self.name = name

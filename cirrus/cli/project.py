@@ -92,7 +92,7 @@ class Project:
 
     @property
     def extendable_collections(self):
-        return [c for c in self.collections if c.user_extendable]
+        return [c for c in self.collections if c.element_class.user_extendable]
 
     @property
     def resource_collections(self):
@@ -114,10 +114,9 @@ class Project:
         config = d.joinpath(DEFAULT_CONFIG_FILENAME)
         return config.is_file()
 
-    @staticmethod
-    def new(d: Path) -> None:
+    def new(self, d: Path) -> None:
         for collection in self.extendable_collections:
-            d.joinpath(collection.usr_dir_name).mkdir(exist_ok=True)
+            d.joinpath(collection.user_dir_name).mkdir(exist_ok=True)
 
         def maybe_write_file(name, content):
             f = d.joinpath(name)
