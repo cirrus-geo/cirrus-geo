@@ -2,7 +2,7 @@ import yaml
 import string
 
 from pathlib import Path
-from collections import MutableMapping, MutableSequence
+from collections.abc import MutableMapping, MutableSequence
 from cfn_tools import odict, yaml_loader, yaml_dumper
 
 
