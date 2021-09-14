@@ -44,3 +44,19 @@ def test_create(createable, module_tmpdir, invoke, project):
     result = invoke(f'show {createable} test_{createable}')
     assert result.exit_code == 0
     assert len(result.stdout) > 0
+
+
+@pytest.mark.parametrize('collection', [c.name for c in project.collections])
+def test_show_list(collection, invoke):
+    result = invoke(f'show {collection}')
+    assert result.exit_code == 0
+    assert len(result.stdout) > 0
+
+
+@pytest.mark.parametrize('collection', [c.name for c in project.collections])
+def test_show_detail(collection, invoke):
+    # TODO: why are the keys resource objects?
+    item = list(getattr(project, collection).keys())[0].name
+    result = invoke(f'show {collection} {item}')
+    assert result.exit_code == 0
+    assert len(result.stdout) > 0

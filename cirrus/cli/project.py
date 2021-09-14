@@ -42,7 +42,7 @@ class Project:
         return f'<{name}: {path}>'
 
     def __getattr__(self, name: str):
-        if self.path is None and name in self._dynamic_attrs:
+        if self._path is None and name in self._dynamic_attrs:
             raise CirrusError(
                 'Cirrus project path not set. Set the path before accessing dynamic attributes.'
             )
@@ -96,13 +96,17 @@ class Project:
         return [c for c in self.collections if issubclass(c.element_class, StepFunction)]
 
     @property
-    def extendable_collections(self):
-        return [c for c in self.collections if c.element_class.user_extendable]
-
-    @property
     def resource_collections(self):
         from cirrus.cli.resources import Resource
         return [c for c in self.collections if issubclass(c.element_class, Resource)]
+
+    @property
+    def extendable_collections(self):
+        return [c for c in self.collections if c.element_class.user_extendable]
+
+    def register_collection(self, collection):
+        self.collections.append(collection)
+        setattr(self, collection.name, collection)
 
     def resolve(self, path: Path=None):
         if path is None:

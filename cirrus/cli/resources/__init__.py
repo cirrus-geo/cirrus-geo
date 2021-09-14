@@ -40,10 +40,15 @@ class Resource():
 
     @classmethod
     def find(cls):
-        search_dirs = (
+        search_dirs = [
             Path(__file__).parent.joinpath('config'),
-            project.path.joinpath('resources'),
-        )
+        ]
+
+        try:
+            search_dirs.append(project.path_safe.joinpath(f'{cls.name}s'))
+        except AttributeError:
+            pass
+
         for d in search_dirs:
             for yml in d.glob('*.yml'):
                 yield from cls.from_file(yml)

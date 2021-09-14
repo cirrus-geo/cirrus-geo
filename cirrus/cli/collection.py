@@ -46,8 +46,7 @@ class Collection():
         return self._elements
 
     def register_to_project(self):
-        project.collections.append(self)
-        setattr(project, self.name, self)
+        project.register_collection(self)
 
     def __iter__(self):
         return self.elements.__iter__()
@@ -57,6 +56,9 @@ class Collection():
 
     def items(self):
         return self.elements.items()
+
+    def keys(self):
+        return self.elements.values()
 
     def values(self):
         return self.elements.values()
