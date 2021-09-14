@@ -104,12 +104,16 @@ class Project:
         from cirrus.cli.resources import Resource
         return [c for c in self.collections if issubclass(c.element_class, Resource)]
 
-    def resolve(self, d: Path=Path(os.getcwd())):
-        d = d.resolve()
-        def dirs(d):
-            yield d
-            yield from d.parents
-        for parent in dirs(d):
+    def resolve(self, path: Path=None):
+        if path is None:
+            path = Path(os.getcwd())
+        else:
+            path = path.resolve()
+
+        def dirs(path):
+            yield path
+            yield from path.parents
+        for parent in dirs(path):
             if Project.dir_is_project(parent):
                 self._path = parent
                 return
