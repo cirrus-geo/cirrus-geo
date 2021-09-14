@@ -67,12 +67,12 @@ class Project:
         return self._path
 
     @path.setter
-    def path(self, p: Path) -> None:
-        if not self.dir_is_project(p):
+    def path(self, path: Path) -> None:
+        if not self.dir_is_project(path):
             raise CirrusError(
                 f"Cannot set project path, does not appear to be vaild project: '{p}'",
             )
-        self._path = p
+        self._path = path
 
     @property
     def config(self) -> Config:
@@ -115,16 +115,16 @@ class Project:
                 return
 
     @staticmethod
-    def dir_is_project(d: Path) -> bool:
-        config = d.joinpath(DEFAULT_CONFIG_FILENAME)
+    def dir_is_project(path: Path) -> bool:
+        config = path.joinpath(DEFAULT_CONFIG_FILENAME)
         return config.is_file()
 
-    def new(self, d: Path) -> None:
+    def new(self, path: Path) -> None:
         for collection in self.extendable_collections:
-            d.joinpath(collection.user_dir_name).mkdir(exist_ok=True)
+            path.joinpath(collection.user_dir_name).mkdir(exist_ok=True)
 
         def maybe_write_file(name, content):
-            f = d.joinpath(name)
+            f = path.joinpath(name)
             if f.exists():
                 logger.info(f'{name} already exists, skipping')
             else:
