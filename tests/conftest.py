@@ -29,5 +29,4 @@ def module_tmpdir():
 def project():
     project = Project()
     project.resolve(path=Path(os.getcwd()))
-    print(project.path)
     return project
