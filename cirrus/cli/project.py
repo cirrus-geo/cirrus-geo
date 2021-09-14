@@ -22,13 +22,18 @@ logger = logging.getLogger(__name__)
 
 
 class Project:
-    def __init__(self, d: Path=None, config: Config=None) -> None:
+    def __init__(self, path: Path=None, config: Config=None) -> None:
         self._config = config
         self._serverless = None
         self._dynamic_attrs = [k[1:] for k in self.__dict__.keys() if k.startswith('_')]
         # do this after dynamic attrs
         # as we don't want it included
-        self._path = d
+        self._path = None
+
+        # set path not _path to use setter
+        if path:
+            self.path = path
+
         self.collections = []
 
     def __repr__(self):
