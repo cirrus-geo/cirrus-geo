@@ -17,23 +17,23 @@ class Resource():
     top_level_key = 'Resources'
     user_extendable = True
 
-    def __init__(self, name, definition, file: Path=None) -> None:
+    def __init__(self, name, definition, _file: Path=None) -> None:
         self.name = name
         self.definition = definition
         self.type = definition.get('Type', '')
-        self.file = file
+        self.file = _file
         self.is_core_component = self.file.parent.samefile(CORE_DIR) if self.file else False
 
     @classmethod
-    def from_file(cls, f: Path):
-        resources = NamedYamlable.from_file(f)
+    def from_file(cls, _file: Path):
+        resources = NamedYamlable.from_file(_file)
         try:
             resources = resources[cls.top_level_key]
         except KeyError:
             pass
 
         for name, definition in resources.items():
-            yield cls(name, definition, f)
+            yield cls(name, definition, _file)
 
     @classmethod
     def find(cls, search_dirs=None):
