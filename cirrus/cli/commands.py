@@ -2,7 +2,7 @@ import click
 
 from pathlib import Path
 from cirrus.cli import constants
-from cirrus.cli.project import project
+from cirrus.cli.project import Project
 from cirrus.cli.utils import (
     logging,
     click as utils_click,
@@ -28,12 +28,19 @@ logger = logging.getLogger(__name__)
     ),
 
 )
+@click.pass_context
 @logging.verbosity()
-def cli(verbose, cirrus_dir=None):
+def cli(ctx, verbose, cirrus_dir=None):
     if cirrus_dir:
-        project.set_path(cirrus_dir)
+        project = Project(cirrus_dir)
     else:
-        project.resolve()
+        project = Project.resolve()
+
+    ctx.obj = project
+
+    for collection in project.collections.collections:
+        collection.add_create_command(create)
+        collection.add_show_command(show)
 
 
 @cli.command()
@@ -57,7 +64,7 @@ def init(directory=None):
     '''
     if not directory:
         directory = Path.cwd()
-    project.new(directory)
+    Project.new(directory)
     click.secho(
         f"Succesfully initialized project in '{directory}'.",
         err=True,
@@ -67,7 +74,7 @@ def init(directory=None):
 
 @cli.command()
 @utils_click.requires_project
-def build():
+def build(project):
     '''
     Build the cirrus configuration into a serverless.yml.
     '''
@@ -76,7 +83,7 @@ def build():
 
 @cli.command()
 @utils_click.requires_project
-def clean():
+def clean(project):
     '''
     Remove all files from the cirrus build directory.
     '''
@@ -91,7 +98,7 @@ def clean():
 )
 @click.argument('sls_args', nargs=-1, type=click.UNPROCESSED)
 @utils_click.requires_project
-def serverless(sls_args):
+def serverless(project, sls_args):
     '''
     Run serverless within the cirrus build directory.
     '''
@@ -113,7 +120,7 @@ def serverless(sls_args):
 
 @cli.group(cls=utils_click.AliasedShortMatchGroup)
 @utils_click.requires_project
-def create():
+def create(project):
     '''
     Create a new component in the project.
     '''

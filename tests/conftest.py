@@ -16,6 +16,13 @@ from cirrus.cli import __main__
 
 
 @pytest.fixture(scope='module')
+def fixture_data(pytestconfig):
+    fdir = pytestconfig.rootpath.joinpath('tests', 'fixture_data')
+    fdir.mkdir(exist_ok=True)
+    return fdir
+
+
+@pytest.fixture(scope='module')
 def module_tmpdir():
     old_cwd = os.getcwd()
     newpath = tempfile.mkdtemp()
@@ -27,6 +34,5 @@ def module_tmpdir():
 
 @pytest.fixture
 def project():
-    project = Project()
-    project.resolve(path=Path(os.getcwd()))
+    project = Project.resolve(strict=True)
     return project

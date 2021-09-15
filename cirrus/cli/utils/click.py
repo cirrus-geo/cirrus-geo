@@ -2,20 +2,25 @@ import click
 import sys
 import logging
 
+from cirrus.cli.project import Project
+
 
 logger = logging.getLogger(__name__)
 
 
+pass_project = click.make_pass_decorator(Project)
+
+
 def requires_project(func):
-    from cirrus.cli.project import project
     from functools import wraps
 
+    @pass_project
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(project, *args, **kwargs):
         if project._path is None:
             logger.error('Fatal: no cirrus project detected/specified.')
             sys.exit(1)
-        return func(*args, **kwargs)
+        return func(project, *args, **kwargs)
     return wrapper
 
 

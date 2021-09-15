@@ -7,9 +7,7 @@ from abc import ABCMeta
 from pathlib import Path
 
 from ..files import ComponentFile
-from cirrus.cli import commands
 from cirrus.cli.exceptions import ComponentError
-from cirrus.cli.project import project
 
 
 logger = logging.getLogger(__name__)
@@ -46,17 +44,7 @@ class ComponentMeta(ABCMeta):
         # TODO: better name attr, clean up the others
         self.component_type = self.__name__.lower()
         self.name = self.__name__.lower()
-        self.user_dir_name = f'{self.name}s'
         self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
-
-    @property
-    def user_dir(self):
-        if self.user_extendable:
-            try:
-                return project.path_safe.joinpath(self.user_dir_name)
-            except AttributeError:
-                pass
-        return None
 
 
 class Component(metaclass=ComponentMeta):
@@ -113,12 +101,12 @@ class Component(metaclass=ComponentMeta):
         self._load(init_files=True)
 
     @classmethod
-    def create(cls, name: str) -> Type[T]:
+    def create(cls, name: str, outdir: Path) -> Type[T]:
         if not cls.user_extendable:
             raise ComponentError(
                 f"Component {self.component_type} does not support creation"
             )
-        path = cls.user_dir.joinpath(name)
+        path = outdir.joinpath(name)
         new = cls(path, load=False)
         try:
             new._create()
@@ -143,18 +131,17 @@ class Component(metaclass=ComponentMeta):
             try:
                 yield cls(component_dir)
             except ComponentError:
-                logger.debug(
+                logger.warning(
                     f"Directory does not appear to be a {cls.component_type}, skipping: '{component_dir}'",
                 )
                 continue
 
     @classmethod
-    def find(cls, name: str=None) -> Type[T]:
-        search_dirs = [cls.core_dir]
+    def find(cls, name: str=None, search_dirs: list=None) -> Type[T]:
+        if search_dirs is None:
+            search_dirs = []
 
-        user_dir = cls.user_dir
-        if user_dir is not None:
-            search_dirs.append(user_dir)
+        search_dirs = [cls.core_dir] + search_dirs
 
         for _dir in search_dirs:
             yield from cls.from_dir(_dir, name=name)
@@ -181,11 +168,11 @@ class Component(metaclass=ComponentMeta):
             ))
 
     @classmethod
-    def add_create_command(cls):
+    def add_create_command(cls, collection, create_cmd):
         if not cls.user_extendable:
             return
 
-        @commands.create.command(
+        @create_cmd.command(
             name=cls.component_type
         )
         @click.argument(
@@ -197,7 +184,7 @@ class Component(metaclass=ComponentMeta):
             from cirrus.cli.exceptions import ComponentError
 
             try:
-                cls.create(name)
+                collection.create(name)
             except ComponentError as e:
                 logger.error(e)
                 sys.exit(1)
@@ -210,8 +197,8 @@ class Component(metaclass=ComponentMeta):
                 )
 
     @classmethod
-    def add_show_command(cls, collection):
-        @commands.show.command(
+    def add_show_command(cls, collection, show_cmd):
+        @show_cmd.command(
             name=collection.name,
         )
         @click.argument(

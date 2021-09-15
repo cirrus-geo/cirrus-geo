@@ -22,115 +22,84 @@ logger = logging.getLogger(__name__)
 
 
 class Project:
-    def __init__(self, path: Path=None, config: Config=None) -> None:
+    def __init__(self, path: Path, config: Config=None) -> None:
+        from cirrus.cli.collections import collections
+
         self._config = config
-        self._serverless = None
-        self._dynamic_attrs = [k[1:] for k in self.__dict__.keys() if k.startswith('_')]
-        # do this after dynamic attrs
-        # as we don't want it included
+        self.collections = collections
+
+        # set path, not _path, to use setter validation
         self._path = None
-
-        # set path not _path to use setter
-        if path:
-            self.path = path
-
-        self.collections = []
+        self.path = path
 
     def __repr__(self):
         name = self.__class__.__name__
-        path = '[not loaded]' if self.path is None else self.path
-        return f'<{name}: {path}>'
-
-    def __getattr__(self, name: str):
-        if self._path is None and name in self._dynamic_attrs:
-            raise CirrusError(
-                'Cirrus project path not set. Set the path before accessing dynamic attributes.'
-            )
-        # TODO: I'm confused why getattr stopped working and
-        # now I'm using getattribute...
-        return super().__getattribute__(name)
+        return f'<{name}: {self.path}>'
 
     @property
     def path(self) -> Path:
-        if self._path is None:
-            raise CirrusError('Cirrus project path not set. Project is not initialized.')
         return self._path
 
     @property
     def path_safe(self) -> Path:
-        from functools import cache
-        if self._path is None:
-            #logging.once(
-            logger.warning(
-                'No cirrus project specified; limited to built-in components/resources.',
-            )
         return self._path
 
     @path.setter
     def path(self, path: Path) -> None:
-        if not self.dir_is_project(path):
+        if path is not None and not self.dir_is_project(path):
             raise CirrusError(
                 f"Cannot set project path, does not appear to be vaild project: '{p}'",
             )
         self._path = path
+        self.collections.register_project(self)
 
     @property
     def config(self) -> Config:
         if self._config is None:
-            # TODO: what happens if no config file?
-            self._config = Config.from_project(self)
+            if self.path is None:
+                logger.warning(
+                    f'Project path unset, cannot load configuration',
+                )
+            else:
+                self._config = Config.from_project(self)
         return self._config
 
     @property
     def build_dir(self) -> Path:
+        if self.path is None:
+            return None
         return self.path.joinpath(DEFAULT_BUILD_DIR_NAME)
 
-    @property
-    def lambda_collections(self):
-        from cirrus.cli.components.base import Lambda
-        return [c for c in self.collections if issubclass(c.element_class, Lambda)]
-
-    @property
-    def stepfunction_collections(self):
-        from cirrus.cli.components.base import StepFunction
-        return [c for c in self.collections if issubclass(c.element_class, StepFunction)]
-
-    @property
-    def resource_collections(self):
-        from cirrus.cli.resources import Resource
-        return [c for c in self.collections if issubclass(c.element_class, Resource)]
-
-    @property
-    def extendable_collections(self):
-        return [c for c in self.collections if c.element_class.user_extendable]
-
-    def register_collection(self, collection):
-        self.collections.append(collection)
-        setattr(self, collection.name, collection)
-
-    def resolve(self, path: Path=None):
+    @classmethod
+    def resolve(cls, path: Path=None, strict=False):
         if path is None:
             path = Path(os.getcwd())
         else:
             path = path.resolve()
 
+        project_path = None
+
         def dirs(path):
             yield path
             yield from path.parents
+
         for parent in dirs(path):
             if Project.dir_is_project(parent):
-                self._path = parent
-                return
+                project_path = parent
+                break
+
+        if strict and project_path is None:
+            raise CirrusError("Unable to resolve project path and 'strict' resolution specified")
+
+        return cls(project_path)
 
     @staticmethod
     def dir_is_project(path: Path) -> bool:
         config = path.joinpath(DEFAULT_CONFIG_FILENAME)
         return config.is_file()
 
-    def new(self, path: Path) -> None:
-        for collection in self.extendable_collections:
-            path.joinpath(collection.user_dir_name).mkdir(exist_ok=True)
-
+    @classmethod
+    def new(cls, path: Path) -> None:
         def maybe_write_file(name, content):
             f = path.joinpath(name)
             if f.exists():
@@ -152,7 +121,17 @@ class Project:
             indent=2,
         ))
 
+        self = cls(path)
+
+        for collection in self.collections.extendable_collections:
+            self.path.joinpath(collection.user_dir_name).mkdir(exist_ok=True)
+
+        return self
+
     def build(self) -> None:
+        if self.path is None:
+            raise CirrusError('Cannot build a project without the path set')
+
         import shutil
         from cirrus.cli.utils import misc
 
@@ -183,7 +162,7 @@ class Project:
 
         # setup all required lambda dirs
         fn_dirs = set()
-        for collection in self.lambda_collections:
+        for collection in self.collections.lambda_collections:
             for fn in collection.values():
                 outdir = fn.get_outdir(bd).resolve()
                 if outdir in fn_dirs:
@@ -200,6 +179,9 @@ class Project:
             shutil.rmtree(d)
 
     def clean(self) -> None:
+        if self.path is None:
+            raise CirrusError('Cannot clean a project without the path set')
+
         import shutil
         bd = self.build_dir
         if not bd.is_dir():
@@ -209,6 +191,3 @@ class Project:
                 shutil.rmtree(f)
             else:
                 f.unlink()
-
-
-project = Project()

@@ -23,9 +23,9 @@ class Lambda(Component):
         self.description = self.config.get('description', '')
         self.python_requirements = self.config.pop('python_requirements', [])
         if not hasattr(self.config, 'module'):
-            self.config.module = f'{self.user_dir_name}/{self.name}'
+            self.config.module = f'lambdas/{self.name}'
         if not hasattr(self.config, 'handler'):
-            self.config.handler = f'{self.component_type}.handler'
+            self.config.handler = 'handler.handler'
 
     @click.command()
     def show(self):

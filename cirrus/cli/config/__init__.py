@@ -29,7 +29,7 @@ class Config(NamedYamlable):
 
         # add all lambda functions and step functions
         # and all resources
-        for collection in project.collections:
+        for collection in project.collections.collections:
             self.register(collection)
 
         return self

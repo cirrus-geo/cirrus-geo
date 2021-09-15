@@ -3,9 +3,6 @@ import click
 
 from pathlib import Path
 
-from cirrus.cli import commands
-from cirrus.cli.project import project
-from cirrus.cli.collection import Collection
 from cirrus.cli.utils.yaml import NamedYamlable
 
 
@@ -39,15 +36,11 @@ class Resource():
             yield cls(name, definition, f)
 
     @classmethod
-    def find(cls):
-        search_dirs = [
-            Path(__file__).parent.joinpath('config'),
-        ]
+    def find(cls, search_dirs=None):
+        if search_dirs is None:
+            search_dirs = []
 
-        try:
-            search_dirs.append(project.path_safe.joinpath(f'{cls.name}s'))
-        except AttributeError:
-            pass
+        search_dirs = [Path(__file__).parent.joinpath('config')] + search_dirs
 
         for d in search_dirs:
             for yml in d.glob('*.yml'):
@@ -69,8 +62,8 @@ class Resource():
         click.echo(self.definition.to_yaml())
 
     @classmethod
-    def add_show_command(cls, collection):
-        @commands.show.command(
+    def add_show_command(cls, collection, show_cmd):
+        @show_cmd.command(
             name=collection.name,
         )
         @click.argument(
@@ -93,9 +86,3 @@ class Resource():
                 elements[0].detail_display()
             else:
                 logger.error("Cannot show %s: no matches for '%s'", collection.element_class.name, name)
-
-
-resources = Collection(
-    'resources',
-    Resource,
-)
