@@ -22,6 +22,7 @@ class Lambda(Component):
         self.config = NamedYamlable.from_yaml(self.definition.content)
         self.description = self.config.get('description', '')
         self.python_requirements = self.config.pop('python_requirements', [])
+
         if not hasattr(self.config, 'module'):
             self.config.module = f'lambdas/{self.name}'
         if not hasattr(self.config, 'handler'):

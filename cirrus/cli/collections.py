@@ -1,5 +1,7 @@
 import logging
 
+from itertools import chain
+
 from cirrus.cli.components import (
     CoreTask,
     Feeder,
@@ -33,6 +35,7 @@ class Collection():
 
         self._elements = None
         self.project = None
+        self.parent = None
 
     @property
     def elements(self):
@@ -104,6 +107,27 @@ class Collection():
         return self.elements.values()
 
 
+class ResourceCollection(Collection):
+    def find(self):
+        self._elements = {}
+
+        def resource_finder():
+            yield from self.element_class.find(search_dirs=self.get_search_dirs())
+            yield from chain.from_iterable(filter(bool, map(
+                lambda r: r.batch_resources if r.batch_enabled else None,
+                self.parent.tasks.values(),
+            )))
+
+        for resource in resource_finder():
+            if resource.name in self._elements:
+                logger.warning(
+                    "Duplicate %s declaration '%s', overriding",
+                    self.element_class.name,
+                    resource.name,
+                )
+            self._elements[resource.name] = resource
+
+
 class Collections():
     def __init__(self, collections, project=None):
         self.collections = collections
@@ -133,6 +157,7 @@ class Collections():
 
     def register_collection(self, collection):
         setattr(self, collection.name, collection)
+        collection.parent = self
         collection.register_project(self.project)
 
     def register_project(self, project):
@@ -151,7 +176,7 @@ collections = Collections([
         'feeders',
         Feeder,
     ),
-    Collection(
+    ResourceCollection(
         'resources',
         Resource,
     ),

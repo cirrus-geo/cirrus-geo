@@ -55,16 +55,30 @@ def test_reinit(module_tmpdir, invoke, project):
 
 
 def test_build(invoke, project, reference_build, build_dir):
+    import sys
     import filecmp
+    import difflib
     result = invoke('build')
     assert result.exit_code == 0
     assert build_dir.is_dir()
+
     if reference_build:
         dcmp = filecmp.dircmp(reference_build, build_dir)
         print(f'Files in missing from build: {dcmp.left_only}')
         print(f'Files added in build: {dcmp.right_only}')
         print(f'Files different in build: {dcmp.diff_files}')
         print(f'Files unable to be compared: {dcmp.funny_files}')
+        for fname in dcmp.diff_files:
+            print()
+            with reference_build.joinpath(fname).open() as f1:
+                with build_dir.joinpath(fname).open() as f2:
+                    sys.stdout.writelines(difflib.unified_diff(
+                        f1.readlines(),
+                        f2.readlines(),
+                        fromfile=f'expected {fname}',
+                        tofile=f'generated {fname}',
+                    ))
+
         assert not (dcmp.left_only or dcmp.right_only or dcmp.diff_files or dcmp.funny_files)
 
 

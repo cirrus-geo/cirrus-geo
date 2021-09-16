@@ -40,18 +40,25 @@ class Resource():
         if search_dirs is None:
             search_dirs = []
 
-        search_dirs = [Path(__file__).parent.joinpath('config')] + search_dirs
+        search_dirs = [CORE_DIR] + search_dirs
 
         for d in search_dirs:
             for yml in d.glob('*.yml'):
                 yield from cls.from_file(yml)
 
     @property
+    def display_source(self):
+        if self.is_core_component:
+            return 'built-in'
+        # TODO: fix this so we can make paths relative to project.path again
+        return self.file.relative_to(None or '/'),
+
+    @property
     def display_name(self):
         return '{}{} ({})'.format(
             self.name,
             f' [{self.type}]' if self.type else '',
-            'built-in' if self.is_core_component else self.file.relative_to(project.path),
+            self.display_source,
         )
 
     def list_display(self):
@@ -86,3 +93,14 @@ class Resource():
                 elements[0].detail_display()
             else:
                 logger.error("Cannot show %s: no matches for '%s'", collection.element_class.name, name)
+
+
+class TaskResource(Resource):
+    def __init__(self, parent_task, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.parent_task = parent_task
+
+    @property
+    def display_source(self):
+        built_in = 'built-in ' if self.parent_task.is_core_component else ''
+        return f'from {built_in}task {self.parent_task.name}'
