@@ -219,6 +219,7 @@ class Component(metaclass=ComponentMeta):
                 element = collection[name]
             except KeyError:
                 logger.error("Cannot show: unknown %s '%s'", collection.element_class.name, name)
+                return
 
             if filename is None:
                 element.detail_display()
