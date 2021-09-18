@@ -84,7 +84,7 @@ def test_build(invoke, project, reference_build, build_dir):
 
 @pytest.mark.parametrize(
     'createable',
-    [c.element_class.name for c in collections.extendable_collections
+    [c.element_class.type for c in collections.extendable_collections
      if hasattr(c.element_class, 'add_create_command')],
 )
 def test_create(createable, module_tmpdir, invoke, project):

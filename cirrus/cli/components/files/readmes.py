@@ -81,14 +81,14 @@ class Readme(ComponentFile):
     def content_fn(component) -> str:
         return default_readme(
             name=component.name,
-            type=component.component_type,
+            type=component.type,
         )
 
     def show(self):
         if self.content is None:
             logger.error(
                 "%s '%s' has no README.",
-                self.parent.component_type.capitalize(),
+                self.parent.type.capitalize(),
                 self.parent.name
             )
             return

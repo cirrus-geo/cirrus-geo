@@ -41,9 +41,7 @@ class ComponentMeta(ABCMeta):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        # TODO: better name attr, clean up the others
-        self.component_type = self.__name__.lower()
-        self.name = self.__name__.lower()
+        self.type = self.__name__.lower()
         self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
 
 
@@ -73,7 +71,7 @@ class Component(metaclass=ComponentMeta):
     def _load(self, init_files=False):
         if not self.path.is_dir():
             raise ComponentError(
-                f"Cannot load {self.component_type} from '{self.path}': not a directory."
+                f"Cannot load {self.type} from '{self.path}': not a directory."
             )
 
         # TODO: this whole load/init thing
@@ -104,7 +102,7 @@ class Component(metaclass=ComponentMeta):
     def create(cls, name: str, outdir: Path) -> Type[T]:
         if not cls.user_extendable:
             raise ComponentError(
-                f"Component {self.component_type} does not support creation"
+                f"Component {self.type} does not support creation"
             )
         path = outdir.joinpath(name)
         new = cls(path, load=False)
@@ -132,7 +130,7 @@ class Component(metaclass=ComponentMeta):
                 yield cls(component_dir)
             except ComponentError:
                 logger.warning(
-                    f"Directory does not appear to be a {cls.component_type}, skipping: '{component_dir}'",
+                    f"Directory does not appear to be a {cls.type}, skipping: '{component_dir}'",
                 )
                 continue
 
@@ -173,7 +171,7 @@ class Component(metaclass=ComponentMeta):
             return
 
         @create_cmd.command(
-            name=cls.component_type
+            name=cls.type
         )
         @click.argument(
             'name',
@@ -191,7 +189,7 @@ class Component(metaclass=ComponentMeta):
             else:
                 # TODO: logging level for "success" on par with warning?
                 click.secho(
-                    f'{cls.component_type} {name} created',
+                    f'{cls.type} {name} created',
                     err=True,
                     fg='green',
                 )
