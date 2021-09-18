@@ -3,7 +3,7 @@ import logging
 from itertools import chain
 
 from cirrus.cli.components import (
-    CoreTask,
+    CoreFunction,
     Feeder,
     Task,
     Workflow,
@@ -168,9 +168,9 @@ class Collections():
 
 collections = Collections([
     Collection(
-        'core-tasks',
-        CoreTask,
-        display_name='Core Tasks',
+        'core-functions',
+        CoreFunction,
+        display_name='Core Functions',
     ),
     Collection(
         'feeders',
