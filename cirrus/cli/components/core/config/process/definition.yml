@@ -1,6 +1,7 @@
 description: Consumes Process Catalogs from queue and invokes workflow
-memorySize: 128
-timeout: 60
-events:
-  - sqs:
-      arn: !GetAtt ProcessQueue.Arn
+lambda:
+  memorySize: 128
+  timeout: 60
+  events:
+    - sqs:
+        arn: !GetAtt ProcessQueue.Arn

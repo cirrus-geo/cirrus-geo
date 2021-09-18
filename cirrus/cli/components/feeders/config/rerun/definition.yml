@@ -1,3 +1,4 @@
 description: Rerun items in the database
-memorySize: 128
-timeout: 900
+lambda:
+  memorySize: 128
+  timeout: 900

@@ -1,3 +1,4 @@
 description: Copy specified assets from Item(s) to an S3 bucket
-memorySize: 768
-timeout: 60
+lambda:
+  memorySize: 768
+  timeout: 60

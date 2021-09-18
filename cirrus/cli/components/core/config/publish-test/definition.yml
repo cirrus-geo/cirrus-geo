@@ -1,5 +1,6 @@
 description: Test Feeder data
-memorySize: 128
-timeout: 60
-events:
-  - sns: ${self:provider.environment.CIRRUS_PUBLISH_TOPIC_ARN}
+lambda:
+  memorySize: 128
+  timeout: 60
+  events:
+    - sns: ${self:provider.environment.CIRRUS_PUBLISH_TOPIC_ARN}

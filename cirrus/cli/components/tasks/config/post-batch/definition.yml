@@ -1,3 +1,4 @@
 description: Post process batch job by copying input from S3
-memorySize: 128
-timeout: 15
+lambda:
+  memorySize: 128
+  timeout: 15

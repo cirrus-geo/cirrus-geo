@@ -21,19 +21,25 @@ class Lambda(Component):
     def load_config(self):
         self.config = NamedYamlable.from_yaml(self.definition.content)
         self.description = self.config.get('description', '')
+        self.enabled = self.config.get('enabled', True)
         self.python_requirements = self.config.pop('python_requirements', [])
 
-        if not hasattr(self.config, 'module'):
-            self.config.module = f'lambdas/{self.name}'
-        if not hasattr(self.config, 'handler'):
-            self.config.handler = 'handler.handler'
+        self.lambda_config = self.config.get('lambda', NamedYamlable())
+        self.lambda_enabled = self.lambda_config.pop('enabled', True) and self.enabled
+        self.lambda_config.description = self.description
+        self.lambda_config.environment = self.config.get('environment', {})
+
+        if not hasattr(self.lambda_config, 'module'):
+            self.lambda_config.module = f'lambdas/{self.name}'
+        if not hasattr(self.lambda_config, 'handler'):
+            self.lambda_config.handler = 'handler.handler'
 
     @click.command()
     def show(self):
         click.echo(self.files)
 
     def get_outdir(self, project_build_dir: Path) -> Path:
-        return project_build_dir.joinpath(self.config.module)
+        return project_build_dir.joinpath(self.lambda_config.module)
 
     def link_to_outdir(self, outdir: Path, project_python_requirements: List[str]) -> None:
         try:
@@ -50,7 +56,6 @@ class Lambda(Component):
             # probably affects handler default too
             outdir.joinpath(_file.name).symlink_to(_file)
 
-        # write requirements file
         reqs = self.python_requirements + project_python_requirements
         outdir.joinpath('requirements.txt').write_text(
             '\n'.join(reqs),

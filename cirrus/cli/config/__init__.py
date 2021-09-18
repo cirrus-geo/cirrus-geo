@@ -71,12 +71,21 @@ class Config(NamedYamlable):
             self.register_lambda(lambda_component)
 
     def register_lambda(self, lambda_component) -> None:
-        if lambda_component.name in self.functions and not lambda_component.is_core_component:
-            logging.warning(
-                f"Duplicate lambda declaration: '{lambda_component.display_name}', skipping",
+        if not lambda_component.lambda_enabled:
+            logging.debug(
+                "Skipping disabled lambda: '%s'",
+                lambda_component.display_name,
             )
             return
-        self.functions[lambda_component.name] = lambda_component.config
+
+        if lambda_component.name in self.functions and not lambda_component.is_core_component:
+            logging.warning(
+                "Duplicate lambda declaration: '%s', skipping",
+                lambda_component.display_name,
+            )
+            return
+
+        self.functions[lambda_component.name] = lambda_component.lambda_config
 
     def register_step_function_collection(self, sf_collection) -> None:
         for sf_component in sf_collection.values():

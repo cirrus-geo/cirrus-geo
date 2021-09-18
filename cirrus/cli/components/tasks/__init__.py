@@ -35,11 +35,11 @@ class Task(Lambda):
         self.batch_env = list(convert_lambda_env_to_batch_env(
             self.config.get('environment', {}),
         ))
-        batch = self.config.pop('batch', {})
-        self.batch_enabled = batch.get('Enabled', False)
+        batch = self.config.get('batch', {})
+        self.batch_enabled = batch.get('enabled', True) and self.enabled
         self.batch_resources = [
             self.create_batch_resource(name, definition)
-            for name, definition in batch.get('Resources', {}).items()
+            for name, definition in batch.get('resources', {}).items()
         ]
 
     def create_batch_resource(self, name, definition):

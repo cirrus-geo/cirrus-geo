@@ -1,3 +1,4 @@
 description: Publish resulting STAC Collections and Items to catalog, and optionally SNS
-memorySize: 128
-timeout: 30
+lambda:
+  memorySize: 128
+  timeout: 30

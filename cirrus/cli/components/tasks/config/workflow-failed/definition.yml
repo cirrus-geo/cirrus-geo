@@ -1,3 +1,4 @@
 description: Indicates the end of a workflow
-memorySize: 128
-timeout: 15
+lambda:
+  memorySize: 128
+  timeout: 15
