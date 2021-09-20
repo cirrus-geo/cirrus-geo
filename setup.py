@@ -2,7 +2,7 @@
 import os
 import os.path
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 from cirrus.cli.constants import DESC
 
@@ -32,7 +32,7 @@ package_data = {
 
 setup(
     name='cirrus',
-    packages=find_packages(exclude=['docs', 'test*']),
+    packages=find_namespace_packages(exclude=['docs', 'test*']),
     version=VERSION,
     description=DESC,
     long_description=readme,
