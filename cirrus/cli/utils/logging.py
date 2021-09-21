@@ -1,18 +1,11 @@
 import logging
 import click
 
-from functools import cache
-
 
 # Inspired from https://github.com/click-contrib/click-log
 
 
 DEFAULT_LEVEL = logging.WARNING
-
-
-@cache
-def once(log_fn, *args, **kwargs):
-    return log_fn(*args, **kwargs)
 
 
 class ClickFormatter(logging.Formatter):
