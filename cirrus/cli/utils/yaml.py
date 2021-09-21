@@ -59,7 +59,9 @@ class NamedYamlableMeta(type(MutableMapping)):
 class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
     _dict_type = odict.ODict
 
-    def __init__(self, dict=None, /, **kwargs):
+    # FUTURE: once not supporting py versions <3.8, use the '/' version of this signature
+    #def __init__(self, dict=None, /, **kwargs):
+    def __init__(self, dict=None, **kwargs):
         self._dict = type(self)._dict_type()
         if dict is not None:
             self.update(dict)
