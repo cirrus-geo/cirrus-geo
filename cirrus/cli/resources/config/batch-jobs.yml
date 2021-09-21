@@ -1,0 +1,87 @@
+Resources:
+  GeoLambdaAsBatchJob:
+    Type: "AWS::Batch::JobDefinition"
+    Properties:
+      JobDefinitionName: '#{AWS::StackName}-geolambda-as-batch'
+      Type: Container
+      Parameters:
+        lambda_function: ""
+        url: ""
+      ContainerProperties:
+        Command:
+          - run
+          - Ref::lambda_function
+          - Ref::url
+        Environment:
+          - Name: CIRRUS_LOG_LEVEL
+            Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
+          - Name: CIRRUS_BUCKET
+            Value: ${self:provider.environment.CIRRUS_BUCKET}
+          - Name: CIRRUS_DATA_BUCKET
+            Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
+          - Name: CIRRUS_CATALOG_BUCKET
+            Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
+          - Name: CIRRUS_STATE_DB
+            Value: ${self:provider.environment.CIRRUS_STATE_DB}
+          - Name: CIRRUS_STACK
+            Value: ${self:provider.environment.CIRRUS_STACK}
+          - Name: CIRRUS_QUEUE_TOPIC_ARN
+            Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
+          - Name: CIRRUS_PROCESS_QUEUE
+            Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
+          - Name: BASE_WORKFLOW_ARN
+            Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
+          - Name: AWS_DEFAULT_REGION
+            Value: ${self:provider.region}
+          - Name: AWS_REGION
+            Value: ${self:provider.region}
+          - Name: GDAL_DATA
+            Value: /usr/local/share/gdal
+          - Name: PROJ_LIB
+            Value: /usr/local/share/proj
+        Memory: ${self:custom.batch.GeoLambdaAsBatchJob.Memory}
+        Vcpus: ${self:custom.batch.GeoLambdaAsBatchJob.Vcpus}
+        Image: 'cirrusgeo/run-geolambda:0.2.1'
+      RetryStrategy:
+        Attempts: 1
+  LambdaAsBatchJob:
+    Type: "AWS::Batch::JobDefinition"
+    Properties:
+      JobDefinitionName: '#{AWS::StackName}-lambda-as-batch'
+      Type: Container
+      Parameters:
+        lambda_function: ""
+        url: ""
+      ContainerProperties:
+        Command:
+          - run
+          - Ref::lambda_function
+          - Ref::url
+        Environment:
+          - Name: CIRRUS_LOG_LEVEL
+            Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
+          - Name: CIRRUS_BUCKET
+            Value: ${self:provider.environment.CIRRUS_BUCKET}
+          - Name: CIRRUS_DATA_BUCKET
+            Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
+          - Name: CIRRUS_CATALOG_BUCKET
+            Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
+          - Name: CIRRUS_STATE_DB
+            Value: ${self:provider.environment.CIRRUS_STATE_DB}
+          - Name: CIRRUS_STACK
+            Value: ${self:provider.environment.CIRRUS_STACK}
+          - Name: CIRRUS_QUEUE_TOPIC_ARN
+            Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
+          - Name: CIRRUS_PROCESS_QUEUE
+            Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
+          - Name: BASE_WORKFLOW_ARN
+            Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
+          - Name: AWS_DEFAULT_REGION
+            Value: ${self:provider.region}
+          - Name: AWS_REGION
+            Value: ${self:provider.region}
+        Memory: ${self:custom.batch.LambdaAsBatchJob.Memory}
+        Vcpus: ${self:custom.batch.LambdaAsBatchJob.Vcpus}
+        Image: 'cirrusgeo/run-lambda:0.2.1'
+      RetryStrategy:
+        Attempts: 1
