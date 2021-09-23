@@ -6,7 +6,10 @@ def get_cirrus_lib_requirement() -> str:
     '''
     Get the cirrus-lib dependency specified for this package.
     '''
-    from importlib import metadata
+    try:
+        from importlib import metadata
+    except ImportError:
+        import importlib_metadata as metadata
 
     package_name = __package__.split('.')[0]
     return [
