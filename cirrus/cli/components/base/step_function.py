@@ -14,6 +14,7 @@ class StepFunction(Component):
     readme = files.Readme(optional=True)
 
     def load_config(self):
+        super().load_config()
         self.config = NamedYamlable.from_yaml(self.definition.content)
         try:
             self.description = self.config.definition.Comment

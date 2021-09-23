@@ -1,5 +1,6 @@
 import logging
 import click
+import textwrap
 
 from typing import List
 from pathlib import Path
@@ -19,13 +20,15 @@ class Lambda(Component):
     readme = files.Readme(optional=True)
 
     def load_config(self):
-        self.config = NamedYamlable.from_yaml(self.definition.content)
+        super().load_config()
+        # we only support batch on tasks, but some things are
+        # simpler if we know we are batch disabled for all Lambdas
+        self.batch_enabled = False
         self.description = self.config.get('description', '')
-        self.enabled = self.config.get('enabled', True)
         self.python_requirements = self.config.pop('python_requirements', [])
 
         self.lambda_config = self.config.get('lambda', NamedYamlable())
-        self.lambda_enabled = self.lambda_config.pop('enabled', True) and self.enabled
+        self.lambda_enabled = self.lambda_config.pop('enabled', True) and self._enabled and bool(self.lambda_config)
         self.lambda_config.description = self.description
         self.lambda_config.environment = self.config.get('environment', {})
 
@@ -34,9 +37,22 @@ class Lambda(Component):
         if not hasattr(self.lambda_config, 'handler'):
             self.lambda_config.handler = 'handler.handler'
 
-    @click.command()
-    def show(self):
-        click.echo(self.files)
+    @property
+    def enabled(self):
+        return self._enabled and (self.lambda_enabled or self.batch_enabled)
+
+    def display_attrs(self):
+        if self.enabled and not self.lambda_enabled and not self.batch_enabled:
+            yield 'DISABLED'
+        yield from super().display_attrs()
+
+    def detail_display(self):
+        super().detail_display()
+        click.echo(f'\nLambda enabled: {self.lambda_enabled}')
+        if not self.lambda_config:
+            return
+        click.echo('Lambda config:')
+        click.echo(textwrap.indent(self.lambda_config.to_yaml(), '  '))
 
     def get_outdir(self, project_build_dir: Path) -> Path:
         return project_build_dir.joinpath(self.lambda_config.module)

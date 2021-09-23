@@ -49,19 +49,22 @@ definition:
 '''.format
 
 
-class LambdaDefinition(ComponentFile):
+class BaseDefinition(ComponentFile):
     def __init__(self, *args, name='definition.yml', **kwargs):
         super().__init__(*args, name=name, **kwargs)
 
     @staticmethod
     def content_fn(component) -> str:
+        return ''
+
+
+class LambdaDefinition(BaseDefinition):
+    @staticmethod
+    def content_fn(component) -> str:
         return default_lambda
 
 
-class StepFunctionDefinition(ComponentFile):
-    def __init__(self, *args, name='definition.yml', **kwargs):
-        super().__init__(*args, name=name, **kwargs)
-
+class StepFunctionDefinition(BaseDefinition):
     @staticmethod
     def content_fn(component) -> str:
         return default_workflow(name=component.name)

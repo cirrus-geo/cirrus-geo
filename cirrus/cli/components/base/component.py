@@ -6,8 +6,9 @@ from typing import Type, TypeVar
 from abc import ABCMeta
 from pathlib import Path
 
-from ..files import ComponentFile
+from ..files import ComponentFile, BaseDefinition
 from cirrus.cli.exceptions import ComponentError
+from cirrus.cli.utils.yaml import NamedYamlable
 
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,8 @@ class ComponentMeta(ABCMeta):
 
 
 class Component(metaclass=ComponentMeta):
+    definition = BaseDefinition()
+
     def __init__(self, path: Path, load: bool=True) -> None:
         self.path = path
         self.name = path.name
@@ -62,10 +65,21 @@ class Component(metaclass=ComponentMeta):
             self._load()
 
     @property
+    def enabled(self):
+        return self._enabled
+
+    def display_attrs(self):
+        if not self.enabled:
+            yield 'DISABLED'
+        if self.is_core_component:
+            yield 'built-in'
+
+    @property
     def display_name(self):
+        attrs = list(self.display_attrs())
         return '{}{}'.format(
             self.name,
-            ' (built-in)' if self.is_core_component else '',
+            ' ({})'.format(', '.join(attrs)) if attrs else '',
         )
 
     def _load(self, init_files=False):
@@ -85,7 +99,8 @@ class Component(metaclass=ComponentMeta):
         self._loaded = True
 
     def load_config(self):
-        pass
+        self.config = NamedYamlable.from_yaml(self.definition.content)
+        self._enabled = self.config.get('enabled', True)
 
     def _create(self):
         if self._loaded:
@@ -128,9 +143,9 @@ class Component(metaclass=ComponentMeta):
                 continue
             try:
                 yield cls(component_dir)
-            except ComponentError:
+            except ComponentError as e:
                 logger.warning(
-                    f"Directory does not appear to be a {cls.type}, skipping: '{component_dir}'",
+                    f"Skipping '{component_dir.name}': {e}",
                 )
                 continue
 
@@ -145,17 +160,18 @@ class Component(metaclass=ComponentMeta):
             yield from cls.from_dir(_dir, name=name)
 
     def list_display(self):
+        color = 'blue' if self.enabled else 'red'
         click.echo('{}{}'.format(
             click.style(
                 f'{self.display_name}:',
-                fg='blue',
+                fg=color,
             ),
-            f' {self.description}'
-            if self.description else '',
+            f' {self.description}' if self.description else '',
         ))
 
     def detail_display(self):
-        click.secho(self.display_name, fg='blue')
+        color = 'blue' if self.enabled else 'red'
+        click.secho(self.display_name, fg=color)
         if self.description:
             click.echo(self.description)
         click.echo("\nFiles:")
@@ -218,7 +234,7 @@ class Component(metaclass=ComponentMeta):
             try:
                 element = collection[name]
             except KeyError:
-                logger.error("Cannot show: unknown %s '%s'", collection.element_class.name, name)
+                logger.error("Cannot show: unknown %s '%s'", collection.element_class.type, name)
                 return
 
             if filename is None:

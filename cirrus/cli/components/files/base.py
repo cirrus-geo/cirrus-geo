@@ -51,8 +51,14 @@ class ComponentFile:
                     self._content = ''
         return self._content
 
-    def validate(self):
-        if self.required and not self.path.is_file():
+    def exists(self):
+        return self.path.is_file()
+
+    def validate(self, required=None):
+        if required is None:
+            required = self.required
+
+        if required and not self.exists():
             raise ComponentError(
                 f"Cannot load {self.__class__.__name__} from '{self.path}': not a file"
             )
