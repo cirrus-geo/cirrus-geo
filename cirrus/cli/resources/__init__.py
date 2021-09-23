@@ -4,6 +4,7 @@ import click
 from pathlib import Path
 
 from cirrus.cli.utils.yaml import NamedYamlable
+from cirrus.cli.utils import misc
 
 
 logger = logging.getLogger(__name__)
@@ -17,23 +18,23 @@ class Resource():
     top_level_key = 'Resources'
     user_extendable = True
 
-    def __init__(self, name, definition, _file: Path=None) -> None:
+    def __init__(self, name, definition, path: Path=None) -> None:
         self.name = name
         self.definition = definition
         self.type = definition.get('Type', '')
-        self.file = _file
-        self.is_core_component = self.file.parent.samefile(CORE_DIR) if self.file else False
+        self.path = path
+        self.is_core_component = self.path.parent.samefile(CORE_DIR) if self.path else False
 
     @classmethod
-    def from_file(cls, _file: Path):
-        resources = NamedYamlable.from_file(_file)
+    def from_file(cls, path: Path):
+        resources = NamedYamlable.from_file(path)
         try:
             resources = resources[cls.top_level_key]
         except KeyError:
             pass
 
         for name, definition in resources.items():
-            yield cls(name, definition, _file)
+            yield cls(name, definition, path)
 
     @classmethod
     def find(cls, search_dirs=None):
@@ -50,8 +51,7 @@ class Resource():
     def display_source(self):
         if self.is_core_component:
             return 'built-in'
-        # TODO: fix this so we can make paths relative to project.path again
-        return self.file.relative_to(None or '/'),
+        return misc.relative_to_cwd(self.path)
 
     @property
     def display_name(self):

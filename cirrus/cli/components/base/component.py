@@ -9,6 +9,7 @@ from pathlib import Path
 from ..files import ComponentFile, BaseDefinition
 from cirrus.cli.exceptions import ComponentError
 from cirrus.cli.utils.yaml import NamedYamlable
+from cirrus.cli.utils import misc
 
 
 logger = logging.getLogger(__name__)
@@ -64,6 +65,9 @@ class Component(metaclass=ComponentMeta):
         if load:
             self._load()
 
+    def relative_path(self):
+        return misc.relative_to_cwd(self.path)
+
     @property
     def enabled(self):
         return self._enabled
@@ -85,7 +89,7 @@ class Component(metaclass=ComponentMeta):
     def _load(self, init_files=False):
         if not self.path.is_dir():
             raise ComponentError(
-                f"Cannot load {self.type} from '{self.path}': not a directory."
+                f"Cannot load {self.type} from '{self.relative_path()}': not a directory."
             )
 
         # TODO: this whole load/init thing
@@ -109,7 +113,7 @@ class Component(metaclass=ComponentMeta):
             self.path.mkdir()
         except FileExistsError as e:
             raise ComponentError(
-                f"Cannot create {self.__class__.__name__} at '{self.path}': already exists."
+                f"Cannot create {self.__class__.__name__} at '{self.relative_path()}': already exists."
             ) from e
         self._load(init_files=True)
 
@@ -145,7 +149,7 @@ class Component(metaclass=ComponentMeta):
                 yield cls(component_dir)
             except ComponentError as e:
                 logger.warning(
-                    f"Skipping '{component_dir.name}': {e}",
+                    f"Skipping {cls.type} '{component_dir.name}': {e}",
                 )
                 continue
 

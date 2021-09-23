@@ -6,6 +6,7 @@ from pathlib import Path
 
 from cirrus.cli.exceptions import ComponentError
 from cirrus.cli.utils.console import console
+from cirrus.cli.utils import misc
 
 
 logger = logging.getLogger(__name__)
@@ -42,14 +43,17 @@ class ComponentFile:
             except FileNotFoundError as e:
                 if self.required:
                     raise ComponentError(
-                        f"{self.__class__.__name__} at '{self.path}': unable to open for read"
+                        f"{self.__class__.__name__} at '{self.relative_path()}': unable to open for read"
                     ) from e
                 else:
                     logging.debug(
-                        f"{self.__class__.__name__} at '{self.path}': unable to open for read, defaulting to empty",
+                        f"{self.__class__.__name__} at '{self.relative_path()}': unable to open for read, defaulting to empty",
                     )
                     self._content = ''
         return self._content
+
+    def relative_path(self):
+        return misc.relative_to_cwd(self.path)
 
     def exists(self):
         return self.path.is_file()
@@ -60,7 +64,7 @@ class ComponentFile:
 
         if required and not self.exists():
             raise ComponentError(
-                f"Cannot load {self.__class__.__name__} from '{self.path}': not a file"
+                f"Cannot load {self.__class__.__name__} from '{self.relative_path()}': not a file"
             )
 
     def _copy_to_component(self, parent_component: Type[Component]) -> T:
