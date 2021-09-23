@@ -166,26 +166,29 @@ class Collections():
             collection.register_project(self.project)
 
 
-collections = Collections([
-    Collection(
-        'core-functions',
-        CoreFunction,
-        display_name='Core Functions',
-    ),
-    Collection(
-        'feeders',
-        Feeder,
-    ),
-    ResourceCollection(
-        'resources',
-        Resource,
-    ),
-    Collection(
-        'tasks',
-        Task,
-    ),
-    Collection(
-        'workflows',
-        Workflow,
-    ),
-])
+def make_collections(project=None):
+    return Collections([
+            Collection(
+                'core-functions',
+                CoreFunction,
+                display_name='Core Functions',
+            ),
+            Collection(
+                'feeders',
+                Feeder,
+            ),
+            ResourceCollection(
+                'resources',
+                Resource,
+            ),
+            Collection(
+                'tasks',
+                Task,
+            ),
+            Collection(
+                'workflows',
+                Workflow,
+            ),
+        ],
+        project=project,
+    )

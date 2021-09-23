@@ -17,7 +17,7 @@ def requires_project(func):
     @pass_project
     @wraps(func)
     def wrapper(project, *args, **kwargs):
-        if project._path is None:
+        if project.path is None:
             logger.error('Fatal: no cirrus project detected/specified.')
             sys.exit(1)
         return func(project, *args, **kwargs)

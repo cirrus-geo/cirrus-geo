@@ -10,8 +10,11 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from cirrus.cli.commands import cli
-from cirrus.cli.collections import collections
+from cirrus.cli.collections import make_collections
 from cirrus.cli.project import Project
+
+
+collections = make_collections()
 
 
 @pytest.fixture(scope='session')

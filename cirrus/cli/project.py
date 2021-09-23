@@ -23,35 +23,21 @@ logger = logging.getLogger(__name__)
 
 class Project:
     def __init__(self, path: Path, config: Config=None) -> None:
-        from cirrus.cli.collections import collections
+        from cirrus.cli.collections import make_collections
 
         self._config = config
-        self.collections = collections
 
-        # set path, not _path, to use setter validation
-        self._path = None
         self.path = path
-
-    def __repr__(self):
-        name = self.__class__.__name__
-        return f'<{name}: {self.path}>'
-
-    @property
-    def path(self) -> Path:
-        return self._path
-
-    @property
-    def path_safe(self) -> Path:
-        return self._path
-
-    @path.setter
-    def path(self, path: Path) -> None:
         if path is not None and not self.dir_is_project(path):
             raise CirrusError(
                 f"Cannot set project path, does not appear to be vaild project: '{p}'",
             )
-        self._path = path
-        self.collections.register_project(self)
+        self.path = path
+
+        self.collections = make_collections(project=self)
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__}: {self.path}>'
 
     @property
     def config(self) -> Config:
