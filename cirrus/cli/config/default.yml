@@ -6,7 +6,7 @@ provider:
   name: aws
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-west-2'}
-  runtime: python3.7
+  runtime: python3.9
   environment:
     CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
     CIRRUS_PUBLIC_CATALOG: False
