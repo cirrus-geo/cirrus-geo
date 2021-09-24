@@ -68,7 +68,7 @@ class Task(Lambda):
     def create_batch_resource(self, name, definition):
         resource = TaskResource(self, name, definition, self.definition.path)
 
-        if resource.type == JOB_DEFINITION_TYPE and self.batch_env:
+        if resource.resource_type == JOB_DEFINITION_TYPE and self.batch_env:
             update_job_env(resource.definition, self.batch_env)
 
         return resource

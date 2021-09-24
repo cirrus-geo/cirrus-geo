@@ -41,6 +41,7 @@ class Config(NamedYamlable):
         self.resources = dict(
             Description='Cirrus STAC Processing Framework',
             Resources={},
+            Outputs={},
         )
 
         # populate required plugin list
@@ -54,16 +55,19 @@ class Config(NamedYamlable):
 
     def register(self, collection) -> None:
         from cirrus.cli.components.base import Lambda, StepFunction
-        from cirrus.cli.resources import Resource
+        from cirrus.cli.resources import Resource, Output
         if issubclass(collection.element_class, Lambda):
             self.register_lambda_collection(collection)
         elif issubclass(collection.element_class, StepFunction):
             self.register_step_function_collection(collection)
         elif issubclass(collection.element_class, Resource):
+            # TODO: make this into a function to iterate through and update env on JobDef instances
             self.resources.Resources = {e.name: e.definition for e in collection.values()}
+        elif issubclass(collection.element_class, Output):
+            self.resources.Outputs = {e.name: e.definition for e in collection.values()}
         else:
             raise ConfigError(
-                f"Unable to register collection '{collection.name}': unknown element class '{collection.element_class.name}'",
+                f"Unable to register collection '{collection.name}': unknown element class '{collection.element_class.type}'",
             )
 
     def register_lambda_collection(self, lambda_collection) -> None:

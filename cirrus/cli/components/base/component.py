@@ -55,7 +55,10 @@ class Component(metaclass=ComponentMeta):
         self.name = path.name
         self.config = None
         self.description = ''
-        self.is_core_component = self.path.parent.samefile(self.__class__.core_dir)
+        self.is_core_component = (
+            self.path.parent.samefile(self.__class__.core_dir)
+            if self.__class__.core_dir.is_dir() else False
+        )
 
         self.files = {}
         for fname, f in self.__class__.files.items():
@@ -158,7 +161,8 @@ class Component(metaclass=ComponentMeta):
         if search_dirs is None:
             search_dirs = []
 
-        search_dirs = [cls.core_dir] + search_dirs
+        if cls.core_dir.is_dir():
+            search_dirs = [cls.core_dir] + search_dirs
 
         for _dir in search_dirs:
             yield from cls.from_dir(_dir, name=name)

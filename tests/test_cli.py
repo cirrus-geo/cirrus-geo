@@ -62,6 +62,7 @@ def test_build(invoke, project, reference_build, build_dir):
     import filecmp
     import difflib
     result = invoke('build')
+    print(result.stdout)
     assert result.exit_code == 0
     assert build_dir.is_dir()
 
@@ -102,13 +103,23 @@ def test_create(createable, module_tmpdir, invoke, project):
 def test_show_list(collection, invoke):
     result = invoke(f'show {collection}')
     assert result.exit_code == 0
-    assert len(result.stdout) > 0
+    if collection == 'outputs':
+        # we don't have any built-in outputs as of now
+        assert len(result.stdout) == 0
+    else:
+        assert len(result.stdout) > 0
 
 
 @pytest.mark.parametrize('collection', [c.name for c in collections.collections])
 def test_show_detail(collection, invoke):
     # TODO: why are the keys resource objects?
-    item = list(getattr(collections, collection).keys())[0].name
+    try:
+        item = list(getattr(collections, collection).keys())[0].name
+    except IndexError:
+        # we don't have any built-in outputs as of now
+        assert collection == 'outputs'
+        return
+
     result = invoke(f'show {collection} {item}')
     assert result.exit_code == 0
     assert len(result.stdout) > 0

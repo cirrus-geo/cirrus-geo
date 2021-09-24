@@ -3,12 +3,14 @@ import logging
 from itertools import chain
 
 from cirrus.cli.components import (
+    Lambda,
+    StepFunction,
     CoreFunction,
     Feeder,
     Task,
     Workflow,
 )
-from cirrus.cli.resources import Resource
+from cirrus.cli.resources import BaseResource, Resource, Output
 
 
 logger = logging.getLogger(__name__)
@@ -63,11 +65,23 @@ class Collection():
 
     def find(self):
         self._elements = {}
-        for element in self.element_class.find(search_dirs=self.get_search_dirs()):
+
+        def finder():
+            yield from self.element_class.find(search_dirs=self.get_search_dirs())
+            try:
+                # supports including batch resources/outputs, which can be defined on tasks
+                yield from chain.from_iterable(filter(bool, map(
+                    lambda r: getattr(r, self.element_class.task_batch_resource_attr) if r.batch_enabled else None,
+                    self.parent.tasks.values(),
+                )))
+            except AttributeError:
+                pass
+
+        for element in finder():
             if element.name in self._elements:
                 logger.warning(
                     "Duplicate %s declaration '%s', overriding",
-                    self.element_class.name,
+                    self.element_class.type,
                     element.name,
                 )
             self._elements[element.name] = element
@@ -107,27 +121,6 @@ class Collection():
         return self.elements.values()
 
 
-class ResourceCollection(Collection):
-    def find(self):
-        self._elements = {}
-
-        def resource_finder():
-            yield from self.element_class.find(search_dirs=self.get_search_dirs())
-            yield from chain.from_iterable(filter(bool, map(
-                lambda r: r.batch_resources if r.batch_enabled else None,
-                self.parent.tasks.values(),
-            )))
-
-        for resource in resource_finder():
-            if resource.name in self._elements:
-                logger.warning(
-                    "Duplicate %s declaration '%s', overriding",
-                    self.element_class.name,
-                    resource.name,
-                )
-            self._elements[resource.name] = resource
-
-
 class Collections():
     def __init__(self, collections, project=None):
         self.collections = collections
@@ -138,18 +131,15 @@ class Collections():
 
     @property
     def lambda_collections(self):
-        from cirrus.cli.components.base import Lambda
         return [c for c in self.collections if issubclass(c.element_class, Lambda)]
 
     @property
     def stepfunction_collections(self):
-        from cirrus.cli.components.base import StepFunction
         return [c for c in self.collections if issubclass(c.element_class, StepFunction)]
 
     @property
     def resource_collections(self):
-        from cirrus.cli.resources import Resource
-        return [c for c in self.collections if issubclass(c.element_class, Resource)]
+        return [c for c in self.collections if issubclass(c.element_class, BaseResource)]
 
     @property
     def extendable_collections(self):
@@ -177,10 +167,6 @@ def make_collections(project=None):
                 'feeders',
                 Feeder,
             ),
-            ResourceCollection(
-                'resources',
-                Resource,
-            ),
             Collection(
                 'tasks',
                 Task,
@@ -188,6 +174,14 @@ def make_collections(project=None):
             Collection(
                 'workflows',
                 Workflow,
+            ),
+            Collection(
+                'resources',
+                Resource,
+            ),
+            Collection(
+                'outputs',
+                Output,
             ),
         ],
         project=project,
