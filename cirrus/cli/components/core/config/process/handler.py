@@ -8,6 +8,7 @@ from cirruslib.utils import dict_merge
 logger = logging.getLogger(__name__)
 
 # Default PROCESSES
+# TODO: put this configuration into the cirrus.yml
 with open(os.path.join(os.path.dirname(__file__), 'processes.json')) as f:
     PROCESSES = json.loads(f.read())
 
@@ -19,6 +20,9 @@ def handler(payload, context):
     if 'Records' not in payload:
         raise ValueError("Input not from SQS")
 
+    # TODO: a large number of input collections will cause a timeout
+    # find a way to process each input message, deleting it from the queue
+    # any not processed before timeout will be retried on the next execution
     catalogs = []
     for record in [json.loads(r['body']) for r in payload['Records']]:
         cat = json.loads(record['Message'])

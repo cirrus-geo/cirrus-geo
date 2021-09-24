@@ -49,7 +49,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: ${self:service}-${self:provider.stage}-process
-      VisibilityTimeout: 300
+      VisibilityTimeout: 1000
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
         maxReceiveCount: 5
@@ -124,7 +124,7 @@ Resources:
     Properties:
       Path: '/'
       Roles:
-        - Ref: BatchInstanceRole    
+        - Ref: BatchInstanceRole
   BatchInstanceRole:
     Type: AWS::IAM::Role
     Properties:
