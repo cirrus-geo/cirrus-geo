@@ -23,8 +23,26 @@ def recursive_compare(d1, d2, level='root'):
         if d1 != d2:
             print('{:<20} {} != {}'.format(level, d1, d2))
 
+
+def parse_args(args=None):
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('json1_file')
+    parser.add_argument('json2_file')
+
+    return parser.parse_args(args)
+
+
+def load_json(json_file):
+    import json
+    with open(json_file) as jf:
+        return json.load(jf)
+
+
 if __name__ == '__main__':
-    d1={'a':[0,2,3,8], 'b':0, 'd':{'da':7, 'db':[99,88]}}
-    d2={'a':[0,2,4], 'c':0, 'd':{'da':3, 'db':7}}
+    args = parse_args()
+    d1 = load_json(args.json1_file)
+    d2 = load_json(args.json2_file)
 
     recursive_compare(d1, d2)
