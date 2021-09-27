@@ -112,9 +112,8 @@ def test_show_list(collection, invoke):
 
 @pytest.mark.parametrize('collection', [c.name for c in collections.collections])
 def test_show_detail(collection, invoke):
-    # TODO: why are the keys resource objects?
     try:
-        item = list(getattr(collections, collection).keys())[0].name
+        item = list(getattr(collections, collection).keys())[0]
     except IndexError:
         # we don't have any built-in outputs as of now
         assert collection == 'outputs'

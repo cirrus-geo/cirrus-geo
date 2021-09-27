@@ -2,6 +2,8 @@ import logging
 
 from itertools import chain
 
+from collections.abc import MutableMapping
+
 from cirrus.cli.components import (
     Lambda,
     StepFunction,
@@ -16,7 +18,7 @@ from cirrus.cli.resources import BaseResource, Resource, Output
 logger = logging.getLogger(__name__)
 
 
-class Collection():
+class Collection(MutableMapping):
     def __init__(
         self,
         name,
@@ -104,21 +106,32 @@ class Collection():
         if self.enable_cli and hasattr(self.element_class, 'add_show_command'):
             self.element_class.add_show_command(self, show_cmd)
 
-
-    def __iter__(self):
-        return self.elements.__iter__()
-
-    def __getitem__(self, name):
-        return self.elements[name]
-
     def items(self):
         return self.elements.items()
 
     def keys(self):
-        return self.elements.values()
+        return self.elements.keys()
 
     def values(self):
         return self.elements.values()
+
+    def __iter__(self):
+        return iter(self.elements)
+
+    def __len__(self):
+        return len(self.elements)
+
+    def __getitem__(self, key):
+        return self.elements[key]
+
+    def __setitem__(self, key, val):
+        self.elements[key] = val
+
+    def __delitem__(self, key):
+        del self.elements[key]
+
+    def __repr__(self):
+        return f'{type(self).__qualname__}({repr(self.elements)})'
 
 
 class Collections():
