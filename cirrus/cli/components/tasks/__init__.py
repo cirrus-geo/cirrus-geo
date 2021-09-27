@@ -1,48 +1,9 @@
 import textwrap
-
 import click
 
 from ..base import Lambda
 from .. import files
-from cirrus.cli.resources import TaskResource
-
-
-JOB_DEFINITION_TYPE = 'AWS::Batch::JobDefinition'
-
-
-def convert_env_to_batch_env(env):
-    for name, val in env.items():
-        yield {'Name': name, 'Value': val}
-
-
-def convert_batch_env_to_env(env):
-    _env = {}
-    for item in env:
-        _env[item['Name']] = item['Value']
-    return _env
-
-
-# TODO: move this into a method on the TaskResource so we can call it from config register
-# load env into JobDefn.Properties.ContainerProperties.Environment
-def update_job_env(job, env):
-    item = job
-    keys = ['Properties', 'ContainerProperties']
-
-    for key in keys:
-        if not key in item:
-            item[key] = {}
-        item = item[key]
-
-    try:
-        _env = item['Environment']
-    except KeyError:
-        item['Environment'] = env
-    else:
-        # prefers the env vars set in the batch env
-        # over those inherited from the task env config
-        item['Environment'] = list(convert_env_to_batch_env(
-            env.update(convert_batch_env_to_env(_env)),
-        ))
+from cirrus.cli.resources import Resource
 
 
 class Task(Lambda):
@@ -66,10 +27,10 @@ class Task(Lambda):
         ]
 
     def create_batch_resource(self, name, definition):
-        resource = TaskResource(self, name, definition, self.definition.path)
+        resource = Resource(name, definition, self.definition.path, parent_task=self)
 
-        if resource.resource_type == JOB_DEFINITION_TYPE and self.batch_env:
-            update_job_env(resource.definition, self.batch_env)
+        if self.batch_env and hasattr(resource, 'update_environment'):
+            resource.update_environement(self.batch_env)
 
         return resource
 
