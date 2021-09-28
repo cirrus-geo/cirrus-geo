@@ -7,6 +7,18 @@ from commonmark.node import Node
 from rich.markdown import TextElement, Markdown as _Markdown
 
 
+## NOTE ##
+# This file is not currently used. The rich markdown parser is based on the
+# commonmark spec python parser, which for whatever reason does not support
+# tables. rich does support tables, but as the markdown parser doesn't
+# understand them, rich cannot properly display tables (they end up as one
+# long line).
+#
+# Therefore, the following is a terrible attempt to hack markdown table
+# support into rich. The approach has not and currently does not work, but
+# I figured I'd keep it around in case I want to come back it the problem.
+
+
 cm_node.reContainer = re.compile(
     r'(document|block_quote|list|item|paragraph|'
     r'heading|emph|strong|link|image|'
