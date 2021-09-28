@@ -30,7 +30,7 @@ class Task(Lambda):
         resource = Resource(name, definition, self.definition.path, parent_task=self)
 
         if self.batch_env and hasattr(resource, 'update_environment'):
-            resource.update_environement(self.batch_env)
+            resource.update_environment(self.batch_env)
 
         return resource
 

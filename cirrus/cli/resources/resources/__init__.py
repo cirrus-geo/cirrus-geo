@@ -56,7 +56,7 @@ class Resource(BaseResource):
 
 
 class JobDefinition(Resource):
-    def update_environmnet(self, env):
+    def update_environment(self, env):
         item = self.definition
         keys = ['Properties', 'ContainerProperties']
 
