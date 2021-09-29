@@ -103,22 +103,12 @@ def test_create(createable, module_tmpdir, invoke, project):
 def test_show_list(collection, invoke):
     result = invoke(f'show {collection}')
     assert result.exit_code == 0
-    if collection == 'outputs':
-        # we don't have any built-in outputs as of now
-        assert len(result.stdout) == 0
-    else:
-        assert len(result.stdout) > 0
+    assert len(result.stdout) > 0
 
 
 @pytest.mark.parametrize('collection', [c.name for c in collections.collections])
 def test_show_detail(collection, invoke):
-    try:
-        item = list(getattr(collections, collection).keys())[0]
-    except IndexError:
-        # we don't have any built-in outputs as of now
-        assert collection == 'outputs'
-        return
-
+    item = list(getattr(collections, collection).keys())[0]
     result = invoke(f'show {collection} {item}')
     assert result.exit_code == 0
     assert len(result.stdout) > 0

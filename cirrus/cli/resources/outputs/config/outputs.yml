@@ -1,0 +1,5 @@
+Outputs:
+  CirrusProcessQueueId:
+    Value: !Ref ProcessQueue
+  CirrusProcessQueueArn:
+    Value: {"Fn::GetAtt": ["ProcessQueue","Arn"]}
