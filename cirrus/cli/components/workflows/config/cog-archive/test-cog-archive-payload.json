@@ -426,6 +426,7 @@
     "links": [],
     "process": {
         "workflow": "cog-archive",
+        "replace": true,
         "output_options": {
             "path_template": "${collection}/${year}/${month}/${id}",
             "collections": {

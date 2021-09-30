@@ -421,6 +421,7 @@
     "links": [],
     "process": {
         "workflow": "mirror-with-preview",
+        "replace": true,
         "output_options": {
             "path_template": "${collection}/${year}/${month}/${id}",
             "collections": {
