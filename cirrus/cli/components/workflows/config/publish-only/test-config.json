@@ -1,5 +1,4 @@
 {
-    "payload": "test-publish-only-payload.json",
     "timeout": 30,
     "files":
     {

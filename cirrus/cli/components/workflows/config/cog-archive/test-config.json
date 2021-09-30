@@ -1,13 +1,14 @@
 {
-    "payload": "test-mirror-payload.json",
-    "timeout": 30,
+    "timeout": 60,
     "files":
     {
-        "data":[
+        "data":
+        [
             "test-collection/2020/7/test-id/L2A_PVI.tif",
             "test-collection/2020/7/test-id/metadata.xml",
             "test-collection/2020/7/test-id/test-id.json",
-            "test-collection/2020/7/test-id/tileInfo.json"
+            "test-collection/2020/7/test-id/tileInfo.json",
+            "test-collection/2020/7/test-id/preview.jpg"
         ]
     }
 }

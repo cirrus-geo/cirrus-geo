@@ -1,5 +1,6 @@
 from ..base import StepFunction
+from ..files import ComponentFile
 
 
 class Workflow(StepFunction):
-    pass
+    test_payload = ComponentFile(name='test-payload.json', optional=True)
