@@ -23,7 +23,7 @@ SNS_CLIENT = boto3.client('sns')
 statedb = StateDB()
 
 # logging
-logger = logging.getLogger(f"{__name__}.rerun")
+logger = logging.getLogger("feeder.rerun")
 
 
 def submit(ids, process_update=None):

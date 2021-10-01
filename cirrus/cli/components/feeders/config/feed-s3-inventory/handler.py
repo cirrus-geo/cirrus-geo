@@ -25,7 +25,7 @@ SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN')
 SNS_CLIENT = boto3.client('sns')
 
 # logging
-logger = logging.getLogger(f"{__name__}.s3-inventory")
+logger = logging.getLogger("feeder.s3-inventory")
 
 
 def read_orc_inventory_file(filename, keys):
@@ -89,7 +89,7 @@ def read_inventory_file(fname, keys, prefix=None, suffix=None,
         if edate is not None:
             dt = get_datetime(record)
             if dt > edate:
-                continue        
+                continue
 
         # made it here without getting filtered out
         yield 's3://%s/%s' % (record['bucket'], record['key'])

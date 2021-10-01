@@ -14,7 +14,7 @@ from rio_cogeo.profiles import cog_profiles
 
 def handler(payload, context={}):
     catalog = Catalog.from_payload(payload)
-    logger = get_task_logger(f"{__name__}.convert-to-cog", catalog=catalog)
+    logger = get_task_logger("task.convert-to-cog", catalog=catalog)
 
     # TODO - make this more general for more items/collections
     item = catalog['features'][0] #, collection=catalog['collections'][0])
@@ -29,7 +29,7 @@ def handler(payload, context={}):
 
     try:
         asset_keys = [a for a in assets if a in item['assets'].keys()]
-        
+
         for asset in asset_keys:
             logger.info(f"Converting {asset} to COG")
             # download asset

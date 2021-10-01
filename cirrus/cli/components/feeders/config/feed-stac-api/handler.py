@@ -25,12 +25,12 @@ MAX_ITEMS_REQUEST = 5000
 SNS_CLIENT = boto3.client('sns')
 
 # logging
-logger = logging.getLogger(f"{__name__}.stac-api")
+logger = logging.getLogger("feeder.stac-api")
 
 
 def split_request(params, nbatches):
     dates = params.get('datetime', '').split('/')
-    
+
     if len(dates) != 2:
         msg = "Do not know how to split up request without daterange"
         logger.error(msg)
@@ -58,14 +58,14 @@ def split_request(params, nbatches):
         request["datetime"] = f"{r[0].strftime('%Y-%m-%dT%H:%M:%S')}/{r[1].strftime('%Y-%m-%dT%H:%M:%S')}"
         logger.debug(f"Split date range: {request['datetime']}")
         yield request
-    
+
 
 def run(params, url, sleep=None, process=None):
     search = Search(url=url, **params)
-    logger.debug(f"Searching {url}")    
+    logger.debug(f"Searching {url}")
     found = search.found()
     logger.debug(f"Total items found: {found}")
- 
+
     if found < MAX_ITEMS_REQUEST:
         logger.info(f"Making single request for {found} items")
         items = search.items()

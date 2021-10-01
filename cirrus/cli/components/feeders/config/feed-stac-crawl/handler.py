@@ -23,7 +23,7 @@ SNS_TOPIC = os.getenv('CIRRUS_QUEUE_TOPIC_ARN')
 SNS_CLIENT = boto3.client('sns')
 
 # logging
-logger = logging.getLogger(f"{__name__}.stac-crawl")
+logger = logging.getLogger("feeder.stac-crawl")
 
 
 def handler(event, context={}):

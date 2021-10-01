@@ -15,7 +15,7 @@ from rasterio.warp import calculate_default_transform, reproject as _reproject, 
 
 def handler(payload, context={}):
     catalog = Catalog.from_payload(payload)
-    logger = get_task_logger(f"{__name__}.add-preview", catalog=catalog)
+    logger = get_task_logger("task.add-preview", catalog=catalog)
 
     # get step configuration
     config = catalog['process']['tasks'].get('add-preview', {})
@@ -77,7 +77,7 @@ def handler(payload, context={}):
 
     # return new items
     catalog['features'] = items
-    return catalog      
+    return catalog
 
 
 def create_thumbnail(filename, logger, scale_percent=5):
@@ -142,7 +142,7 @@ def create_preview(filename, logger, fnout=None, preproj=False, ccc=[2.0, 98.0],
             logger.debug(f"Stretching {inmin} - {inmax} to 1-255 with ccc={ccc}")
             gdal.Translate(fntmp, _filename, noData=nodata, format='GTiff', outputType=gdal.GDT_Byte,
                            scaleParams=[[inmin, inmax, 1, 255]])
-        
+
         cogify(fntmp, fnout, logger)
     except Exception as err:
         logger.error(f"Unable to create preview {filename}: {err}")

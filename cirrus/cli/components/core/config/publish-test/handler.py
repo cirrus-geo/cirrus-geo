@@ -4,14 +4,14 @@ import logging
 import cirruslib.logging
 
 # logging
-logger = logging.getLogger(f"{__name__}.publish-test")
+logger = logging.getLogger(f"lambda_function.publish-test")
 
 
 def handler(payload, context):
     logger.debug('Payload: %s' % json.dumps(payload))
 
     payloads = []
-    
+
     # from SQS or SNS
     if 'Records' in payload:
         for r in payload['Records']:
