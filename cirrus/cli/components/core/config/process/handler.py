@@ -4,8 +4,9 @@ import os
 
 from cirruslib import Catalog, Catalogs
 from cirruslib.utils import dict_merge
+from cirruslib.logging import get_task_logger
 
-logger = logging.getLogger(__name__)
+logger = get_task_logger('lambda_function.process', catalog=tuple())
 
 # Default PROCESSES
 # TODO: put this configuration into the cirrus.yml

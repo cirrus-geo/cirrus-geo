@@ -58,11 +58,11 @@ def handler(payload, context):
         raise Exception(msg) from err
 
     try:
-        # update processing in table
-        statedb.set_completed(catalog['id'], outputs=s3urls)
+        # update job outputs in table
+        statedb.set_outputs(catalog['id'], outputs=s3urls)
     except Exception as err:
-        msg = f"publish: failed setting as complete ({err})"
+        msg = f"publish: failed setting statedb outputs ({err})"
         logger.error(msg, exc_info=True)
-        raise Exception(msg) from err        
+        raise Exception(msg) from err
 
     return catalog

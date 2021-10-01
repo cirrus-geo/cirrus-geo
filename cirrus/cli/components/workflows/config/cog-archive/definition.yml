@@ -29,7 +29,7 @@ definition:
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
-          Next: workflow-failed
+          Next: failure
     copy-assets-batch:
       Type: Task
       Resource: arn:aws:states:::batch:submitJob.sync
@@ -49,7 +49,7 @@ definition:
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
-          Next: workflow-failed
+          Next: failure
     copy-assets-post-batch:
       Type: Task
       Resource:
@@ -73,7 +73,7 @@ definition:
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
-          Next: workflow-failed
+          Next: failure
 
     # Cogify
     convert-to-cog-batch-or-lambda:
@@ -101,7 +101,7 @@ definition:
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
-          Next: workflow-failed
+          Next: failure
     convert-to-cog-batch:
       Type: Task
       Resource: arn:aws:states:::batch:submitJob.sync
@@ -125,7 +125,7 @@ definition:
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
-          Next: workflow-failed
+          Next: failure
     convert-to-cog-post-batch:
       Type: Task
       Resource:
@@ -149,7 +149,7 @@ definition:
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
-          Next: workflow-failed
+          Next: failure
     publish:
       Type: Task
       Resource:
@@ -163,16 +163,6 @@ definition:
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
-          Next: workflow-failed
-    workflow-failed:
-      Type: Task
-      Resource:
-        Fn::GetAtt: [workflow-failed, Arn]
-      Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
-          IntervalSeconds: 1
-          BackoffRate: 2.0
-          MaxAttempts: 5
-      Next: failure
+          Next: failure
     failure:
       Type: Fail

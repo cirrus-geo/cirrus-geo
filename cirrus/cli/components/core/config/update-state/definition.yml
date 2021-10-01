@@ -1,0 +1,17 @@
+description: update the cirrus database with the execution state
+lambda:
+  memorySize: 128
+  timeout: 15
+  events:
+    - eventBridge:
+        pattern:
+          source:
+            - aws.states
+          detail-type:
+            - Step Functions Execution Status Change
+          detail:
+            stateMachineArn:
+              - prefix: "arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:cirrus"
+            status:
+              - SUCCEEDED
+              - FAILED
