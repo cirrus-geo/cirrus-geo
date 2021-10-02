@@ -7,7 +7,7 @@ from collections.abc import MutableMapping
 from cirrus.cli.components import (
     Lambda,
     StepFunction,
-    CoreFunction,
+    Function,
     Feeder,
     Task,
     Workflow,
@@ -172,9 +172,8 @@ class Collections():
 def make_collections(project=None):
     return Collections([
             Collection(
-                'core-functions',
-                CoreFunction,
-                display_name='Core Functions',
+                'functions',
+                Function,
             ),
             Collection(
                 'feeders',
