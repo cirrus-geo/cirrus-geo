@@ -1,6 +1,8 @@
 import textwrap
 import click
 
+from pathlib import Path
+
 from ..base import Lambda
 from .. import files
 from cirrus.cli.resources import Resource
@@ -23,7 +25,7 @@ class Task(Lambda):
         self.batch_enabled = batch.get('enabled', True) and self._enabled and bool(batch)
         self.batch_resources = [
             self.create_batch_resource(name, definition)
-            for name, definition in batch.get('resources', {}).items()
+            for name, definition in batch.get('Resources', {}).items()
         ]
 
     def create_batch_resource(self, name, definition):
@@ -55,3 +57,21 @@ class Task(Lambda):
                     '    ',
                 ),
             ))
+
+    @classmethod
+    def extra_create_args(cls):
+        def wrapper(func):
+            return click.option('--has-batch/--no-batch', default=False)(
+                click.option('--has-lambda/--no-lambda', default=True)(
+                    func,
+                ),
+            )
+        return wrapper
+
+    @classmethod
+    def create(cls, name: str, description: str, outdir: Path, has_batch: bool, has_lambda: bool):
+        new = cls._create_init(name, description, outdir)
+        new.lambda_enabled = has_lambda
+        new.batch_enabled = has_batch
+        new._create_do()
+        return new

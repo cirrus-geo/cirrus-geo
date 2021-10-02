@@ -88,8 +88,8 @@ class Collection(MutableMapping):
                 )
             self._elements[element.name] = element
 
-    def create(self, name: str):
-        return self.element_class.create(name, self.user_dir)
+    def create(self, name: str, description: str, **kwargs):
+        return self.element_class.create(name, description, self.user_dir, **kwargs)
 
     def reset_elements(self):
         self._elements = None

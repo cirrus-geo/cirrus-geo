@@ -10,12 +10,12 @@ default_handler = '''#!/usr/bin/env python
 from cirruslib import Catalog, get_task_logger
 
 
-LAMBDA_TYPE = {component_type}
+LAMBDA_TYPE = '{component_type}'
 
 
 def handler(payload, context={{}}):
     catalog = Catalog.from_payload(payload)
-    logger = get_task_logger(f'{{LAMBDA_TYPE}}.{name}", catalog=catalog)
+    logger = get_task_logger(f'{{LAMBDA_TYPE}}.{name}', catalog=catalog)
     return catalog
 '''.format
 

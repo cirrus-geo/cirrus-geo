@@ -50,11 +50,11 @@ class ComponentMeta(ABCMeta):
 class Component(metaclass=ComponentMeta):
     definition = BaseDefinition()
 
-    def __init__(self, path: Path, load: bool=True) -> None:
+    def __init__(self, path: Path, description: str='', load: bool=True) -> None:
         self.path = path
         self.name = path.name
         self.config = None
-        self.description = ''
+        self.description = description
         self.is_core_component = (
             self.path.parent.samefile(self.__class__.core_dir)
             if self.__class__.core_dir.is_dir() else False
@@ -109,38 +109,44 @@ class Component(metaclass=ComponentMeta):
         self.config = NamedYamlable.from_yaml(self.definition.content)
         self._enabled = self.config.get('enabled', True)
 
-    def _create(self):
+    def _create_do(self):
         if self._loaded:
             raise ComponentError(f'Cannot create a loaded {self.__class__.__name__}.')
+
+        self.path.parent.mkdir(exist_ok=True)
+
         try:
             self.path.mkdir()
         except FileExistsError as e:
             raise ComponentError(
                 f"Cannot create {self.__class__.__name__} at '{self.relative_path()}': already exists."
             ) from e
-        self._load(init_files=True)
 
-    @classmethod
-    def create(cls, name: str, outdir: Path) -> Type[T]:
-        if not cls.user_extendable:
-            raise ComponentError(
-                f"Component {self.type} does not support creation"
-            )
-        path = outdir.joinpath(name)
-        new = cls(path, load=False)
         try:
-            new._create()
-        except ComponentError:
-            raise
+            self._load(init_files=True)
         except Exception as e:
             # want to clean up anything
             # we created if we failed
             import shutil
             try:
-                shutil.rmtree(new.path)
+                shutil.rmtree(self.path)
             except FileNotFoundError:
                 pass
             raise
+
+    @classmethod
+    def _create_init(cls, name: str, description: str, outdir: Path) -> Type[T]:
+        if not cls.user_extendable:
+            raise ComponentError(
+                f"Component {self.type} does not support creation"
+            )
+        path = outdir.joinpath(name)
+        return cls(path, load=False)
+
+    @classmethod
+    def create(cls, name: str, description: str, outdir: Path) -> Type[T]:
+        new = cls._create_init(name, description, outdir)
+        new._create_do()
         return new
 
     @classmethod
@@ -190,6 +196,12 @@ class Component(metaclass=ComponentMeta):
             ))
 
     @classmethod
+    def extra_create_args(cls):
+        def wrapper(func):
+            return func
+        return wrapper
+
+    @classmethod
     def add_create_command(cls, collection, create_cmd):
         if not cls.user_extendable:
             return
@@ -201,12 +213,17 @@ class Component(metaclass=ComponentMeta):
             'name',
             metavar='name',
         )
-        def _create(name):
+        @click.argument(
+            'description',
+            metavar='description',
+        )
+        @cls.extra_create_args()
+        def _create(name, description, **kwargs):
             import sys
             from cirrus.cli.exceptions import ComponentError
 
             try:
-                collection.create(name)
+                collection.create(name, description, **kwargs)
             except ComponentError as e:
                 logger.error(e)
                 sys.exit(1)

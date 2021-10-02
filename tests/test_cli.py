@@ -92,7 +92,7 @@ def test_build(invoke, project, reference_build, build_dir):
      if hasattr(c.element_class, 'add_create_command')],
 )
 def test_create(createable, module_tmpdir, invoke, project):
-    result = invoke(f'create {createable} test_{createable}')
+    result = invoke(f'create {createable} test_{createable} description')
     assert result.exit_code == 0
     result = invoke(f'show {createable} test_{createable}')
     assert result.exit_code == 0

@@ -98,6 +98,9 @@ class BaseResource(metaclass=ResourceMeta):
         def _show(name):
             elements = []
             for element in collection.values():
+                if name == element.name.lower():
+                    elements = [element]
+                    break
                 if not name or name in element.name.lower():
                     elements.append(element)
 
