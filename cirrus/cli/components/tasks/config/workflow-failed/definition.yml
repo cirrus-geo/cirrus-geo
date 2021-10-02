@@ -1,4 +1,0 @@
-description: Indicates the end of a workflow
-lambda:
-  memorySize: 128
-  timeout: 15

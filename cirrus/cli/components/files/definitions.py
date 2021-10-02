@@ -90,17 +90,7 @@ definition:
       Catch:
         - ErrorEquals: ["States.ALL"]
           ResultPath: $.error
-          Next: workflow-failed
-    workflow-failed:
-      Type: Task
-      Resource:
-        Fn::GetAtt: [workflow-failed, Arn]
-      Retry:
-        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
-          IntervalSeconds: 1
-          BackoffRate: 2.0
-          MaxAttempts: 5
-      Next: failure
+          Next: failure
     failure:
       Type: Fail
 '''.format
