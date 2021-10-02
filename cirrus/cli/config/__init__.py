@@ -23,16 +23,9 @@ class Config(NamedYamlable):
 
     @classmethod
     def from_project(cls, project):
-        self = cls.from_file(
+        return cls.from_file(
             project.path.joinpath(DEFAULT_CONFIG_FILENAME),
         )
-
-        # add all lambda functions and step functions
-        # and all resources
-        for collection in project.collections.collections:
-            self.register(collection)
-
-        return self
 
     def validate(self) -> None:
         # set defaults
@@ -53,6 +46,13 @@ class Config(NamedYamlable):
             # deduplicate
             self.plugins = list(set(self.plugins))
 
+    def build(collections):
+        # add all components and resources
+        copy = self.copy()
+        for collection in project.collections.collections:
+            copy.register(collection)
+        return copy
+
     def register(self, collection) -> None:
         from cirrus.cli.components.base import Lambda, StepFunction
         from cirrus.cli.resources import Resource, Output
@@ -61,7 +61,6 @@ class Config(NamedYamlable):
         elif issubclass(collection.element_class, StepFunction):
             self.register_step_function_collection(collection)
         elif issubclass(collection.element_class, Resource):
-            # TODO: make this into a function to iterate through and update env on JobDef instances
             self.resources.Resources = {e.name: e.definition for e in collection.values()}
         elif issubclass(collection.element_class, Output):
             self.resources.Outputs = {e.name: e.definition for e in collection.values()}

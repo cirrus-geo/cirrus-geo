@@ -16,6 +16,7 @@ from cirrus.cli.config import Config, DEFAULT_CONFIG_PATH
 from cirrus.cli.exceptions import CirrusError
 from cirrus.cli.utils import logging
 from cirrus.cli.utils.yaml import NamedYamlable
+from cirrus.cli.collections import make_collections
 
 
 logger = logging.getLogger(__name__)
@@ -23,32 +24,24 @@ logger = logging.getLogger(__name__)
 
 class Project:
     def __init__(self, path: Path, config: Config=None) -> None:
-        from cirrus.cli.collections import make_collections
-
-        self._config = config
-
-        self.path = path
         if path is not None and not self.dir_is_project(path):
             raise CirrusError(
                 f"Cannot set project path, does not appear to be vaild project: '{p}'",
             )
         self.path = path
-
+        self.config = config or self.load_config()
         self.collections = make_collections(project=self)
 
     def __repr__(self):
         return f'<{self.__class__.__name__}: {self.path}>'
 
-    @property
-    def config(self) -> Config:
-        if self._config is None:
-            if self.path is None:
-                logger.warning(
-                    f'Project path unset, cannot load configuration',
-                )
-            else:
-                self._config = Config.from_project(self)
-        return self._config
+    def load_config(self) -> Config:
+        if self.path is None:
+            logger.warning(
+                f'Project path unset, cannot load configuration',
+            )
+            return None
+        return Config.from_project(self)
 
     @property
     def build_dir(self) -> Path:
@@ -144,7 +137,7 @@ class Project:
                 existing_dirs.add(d.resolve())
 
         # write serverless config
-        self.config.to_file(bd.joinpath(DEFAULT_SERVERLESS_FILENAME))
+        self.config.build(self.collections).to_file(bd.joinpath(DEFAULT_SERVERLESS_FILENAME))
 
         # setup all required lambda dirs
         fn_dirs = set()

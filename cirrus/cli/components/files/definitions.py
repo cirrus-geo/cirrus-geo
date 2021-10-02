@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 lambda_base = '''description: '{description}'
 iamRoleStatements: []
 python_requirements: []
-environment: []
+environment: {{}}
 '''.format
 
 lambda_lambda = '''lambda:

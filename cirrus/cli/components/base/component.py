@@ -46,6 +46,12 @@ class ComponentMeta(ABCMeta):
         self.type = self.__name__.lower()
         self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
 
+    # TODO: it feels like the class _is_ its own collection
+    # so maybe collection should be a meta-base-class from
+    # which ComponentMeta inherits
+    def register_collection(self, collection):
+        self.collection = collection
+
 
 class Component(metaclass=ComponentMeta):
     definition = BaseDefinition()
@@ -135,17 +141,17 @@ class Component(metaclass=ComponentMeta):
             raise
 
     @classmethod
-    def _create_init(cls, name: str, description: str, outdir: Path) -> Type[T]:
+    def _create_init(cls, name: str, description: str) -> Type[T]:
         if not cls.user_extendable:
             raise ComponentError(
                 f"Component {self.type} does not support creation"
             )
-        path = outdir.joinpath(name)
+        path = cls.collection.user_dir.joinpath(name)
         return cls(path, load=False)
 
     @classmethod
-    def create(cls, name: str, description: str, outdir: Path) -> Type[T]:
-        new = cls._create_init(name, description, outdir)
+    def create(cls, name: str, description: str) -> Type[T]:
+        new = cls._create_init(name, description)
         new._create_do()
         return new
 
@@ -202,7 +208,7 @@ class Component(metaclass=ComponentMeta):
         return wrapper
 
     @classmethod
-    def add_create_command(cls, collection, create_cmd):
+    def add_create_command(cls, create_cmd):
         if not cls.user_extendable:
             return
 
@@ -223,7 +229,7 @@ class Component(metaclass=ComponentMeta):
             from cirrus.cli.exceptions import ComponentError
 
             try:
-                collection.create(name, description, **kwargs)
+                cls.create(name, description, **kwargs)
             except ComponentError as e:
                 logger.error(e)
                 sys.exit(1)
@@ -236,9 +242,9 @@ class Component(metaclass=ComponentMeta):
                 )
 
     @classmethod
-    def add_show_command(cls, collection, show_cmd):
+    def add_show_command(cls, show_cmd):
         @show_cmd.command(
-            name=collection.name,
+            name=cls.collection.name,
         )
         @click.argument(
             'name',
@@ -252,14 +258,14 @@ class Component(metaclass=ComponentMeta):
         )
         def _show(name=None, filename=None):
             if name is None:
-                for element in collection.values():
+                for element in cls.collection.values():
                     element.list_display()
                 return
 
             try:
-                element = collection[name]
+                element = cls.collection[name]
             except KeyError:
-                logger.error("Cannot show: unknown %s '%s'", collection.element_class.type, name)
+                logger.error("Cannot show: unknown %s '%s'", cls.type, name)
                 return
 
             if filename is None:

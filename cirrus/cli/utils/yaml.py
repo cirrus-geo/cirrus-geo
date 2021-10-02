@@ -1,5 +1,6 @@
 import yaml
 import string
+import copy
 
 from pathlib import Path
 from collections.abc import MutableMapping, MutableSequence
@@ -89,6 +90,9 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
     def to_file(self, f: Path) -> None:
         with f.open('w') as f:
             self._dump(stream=f)
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     # make this work like a namespace for keys that
     # are in a format compatible with python identifiers

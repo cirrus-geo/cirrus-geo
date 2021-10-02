@@ -27,6 +27,9 @@ class ResourceMeta(ABCMeta):
         self.type = self.__name__.lower()
         self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
 
+    def register_collection(self, collection):
+        self.collection = collection
+
 
 class BaseResource(metaclass=ResourceMeta):
     top_level_key = 'Resources'
@@ -84,9 +87,9 @@ class BaseResource(metaclass=ResourceMeta):
         click.echo(self.definition.to_yaml())
 
     @classmethod
-    def add_show_command(cls, collection, show_cmd):
+    def add_show_command(cls, show_cmd):
         @show_cmd.command(
-            name=collection.name,
+            name=cls.collection.name,
         )
         @click.argument(
             'name',
@@ -97,7 +100,7 @@ class BaseResource(metaclass=ResourceMeta):
         )
         def _show(name):
             elements = []
-            for element in collection.values():
+            for element in cls.collection.values():
                 if name == element.name.lower():
                     elements = [element]
                     break
@@ -110,6 +113,6 @@ class BaseResource(metaclass=ResourceMeta):
                 for element in elements:
                     element.list_display()
             elif not name:
-                logger.error("Cannot show %s: none found", collection.name)
+                logger.error("Cannot show %s: none found", cls.collection.name)
             else:
-                logger.error("Cannot show %s: no matches for '%s'", collection.name, name)
+                logger.error("Cannot show %s: no matches for '%s'", cls.collection.name, name)

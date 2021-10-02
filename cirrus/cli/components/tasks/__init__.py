@@ -69,8 +69,8 @@ class Task(Lambda):
         return wrapper
 
     @classmethod
-    def create(cls, name: str, description: str, outdir: Path, has_batch: bool, has_lambda: bool):
-        new = cls._create_init(name, description, outdir)
+    def create(cls, name: str, description: str, has_batch: bool, has_lambda: bool):
+        new = cls._create_init(name, description)
         new.lambda_enabled = has_lambda
         new.batch_enabled = has_batch
         new._create_do()

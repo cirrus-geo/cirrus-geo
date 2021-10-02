@@ -29,6 +29,7 @@ class Collection(MutableMapping):
     ):
         self.name = name
         self.element_class = element_class
+        element_class.register_collection(self)
         self.enable_cli = enable_cli
         self.display_name = display_name if display_name is not None else self.name.capitalize()
 
@@ -88,9 +89,6 @@ class Collection(MutableMapping):
                 )
             self._elements[element.name] = element
 
-    def create(self, name: str, description: str, **kwargs):
-        return self.element_class.create(name, description, self.user_dir, **kwargs)
-
     def reset_elements(self):
         self._elements = None
 
@@ -100,11 +98,11 @@ class Collection(MutableMapping):
 
     def add_create_command(self, create_cmd):
         if self.enable_cli and hasattr(self.element_class, 'add_create_command'):
-            self.element_class.add_create_command(self, create_cmd)
+            self.element_class.add_create_command(create_cmd)
 
     def add_show_command(self, show_cmd):
         if self.enable_cli and hasattr(self.element_class, 'add_show_command'):
-            self.element_class.add_show_command(self, show_cmd)
+            self.element_class.add_show_command(show_cmd)
 
     def items(self):
         return self.elements.items()
