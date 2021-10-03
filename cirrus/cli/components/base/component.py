@@ -3,20 +3,20 @@ import logging
 import click
 
 from typing import Type, TypeVar
-from abc import ABCMeta
 from pathlib import Path
 
 from ..files import ComponentFile, BaseDefinition
 from cirrus.cli.exceptions import ComponentError
 from cirrus.cli.utils.yaml import NamedYamlable
 from cirrus.cli.utils import misc
+from cirrus.cli.collection_meta import CollectionMeta
 
 
 logger = logging.getLogger(__name__)
 
 
 T = TypeVar('T', bound='Component')
-class ComponentMeta(ABCMeta):
+class ComponentMeta(CollectionMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
         files = attrs.get('files', {})
 
@@ -46,11 +46,117 @@ class ComponentMeta(ABCMeta):
         self.type = self.__name__.lower()
         self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
 
-    # TODO: it feels like the class _is_ its own collection
-    # so maybe collection should be a meta-base-class from
-    # which ComponentMeta inherits
-    def register_collection(self, collection):
-        self.collection = collection
+    def from_dir(self, d: Path, name: str=None) -> Type[T]:
+        if not d.is_dir():
+            return
+
+        for component_dir in d.resolve().iterdir():
+            if name and component_dir.name != name:
+                continue
+            try:
+                yield self(component_dir)
+            except ComponentError as e:
+                logger.warning(
+                    f"Skipping {self.type} '{component_dir.name}': {e}",
+                )
+                continue
+
+    def _find(self, name: str=None, search_dirs: list=None) -> Type[T]:
+        if search_dirs is None:
+            search_dirs = []
+
+        if self.core_dir.is_dir():
+            search_dirs = [self.core_dir] + search_dirs
+
+        for _dir in search_dirs:
+            yield from self.from_dir(_dir, name=name)
+
+    def find(self):
+        self._elements = {}
+        for element in self._find(search_dirs=self.get_search_dirs()):
+            if element.name in self._elements:
+                logger.warning(
+                    "Duplicate %s declaration '%s', overriding",
+                    self.type,
+                    element.name,
+                )
+            self._elements[element.name] = element
+
+    def extra_create_args(self):
+        def wrapper(func):
+            return func
+        return wrapper
+
+    def add_create_command(self, create_cmd):
+        if not (self.enable_cli and self.user_extendable):
+            return
+
+        @create_cmd.command(
+            name=self.type
+        )
+        @click.argument(
+            'name',
+            metavar='name',
+        )
+        @click.argument(
+            'description',
+            metavar='description',
+        )
+        @self.extra_create_args()
+        def _create(name, description, **kwargs):
+            import sys
+            from cirrus.cli.exceptions import ComponentError
+
+            try:
+                self.create(name, description, **kwargs)
+            except ComponentError as e:
+                logger.error(e)
+                sys.exit(1)
+            else:
+                # TODO: logging level for "success" on par with warning?
+                click.secho(
+                    f'{self.type} {name} created',
+                    err=True,
+                    fg='green',
+                )
+
+    def add_show_command(self, show_cmd):
+        if not self.enable_cli:
+            return
+
+        @show_cmd.command(
+            name=self.collection_name,
+        )
+        @click.argument(
+            'name',
+            metavar='name',
+            required=False,
+        )
+        @click.argument(
+            'filename',
+            metavar='filename',
+            required=False,
+        )
+        def _show(name=None, filename=None):
+            if name is None:
+                for element in self.values():
+                    element.list_display()
+                return
+
+            try:
+                element = self[name]
+            except KeyError:
+                logger.error("Cannot show: unknown %s '%s'", self.type, name)
+                return
+
+            if filename is None:
+                element.detail_display()
+                return
+
+            try:
+                element.files[filename].show()
+            except KeyError:
+                logger.error("Cannot show: unknown file '%s'", filename)
 
 
 class Component(metaclass=ComponentMeta):
@@ -146,7 +252,7 @@ class Component(metaclass=ComponentMeta):
             raise ComponentError(
                 f"Component {self.type} does not support creation"
             )
-        path = cls.collection.user_dir.joinpath(name)
+        path = cls.user_dir.joinpath(name)
         return cls(path, load=False)
 
     @classmethod
@@ -154,30 +260,6 @@ class Component(metaclass=ComponentMeta):
         new = cls._create_init(name, description)
         new._create_do()
         return new
-
-    @classmethod
-    def from_dir(cls, d: Path, name: str=None) -> Type[T]:
-        for component_dir in d.resolve().iterdir():
-            if name and component_dir.name != name:
-                continue
-            try:
-                yield cls(component_dir)
-            except ComponentError as e:
-                logger.warning(
-                    f"Skipping {cls.type} '{component_dir.name}': {e}",
-                )
-                continue
-
-    @classmethod
-    def find(cls, name: str=None, search_dirs: list=None) -> Type[T]:
-        if search_dirs is None:
-            search_dirs = []
-
-        if cls.core_dir.is_dir():
-            search_dirs = [cls.core_dir] + search_dirs
-
-        for _dir in search_dirs:
-            yield from cls.from_dir(_dir, name=name)
 
     def list_display(self):
         color = 'blue' if self.enabled else 'red'
@@ -200,79 +282,3 @@ class Component(metaclass=ComponentMeta):
                 click.style(name, fg='yellow'),
                 f.name,
             ))
-
-    @classmethod
-    def extra_create_args(cls):
-        def wrapper(func):
-            return func
-        return wrapper
-
-    @classmethod
-    def add_create_command(cls, create_cmd):
-        if not cls.user_extendable:
-            return
-
-        @create_cmd.command(
-            name=cls.type
-        )
-        @click.argument(
-            'name',
-            metavar='name',
-        )
-        @click.argument(
-            'description',
-            metavar='description',
-        )
-        @cls.extra_create_args()
-        def _create(name, description, **kwargs):
-            import sys
-            from cirrus.cli.exceptions import ComponentError
-
-            try:
-                cls.create(name, description, **kwargs)
-            except ComponentError as e:
-                logger.error(e)
-                sys.exit(1)
-            else:
-                # TODO: logging level for "success" on par with warning?
-                click.secho(
-                    f'{cls.type} {name} created',
-                    err=True,
-                    fg='green',
-                )
-
-    @classmethod
-    def add_show_command(cls, show_cmd):
-        @show_cmd.command(
-            name=cls.collection.name,
-        )
-        @click.argument(
-            'name',
-            metavar='name',
-            required=False,
-        )
-        @click.argument(
-            'filename',
-            metavar='filename',
-            required=False,
-        )
-        def _show(name=None, filename=None):
-            if name is None:
-                for element in cls.collection.values():
-                    element.list_display()
-                return
-
-            try:
-                element = cls.collection[name]
-            except KeyError:
-                logger.error("Cannot show: unknown %s '%s'", cls.type, name)
-                return
-
-            if filename is None:
-                element.detail_display()
-                return
-
-            try:
-                element.files[filename].show()
-            except KeyError:
-                logger.error("Cannot show: unknown file '%s'", filename)

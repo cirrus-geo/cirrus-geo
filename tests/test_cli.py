@@ -88,8 +88,8 @@ def test_build(invoke, project, reference_build, build_dir):
 
 @pytest.mark.parametrize(
     'createable',
-    [c.element_class.type for c in collections.extendable_collections
-     if hasattr(c.element_class, 'add_create_command')],
+    [c.type for c in collections.extendable_collections
+     if hasattr(c, 'add_create_command')],
 )
 def test_create(createable, module_tmpdir, invoke, project):
     result = invoke(f'create {createable} test_{createable} description')
@@ -99,14 +99,14 @@ def test_create(createable, module_tmpdir, invoke, project):
     assert len(result.stdout) > 0
 
 
-@pytest.mark.parametrize('collection', [c.name for c in collections.collections])
+@pytest.mark.parametrize('collection', [c.collection_name for c in collections])
 def test_show_list(collection, invoke):
     result = invoke(f'show {collection}')
     assert result.exit_code == 0
     assert len(result.stdout) > 0
 
 
-@pytest.mark.parametrize('collection', [c.name for c in collections.collections])
+@pytest.mark.parametrize('collection', [c.collection_name for c in collections])
 def test_show_detail(collection, invoke):
     item = list(getattr(collections, collection).keys())[0]
     result = invoke(f'show {collection} {item}')

@@ -38,9 +38,11 @@ def cli(ctx, verbose, cirrus_dir=None):
 
     ctx.obj = project
 
-    for collection in project.collections.collections:
-        collection.add_create_command(create)
-        collection.add_show_command(show)
+    for collection in project.collections:
+        if hasattr(collection, 'add_create_command'):
+            collection.add_create_command(create)
+        if hasattr(collection, 'add_show_command'):
+            collection.add_show_command(show)
 
 
 @cli.command()

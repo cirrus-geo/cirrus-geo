@@ -46,27 +46,27 @@ class Config(NamedYamlable):
             # deduplicate
             self.plugins = list(set(self.plugins))
 
-    def build(collections):
+    def build(self, collections):
         # add all components and resources
         copy = self.copy()
-        for collection in project.collections.collections:
+        for collection in collections:
             copy.register(collection)
         return copy
 
     def register(self, collection) -> None:
         from cirrus.cli.components.base import Lambda, StepFunction
         from cirrus.cli.resources import Resource, Output
-        if issubclass(collection.element_class, Lambda):
+        if issubclass(collection, Lambda):
             self.register_lambda_collection(collection)
-        elif issubclass(collection.element_class, StepFunction):
+        elif issubclass(collection, StepFunction):
             self.register_step_function_collection(collection)
-        elif issubclass(collection.element_class, Resource):
+        elif issubclass(collection, Resource):
             self.resources.Resources = {e.name: e.definition for e in collection.values()}
-        elif issubclass(collection.element_class, Output):
+        elif issubclass(collection, Output):
             self.resources.Outputs = {e.name: e.definition for e in collection.values()}
         else:
             raise ConfigError(
-                f"Unable to register collection '{collection.name}': unknown element class '{collection.element_class.type}'",
+                f"Unable to register collection '{collection.name}': unknown type '{collection.type}'",
             )
 
     def register_lambda_collection(self, lambda_collection) -> None:

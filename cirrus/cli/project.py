@@ -37,7 +37,7 @@ class Project:
 
     def load_config(self) -> Config:
         if self.path is None:
-            logger.warning(
+            logger.debug(
                 f'Project path unset, cannot load configuration',
             )
             return None
