@@ -1,0 +1,168 @@
+name: ${self:service}-${self:provider.stage}-cog-archive
+definition:
+  Comment: "Create mirror with some cogified assets"
+  StartAt: copy-assets-batch-or-lambda
+  States:
+    # Copy Assets
+    copy-assets-batch-or-lambda:
+      Type: Choice
+      Choices:
+        - Variable: "$.process.tasks.copy-assets.batch"
+          IsPresent: false
+          Next: copy-assets
+        - Variable: "$.process.tasks.copy-assets.batch"
+          BooleanEquals: false
+          Next: copy-assets
+        - Variable: "$.process.tasks.copy-assets.batch"
+          BooleanEquals: true
+          Next: copy-assets-pre-batch
+    copy-assets-pre-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [pre-batch, Arn]
+      Next: copy-assets-batch
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+    copy-assets-batch:
+      Type: Task
+      Resource: arn:aws:states:::batch:submitJob.sync
+      Parameters:
+        JobName: copy-assets-batch
+        JobQueue: "#{BasicSpotJobQueue}"
+        JobDefinition: "#{GeoLambdaAsBatchJob}"
+        Parameters:
+          lambda_function: ${self:service}-${self:provider.stage}-copy-assets
+          url.$: "$.url"
+      Next: copy-assets-post-batch
+      Retry:
+        - ErrorEquals: ["Batch.AWSBatchException"]
+          IntervalSeconds: 10.0
+          BackoffRate: 2.0
+          MaxAttempts: 3
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+    copy-assets-post-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [post-batch, Arn]
+      Next: convert-to-cog-batch-or-lambda
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+    copy-assets:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [copy-assets, Arn]
+      Next: convert-to-cog-batch-or-lambda
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+
+    # Cogify
+    convert-to-cog-batch-or-lambda:
+      Type: Choice
+      Choices:
+        - Variable: "$.process.tasks.convert-to-cog.batch"
+          IsPresent: false
+          Next: convert-to-cog
+        - Variable: "$.process.tasks.convert-to-cog.batch"
+          BooleanEquals: false
+          Next: convert-to-cog
+        - Variable: "$.process.tasks.convert-to-cog.batch"
+          BooleanEquals: true
+          Next: convert-to-cog-pre-batch
+    convert-to-cog-pre-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [pre-batch, Arn]
+      Next: convert-to-cog-batch
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+    convert-to-cog-batch:
+      Type: Task
+      Resource: arn:aws:states:::batch:submitJob.sync
+      Parameters:
+        JobName: convert-to-cog-batch
+        JobQueue: "#{CustomSpotJobQueue}"
+        JobDefinition: "#{GeoLambdaAsBatchJob}"
+        Parameters:
+          lambda_function: ${self:service}-${self:provider.stage}-convert-to-cog
+          url.$: "$.url"
+      Next: convert-to-cog-post-batch
+      Retry:
+        - ErrorEquals: ["Batch.AWSBatchException"]
+          IntervalSeconds: 600
+          BackoffRate: 2.0
+          MaxAttempts: 4
+        - ErrorEquals: ["States.TaskFailed"]
+          IntervalSeconds: 60
+          BackoffRate: 3.0
+          MaxAttempts: 2
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+    convert-to-cog-post-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [post-batch, Arn]
+      Next: publish
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+    convert-to-cog:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [convert-to-cog, Arn]
+      Next: publish
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+    publish:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [publish, Arn]
+      End: True
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+    failure:
+      Type: Fail

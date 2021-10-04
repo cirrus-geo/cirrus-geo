@@ -1,0 +1,137 @@
+# main application name
+service: cirrus
+
+# high level config
+provider:
+  name: aws
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-west-2'}
+  runtime: python3.9
+  environment:
+    CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+    CIRRUS_PUBLIC_CATALOG: False
+    #CIRRUS_API_URL: <url>
+    CIRRUS_STAC_VERSION: 1.0.0-beta.2
+    CIRRUS_LOG_LEVEL: DEBUG
+    CIRRUS_BUCKET: !Ref ServerlessDeploymentBucket
+    CIRRUS_DATA_BUCKET: !Ref Data
+    CIRRUS_CATALOG_BUCKET: !Ref Catalogs
+    CIRRUS_STATE_DB: !Ref StateTable
+    CIRRUS_STACK: ${self:service}-${self:provider.stage}
+    BASE_WORKFLOW_ARN: "arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-"
+    CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+    CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+    CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+    CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Query
+      - dynamodb:Scan
+      - dynamodb:GetItem
+      - dynamodb:BatchGetItem
+      - dynamodb:PutItem
+      - dynamodb:UpdateItem
+      - dynamodb:DeleteItem
+      - dynamodb:DescribeTable
+      Resource:
+        - !GetAtt StateTable.Arn
+        - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
+    - Effect: "Allow"
+      Action:
+        - sqs:GetQueueUrl
+        - sqs:SendMessage
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
+      Resource:
+        - !GetAtt ProcessQueue.Arn
+    - Effect: "Allow"
+      Action:
+        - SNS:Publish
+      Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
+    - Effect: "Allow"
+      Action:
+        - states:StartExecution
+      Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
+    - Effect: "Allow"
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:cirrus*
+    - Effect: "Allow"
+      Action: "s3:*"
+      Resource: "*"
+    - Effect: "Allow"
+      Action: secretsmanager:GetSecretValue
+      Resource:
+        - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
+    - Effect: "Allow"
+      Action:
+        - batch:SubmitJob
+      Resource:
+        - arn:aws:batch:#{AWS::Region}:#{AWS::AccountId}:job-definition/cirrus*
+        - arn:aws:batch:#{AWS::Region}:#{AWS::AccountId}:job-queue/cirrus*
+    - Effect: "Allow"
+      Action:
+        - logs:GetLogEvents
+      Resource:
+        - arn:aws:logs:#{AWS::Region}:#{AWS::AccountId}:log-group:/aws/batch/*
+    - Effect: "Allow"
+      Action:
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        - ec2:CreateNetworkInterface
+        - ec2:DescribeNetworkInterfaces
+        - ec2:DeleteNetworkInterface
+      Resource: "*"
+
+custom:
+  batch:
+    SecurityGroupIds:
+      - ${env:SECURITY_GROUP_1}
+    Subnets:
+      - ${env:SUBNET_1}
+      - ${env:SUBNET_2}
+      - ${env:SUBNET_3}
+      - ${env:SUBNET_4}
+    BasicComputeEnvironments:
+      MaxvCpus: 128
+    CustomComputeEnvironments:
+      MaxvCpus: 8000
+      ImageId: ami-0762f74aea69d4143
+    LambdaAsBatchJob:
+      Memory: 2048
+      Vcpus: 1
+    GeoLambdaAsBatchJob:
+      Memory: 2048
+      Vcpus: 1
+  pythonRequirements:
+    #dockerizePip: true
+    slim: true
+    #invalidateCaches: true
+    #useStaticCache: false
+    #useDownloadCache: false
+    slimPatternsAppendDefaults: false
+    slimPatterns:
+      - 'botocore/**'
+      - 'botocore-*/**'
+      - 'boto3/**'
+      - 'boto3-*/**'
+      - 'bin/**'
+      - 'dateutils*'
+      - 'docutils/**'
+      - 'docutils-*/**'
+      - 'numpy/**'
+      - 'numpy-*/**'
+      - 'rasterio/**'
+      - 'rasterio-*/**'
+      - 'six.py'
+      - 'six-*/**'
+      - 'urllib3/**'
+      - 'urllib3-*/**'
+      - 'jmespath/**'
+      - 'jmespath-*/**'
+
+package:
+  individually: true

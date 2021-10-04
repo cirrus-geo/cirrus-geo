@@ -1,0 +1,13 @@
+description: Create a preview and/or thumbnail from one or more assets
+environment:
+  GDAL_DATA: /opt/share/gdal
+  PROJ_LIB: /opt/share/proj
+python_requirements:
+  - rasterio==1.1.3
+  - rio-cogeo~=1.1.10
+lambda:
+  memorySize: 1024
+  timeout: 900
+  layers:
+    - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda:2
+    - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1

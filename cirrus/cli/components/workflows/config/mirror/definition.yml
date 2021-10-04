@@ -1,0 +1,99 @@
+name: ${self:service}-${self:provider.stage}-mirror
+definition:
+  Comment: "Mirror items with selected assets"
+  StartAt: copy-assets-batch-or-lambda
+  States:
+    # copy assets
+    copy-assets-batch-or-lambda:
+      Type: Choice
+      Choices:
+        - Variable: "$.process.tasks.copy-assets.batch"
+          IsPresent: false
+          Next: copy-assets
+        - Variable: "$.process.tasks.copy-assets.batch"
+          BooleanEquals: false
+          Next: copy-assets
+        - Variable: "$.process.tasks.copy-assets.batch"
+          BooleanEquals: true
+          Next: copy-assets-pre-batch
+    copy-assets-pre-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [pre-batch, Arn]
+      Next: copy-assets-batch
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+    copy-assets-batch:
+      Type: Task
+      Resource: arn:aws:states:::batch:submitJob.sync
+      Parameters:
+        JobName: copy-assets-batch
+        JobQueue: "#{BasicSpotJobQueue}"
+        JobDefinition: "#{GeoLambdaAsBatchJob}"
+        Parameters:
+          lambda_function: ${self:service}-${self:provider.stage}-copy-assets
+          url.$: "$.url"
+      Next: copy-assets-post-batch
+      Retry:
+        - ErrorEquals: ["Batch.AWSBatchException", "States.TaskFailed"]
+          IntervalSeconds: 10.0
+          BackoffRate: 2.0
+          MaxAttempts: 3
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+    copy-assets-post-batch:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [post-batch, Arn]
+      Next: publish
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+    copy-assets:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [copy-assets, Arn]
+      Next: publish
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+
+    # publish
+    publish:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [publish, Arn]
+      End: True
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+
+    failure:
+      Type: Fail

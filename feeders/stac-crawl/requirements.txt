@@ -1,2 +1,0 @@
-cirrus-lib~=0.4
-git+git://github.com/stac-utils/pystac@develop

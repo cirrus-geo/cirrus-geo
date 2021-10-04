@@ -1,0 +1,7 @@
+description: Cirrus API
+lambda:
+  memorySize: 128
+  timeout: 10
+  events:
+    - http: GET /
+    - http: GET {proxy+}

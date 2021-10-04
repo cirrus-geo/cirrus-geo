@@ -1,0 +1,6 @@
+description: Crawl static STAC assets
+lambda:
+  memorySize: 128
+  timeout: 900
+python-requirements:
+  - git+git://github.com/stac-utils/pystac@develop

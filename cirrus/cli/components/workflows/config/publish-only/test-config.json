@@ -1,0 +1,10 @@
+{
+    "timeout": 30,
+    "files":
+    {
+        "data":
+        [
+            "test-collection/2020/7/test-id/test-id.json"
+        ]
+    }
+}

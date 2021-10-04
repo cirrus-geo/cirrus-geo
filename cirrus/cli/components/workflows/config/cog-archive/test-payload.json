@@ -1,0 +1,455 @@
+{
+    "type": "FeatureCollection",
+    "stac_version": "1.0.0-beta.1",
+    "stac_extensions": [],
+    "collections": [],
+    "features": [
+        {
+            "type": "Feature",
+            "stac_version": "1.0.0-beta.2",
+            "stac_extensions": [
+                "eo",
+                "view",
+                "proj"
+            ],
+            "id": "test-id",
+            "bbox": [
+                -25.559261439165528,
+                16.227964906866426,
+                -25.380340586796063,
+                16.275012498594666
+            ],
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -25.39217462442618,
+                            16.227964906866426
+                        ],
+                        [
+                            -25.559261439165528,
+                            16.275012498594666
+                        ],
+                        [
+                            -25.380340586796063,
+                            16.273632263407467
+                        ],
+                        [
+                            -25.39217462442618,
+                            16.227964906866426
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "datetime": "2020-07-28T12:27:15Z",
+                "platform": "sentinel-2b",
+                "constellation": "sentinel-2",
+                "instruments": [
+                    "msi"
+                ],
+                "gsd": 10,
+                "view:off_nadir": 0,
+                "proj:epsg": 32626,
+                "sentinel:latitude_band": "P",
+                "sentinel:grid_square": "PC",
+                "sentinel:sequence": "0",
+                "sentinel:product_id": "S2B_MSIL2A_20200728T122659_N0214_R109_T26PPC_20200728T143134",
+                "sentinel:data_coverage": 0.4,
+                "eo:cloud_cover": 0,
+                "sentinel:valid_cloud_cover": false,
+                "created": "2020-07-28T21:14:22.735Z",
+                "updated": "2020-07-28T21:14:22.735Z"
+            },
+            "collection": "test-collection",
+            "assets": {
+                "thumbnail": {
+                    "title": "Thumbnail",
+                    "type": "image/png",
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l1c/tiles/26/P/PC/2020/7/28/0/preview.jpg"
+                },
+                "overview": {
+                    "title": "True color image",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/L2A_PVI.tif",
+                    "proj:shape": [
+                        343,
+                        343
+                    ],
+                    "proj:transform": [
+                        320,
+                        0,
+                        600000,
+                        0,
+                        -320,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "info": {
+                    "title": "Original JSON metadata",
+                    "type": "application/json",
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/26/P/PC/2020/7/28/0/tileInfo.json"
+                },
+                "metadata": {
+                    "title": "Original XML metadata",
+                    "type": "application/xml",
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/26/P/PC/2020/7/28/0/metadata.xml"
+                },
+                "visual": {
+                    "title": "True color image",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/TCI.tif",
+                    "proj:shape": [
+                        10980,
+                        10980
+                    ],
+                    "proj:transform": [
+                        10,
+                        0,
+                        600000,
+                        0,
+                        -10,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B01": {
+                    "title": "Band 1 (coastal)",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B01.tif",
+                    "proj:shape": [
+                        1830,
+                        1830
+                    ],
+                    "proj:transform": [
+                        60,
+                        0,
+                        600000,
+                        0,
+                        -60,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B02": {
+                    "title": "Band 2 (blue)",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B02.tif",
+                    "proj:shape": [
+                        10980,
+                        10980
+                    ],
+                    "proj:transform": [
+                        10,
+                        0,
+                        600000,
+                        0,
+                        -10,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B03": {
+                    "title": "Band 3 (green)",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B03.tif",
+                    "proj:shape": [
+                        10980,
+                        10980
+                    ],
+                    "proj:transform": [
+                        10,
+                        0,
+                        600000,
+                        0,
+                        -10,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B04": {
+                    "title": "Band 4 (red)",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B04.tif",
+                    "proj:shape": [
+                        10980,
+                        10980
+                    ],
+                    "proj:transform": [
+                        10,
+                        0,
+                        600000,
+                        0,
+                        -10,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B05": {
+                    "title": "Band 5",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B05.tif",
+                    "proj:shape": [
+                        5490,
+                        5490
+                    ],
+                    "proj:transform": [
+                        20,
+                        0,
+                        600000,
+                        0,
+                        -20,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B06": {
+                    "title": "Band 6",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B06.tif",
+                    "proj:shape": [
+                        5490,
+                        5490
+                    ],
+                    "proj:transform": [
+                        20,
+                        0,
+                        600000,
+                        0,
+                        -20,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B07": {
+                    "title": "Band 7",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B07.tif",
+                    "proj:shape": [
+                        5490,
+                        5490
+                    ],
+                    "proj:transform": [
+                        20,
+                        0,
+                        600000,
+                        0,
+                        -20,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B08": {
+                    "title": "Band 8 (nir)",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B08.tif",
+                    "proj:shape": [
+                        10980,
+                        10980
+                    ],
+                    "proj:transform": [
+                        10,
+                        0,
+                        600000,
+                        0,
+                        -10,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B8A": {
+                    "title": "Band 8A",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B8A.tif",
+                    "proj:shape": [
+                        5490,
+                        5490
+                    ],
+                    "proj:transform": [
+                        20,
+                        0,
+                        600000,
+                        0,
+                        -20,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B09": {
+                    "title": "Band 9",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B09.tif",
+                    "proj:shape": [
+                        1830,
+                        1830
+                    ],
+                    "proj:transform": [
+                        60,
+                        0,
+                        600000,
+                        0,
+                        -60,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B11": {
+                    "title": "Band 11 (swir16)",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B11.tif",
+                    "proj:shape": [
+                        5490,
+                        5490
+                    ],
+                    "proj:transform": [
+                        20,
+                        0,
+                        600000,
+                        0,
+                        -20,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "B12": {
+                    "title": "Band 12 (swir22)",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/B12.tif",
+                    "proj:shape": [
+                        5490,
+                        5490
+                    ],
+                    "proj:transform": [
+                        20,
+                        0,
+                        600000,
+                        0,
+                        -20,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "AOT": {
+                    "title": "Aerosol Optical Thickness (AOT)",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/AOT.tif",
+                    "proj:shape": [
+                        1830,
+                        1830
+                    ],
+                    "proj:transform": [
+                        60,
+                        0,
+                        600000,
+                        0,
+                        -60,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "WVP": {
+                    "title": "Water Vapour (WVP)",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/WVP.tif",
+                    "proj:shape": [
+                        10980,
+                        10980
+                    ],
+                    "proj:transform": [
+                        10,
+                        0,
+                        600000,
+                        0,
+                        -10,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                "SCL": {
+                    "title": "Scene Classification Map (SCL)",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "href": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2B_26PPC_20200728_0_L2A/SCL.tif",
+                    "proj:shape": [
+                        5490,
+                        5490
+                    ],
+                    "proj:transform": [
+                        20,
+                        0,
+                        600000,
+                        0,
+                        -20,
+                        1800000,
+                        0,
+                        0,
+                        1
+                    ]
+                }
+            },
+            "links": []
+        }
+    ],
+    "links": [],
+    "process": {
+        "workflow": "cog-archive",
+        "replace": true,
+        "output_options": {
+            "path_template": "${collection}/${year}/${month}/${id}",
+            "collections": {
+                "test-collection": ".*"
+            }
+        },
+        "tasks": {
+            "copy-assets": {
+                "assets": ["thumbnail", "overview", "info", "metadata"],
+                "drop_assets": ["WVP", "AOT", "visual"]
+            },
+            "convert-to-cog": {
+                "batch": false,
+                "assets": {
+                    "B01": {
+                        "nodata": 0,
+                        "blocksize": 128,
+                        "overview_blocksize": 64,
+                        "overview_resampling": "average"
+                    }
+                },
+                "drop_assets": ["WVP", "AOT", "visual"]
+            }
+        }
+    }
+}

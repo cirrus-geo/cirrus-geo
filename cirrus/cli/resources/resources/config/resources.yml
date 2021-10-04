@@ -1,0 +1,216 @@
+Resources:
+  # Main data bucket
+  Data:
+    Type: AWS::S3::Bucket
+  # Bucket for storing input catalogs
+  Catalogs:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 10
+            Prefix: batch/
+            Status: Enabled
+          - ExpirationInDays: 10
+            Prefix: payloads/
+            Status: Enabled
+  # SNS Topic for adding input data to Cirrus
+  QueueTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      TopicName: ${self:service}-${self:provider.stage}-queue
+  # SNS Topic for adding input data to Cirrus
+  PublishTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      TopicName: ${self:service}-${self:provider.stage}-publish
+  # SNS Topic for failed workflows
+  FailedTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      TopicName: ${self:service}-${self:provider.stage}-failed
+  # Allow anyone to subscribe to publish topic
+  #PublishTopicPolicy:
+  #  Type: 'AWS::SNS::TopicPolicy'
+  #  Properties:
+  #    Topics:
+  #      - !Ref PublishTopic
+  #    PolicyDocument:
+  #      Statement:
+  #        - Sid: public-sns-subscriptions
+  #          Effect: Allow
+  #          Principal: "*"
+  #          Action:
+  #            - sns:Subscribe
+  #          Resource:
+  #            - arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+  # Process Queue
+  ProcessQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:service}-${self:provider.stage}-process
+      VisibilityTimeout: 1000
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
+        maxReceiveCount: 5
+  ProcessDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:service}-${self:provider.stage}-process-dead-letter
+  ProcessQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref ProcessQueue
+      PolicyDocument:
+        Statement:
+          - Sid: allow-sqs-sendmessage
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action: SQS:SendMessage
+            Resource: !GetAtt ProcessQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  - !Ref QueueTopic
+                  - !Ref PublishTopic
+  ProcessQueueSubsciption:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt ProcessQueue.Arn
+      Protocol: sqs
+      Region: "#{AWS::Region}"
+      TopicArn: !Ref QueueTopic
+  StateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: collections_workflow
+          AttributeType: S
+        - AttributeName: itemids
+          AttributeType: S
+        - AttributeName: state_updated
+          AttributeType: S
+        - AttributeName: updated
+          AttributeType: S
+      KeySchema:
+        - AttributeName: collections_workflow
+          KeyType: HASH
+        - AttributeName: itemids
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: "state_updated"
+          KeySchema:
+            - AttributeName: collections_workflow
+              KeyType: HASH
+            - AttributeName: state_updated
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: "updated"
+          KeySchema:
+            - AttributeName: collections_workflow
+              KeyType: HASH
+            - AttributeName: updated
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      TableName: ${self:service}-${self:provider.stage}-state
+  # Batch IAM Roles
+  BatchInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: '/'
+      Roles:
+        - Ref: BatchInstanceRole
+  BatchInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'ec2.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+      Policies:
+        - PolicyName: 'Cirrus'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                  - "*"
+              - Effect: Allow
+                Action:
+                  - lambda:GetFunction
+                Resource:
+                  - arn:aws:lambda:*:*:function:${self:service}-${self:provider.stage}-*
+              - Effect: "Allow"
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - Fn::GetAtt: [StateTable, Arn]
+                  - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
+              - Effect: Allow
+                Action: SNS:Publish
+                Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:cirrus*
+              - Effect: Allow
+                Action:
+                  - sqs:GetQueueUrl
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource:
+                  - !GetAtt ProcessQueue.Arn
+              - Effect: "Allow"
+                Action:
+                  - states:StartExecution
+                Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
+  BatchServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'batch.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+  EC2SpotRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'spotfleet.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole

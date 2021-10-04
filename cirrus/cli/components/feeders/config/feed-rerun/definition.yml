@@ -1,0 +1,4 @@
+description: Rerun items in the database
+lambda:
+  memorySize: 128
+  timeout: 900

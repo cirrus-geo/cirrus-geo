@@ -1,2 +1,0 @@
-cirrus-lib~=0.4
-pystac~=0.5

@@ -1,0 +1,21 @@
+name: ${self:service}-${self:provider.stage}-publish-only
+definition:
+  Comment: Simple example that just published input Collections and items
+  StartAt: publish
+  States:
+    publish:
+      Type: Task
+      Resource:
+        Fn::GetAtt: [publish, Arn]
+      End: True
+      Retry:
+        - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: ["States.ALL"]
+          ResultPath: $.error
+          Next: failure
+    failure:
+      Type: Fail

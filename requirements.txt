@@ -1,0 +1,5 @@
+pyyaml~=5.4
+click~=8.0
+rich~=10.6
+cfn-flip~=1.2
+cirrus-lib>=0.5.1

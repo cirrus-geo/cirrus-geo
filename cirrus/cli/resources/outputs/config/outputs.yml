@@ -1,0 +1,3 @@
+Outputs:
+  CirrusQueueSnsArn:
+    Value: !Ref QueueTopic

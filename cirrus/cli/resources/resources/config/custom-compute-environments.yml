@@ -1,0 +1,65 @@
+Resources:
+  CustomOnDemandComputeEnvironment:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      Type: MANAGED
+      ServiceRole:
+        Fn::GetAtt: [ BatchServiceRole, Arn ]
+      ComputeEnvironmentName: '#{AWS::StackName}-custom-ondemand'
+      ComputeResources:
+        ImageId: ${self:custom.batch.CustomComputeEnvironments.ImageId}
+        MaxvCpus: ${self:custom.batch.CustomComputeEnvironments.MaxvCpus}
+        SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+        Subnets: ${self:custom.batch.Subnets}
+        InstanceTypes:
+          - optimal
+        Type: EC2
+        AllocationStrategy: BEST_FIT_PROGRESSIVE
+        MinvCpus: 0
+        InstanceRole:
+          Fn::GetAtt: [ BatchInstanceProfile, Arn ]
+        Tags: {"Name": "Batch Instance - #{AWS::StackName}"}
+        DesiredvCpus: 0
+      State: ENABLED
+  CustomOnDemandJobQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref CustomOnDemandComputeEnvironment
+      State: ENABLED
+      Priority: 1
+      JobQueueName: '#{AWS::StackName}-custom-ondemand'
+  CustomSpotComputeEnvironment:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      Type: MANAGED
+      ServiceRole:
+        Fn::GetAtt: [ BatchServiceRole, Arn ]
+      ComputeEnvironmentName: '#{AWS::StackName}-custom-spot'
+      ComputeResources:
+        ImageId: ${self:custom.batch.CustomComputeEnvironments.ImageId}
+        MaxvCpus: ${self:custom.batch.CustomComputeEnvironments.MaxvCpus}
+        SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+        Subnets: ${self:custom.batch.Subnets}
+        InstanceTypes:
+          - optimal
+        Type: SPOT
+        AllocationStrategy: BEST_FIT_PROGRESSIVE
+        SpotIamFleetRole:
+          Fn::GetAtt: [ EC2SpotRole, Arn ]
+        MinvCpus: 0
+        InstanceRole:
+          Fn::GetAtt: [ BatchInstanceProfile, Arn ]
+        Tags: {"Name": "Batch Instance - #{AWS::StackName}"}
+        DesiredvCpus: 0
+      State: ENABLED
+  CustomSpotJobQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref CustomSpotComputeEnvironment
+      State: ENABLED
+      Priority: 1
+      JobQueueName: '#{AWS::StackName}-custom-spot'

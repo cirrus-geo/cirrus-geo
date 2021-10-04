@@ -1,0 +1,6 @@
+description: Feed Sentinel AWS inventory data to Cirrus for cataloging
+lambda:
+  memorySize: 128
+  timeout: 900
+python-requirements:
+  - pyorc==0.3.0
