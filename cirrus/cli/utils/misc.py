@@ -11,7 +11,7 @@ def get_cirrus_lib_requirement() -> str:
     except ImportError:
         import importlib_metadata as metadata
 
-    package_name = __package__.split('.')[0]
+    package_name = 'cirrus-geo'
     return [
         req for req in metadata.requires(package_name)
         if req.startswith('cirrus-lib')
