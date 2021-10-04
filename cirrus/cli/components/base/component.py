@@ -250,7 +250,7 @@ class Component(metaclass=ComponentMeta):
     def _create_init(cls, name: str, description: str) -> Type[T]:
         if not cls.user_extendable:
             raise ComponentError(
-                f"Component {self.type} does not support creation"
+                f"Component {cls.type} does not support creation"
             )
         path = cls.user_dir.joinpath(name)
         return cls(path, load=False)

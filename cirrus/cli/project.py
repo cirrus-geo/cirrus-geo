@@ -26,7 +26,7 @@ class Project:
     def __init__(self, path: Path, config: Config=None) -> None:
         if path is not None and not self.dir_is_project(path):
             raise CirrusError(
-                f"Cannot set project path, does not appear to be vaild project: '{p}'",
+                f"Cannot set project path, does not appear to be vaild project: '{path}'",
             )
         self.path = path
         self.config = config or self.load_config()
