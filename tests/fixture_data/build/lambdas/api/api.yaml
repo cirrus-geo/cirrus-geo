@@ -1,0 +1,50 @@
+openapi: 3.0.1
+info:
+  title: Cirrus API
+  version: 0.1.0
+  license:
+    name: Apache License 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0'
+  description: >-
+    This is an OpenAPI definition of the Cirrus API.
+  contact:
+    name: Cirrus
+    url: 'http://element84.com'
+tags:
+  - name: Capabilities
+    description: essential characteristics of this API
+  - name: Data
+    description: access to dat
+  - name: STAC
+    description: STAC metadata specification
+paths:
+  /:
+    get:
+      tags:
+        - Capabilities
+      summary: landing page
+      description: |-
+        Returns the root Cirrus API showing links and overall statistics for the Cirrus instance
+      operationId: getLandingPage
+      responses:
+        '200':
+          $ref: '#/components/responses/LandingPage'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /conformance:
+    get:
+      tags:
+        - Capabilities
+      summary: information about specifications that this API conforms to
+      description: |-
+        A list of all conformance classes specified in a standard that the
+        server conforms to.
+      operationId: getConformanceDeclaration
+      responses:
+        '200':
+          $ref: '#/components/responses/ConformanceDeclaration'
+        '500':
+          $ref: '#/components/responses/ServerError'
+servers:
+  - url: 'http://www.cool-sat.com'
+    description: Cirrus API
