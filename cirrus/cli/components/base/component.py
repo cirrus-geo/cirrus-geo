@@ -14,8 +14,9 @@ from cirrus.cli.collection_meta import CollectionMeta
 
 logger = logging.getLogger(__name__)
 
-
 T = TypeVar('T', bound='Component')
+
+
 class ComponentMeta(CollectionMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
         files = attrs.get('files', {})
@@ -36,7 +37,7 @@ class ComponentMeta(CollectionMeta):
 
         attrs['files'] = files
 
-        if not 'user_extendable' in attrs:
+        if 'user_extendable' not in attrs:
             attrs['user_extendable'] = True
 
         return super().__new__(cls, name, bases, attrs, **kwargs)
@@ -50,7 +51,7 @@ class ComponentMeta(CollectionMeta):
         if not d.is_dir():
             return
 
-        for component_dir in d.resolve().iterdir():
+        for component_dir in sorted(d.resolve().iterdir()):
             if name and component_dir.name != name:
                 continue
             try:
@@ -236,7 +237,7 @@ class Component(metaclass=ComponentMeta):
 
         try:
             self._load(init_files=True)
-        except Exception as e:
+        except Exception:
             # want to clean up anything
             # we created if we failed
             import shutil
@@ -250,7 +251,7 @@ class Component(metaclass=ComponentMeta):
     def _create_init(cls, name: str, description: str) -> Type[T]:
         if not cls.user_extendable:
             raise ComponentError(
-                f"Component {self.type} does not support creation"
+                f"Component {cls.type} does not support creation"
             )
         path = cls.user_dir.joinpath(name)
         return cls(path, load=False)

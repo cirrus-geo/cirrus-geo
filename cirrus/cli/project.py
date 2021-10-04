@@ -1,7 +1,5 @@
 import os
-import sys
 import json
-import yaml
 
 from pathlib import Path
 
@@ -15,7 +13,6 @@ from cirrus.cli.constants import (
 from cirrus.cli.config import Config, DEFAULT_CONFIG_PATH
 from cirrus.cli.exceptions import CirrusError
 from cirrus.cli.utils import logging
-from cirrus.cli.utils.yaml import NamedYamlable
 from cirrus.cli.collections import make_collections
 
 
@@ -26,7 +23,7 @@ class Project:
     def __init__(self, path: Path, config: Config=None) -> None:
         if path is not None and not self.dir_is_project(path):
             raise CirrusError(
-                f"Cannot set project path, does not appear to be vaild project: '{p}'",
+                f"Cannot set project path, does not appear to be vaild project: '{path}'",
             )
         self.path = path
         self.config = config or self.load_config()
@@ -38,7 +35,7 @@ class Project:
     def load_config(self) -> Config:
         if self.path is None:
             logger.debug(
-                f'Project path unset, cannot load configuration',
+                'Project path unset, cannot load configuration',
             )
             return None
         return Config.from_project(self)

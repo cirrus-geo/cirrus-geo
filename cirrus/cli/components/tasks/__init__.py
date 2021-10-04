@@ -1,8 +1,6 @@
 import textwrap
 import click
 
-from pathlib import Path
-
 from ..base import Lambda
 from .. import files
 from cirrus.cli.resources import Resource
@@ -48,7 +46,7 @@ class Task(Lambda):
         click.echo(f'Batch enabled: {self.batch_enabled}')
         if not self.batch_resources:
             return
-        click.echo(f'Batch resources:')
+        click.echo('Batch resources:')
         for resource in self.batch_resources:
             click.echo("  {}:\n{}".format(
                 click.style(resource.name, fg='yellow'),

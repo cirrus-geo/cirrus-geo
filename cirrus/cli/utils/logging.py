@@ -35,7 +35,7 @@ class ClickHandler(logging.Handler):
     def emit(self, record):
         try:
             msg = self.format(record)
-            level = record.levelname.lower()
+            record.levelname.lower()
             click.echo(msg, err=True)
         except Exception:
             self.handleError(record)

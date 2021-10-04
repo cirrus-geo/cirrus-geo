@@ -1,11 +1,7 @@
-import os
 import shlex
 import shutil
 
 import pytest
-
-from functools import partial
-from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -49,7 +45,7 @@ def test_init(invoke, module_tmpdir):
     result = invoke('init')
     print(result.stdout, result.stderr)
     assert result.exit_code == 0
-    assert Project.dir_is_project(module_tmpdir) == True
+    assert Project.dir_is_project(module_tmpdir) is True
 
 
 def test_reinit(module_tmpdir, invoke, project):
@@ -63,6 +59,8 @@ def test_build(invoke, project, reference_build, build_dir):
     import difflib
     result = invoke('build')
     print(result.stdout)
+    print(result.stderr)
+    print(result.exc_info)
     assert result.exit_code == 0
     assert build_dir.is_dir()
 
@@ -73,7 +71,6 @@ def test_build(invoke, project, reference_build, build_dir):
         print(f'Files different in build: {dcmp.diff_files}')
         print(f'Files unable to be compared: {dcmp.funny_files}')
         for fname in dcmp.diff_files:
-            print()
             with reference_build.joinpath(fname).open() as f1:
                 with build_dir.joinpath(fname).open() as f2:
                     sys.stdout.writelines(difflib.unified_diff(
