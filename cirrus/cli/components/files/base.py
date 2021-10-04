@@ -2,7 +2,6 @@ import copy
 import logging
 
 from typing import Type, TypeVar, Callable
-from pathlib import Path
 
 from cirrus.cli.exceptions import ComponentError
 from cirrus.cli.utils.console import console
@@ -14,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar('T', bound='ComponentFile')
 Component = TypeVar('Component', bound='Component')
+
+
 class ComponentFile:
     def __init__(
         self,

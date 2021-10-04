@@ -14,8 +14,9 @@ from cirrus.cli.collection_meta import CollectionMeta
 
 logger = logging.getLogger(__name__)
 
-
 T = TypeVar('T', bound='Component')
+
+
 class ComponentMeta(CollectionMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
         files = attrs.get('files', {})
@@ -36,7 +37,7 @@ class ComponentMeta(CollectionMeta):
 
         attrs['files'] = files
 
-        if not 'user_extendable' in attrs:
+        if 'user_extendable' not in attrs:
             attrs['user_extendable'] = True
 
         return super().__new__(cls, name, bases, attrs, **kwargs)
@@ -236,7 +237,7 @@ class Component(metaclass=ComponentMeta):
 
         try:
             self._load(init_files=True)
-        except Exception as e:
+        except Exception:
             # want to clean up anything
             # we created if we failed
             import shutil

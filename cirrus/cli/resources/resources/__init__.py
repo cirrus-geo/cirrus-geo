@@ -61,7 +61,7 @@ class JobDefinition(Resource):
         keys = ['Properties', 'ContainerProperties']
 
         for key in keys:
-            if not key in item:
+            if key not in item:
                 item[key] = {}
             item = item[key]
 

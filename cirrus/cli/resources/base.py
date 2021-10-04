@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 class ResourceMeta(CollectionMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
-        if not 'user_extendable' in attrs:
+        if 'user_extendable' not in attrs:
             attrs['user_extendable'] = True
 
-        if not 'top_level_key' in attrs and not [base for base in bases if hasattr(base, 'top_level_key')]:
+        if 'top_level_key' not in attrs and not [base for base in bases if hasattr(base, 'top_level_key')]:
             raise NotImplementedError(f"Must define the 'top_level_key' attr on '{name}'")
 
         return super().__new__(cls, name, bases, attrs, **kwargs)

@@ -23,7 +23,6 @@ class CollectionMeta(MutableMapping, ABCMeta):
         elif 'user_dir_name' not in attrs or attrs['user_dir_name'] is None:
             attrs['user_dir_name'] = attrs['collection_name']
 
-
         attrs['_elements'] = None
         attrs['project'] = None
         attrs['parent'] = None

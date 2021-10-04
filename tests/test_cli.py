@@ -1,11 +1,7 @@
-import os
 import shlex
 import shutil
 
 import pytest
-
-from functools import partial
-from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -49,7 +45,7 @@ def test_init(invoke, module_tmpdir):
     result = invoke('init')
     print(result.stdout, result.stderr)
     assert result.exit_code == 0
-    assert Project.dir_is_project(module_tmpdir) == True
+    assert Project.dir_is_project(module_tmpdir) is True
 
 
 def test_reinit(module_tmpdir, invoke, project):
