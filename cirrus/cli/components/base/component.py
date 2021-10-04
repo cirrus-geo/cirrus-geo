@@ -51,7 +51,7 @@ class ComponentMeta(CollectionMeta):
         if not d.is_dir():
             return
 
-        for component_dir in d.resolve().iterdir():
+        for component_dir in sorted(d.resolve().iterdir()):
             if name and component_dir.name != name:
                 continue
             try:

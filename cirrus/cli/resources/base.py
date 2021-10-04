@@ -46,7 +46,7 @@ class ResourceMeta(CollectionMeta):
             search_dirs = [self.core_dir] + search_dirs
 
         for d in search_dirs:
-            for yml in d.glob('*.yml'):
+            for yml in sorted(d.glob('*.yml')):
                 yield from self.from_file(yml)
 
     def find(self):
