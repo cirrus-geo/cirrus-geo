@@ -6,7 +6,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 
-def handler(payload, context={}):
+def lambda_handler(payload, context={}):
     catalog = Catalog.from_payload(payload)
     logger = get_task_logger("task.copy-assets", catalog=catalog)
 

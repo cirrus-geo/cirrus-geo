@@ -26,7 +26,7 @@ SNS_CLIENT = boto3.client('sns')
 logger = logging.getLogger("feeder.stac-crawl")
 
 
-def handler(event, context={}):
+def lambda_handler(event, context={}):
     logger.debug('Event: %s' % json.dumps(event))
 
     # parse input
@@ -59,4 +59,4 @@ if __name__ == "__main__":
 
     with open(args.payload) as f:
         payload = json.loads(f.read())
-    handler(payload)
+    lambda_handler(payload)

@@ -95,7 +95,7 @@ def read_inventory_file(fname, keys, prefix=None, suffix=None,
         yield 's3://%s/%s' % (record['bucket'], record['key'])
 
 
-def handler(payload, context={}):
+def lambda_handler(payload, context={}):
     logger.info('Payload: %s' % json.dumps(payload))
 
     # get payload variables
@@ -212,4 +212,4 @@ if __name__ == "__main__":
 
     with open(args.payload) as f:
         payload = json.loads(f.read())
-    handler(payload)
+    lambda_handler(payload)

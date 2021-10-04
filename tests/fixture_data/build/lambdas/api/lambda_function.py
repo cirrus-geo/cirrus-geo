@@ -77,7 +77,7 @@ def summary(collections_workflow, since, limit):
     }
 
 
-def handler(event, context):
+def lambda_handler(event, context):
     logger.debug('Event: %s' % json.dumps(event))
 
     # get request URL

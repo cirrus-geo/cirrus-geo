@@ -35,7 +35,7 @@ def submit(ids, process_update=None):
     SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(payload))
 
 
-def handler(payload, context={}):
+def lambda_handler(payload, context={}):
     logger.debug('Payload: %s' % json.dumps(payload))
 
     collections = payload.get('collections')
@@ -83,4 +83,4 @@ if __name__ == "__main__":
 
     with open(args.payload) as f:
         payload = json.loads(f.read())
-    handler(payload)
+    lambda_handler(payload)

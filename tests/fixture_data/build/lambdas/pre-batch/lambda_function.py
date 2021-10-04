@@ -8,7 +8,7 @@ from cirruslib import Catalog, get_task_logger
 CATALOG_BUCKET = getenv('CIRRUS_CATALOG_BUCKET')
 
 
-def handler(payload, context):
+def lambda_handler(payload, context):
     catalog = Catalog.from_payload(payload)
     logger = get_task_logger("task.pre-batch", catalog=catalog)
 

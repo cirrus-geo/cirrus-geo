@@ -167,7 +167,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/api
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   process:
     memorySize: 128
     timeout: 900
@@ -195,7 +195,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/process
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   publish-test:
     memorySize: 128
     timeout: 60
@@ -219,7 +219,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/publish-test
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   update-state:
     memorySize: 128
     timeout: 15
@@ -254,7 +254,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/update-state
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   feed-rerun:
     memorySize: 128
     timeout: 900
@@ -276,7 +276,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/feed-rerun
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   feed-s3-inventory:
     memorySize: 128
     timeout: 900
@@ -298,7 +298,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/feed-s3-inventory
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   feed-stac-api:
     memorySize: 128
     timeout: 900
@@ -320,7 +320,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/feed-stac-api
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   feed-stac-crawl:
     memorySize: 128
     timeout: 900
@@ -342,7 +342,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/feed-stac-crawl
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   add-preview:
     memorySize: 1024
     timeout: 900
@@ -369,7 +369,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/add-preview
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   convert-to-cog:
     memorySize: 1024
     timeout: 900
@@ -396,7 +396,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/convert-to-cog
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   copy-assets:
     memorySize: 768
     timeout: 60
@@ -418,7 +418,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/copy-assets
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   post-batch:
     memorySize: 128
     timeout: 15
@@ -440,7 +440,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/post-batch
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   pre-batch:
     memorySize: 128
     timeout: 15
@@ -462,7 +462,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/pre-batch
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
   publish:
     memorySize: 128
     timeout: 30
@@ -485,7 +485,7 @@ functions:
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
     module: lambdas/publish
-    handler: handler.handler
+    handler: lambda_function.lambda_handler
 stepFunctions:
   validate: true
   stateMachines:

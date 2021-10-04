@@ -14,7 +14,7 @@ with open(os.path.join(os.path.dirname(__file__), 'processes.json')) as f:
     PROCESSES = json.loads(f.read())
 
 
-def handler(payload, context):
+def lambda_handler(payload, context):
     logger.debug(json.dumps(payload))
 
     # Read SQS payload

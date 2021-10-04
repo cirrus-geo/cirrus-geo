@@ -7,7 +7,7 @@ import cirruslib.logging
 logger = logging.getLogger(f"lambda_function.publish-test")
 
 
-def handler(payload, context):
+def lambda_handler(payload, context):
     logger.debug('Payload: %s' % json.dumps(payload))
 
     payloads = []
