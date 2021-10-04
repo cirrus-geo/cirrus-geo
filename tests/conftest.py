@@ -28,5 +28,4 @@ def module_tmpdir():
 
 @pytest.fixture
 def project():
-    project = Project.resolve(strict=True)
-    return project
+    return Project.resolve(strict=True)
