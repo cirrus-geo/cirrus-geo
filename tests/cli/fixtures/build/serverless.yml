@@ -1,0 +1,1612 @@
+service: cirrus
+provider:
+  name: aws
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-west-2'}
+  runtime: python3.9
+  environment:
+    CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+    CIRRUS_PUBLIC_CATALOG: false
+    CIRRUS_STAC_VERSION: 1.0.0-beta.2
+    CIRRUS_LOG_LEVEL: DEBUG
+    CIRRUS_BUCKET:
+      Ref: ServerlessDeploymentBucket
+    CIRRUS_DATA_BUCKET:
+      Ref: Data
+    CIRRUS_CATALOG_BUCKET:
+      Ref: Catalogs
+    CIRRUS_STATE_DB:
+      Ref: StateTable
+    CIRRUS_STACK: ${self:service}-${self:provider.stage}
+    BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+    CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+    CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+    CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+    CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:BatchGetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:DescribeTable
+      Resource:
+        - Fn::GetAtt:
+            - StateTable
+            - Arn
+        - Fn::Join:
+            - ''
+            - - Fn::GetAtt:
+                  - StateTable
+                  - Arn
+              - /index/*
+    - Effect: Allow
+      Action:
+        - sqs:GetQueueUrl
+        - sqs:SendMessage
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
+      Resource:
+        - Fn::GetAtt:
+            - ProcessQueue
+            - Arn
+    - Effect: Allow
+      Action:
+        - SNS:Publish
+      Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
+    - Effect: Allow
+      Action:
+        - states:StartExecution
+      Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:cirrus*
+    - Effect: Allow
+      Action: s3:*
+      Resource: '*'
+    - Effect: Allow
+      Action: secretsmanager:GetSecretValue
+      Resource:
+        - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
+    - Effect: Allow
+      Action:
+        - batch:SubmitJob
+      Resource:
+        - arn:aws:batch:#{AWS::Region}:#{AWS::AccountId}:job-definition/cirrus*
+        - arn:aws:batch:#{AWS::Region}:#{AWS::AccountId}:job-queue/cirrus*
+    - Effect: Allow
+      Action:
+        - logs:GetLogEvents
+      Resource:
+        - arn:aws:logs:#{AWS::Region}:#{AWS::AccountId}:log-group:/aws/batch/*
+    - Effect: Allow
+      Action:
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        - ec2:CreateNetworkInterface
+        - ec2:DescribeNetworkInterfaces
+        - ec2:DeleteNetworkInterface
+      Resource: '*'
+custom:
+  batch:
+    SecurityGroupIds:
+      - ${env:SECURITY_GROUP_1}
+    Subnets:
+      - ${env:SUBNET_1}
+      - ${env:SUBNET_2}
+      - ${env:SUBNET_3}
+      - ${env:SUBNET_4}
+    BasicComputeEnvironments:
+      MaxvCpus: 128
+    CustomComputeEnvironments:
+      MaxvCpus: 8000
+      ImageId: ami-0762f74aea69d4143
+    LambdaAsBatchJob:
+      Memory: 2048
+      Vcpus: 1
+    GeoLambdaAsBatchJob:
+      Memory: 2048
+      Vcpus: 1
+  pythonRequirements:
+    slim: true
+    slimPatternsAppendDefaults: false
+    slimPatterns:
+      - botocore/**
+      - botocore-*/**
+      - boto3/**
+      - boto3-*/**
+      - bin/**
+      - dateutils*
+      - docutils/**
+      - docutils-*/**
+      - numpy/**
+      - numpy-*/**
+      - rasterio/**
+      - rasterio-*/**
+      - six.py
+      - six-*/**
+      - urllib3/**
+      - urllib3-*/**
+      - jmespath/**
+      - jmespath-*/**
+functions:
+  api:
+    memorySize: 128
+    timeout: 10
+    events:
+      - http: GET /
+      - http: GET {proxy+}
+    description: Cirrus API
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/api/**
+    module: lambdas/api
+    handler: lambda_function.lambda_handler
+  process:
+    memorySize: 128
+    timeout: 900
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - ProcessQueue
+              - Arn
+    description: Consumes Process Catalogs from queue and invokes workflow
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/process/**
+    module: lambdas/process
+    handler: lambda_function.lambda_handler
+  publish-test:
+    memorySize: 128
+    timeout: 60
+    events:
+      - sns: ${self:provider.environment.CIRRUS_PUBLISH_TOPIC_ARN}
+    description: Test Feeder data
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/publish-test/**
+    module: lambdas/publish-test
+    handler: lambda_function.lambda_handler
+  update-state:
+    memorySize: 128
+    timeout: 15
+    events:
+      - eventBridge:
+          pattern:
+            source:
+              - aws.states
+            detail-type:
+              - Step Functions Execution Status Change
+            detail:
+              stateMachineArn:
+                - prefix: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:cirrus
+              status:
+                - SUCCEEDED
+                - FAILED
+    description: update the cirrus database with the execution state
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/update-state/**
+    module: lambdas/update-state
+    handler: lambda_function.lambda_handler
+  feed-rerun:
+    memorySize: 128
+    timeout: 900
+    description: Rerun items in the database
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/feed-rerun/**
+    module: lambdas/feed-rerun
+    handler: lambda_function.lambda_handler
+  feed-s3-inventory:
+    memorySize: 128
+    timeout: 900
+    description: Feed Sentinel AWS inventory data to Cirrus for cataloging
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/feed-s3-inventory/**
+    module: lambdas/feed-s3-inventory
+    handler: lambda_function.lambda_handler
+  feed-stac-api:
+    memorySize: 128
+    timeout: 900
+    description: Feed data from a STAC API to Cirrus for processing
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/feed-stac-api/**
+    module: lambdas/feed-stac-api
+    handler: lambda_function.lambda_handler
+  feed-stac-crawl:
+    memorySize: 128
+    timeout: 900
+    description: Crawl static STAC assets
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/feed-stac-crawl/**
+    module: lambdas/feed-stac-crawl
+    handler: lambda_function.lambda_handler
+  add-preview:
+    memorySize: 1024
+    timeout: 900
+    layers:
+      - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda:2
+      - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1
+    description: Create a preview and/or thumbnail from one or more assets
+    environment:
+      GDAL_DATA: /opt/share/gdal
+      PROJ_LIB: /opt/share/proj
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/add-preview/**
+    module: lambdas/add-preview
+    handler: lambda_function.lambda_handler
+  convert-to-cog:
+    memorySize: 1024
+    timeout: 900
+    layers:
+      - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda:2
+      - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1
+    description: Convert specified assets into Cloud Optimized GeoTIFFs
+    environment:
+      GDAL_DATA: /opt/share/gdal
+      PROJ_LIB: /opt/share/proj
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/convert-to-cog/**
+    module: lambdas/convert-to-cog
+    handler: lambda_function.lambda_handler
+  copy-assets:
+    memorySize: 768
+    timeout: 60
+    description: Copy specified assets from Item(s) to an S3 bucket
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/copy-assets/**
+    module: lambdas/copy-assets
+    handler: lambda_function.lambda_handler
+  post-batch:
+    memorySize: 128
+    timeout: 15
+    description: Post process batch job by copying input from S3
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/post-batch/**
+    module: lambdas/post-batch
+    handler: lambda_function.lambda_handler
+  pre-batch:
+    memorySize: 128
+    timeout: 15
+    description: Pre process batch job by copying input to S3
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/pre-batch/**
+    module: lambdas/pre-batch
+    handler: lambda_function.lambda_handler
+  publish:
+    memorySize: 128
+    timeout: 30
+    description: Publish resulting STAC Collections and Items to catalog, and optionally
+      SNS
+    environment:
+      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
+      CIRRUS_PUBLIC_CATALOG: false
+      CIRRUS_STAC_VERSION: 1.0.0-beta.2
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_STACK: ${self:service}-${self:provider.stage}
+      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
+      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/publish/**
+    module: lambdas/publish
+    handler: lambda_function.lambda_handler
+stepFunctions:
+  validate: true
+  stateMachines:
+    cog-archive:
+      name: ${self:service}-${self:provider.stage}-cog-archive
+      definition:
+        Comment: Create mirror with some cogified assets
+        StartAt: copy-assets-batch-or-lambda
+        States:
+          copy-assets-batch-or-lambda:
+            Type: Choice
+            Choices:
+              - Variable: $.process.tasks.copy-assets.batch
+                IsPresent: false
+                Next: copy-assets
+              - Variable: $.process.tasks.copy-assets.batch
+                BooleanEquals: false
+                Next: copy-assets
+              - Variable: $.process.tasks.copy-assets.batch
+                BooleanEquals: true
+                Next: copy-assets-pre-batch
+          copy-assets-pre-batch:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - pre-batch
+                - Arn
+            Next: copy-assets-batch
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          copy-assets-batch:
+            Type: Task
+            Resource: arn:aws:states:::batch:submitJob.sync
+            Parameters:
+              JobName: copy-assets-batch
+              JobQueue: '#{BasicSpotJobQueue}'
+              JobDefinition: '#{GeoLambdaAsBatchJob}'
+              Parameters:
+                lambda_function: ${self:service}-${self:provider.stage}-copy-assets
+                url.$: $.url
+            Next: copy-assets-post-batch
+            Retry:
+              - ErrorEquals:
+                  - Batch.AWSBatchException
+                IntervalSeconds: 10.0
+                BackoffRate: 2.0
+                MaxAttempts: 3
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          copy-assets-post-batch:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - post-batch
+                - Arn
+            Next: convert-to-cog-batch-or-lambda
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+          copy-assets:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - copy-assets
+                - Arn
+            Next: convert-to-cog-batch-or-lambda
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          convert-to-cog-batch-or-lambda:
+            Type: Choice
+            Choices:
+              - Variable: $.process.tasks.convert-to-cog.batch
+                IsPresent: false
+                Next: convert-to-cog
+              - Variable: $.process.tasks.convert-to-cog.batch
+                BooleanEquals: false
+                Next: convert-to-cog
+              - Variable: $.process.tasks.convert-to-cog.batch
+                BooleanEquals: true
+                Next: convert-to-cog-pre-batch
+          convert-to-cog-pre-batch:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - pre-batch
+                - Arn
+            Next: convert-to-cog-batch
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          convert-to-cog-batch:
+            Type: Task
+            Resource: arn:aws:states:::batch:submitJob.sync
+            Parameters:
+              JobName: convert-to-cog-batch
+              JobQueue: '#{CustomSpotJobQueue}'
+              JobDefinition: '#{GeoLambdaAsBatchJob}'
+              Parameters:
+                lambda_function: ${self:service}-${self:provider.stage}-convert-to-cog
+                url.$: $.url
+            Next: convert-to-cog-post-batch
+            Retry:
+              - ErrorEquals:
+                  - Batch.AWSBatchException
+                IntervalSeconds: 600
+                BackoffRate: 2.0
+                MaxAttempts: 4
+              - ErrorEquals:
+                  - States.TaskFailed
+                IntervalSeconds: 60
+                BackoffRate: 3.0
+                MaxAttempts: 2
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          convert-to-cog-post-batch:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - post-batch
+                - Arn
+            Next: publish
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+          convert-to-cog:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - convert-to-cog
+                - Arn
+            Next: publish
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          publish:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - publish
+                - Arn
+            End: true
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          failure:
+            Type: Fail
+    mirror:
+      name: ${self:service}-${self:provider.stage}-mirror
+      definition:
+        Comment: Mirror items with selected assets
+        StartAt: copy-assets-batch-or-lambda
+        States:
+          copy-assets-batch-or-lambda:
+            Type: Choice
+            Choices:
+              - Variable: $.process.tasks.copy-assets.batch
+                IsPresent: false
+                Next: copy-assets
+              - Variable: $.process.tasks.copy-assets.batch
+                BooleanEquals: false
+                Next: copy-assets
+              - Variable: $.process.tasks.copy-assets.batch
+                BooleanEquals: true
+                Next: copy-assets-pre-batch
+          copy-assets-pre-batch:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - pre-batch
+                - Arn
+            Next: copy-assets-batch
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          copy-assets-batch:
+            Type: Task
+            Resource: arn:aws:states:::batch:submitJob.sync
+            Parameters:
+              JobName: copy-assets-batch
+              JobQueue: '#{BasicSpotJobQueue}'
+              JobDefinition: '#{GeoLambdaAsBatchJob}'
+              Parameters:
+                lambda_function: ${self:service}-${self:provider.stage}-copy-assets
+                url.$: $.url
+            Next: copy-assets-post-batch
+            Retry:
+              - ErrorEquals:
+                  - Batch.AWSBatchException
+                  - States.TaskFailed
+                IntervalSeconds: 10.0
+                BackoffRate: 2.0
+                MaxAttempts: 3
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          copy-assets-post-batch:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - post-batch
+                - Arn
+            Next: publish
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          copy-assets:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - copy-assets
+                - Arn
+            Next: publish
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          publish:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - publish
+                - Arn
+            End: true
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          failure:
+            Type: Fail
+    mirror-with-preview:
+      name: ${self:service}-${self:provider.stage}-mirror-with-preview
+      definition:
+        Comment: Mirror items with selected assets
+        StartAt: copy-assets-batch-or-lambda
+        States:
+          copy-assets-batch-or-lambda:
+            Type: Choice
+            Choices:
+              - Variable: $.process.tasks.copy-assets.batch
+                IsPresent: false
+                Next: copy-assets
+              - Variable: $.process.tasks.copy-assets.batch
+                BooleanEquals: false
+                Next: copy-assets
+              - Variable: $.process.tasks.copy-assets.batch
+                BooleanEquals: true
+                Next: copy-assets-pre-batch
+          copy-assets-pre-batch:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - pre-batch
+                - Arn
+            Next: copy-assets-batch
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          copy-assets-batch:
+            Type: Task
+            Resource: arn:aws:states:::batch:submitJob.sync
+            Parameters:
+              JobName: copy-assets-batch
+              JobQueue: '#{BasicSpotJobQueue}'
+              JobDefinition: '#{GeoLambdaAsBatchJob}'
+              Parameters:
+                lambda_function: ${self:service}-${self:provider.stage}-copy-assets
+                url.$: $.url
+            Next: copy-assets-post-batch
+            Retry:
+              - ErrorEquals:
+                  - Batch.AWSBatchException
+                  - States.TaskFailed
+                IntervalSeconds: 10.0
+                BackoffRate: 2.0
+                MaxAttempts: 3
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          copy-assets-post-batch:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - post-batch
+                - Arn
+            Next: add-preview-batch-or-lambda
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          copy-assets:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - copy-assets
+                - Arn
+            Next: add-preview-batch-or-lambda
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          add-preview-batch-or-lambda:
+            Type: Choice
+            Choices:
+              - Variable: $.process.tasks.add-preview.batch
+                IsPresent: false
+                Next: add-preview
+              - Variable: $.process.tasks.add-preview.batch
+                BooleanEquals: false
+                Next: add-preview
+              - Variable: $.process.tasks.add-preview.batch
+                BooleanEquals: true
+                Next: add-preview-pre-batch
+          add-preview-pre-batch:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - pre-batch
+                - Arn
+            Next: add-preview-batch
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          add-preview-batch:
+            Type: Task
+            Resource: arn:aws:states:::batch:submitJob.sync
+            Parameters:
+              JobName: add-preview-batch
+              JobQueue: '#{BasicSpotJobQueue}'
+              JobDefinition: '#{GeoLambdaAsBatchJob}'
+              Parameters:
+                lambda_function: ${self:service}-${self:provider.stage}-add-preview
+                url.$: $.url
+            Next: add-preview-post-batch
+            Retry:
+              - ErrorEquals:
+                  - Batch.AWSBatchException
+                  - States.TaskFailed
+                IntervalSeconds: 10.0
+                BackoffRate: 2.0
+                MaxAttempts: 3
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          add-preview-post-batch:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - post-batch
+                - Arn
+            Next: publish
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          add-preview:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - add-preview
+                - Arn
+            Next: publish
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          publish:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - publish
+                - Arn
+            End: true
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          failure:
+            Type: Fail
+    publish-only:
+      name: ${self:service}-${self:provider.stage}-publish-only
+      definition:
+        Comment: Simple example that just published input Collections and items
+        StartAt: publish
+        States:
+          publish:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - publish
+                - Arn
+            End: true
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          failure:
+            Type: Fail
+resources:
+  Description: Cirrus STAC Processing Framework
+  Resources:
+    BasicOnDemandComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeEnvironmentName: '#{AWS::StackName}-basic-ondemand'
+        ComputeResources:
+          MaxvCpus: ${self:custom.batch.BasicComputeEnvironments.MaxvCpus}
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: EC2
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name: 'Batch Instance - #{AWS::StackName}'
+          DesiredvCpus: 0
+        State: ENABLED
+    BasicOnDemandJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: BasicOnDemandComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName: '#{AWS::StackName}-basic-ondemand'
+    BasicSpotComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeEnvironmentName: '#{AWS::StackName}-basic-spot'
+        ComputeResources:
+          MaxvCpus: ${self:custom.batch.BasicComputeEnvironments.MaxvCpus}
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: SPOT
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          SpotIamFleetRole:
+            Fn::GetAtt:
+              - EC2SpotRole
+              - Arn
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name: 'Batch Instance - #{AWS::StackName}'
+          DesiredvCpus: 0
+        State: ENABLED
+    BasicSpotJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: BasicSpotComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName: '#{AWS::StackName}-basic-spot'
+    GeoLambdaAsBatchJob:
+      Type: AWS::Batch::JobDefinition
+      Properties:
+        JobDefinitionName: '#{AWS::StackName}-geolambda-as-batch'
+        Type: Container
+        Parameters:
+          lambda_function: ''
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - Ref::lambda_function
+            - Ref::url
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
+            - Name: CIRRUS_BUCKET
+              Value: ${self:provider.environment.CIRRUS_BUCKET}
+            - Name: CIRRUS_DATA_BUCKET
+              Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
+            - Name: CIRRUS_CATALOG_BUCKET
+              Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
+            - Name: CIRRUS_STATE_DB
+              Value: ${self:provider.environment.CIRRUS_STATE_DB}
+            - Name: CIRRUS_STACK
+              Value: ${self:provider.environment.CIRRUS_STACK}
+            - Name: CIRRUS_QUEUE_TOPIC_ARN
+              Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
+            - Name: CIRRUS_PROCESS_QUEUE
+              Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
+            - Name: BASE_WORKFLOW_ARN
+              Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
+            - Name: AWS_DEFAULT_REGION
+              Value: ${self:provider.region}
+            - Name: AWS_REGION
+              Value: ${self:provider.region}
+            - Name: GDAL_DATA
+              Value: /usr/local/share/gdal
+            - Name: PROJ_LIB
+              Value: /usr/local/share/proj
+          Memory: ${self:custom.batch.GeoLambdaAsBatchJob.Memory}
+          Vcpus: ${self:custom.batch.GeoLambdaAsBatchJob.Vcpus}
+          Image: cirrusgeo/run-geolambda:0.2.1
+        RetryStrategy:
+          Attempts: 1
+    LambdaAsBatchJob:
+      Type: AWS::Batch::JobDefinition
+      Properties:
+        JobDefinitionName: '#{AWS::StackName}-lambda-as-batch'
+        Type: Container
+        Parameters:
+          lambda_function: ''
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - Ref::lambda_function
+            - Ref::url
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
+            - Name: CIRRUS_BUCKET
+              Value: ${self:provider.environment.CIRRUS_BUCKET}
+            - Name: CIRRUS_DATA_BUCKET
+              Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
+            - Name: CIRRUS_CATALOG_BUCKET
+              Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
+            - Name: CIRRUS_STATE_DB
+              Value: ${self:provider.environment.CIRRUS_STATE_DB}
+            - Name: CIRRUS_STACK
+              Value: ${self:provider.environment.CIRRUS_STACK}
+            - Name: CIRRUS_QUEUE_TOPIC_ARN
+              Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
+            - Name: CIRRUS_PROCESS_QUEUE
+              Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
+            - Name: BASE_WORKFLOW_ARN
+              Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
+            - Name: AWS_DEFAULT_REGION
+              Value: ${self:provider.region}
+            - Name: AWS_REGION
+              Value: ${self:provider.region}
+          Memory: ${self:custom.batch.LambdaAsBatchJob.Memory}
+          Vcpus: ${self:custom.batch.LambdaAsBatchJob.Vcpus}
+          Image: cirrusgeo/run-lambda:0.2.1
+        RetryStrategy:
+          Attempts: 1
+    CustomOnDemandComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeEnvironmentName: '#{AWS::StackName}-custom-ondemand'
+        ComputeResources:
+          ImageId: ${self:custom.batch.CustomComputeEnvironments.ImageId}
+          MaxvCpus: ${self:custom.batch.CustomComputeEnvironments.MaxvCpus}
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: EC2
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name: 'Batch Instance - #{AWS::StackName}'
+          DesiredvCpus: 0
+        State: ENABLED
+    CustomOnDemandJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: CustomOnDemandComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName: '#{AWS::StackName}-custom-ondemand'
+    CustomSpotComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeEnvironmentName: '#{AWS::StackName}-custom-spot'
+        ComputeResources:
+          ImageId: ${self:custom.batch.CustomComputeEnvironments.ImageId}
+          MaxvCpus: ${self:custom.batch.CustomComputeEnvironments.MaxvCpus}
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: SPOT
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          SpotIamFleetRole:
+            Fn::GetAtt:
+              - EC2SpotRole
+              - Arn
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name: 'Batch Instance - #{AWS::StackName}'
+          DesiredvCpus: 0
+        State: ENABLED
+    CustomSpotJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: CustomSpotComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName: '#{AWS::StackName}-custom-spot'
+    Data:
+      Type: AWS::S3::Bucket
+    Catalogs:
+      Type: AWS::S3::Bucket
+      Properties:
+        LifecycleConfiguration:
+          Rules:
+            - ExpirationInDays: 10
+              Prefix: batch/
+              Status: Enabled
+            - ExpirationInDays: 10
+              Prefix: payloads/
+              Status: Enabled
+    QueueTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-${self:provider.stage}-queue
+    PublishTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-${self:provider.stage}-publish
+    FailedTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-${self:provider.stage}-failed
+    ProcessQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-process
+        VisibilityTimeout: 1000
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt:
+              - ProcessDeadLetterQueue
+              - Arn
+          maxReceiveCount: 5
+    ProcessDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-process-dead-letter
+    ProcessQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - Ref: ProcessQueue
+        PolicyDocument:
+          Statement:
+            - Sid: allow-sqs-sendmessage
+              Effect: Allow
+              Principal:
+                AWS: '*'
+              Action: SQS:SendMessage
+              Resource:
+                Fn::GetAtt:
+                  - ProcessQueue
+                  - Arn
+              Condition:
+                ArnEquals:
+                  aws:SourceArn:
+                    - Ref: QueueTopic
+                    - Ref: PublishTopic
+    ProcessQueueSubsciption:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint:
+          Fn::GetAtt:
+            - ProcessQueue
+            - Arn
+        Protocol: sqs
+        Region: '#{AWS::Region}'
+        TopicArn:
+          Ref: QueueTopic
+    StateTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: collections_workflow
+            AttributeType: S
+          - AttributeName: itemids
+            AttributeType: S
+          - AttributeName: state_updated
+            AttributeType: S
+          - AttributeName: updated
+            AttributeType: S
+        KeySchema:
+          - AttributeName: collections_workflow
+            KeyType: HASH
+          - AttributeName: itemids
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: state_updated
+            KeySchema:
+              - AttributeName: collections_workflow
+                KeyType: HASH
+              - AttributeName: state_updated
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: updated
+            KeySchema:
+              - AttributeName: collections_workflow
+                KeyType: HASH
+              - AttributeName: updated
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:service}-${self:provider.stage}-state
+    BatchInstanceProfile:
+      Type: AWS::IAM::InstanceProfile
+      Properties:
+        Path: /
+        Roles:
+          - Ref: BatchInstanceRole
+    BatchInstanceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - ec2.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        Path: /
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+        Policies:
+          - PolicyName: Cirrus
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - s3:*
+                  Resource:
+                    - '*'
+                - Effect: Allow
+                  Action:
+                    - lambda:GetFunction
+                  Resource:
+                    - arn:aws:lambda:*:*:function:${self:service}-${self:provider.stage}-*
+                - Effect: Allow
+                  Action:
+                    - dynamodb:Query
+                    - dynamodb:Scan
+                    - dynamodb:GetItem
+                    - dynamodb:PutItem
+                    - dynamodb:UpdateItem
+                    - dynamodb:DeleteItem
+                  Resource:
+                    - Fn::GetAtt:
+                        - StateTable
+                        - Arn
+                    - Fn::Join:
+                        - ''
+                        - - Fn::GetAtt:
+                              - StateTable
+                              - Arn
+                          - /index/*
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource: arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
+                - Effect: Allow
+                  Action: SNS:Publish
+                  Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:cirrus*
+                - Effect: Allow
+                  Action:
+                    - sqs:GetQueueUrl
+                    - sqs:SendMessage
+                    - sqs:ReceiveMessage
+                    - sqs:DeleteMessage
+                  Resource:
+                    - Fn::GetAtt:
+                        - ProcessQueue
+                        - Arn
+                - Effect: Allow
+                  Action:
+                    - states:StartExecution
+                  Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
+    BatchServiceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - batch.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        Path: /
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+    EC2SpotRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - spotfleet.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        Path: /
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole
+  Outputs:
+    CirrusQueueSnsArn:
+      Value:
+        Ref: QueueTopic
+package:
+  individually: true
+  exclude:
+    - '**/*'
+plugins:
+  - serverless-python-requirements
+  - serverless-step-functions
+  - serverless-pseudo-parameters
+  - serverless-iam-roles-per-function

@@ -16,6 +16,9 @@ with open(os.path.join(HERE, 'README.md'), encoding='utf-8') as f:
 
 with open(os.path.join(HERE, 'requirements.txt'), encoding='utf-8') as f:
     reqs = f.read().split('\n')
+with open(os.path.join(HERE, 'requirements-lib.txt'), encoding='utf-8') as f:
+    lib_reqs = f.read().split('\n')
+
 
 install_requires = [x.strip() for x in reqs if 'git+' not in x]
 dependency_links = [x.strip().replace('git+', '') for x in reqs if 'git+' not in x]
@@ -40,6 +43,9 @@ setup(
     author='Matthew Hanson (matthewhanson), Jarrett Keifer (jkeifer), Element 84',
     url='https://github.com/cirrus-geo/cirrus',
     install_requires=install_requires,
+    extras_require={
+        'lib': lib_reqs,
+    },
     dependency_links=dependency_links,
         classifiers=[
         'Intended Audience :: Developers',

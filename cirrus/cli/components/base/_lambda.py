@@ -1,6 +1,7 @@
 import logging
 import click
 import textwrap
+import copy
 
 from typing import List
 from pathlib import Path
@@ -25,7 +26,6 @@ class Lambda(Component):
         # simpler if we know we are batch disabled for all Lambdas
         self.batch_enabled = False
         self.description = self.config.get('description', '')
-        self.python_requirements = self.config.pop('python_requirements', [])
 
         self.lambda_config = self.config.get('lambda', NamedYamlable())
         self.lambda_enabled = self.lambda_config.pop('enabled', True) and self._enabled and bool(self.lambda_config)
@@ -38,6 +38,14 @@ class Lambda(Component):
         self.lambda_config.package = {}
         self.lambda_config.package.include = []
         self.lambda_config.package.include.append(f'./lambdas/{self.name}/**')
+
+        if not hasattr(self.lambda_config, 'pythonRequirements'):
+            self.lambda_config.pythonRequirements = {}
+        self.lambda_config.pythonRequirements['include'] = sorted(list({
+            req for req in
+            self.lambda_config.pythonRequirements.get('include', [])
+            + list(self.project.config.custom.pythonRequirements.include)
+        }))
 
         if not hasattr(self.lambda_config, 'module'):
             self.lambda_config.module = f'lambdas/{self.name}'
@@ -61,10 +69,17 @@ class Lambda(Component):
         click.echo('Lambda config:')
         click.echo(textwrap.indent(self.lambda_config.to_yaml(), '  '))
 
+    def copy_for_config(self):
+        lc = copy.deepcopy(self.lambda_config)
+        lc.pop('pythonRequirements', None)
+        return lc
+
     def get_outdir(self, project_build_dir: Path) -> Path:
         return project_build_dir.joinpath(self.lambda_config.module)
 
-    def link_to_outdir(self, outdir: Path, project_python_requirements: List[str]) -> None:
+    def link_to_outdir(self, outdir: Path) -> None:
+        import shutil
+
         try:
             outdir.mkdir(parents=True)
         except FileExistsError:
@@ -77,11 +92,16 @@ class Lambda(Component):
             # TODO: could have a problem on windows
             # if lambda has a directory in it
             # probably affects handler default too
-            outdir.joinpath(_file.name).symlink_to(_file)
+            if _file.is_dir():
+                shutil.copytree(_file, outdir.joinpath(_file.name))
+            else:
+                shutil.copyfile(_file, outdir.joinpath(_file.name))
 
-        reqs = self.python_requirements + project_python_requirements
         outdir.joinpath('requirements.txt').write_text(
-            '\n'.join(reqs),
+            ''.join(
+                [f'{req}\n' for req in
+                 self.lambda_config.pythonRequirements.get('include', [])],
+            ),
         )
 
     def clean_outdir(self, outdir: Path):

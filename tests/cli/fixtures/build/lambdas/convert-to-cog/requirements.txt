@@ -1,0 +1,5 @@
+boto3-utils~=0.3.2
+python-json-logger~=2.0
+rasterio==1.2.8
+requests>=2.24.0
+rio-cogeo~=1.1.10

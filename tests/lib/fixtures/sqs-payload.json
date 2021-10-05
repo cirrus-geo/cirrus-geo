@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "bad438c7-21be-49eb-ad1f-4dfa864f2e1a",
+            "receiptHandle": "AQEBAa7BK1X4PnCLnJN4PbJMIEntxcLz6tvFpPQfFbMfS1d6AgiixpoOahaahEhmS2IyxEWuPLjjAjdCObsAwXDSjkLGH/wjN1nM2l2skfvQVH4iG3xPUME+skaUKAnrsuhiOHUTIzc+0pp1wUzC3fq41aKpvpIEr3foFuLqs6B8y9w2CocjXfGvrRHD2M1xelRB7J1avVqWVyRhDkjS+DjnxbZZsGoUxNNejOqb375lA8fMeH7hr5y3H7l70RJwyYvK+UbmJyjb56kIuckLM4bLBCzYC/eJiKTih+sKDvHlO3mmSg8t7vOl0a3buRbwmpt3woX32dHyaLcqsNK6SAuzfbi9Mebn/mZcO5oYRK6k1gJGMmAzU9lqEOHAQcZqU/HHpmLGOJYdyfKT9qolXsHtUg==",
+            "body": "{\n  \"Type\" : \"Notification\",\n  \"MessageId\" : \"8dbd53ef-41a8-5515-86b9-0bf48d2d6be5\",\n  \"TopicArn\" : \"arn:aws:sns:us-west-2:608149789419:cirrus-v0-queue\",\n  \"Message\" : \"{\\\"type\\\": \\\"FeatureCollection\\\", \\\"features\\\": [{\\\"type\\\": \\\"Feature\\\", \\\"id\\\": \\\"tiles-17-H-QD-2020-11-3-0\\\", \\\"collection\\\": \\\"sentinel-s2-l2a-aws\\\", \\\"properties\\\": {}, \\\"assets\\\": {\\\"json\\\": {\\\"href\\\": \\\"https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/17/H/QD/2020/11/3/0/tileInfo.json\\\"}}}], \\\"process\\\": {\\\"description\\\": \\\"Convert Original Sentinel-2 metadata to STAC and publish\\\", \\\"input_collections\\\": [\\\"sentinel-s2-l2a-aws\\\"], \\\"workflow\\\": \\\"publish-sentinel\\\", \\\"output_options\\\": {\\\"path_template\\\": \\\"/${collection}/${sentinel:utm_zone}/${sentinel:latitude_band}/${sentinel:grid_square}/${year}/${month}/${id}\\\", \\\"collections\\\": {\\\"sentinel-s2-l1c\\\": \\\".*L1C\\\", \\\"sentinel-s2-l2a\\\": \\\".*L2A\\\"}}, \\\"tasks\\\": {\\\"publish\\\": {\\\"public\\\": true}}, \\\"replace\\\": false}}\",\n  \"Timestamp\" : \"2020-11-03T21:23:17.267Z\",\n  \"SignatureVersion\" : \"1\",\n  \"Signature\" : \"Lr6SIeC8n4elCB1ga28VlWdOdUH2KBUkC7gl7V5e2wN/P7nMo1picd/5ZaYgjaCa83z3zq5R6EHXL91qQQliYPV1QpNvbrXUKSRFfF2/QywktFZs1GcE7DpPL+9fm9QPBouAMqNhwlteYgNefaOS2CXkF/KuSBTB2y26aerDJlrKNY8k3RKz1t0SXfuYszDB/ln45LHio4zjCnJrreqqs4Vo88XBCjxoRviqCz8PZ9Ew3W8qr1/46A5mOAg+CGg9ytAXkl2YZ3T0DbCfHVX8J7wBTgdLiMHsZt26Y/m7W8J0JDRtJ4Cc8SjK3tTNfeFo9NHzFKwG76eW1fiNyWU9TQ==\",\n  \"SigningCertURL\" : \"https://sns.us-west-2.amazonaws.com/SimpleNotificationService-a86cb10b4e1f29c941702d737128f7b6.pem\",\n  \"UnsubscribeURL\" : \"https://sns.us-west-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-west-2:608149789419:cirrus-v0-queue:54f05a6e-891b-4391-9333-5609d92ed9aa\"\n}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1604438597302",
+                "SenderId": "AIDAIYLAVTDLUXBIEIX46",
+                "ApproximateFirstReceiveTimestamp": "1604438597304"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "119e8a95e954779290de96d0ea69bec3",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:us-west-2:608149789419:cirrus-v0-process",
+            "awsRegion": "us-west-2"
+        }
+    ]
+}

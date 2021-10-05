@@ -9,3 +9,4 @@ dist/
 .env
 packages/
 *.egg-info/
+.coverage
