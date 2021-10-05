@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: figure out most basic permissions
-lambda_base = '''description: '{description}'
+lambda_base = '''description: {description}
 iamRoleStatements: []
 python_requirements: []
 environment: {{}}

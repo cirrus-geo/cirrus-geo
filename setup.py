@@ -31,7 +31,7 @@ package_data = {
 
 
 setup(
-    name='cirrus',
+    name='cirrus-geo',
     packages=find_namespace_packages(exclude=['docs', 'test*']),
     version=VERSION,
     description=DESC,
