@@ -37,6 +37,11 @@ class Config(NamedYamlable):
             Outputs={},
         )
 
+        self.package = {}
+        self.package.individually = True
+        self.package.exclude = []
+        self.package.exclude.append('**/*')
+
         # populate required plugin list
         try:
             self.plugins.extend(SERVERLESS_PLUGINS.keys())
