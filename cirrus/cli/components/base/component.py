@@ -254,7 +254,7 @@ class Component(metaclass=ComponentMeta):
                 f"Component {cls.type} does not support creation"
             )
         path = cls.user_dir.joinpath(name)
-        return cls(path, load=False)
+        return cls(path, description, load=False)
 
     @classmethod
     def create(cls, name: str, description: str) -> Type[T]:
