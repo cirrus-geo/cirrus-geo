@@ -13,7 +13,7 @@ from cirruslib import Catalog, get_task_logger
 LAMBDA_TYPE = '{component_type}'
 
 
-def handler(payload, context={{}}):
+def lambda_handler(payload, context={{}}):
     catalog = Catalog.from_payload(payload)
     logger = get_task_logger(f'{{LAMBDA_TYPE}}.{name}', catalog=catalog)
     return catalog
@@ -21,7 +21,7 @@ def handler(payload, context={{}}):
 
 
 class PythonHandler(ComponentFile):
-    def __init__(self, *args, name='handler.py', **kwargs):
+    def __init__(self, *args, name='lambda_function.py', **kwargs):
         super().__init__(*args, name=name, **kwargs)
 
     @staticmethod

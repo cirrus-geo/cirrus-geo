@@ -92,7 +92,7 @@ def run(params, url, sleep=None, process=None):
             run(params, url, process=process)
 
 
-def handler(event, context={}):
+def lambda_handler(event, context={}):
     logger.debug('Event: %s' % json.dumps(event))
 
     url = event.get('url')
@@ -134,4 +134,4 @@ if __name__ == "__main__":
 
     with open(args.payload) as f:
         payload = json.loads(f.read())
-    handler(payload)
+    lambda_handler(payload)

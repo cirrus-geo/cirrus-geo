@@ -13,7 +13,7 @@ PUBLISH_TOPICS = getenv('CIRRUS_PUBLISH_SNS', None)
 statedb = StateDB()
 
 
-def handler(payload, context):
+def lambda_handler(payload, context):
     catalog = Catalog.from_payload(payload)
     logger = get_task_logger("task.publish", catalog=catalog)
 

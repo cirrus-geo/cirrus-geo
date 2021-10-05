@@ -13,7 +13,7 @@ from rio_cogeo.profiles import cog_profiles
 from rasterio.warp import calculate_default_transform, reproject as _reproject, Resampling
 
 
-def handler(payload, context={}):
+def lambda_handler(payload, context={}):
     catalog = Catalog.from_payload(payload)
     logger = get_task_logger("task.add-preview", catalog=catalog)
 

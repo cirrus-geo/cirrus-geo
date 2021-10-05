@@ -12,7 +12,7 @@ from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
 
 
-def handler(payload, context={}):
+def lambda_handler(payload, context={}):
     catalog = Catalog.from_payload(payload)
     logger = get_task_logger("task.convert-to-cog", catalog=catalog)
 

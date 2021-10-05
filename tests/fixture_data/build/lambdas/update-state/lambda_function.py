@@ -196,7 +196,7 @@ def get_error_from_batch(logname):
         return "Exception", "Unable to get Error Log"
 
 
-def handler(payload, context={}):
+def lambda_handler(payload, context={}):
     logger.debug(payload)
     catalog, status, error = parse_payload(payload)
 

@@ -38,7 +38,7 @@ class Lambda(Component):
         if not hasattr(self.lambda_config, 'module'):
             self.lambda_config.module = f'lambdas/{self.name}'
         if not hasattr(self.lambda_config, 'handler'):
-            self.lambda_config.handler = 'handler.handler'
+            self.lambda_config.handler = 'lambda_function.lambda_handler'
 
     @property
     def enabled(self):
