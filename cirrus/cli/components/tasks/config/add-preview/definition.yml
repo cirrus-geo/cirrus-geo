@@ -3,7 +3,7 @@ environment:
   GDAL_DATA: /opt/share/gdal
   PROJ_LIB: /opt/share/proj
 python_requirements:
-  - rasterio==1.1.3
+  - rasterio==1.2.8
   - rio-cogeo~=1.1.10
 lambda:
   memorySize: 1024
