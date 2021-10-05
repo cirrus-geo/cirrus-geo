@@ -136,8 +136,6 @@ custom:
       - urllib3-*/**
       - jmespath/**
       - jmespath-*/**
-package:
-  individually: true
 functions:
   api:
     memorySize: 128
@@ -166,6 +164,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/api/**
     module: lambdas/api
     handler: lambda_function.lambda_handler
   process:
@@ -194,6 +195,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/process/**
     module: lambdas/process
     handler: lambda_function.lambda_handler
   publish-test:
@@ -218,6 +222,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/publish-test/**
     module: lambdas/publish-test
     handler: lambda_function.lambda_handler
   update-state:
@@ -253,6 +260,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/update-state/**
     module: lambdas/update-state
     handler: lambda_function.lambda_handler
   feed-rerun:
@@ -275,6 +285,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/feed-rerun/**
     module: lambdas/feed-rerun
     handler: lambda_function.lambda_handler
   feed-s3-inventory:
@@ -297,6 +310,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/feed-s3-inventory/**
     module: lambdas/feed-s3-inventory
     handler: lambda_function.lambda_handler
   feed-stac-api:
@@ -319,6 +335,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/feed-stac-api/**
     module: lambdas/feed-stac-api
     handler: lambda_function.lambda_handler
   feed-stac-crawl:
@@ -341,6 +360,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/feed-stac-crawl/**
     module: lambdas/feed-stac-crawl
     handler: lambda_function.lambda_handler
   add-preview:
@@ -368,6 +390,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/add-preview/**
     module: lambdas/add-preview
     handler: lambda_function.lambda_handler
   convert-to-cog:
@@ -395,6 +420,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/convert-to-cog/**
     module: lambdas/convert-to-cog
     handler: lambda_function.lambda_handler
   copy-assets:
@@ -417,6 +445,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/copy-assets/**
     module: lambdas/copy-assets
     handler: lambda_function.lambda_handler
   post-batch:
@@ -439,6 +470,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/post-batch/**
     module: lambdas/post-batch
     handler: lambda_function.lambda_handler
   pre-batch:
@@ -461,6 +495,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/pre-batch/**
     module: lambdas/pre-batch
     handler: lambda_function.lambda_handler
   publish:
@@ -484,6 +521,9 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    package:
+      include:
+        - ./lambdas/publish/**
     module: lambdas/publish
     handler: lambda_function.lambda_handler
 stepFunctions:
@@ -1509,6 +1549,10 @@ resources:
     CirrusQueueSnsArn:
       Value:
         Ref: QueueTopic
+package:
+  individually: true
+  exclude:
+    - '**/*'
 plugins:
   - serverless-python-requirements
   - serverless-step-functions
