@@ -132,6 +132,3 @@ custom:
       - 'urllib3-*/**'
       - 'jmespath/**'
       - 'jmespath-*/**'
-
-package:
-  individually: true

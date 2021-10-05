@@ -35,6 +35,10 @@ class Lambda(Component):
         if self.project and self.project.config:
             self.lambda_config.environment.update(self.project.config.provider.environment)
 
+        self.lambda_config.package = {}
+        self.lambda_config.package.include = []
+        self.lambda_config.package.include.append(f'./lambdas/{self.name}/**')
+
         if not hasattr(self.lambda_config, 'module'):
             self.lambda_config.module = f'lambdas/{self.name}'
         if not hasattr(self.lambda_config, 'handler'):
