@@ -36,6 +36,7 @@ setup(
     version=VERSION,
     description=DESC,
     long_description=readme,
+    long_description_content_type='text/markdown',
     author='Matthew Hanson (matthewhanson), Jarrett Keifer (jkeifer), Element 84',
     url='https://github.com/cirrus-geo/cirrus',
     install_requires=install_requires,
