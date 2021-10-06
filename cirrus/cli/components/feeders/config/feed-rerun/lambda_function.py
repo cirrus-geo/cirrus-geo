@@ -3,15 +3,11 @@ import boto3
 import json
 import logging
 import sys
-import uuid
 
-from boto3utils import s3
 from cirruslib.statedb import StateDB
 from cirruslib.utils import submit_batch_job
-from cirruslib import Catalogs
-from json import dumps
 from os import getenv
-from traceback import format_exc
+
 
 # envvars
 SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN')
@@ -52,7 +48,12 @@ def lambda_handler(payload, context={}):
         submit_batch_job(payload, context.invoked_function_arn, name='rerun')
         return
 
-    items = statedb.get_items(f"{collections}_{workflow}", state=state, since=since, limit=limit)
+    items = statedb.get_items(
+        f"{collections}_{workflow}",
+        state=state,
+        since=since,
+        limit=limit,
+    )
 
     nitems = len(items)
     logger.debug(f"Rerunning {nitems} catalogs")

@@ -1,14 +1,11 @@
 import argparse
 import boto3
 import gzip
-import itertools
 import json
 import io
 import logging
 import re
-import requests
 import sys
-import uuid
 from datetime import datetime
 from dateutil.parser import parse
 from os import getenv, path as op
@@ -39,8 +36,8 @@ def read_orc_inventory_file(filename, keys):
 def read_csv_inventory_file(filename, keys):
     gz = gzip.open(filename, 'rb')
     for line in io.BufferedReader(gz):
-        l = line.decode('utf-8').replace('"', '').replace('\n', '')
-        record = {keys[i].lower(): v for i, v in enumerate(l.split(','))}
+        line = line.decode('utf-8').replace('"', '').replace('\n', '')
+        record = {keys[i].lower(): v for i, v in enumerate(line.split(','))}
         yield record
     gz.close()
 
@@ -48,7 +45,7 @@ def read_csv_inventory_file(filename, keys):
 def read_inventory_file(fname, keys, prefix=None, suffix=None,
                         start_date=None, end_date=None,
                         datetime_regex=None, datetime_key='LastModifiedDate'):
-    logger.debug('Reading inventory file %s' % (fname))
+    logger.debug('Reading inventory file %s', fname)
     filename = s3().download(fname, path='/tmp')
     ext = op.splitext(fname)[-1]
     if ext == ".gz":
@@ -96,7 +93,7 @@ def read_inventory_file(fname, keys, prefix=None, suffix=None,
 
 
 def lambda_handler(payload, context={}):
-    logger.info('Payload: %s' % json.dumps(payload))
+    logger.info('Payload: %s', json.dumps(payload))
 
     # get payload variables
     inventory_url = payload.pop('inventory_url', None)
@@ -120,7 +117,11 @@ def lambda_handler(payload, context={}):
 
         # get list of inventory files
         files = manifest.get('files')
-        logger.info('Getting latest inventory (%s files) from %s' % (len(files), inventory_url))
+        logger.info(
+            'Getting latest inventory (%s files) from %s',
+            len(files),
+            inventory_url,
+        )
 
         submitted_urls = []
         njobs = 0
@@ -134,7 +135,12 @@ def lambda_handler(payload, context={}):
                     'process': process
                 }
                 batch_payload.update(payload)
-                submit_batch_job(batch_payload, context.invoked_function_arn, definition='lambda-as-batch', name='feed-s3-inventory')
+                submit_batch_job(
+                    batch_payload,
+                    context.invoked_function_arn,
+                    definition='lambda-as-batch',
+                    name='feed-s3-inventory',
+                )
                 submitted_urls = []
                 njobs += 1
                 # stop if max batches reached (used for testing)
@@ -147,9 +153,14 @@ def lambda_handler(payload, context={}):
                 'process': process
             }
             batch_payload.update(payload)
-            submit_batch_job(batch_payload, context.invoked_function_arn, definition='lambda-as-batch', name='feed-s3-inventory')
+            submit_batch_job(
+                batch_payload,
+                context.invoked_function_arn,
+                definition='lambda-as-batch',
+                name='feed-s3-inventory',
+            )
             njobs += 1
-        logger.info(f"Submitted {njobs} batch jobs")
+        logger.info("Submitted %s batch jobs", njobs)
         return njobs
 
     # process inventory files (assumes this is batch!)
@@ -161,7 +172,7 @@ def lambda_handler(payload, context={}):
     catids = []
     if inventory_files and keys and process:
         # filter filenames
-        logger.info(f"Parsing {len(inventory_files)} inventory files")
+        logger.info("Parsing %s inventory files", len(inventory_files))
         for f in inventory_files:
             for url in read_inventory_file(f, keys, **payload):
                 parts = s3session.urlparse(url)
@@ -194,11 +205,20 @@ def lambda_handler(payload, context={}):
                 # feed to cirrus through SNS topic
                 SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(catalog))
                 if (len(catids) % 1000) == 0:
-                    logger.debug(f"Published {len(catids)} catalogs to {SNS_TOPIC}: {json.dumps(catalog)}")
+                    logger.debug(
+                        "Published %s catalogs to %s: %s",
+                        len(catids),
+                        SNS_TOPIC,
+                        json.dumps(catalog),
+                    )
 
                 catids.append(item['id'])
 
-        logger.info(f"Published {len(catids)} catalogs from {len(inventory_files)} inventory files")
+        logger.info(
+            "Published %s catalogs from %s inventory files",
+            len(catids),
+            len(inventory_files),
+        )
         return catids
 
 

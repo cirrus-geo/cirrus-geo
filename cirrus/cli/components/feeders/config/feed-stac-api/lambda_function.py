@@ -5,14 +5,11 @@ import json
 import logging
 import math
 import os
-import requests
 import sys
 import time
-import uuid
 from copy import deepcopy
 from dateutil.parser import parse
 
-from boto3utils import s3
 from cirruslib.utils import submit_batch_job
 from satsearch import Search
 

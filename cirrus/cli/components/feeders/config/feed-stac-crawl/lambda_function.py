@@ -1,19 +1,11 @@
 import argparse
 import boto3
-import datetime
 import json
 import logging
-import math
 import os
-import requests
 import sys
-import time
-import uuid
 
-from boto3utils import s3
-from copy import deepcopy
 from cirruslib.utils import submit_batch_job
-from dateutil.parser import parse
 from pystac import Catalog
 
 # envvars
@@ -35,7 +27,12 @@ def lambda_handler(event, context={}):
     process = event['process']
 
     if batch and hasattr(context, "invoked_function_arn"):
-        submit_batch_job(event, context.invoked_function_arn, definition='lambda-as-batch', name='feed-stac-crawl')
+        submit_batch_job(
+            event,
+            context.invoked_function_arn,
+            definition='lambda-as-batch',
+            name='feed-stac-crawl',
+        )
         return
 
     cat = Catalog.from_file(url)

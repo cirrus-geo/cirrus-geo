@@ -2,10 +2,10 @@ import json
 import logging
 import os
 from copy import deepcopy
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 from boto3utils import s3
-from cirruslib import StateDB, stac, STATES
+from cirruslib import StateDB, STATES
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def create_link(url, title, rel, media_type='application/json'):
 
 def get_root(root_url):
     cat_url = f"s3://{DATA_BUCKET}/catalog.json"
-    logger.debug(f"Root catalog: {cat_url}")
+    logger.debug("Root catalog: %s", cat_url)
     cat = s3().read_json(cat_url)
 
     links = []
@@ -49,7 +49,14 @@ def get_root(root_url):
     for col in workflows:
         for wf in workflows[col]:
             name = f"{col} - {wf}"
-            link = create_link(urljoin(root_url, f"{col}/workflow-{wf}"), name, 'child')
+            link = create_link(
+                urljoin(
+                    root_url,
+                    f"{col}/workflow-{wf}",
+                ),
+                name,
+                'child',
+            )
             links.append(link)
 
     links.insert(0, create_link(root_url, "home", "self"))
@@ -66,10 +73,15 @@ def get_root(root_url):
 
 def summary(collections_workflow, since, limit):
     parts = collections_workflow.rsplit('_', maxsplit=1)
-    logger.debug(f"Getting summary for {collections_workflow}")
+    logger.debug("Getting summary for %s", collections_workflow)
     counts = {}
     for s in STATES:
-        counts[s] = statedb.get_counts(collections_workflow, state=s, since=since, limit=limit)
+        counts[s] = statedb.get_counts(
+            collections_workflow,
+            state=s,
+            since=since,
+            limit=limit,
+        )
     return {
         "collections": parts[0],
         "workflow": parts[1],
@@ -78,7 +90,7 @@ def summary(collections_workflow, since, limit):
 
 
 def lambda_handler(event, context):
-    logger.debug('Event: %s' % json.dumps(event))
+    logger.debug('Event: %s', json.dumps(event))
 
     # get request URL
     domain = event.get('requestContext', {}).get('domainName', '')
@@ -103,11 +115,11 @@ def lambda_handler(event, context):
     if catid.startswith('collections'):
         legacy = True
         catid = catid.replace('collections/', '', 1)
-    logger.info(f"Path parameters: {catid}")
+    logger.info("Path parameters: %s", catid)
 
     # get query parameters
     qparams = event['queryStringParameters'] if event.get('queryStringParameters') else {}
-    logger.info(f"Query Parameters: {qparams}")
+    logger.info("Query Parameters: %s", qparams)
     state = qparams.get('state', None)
     since = qparams.get('since', None)
     nextkey = qparams.get('nextkey', None)
@@ -128,13 +140,28 @@ def lambda_handler(event, context):
 
     if key['itemids'] == '':
         # get summary of collection
-        return response(summary(key['collections_workflow'], since=since, limit=limit))
+        return response(summary(
+            key['collections_workflow'],
+            since=since,
+            limit=limit,
+        ))
     elif key['itemids'] == 'items':
         # get items
-        logger.debug(f"Getting items for {key['collections_workflow']}, state={state}, since={since}")
-        items = statedb.get_items_page(key['collections_workflow'], state=state, since=since,
-                                        limit=limit, nextkey=nextkey, sort_ascending=sort_ascending,
-                                        sort_index=sort_index)
+        logger.debug(
+            "Getting items for %s, state=%s, since=%s",
+            key['collections_workflow'],
+            state,
+            since,
+        )
+        items = statedb.get_items_page(
+            key['collections_workflow'],
+            state=state,
+            since=since,
+            limit=limit,
+            nextkey=nextkey,
+            sort_ascending=sort_ascending,
+            sort_index=sort_index,
+        )
         if legacy:
             items = [to_legacy(item) for item in items]
 
@@ -145,6 +172,7 @@ def lambda_handler(event, context):
         if legacy:
             item = to_legacy(item)
         return response(item)
+
 
 def to_legacy(item):
     _item = {

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import logging
 import json
 import boto3
 
@@ -136,7 +135,6 @@ def get_execution_error(arn):
     return error
 
 
-
 # TODO: in cirruslib make a factory class that returns classes
 # for each error type, and generalize the processing here into
 # a well-known type interface
@@ -169,6 +167,7 @@ def parse_payload(payload):
     except Exception:
         logger.error('Unknown payload: %s', json.dumps(payload))
         return None, None, None
+
 
 def lambda_handler(payload, context={}):
     logger.debug(payload)

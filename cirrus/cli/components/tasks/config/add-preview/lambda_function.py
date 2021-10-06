@@ -5,7 +5,6 @@ import tempfile
 
 import gdal
 import rasterio
-from boto3utils import s3
 from cirruslib import Catalog, get_task_logger
 from cirruslib.transfer import download_item_assets, upload_item_assets
 from rio_cogeo.cogeo import cog_translate
@@ -25,7 +24,7 @@ def lambda_handler(payload, context={}):
     config.pop('batch')
 
     if assets is None:
-        msg = f"add-preview: no asset specified for preview"
+        msg = "add-preview: no asset specified for preview"
         logger.error(msg)
         raise Exception(msg)
 
@@ -40,7 +39,7 @@ def lambda_handler(payload, context={}):
                 asset = a
                 break
         if asset is None:
-            msg = f"add-preview: no available asset for preview"
+            msg = "add-preview: no available asset for preview"
             logger.warning(msg)
             items.append(item)
             continue
@@ -116,7 +115,16 @@ def calculate_ccc_values(filename, logger, lo=2.0, hi=96.0, bins=1000):
     return [lo_val, hi_val]
 
 
-def create_preview(filename, logger, fnout=None, preproj=False, ccc=[2.0, 98.0], exp=None, nodata=0, **kwargs):
+def create_preview(
+    filename,
+    logger,
+    fnout=None,
+    preproj=False,
+    ccc=[2.0, 98.0],
+    exp=None,
+    nodata=0,
+    **kwargs,
+):
     if fnout is None:
         fnout = os.path.splitext(filename)[0] + '_preview.tif'
     fntmp = fnout.replace('.tif', '_tmp.tif')
@@ -134,14 +142,27 @@ def create_preview(filename, logger, fnout=None, preproj=False, ccc=[2.0, 98.0],
             inmin = stats[0]
             inmax = stats[1]
             logger.debug(f"Stretching {inmin} - {inmax} to 1-255 with exp={exp}")
-            gdal.Translate(fntmp, filename, noData=nodata, format='GTiff', outputType=gdal.GDT_Byte,
-                       scaleParams=[[inmin, inmax, 1, 255]], exponents=[exp])
+            gdal.Translate(
+                fntmp,
+                filename,
+                noData=nodata,
+                format='GTiff',
+                outputType=gdal.GDT_Byte,
+                scaleParams=[[inmin, inmax, 1, 255]],
+                exponents=[exp],
+            )
         else:
             # ccc stretch
             inmin, inmax = calculate_ccc_values(_filename, logger, lo=ccc[0], hi=ccc[1])
             logger.debug(f"Stretching {inmin} - {inmax} to 1-255 with ccc={ccc}")
-            gdal.Translate(fntmp, _filename, noData=nodata, format='GTiff', outputType=gdal.GDT_Byte,
-                           scaleParams=[[inmin, inmax, 1, 255]])
+            gdal.Translate(
+                fntmp,
+                _filename,
+                noData=nodata,
+                format='GTiff',
+                outputType=gdal.GDT_Byte,
+                scaleParams=[[inmin, inmax, 1, 255]],
+            )
 
         cogify(fntmp, fnout, logger)
     except Exception as err:
@@ -177,8 +198,16 @@ def cogify(fin, fout, logger, nodata=None):
         GDAL_TIFF_INTERNAL_MASK=os.environ.get("GDAL_TIFF_INTERNAL_MASK", True),
         GDAL_TIFF_OVR_BLOCKSIZE=str(overview_blocksize),
     )
-    cog_translate(fin, fout, output_profile, config=config, nodata=nodata, overview_resampling="bilinear",
-                  add_mask=False, web_optimized=False)
+    cog_translate(
+        fin,
+        fout,
+        output_profile,
+        config=config,
+        nodata=nodata,
+        overview_resampling="bilinear",
+        add_mask=False,
+        web_optimized=False,
+    )
     return fout
 
 
@@ -199,11 +228,21 @@ def reproject(fin, fout, logger, crs='EPSG:4326'):
     with rasterio.open(fin) as src:
         if src.crs:
             transform, width, height = calculate_default_transform(
-                src.crs, crs, src.width, src.height, *src.bounds)
+                src.crs,
+                crs,
+                src.width,
+                src.height,
+                *src.bounds,
+            )
         else:
             # use GCPs
             transform, width, height = calculate_default_transform(
-            src.crs, crs, src.width, src.height, gcps=src.gcps[0])
+                src.crs,
+                crs,
+                src.width,
+                src.height,
+                gcps=src.gcps[0],
+            )
         kwargs = src.meta.copy()
         kwargs.update({
             'crs': crs,

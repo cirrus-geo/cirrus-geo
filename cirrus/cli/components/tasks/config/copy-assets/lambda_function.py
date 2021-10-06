@@ -11,7 +11,7 @@ def lambda_handler(payload, context={}):
     logger = get_task_logger("task.copy-assets", catalog=catalog)
 
     # TODO - make this more general for more items/collections
-    item = catalog['features'][0] #, collection=catalog['collections'][0])
+    item = catalog['features'][0]  # collection=catalog['collections'][0])
 
     # configuration options
     config = catalog['process']['tasks'].get('copy-assets', {})
