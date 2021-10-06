@@ -1,14 +1,13 @@
 import json
 import logging
 
-import cirruslib.logging
 
 # logging
-logger = logging.getLogger(f"lambda_function.publish-test")
+logger = logging.getLogger("lambda_function.publish-test")
 
 
 def lambda_handler(payload, context):
-    logger.debug('Payload: %s' % json.dumps(payload))
+    logger.debug('Payload: %s', json.dumps(payload))
 
     payloads = []
 
@@ -23,4 +22,4 @@ def lambda_handler(payload, context):
         payloads = [payload]
 
     for p in payloads:
-        logger.debug(f"Message: {json.dumps(p)}")
+        logger.debug("Message: %s", json.dumps(p))

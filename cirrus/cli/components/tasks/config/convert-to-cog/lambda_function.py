@@ -1,4 +1,3 @@
-import json
 import os
 from shutil import rmtree
 from tempfile import mkdtemp
@@ -17,7 +16,7 @@ def lambda_handler(payload, context={}):
     logger = get_task_logger("task.convert-to-cog", catalog=catalog)
 
     # TODO - make this more general for more items/collections
-    item = catalog['features'][0] #, collection=catalog['collections'][0])
+    item = catalog['features'][0]  # collection=catalog['collections'][0])
 
     # configuration options
     config = catalog['process']['tasks'].get('convert-to-cog', {})
@@ -53,10 +52,10 @@ def lambda_handler(payload, context={}):
                 os.remove(fnout)
 
         # add derived_from link
-        links = [l['href'] for l in item['links'] if l['rel'] == 'self']
+        links = [link['href'] for link in item['links'] if link['rel'] == 'self']
         if len(links) == 1:
             # add derived from link
-            item ['links'].append({
+            item['links'].append({
                 'title': 'Source STAC Item',
                 'rel': 'derived_from',
                 'href': links[0],

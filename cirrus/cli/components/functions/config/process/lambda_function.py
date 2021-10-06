@@ -1,10 +1,10 @@
 import json
-import logging
 import os
 
 from cirruslib import Catalog, Catalogs
 from cirruslib.utils import dict_merge
 from cirruslib.logging import get_task_logger
+
 
 logger = get_task_logger('lambda_function.process', catalog=tuple())
 
@@ -32,15 +32,17 @@ def lambda_handler(payload, context):
         if 'catids' in cat:
             _cats = Catalogs.from_catids(cat['catids'])
             if 'process_update' in cat:
-                logger.debug(f"Process update: {json.dumps(cat['process_update'])}")
+                logger.debug("Process update: %s", json.dumps(cat['process_update']))
                 for c in _cats:
                     c['process'] = dict_merge(c['process'], cat['process_update'])
             cats = Catalogs(_cats)
             cats.process(replace=True)
         elif cat.get('type', '') == 'Feature':
-        # If Item, create Catalog and use default process for that collection
+            # If Item, create Catalog and use default process for that collection
             if cat['collection'] not in PROCESSES.keys():
-                raise ValueError(f"Default process not provided for collection {cat['collection']}")
+                raise ValueError(
+                    f"Default process not provided for collection {cat['collection']}",
+                )
             cat_json = {
                 'type': 'FeatureCollection',
                 'features': [cat],
