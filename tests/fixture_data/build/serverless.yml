@@ -587,7 +587,7 @@ stepFunctions:
               - ErrorEquals:
                   - States.ALL
                 ResultPath: $.error
-                Next: failure
+                Next: copy-assets-post-batch
           copy-assets-post-batch:
             Type: Task
             Resource:
@@ -678,7 +678,7 @@ stepFunctions:
               - ErrorEquals:
                   - States.ALL
                 ResultPath: $.error
-                Next: failure
+                Next: convert-to-cog-post-batch
           convert-to-cog-post-batch:
             Type: Task
             Resource:
@@ -792,7 +792,7 @@ stepFunctions:
               - ErrorEquals:
                   - States.ALL
                 ResultPath: $.error
-                Next: failure
+                Next: copy-assets-post-batch
           copy-assets-post-batch:
             Type: Task
             Resource:
@@ -911,7 +911,7 @@ stepFunctions:
               - ErrorEquals:
                   - States.ALL
                 ResultPath: $.error
-                Next: failure
+                Next: copy-assets-post-batch
           copy-assets-post-batch:
             Type: Task
             Resource:
@@ -1003,7 +1003,7 @@ stepFunctions:
               - ErrorEquals:
                   - States.ALL
                 ResultPath: $.error
-                Next: failure
+                Next: add-preview-post-batch
           add-preview-post-batch:
             Type: Task
             Resource:

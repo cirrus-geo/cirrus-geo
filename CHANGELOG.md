@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.5.0a2] - 2021-10-06
+
+- Always go to post batch after batch jobs, even on error, to use the new behavior to pull and re-raise batch errors
+
 ## [v0.5.0a1] - 2021-10-05
 
 - Separate lambda packages only contain code/files specific to each respective lambda
