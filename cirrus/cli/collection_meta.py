@@ -29,6 +29,14 @@ class CollectionMeta(MutableMapping, ABCMeta):
 
         return super().__new__(cls, name, bases, attrs, **kwargs)
 
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is CollectionMeta:
+            if any("elements" in B.__dict__ for B in C.__mro__):
+                return True
+            return False
+        return NotImplemented
+
     def __hash__(self):
         return hash(self.collection_name)
 
