@@ -15,3 +15,10 @@ lambda:
             status:
               - SUCCEEDED
               - FAILED
+  iamRoleStatementsInherit: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - states:GetExecutionHistory
+      Resource:
+        - arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:execution:*

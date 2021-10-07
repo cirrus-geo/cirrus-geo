@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Add permission to `update-state` to allow getting step function execution histories
+
 ## [v0.5.0a2] - 2021-10-06
 
 - Always go to post batch after batch jobs, even on error, to use the new behavior to pull and re-raise batch errors

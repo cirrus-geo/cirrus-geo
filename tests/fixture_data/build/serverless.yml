@@ -243,6 +243,13 @@ functions:
               status:
                 - SUCCEEDED
                 - FAILED
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - states:GetExecutionHistory
+        Resource:
+          - arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:execution:*
     description: update the cirrus database with the execution state
     environment:
       CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
