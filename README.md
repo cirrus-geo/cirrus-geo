@@ -1,3 +1,7 @@
+[![build-status-image]][build-status]
+[![coverage-status-image]][codecov]
+[![pypi-version]][pypi]
+
 # Cirrus
 
 Cirrus is a [STAC](https://stacspec.org/)-based processing pipeline. As input, Cirrus takes a GeoJSON FeatureCollection with 1 or more STAC Items. This input is run through workflows that generate 1 or more STAC Items as output. These output Items are added to the Cirrus static STAC catalog, and are also broadcast via an SNS topic that can be subscribed to for triggering additional workflows, such as keeping a dynamic STAC catalog up to date (for example, [STAC-server](https://github.com/stac-utils/stac-server)).
@@ -175,3 +179,11 @@ Documentation for deploying, using, and customizing Cirrus is contained within t
 
 ## About
 Cirrus is an Open-Source pipeline for processing geospatial data in AWS. Cirrus was developed by [Element 84](https://element84.com/) originally under a [NASA ACCESS project](https://earthdata.nasa.gov/esds/competitive-programs/access) called [Community Tools for Analysis of NASA Earth Observation System Data in the Cloud](https://earthdata.nasa.gov/esds/competitive-programs/access/eos-data-cloud).
+
+
+[build-status-image]: https://github.com/cirrus-geo/cirrus-geo/actions/workflows/python-test.yml/badge.svg
+[build-status]: https://github.com/cirrus-geo/cirrus-geo/actions/workflows/python-test.yml
+[coverage-status-image]: https://img.shields.io/codecov/c/github/cirrus-geo/cirrus-geo/master.svg
+[codecov]: https://codecov.io/github/cirrus-geo/cirrus-geo?branch=master
+[pypi-version]: https://img.shields.io/pypi/v/cirrus-geo.svg
+[pypi]: https://pypi.org/project/cirrus-geo/
