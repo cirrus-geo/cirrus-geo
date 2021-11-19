@@ -220,7 +220,7 @@ class Component(metaclass=ComponentMeta):
 
     def load_config(self):
         self.config = NamedYamlable.from_yaml(self.definition.content)
-        self._enabled = self.config.get('enabled', True)
+        self._enabled = self.config.pop('enabled', True)
 
     def _create_do(self):
         if self._loaded:
