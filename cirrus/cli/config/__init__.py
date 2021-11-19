@@ -100,6 +100,13 @@ class Config(NamedYamlable):
             self.register_step_function(sf_component)
 
     def register_step_function(self, sf_component) -> None:
+        if not sf_component.enabled:
+            logging.debug(
+                "Skipping disabled step function: '%s'",
+                sf_component.display_name,
+            )
+            return
+
         if sf_component.name in self.stepFunctions.stateMachines and not sf_component.is_core_component:
             logging.warning(
                 f"Duplicate step function declaration '{sf_component.display_name}', skipping",
