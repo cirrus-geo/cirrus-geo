@@ -1,4 +1,4 @@
-from ..base import Lambda
+from .base import Lambda
 
 
 class Feeder(Lambda):

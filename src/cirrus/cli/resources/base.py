@@ -26,7 +26,6 @@ class ResourceMeta(CollectionMeta):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.type = self.__name__.lower()
-        self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
 
     def from_file(self, path: Path):
         resources = NamedYamlable.from_file(path)

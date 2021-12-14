@@ -1,5 +1,5 @@
-from ..base import StepFunction
-from ..files import ComponentFile
+from .base import StepFunction
+from .files import ComponentFile
 
 
 class Workflow(StepFunction):

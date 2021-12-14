@@ -2,6 +2,9 @@ import logging
 
 from abc import ABCMeta, abstractmethod
 from collections.abc import MutableMapping
+from pathlib import Path
+
+import cirrus.builtins
 
 
 logger = logging.getLogger(__name__)
@@ -22,6 +25,10 @@ class CollectionMeta(MutableMapping, ABCMeta):
             attrs['user_dir_name'] = None
         elif 'user_dir_name' not in attrs or attrs['user_dir_name'] is None:
             attrs['user_dir_name'] = attrs['collection_name']
+
+        attrs['core_dir'] = Path(cirrus.builtins.__file__).parent.joinpath(
+            attrs['collection_name']
+        )
 
         attrs['_elements'] = None
         attrs['project'] = None

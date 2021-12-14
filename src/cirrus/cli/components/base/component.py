@@ -45,7 +45,6 @@ class ComponentMeta(CollectionMeta):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.type = self.__name__.lower()
-        self.core_dir = Path(sys.modules[self.__module__].__file__,).parent.joinpath('config')
 
     def from_dir(self, d: Path, name: str=None) -> Type[T]:
         if not d.is_dir():

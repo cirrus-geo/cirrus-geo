@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from ..base import BaseResource
+from .base import BaseResource
 
 
 JOB_DEFINITION_TYPE = 'AWS::Batch::JobDefinition'

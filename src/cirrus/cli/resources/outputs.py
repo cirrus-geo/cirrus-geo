@@ -1,4 +1,4 @@
-from ..base import BaseResource
+from .base import BaseResource
 
 
 class Output(BaseResource):
