@@ -9,7 +9,7 @@ from ..files import ComponentFile, BaseDefinition
 from cirrus.core.exceptions import ComponentError
 from cirrus.core.utils.yaml import NamedYamlable
 from cirrus.core.utils import misc
-from cirrus.core.collection_meta import CollectionMeta
+from cirrus.core.group_meta import GroupMeta
 
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 T = TypeVar('T', bound='Component')
 
 
-class ComponentMeta(CollectionMeta):
+class ComponentMeta(GroupMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
         files = attrs.get('files', {})
 
@@ -124,7 +124,7 @@ class ComponentMeta(CollectionMeta):
             return
 
         @show_cmd.command(
-            name=self.collection_name,
+            name=self.group_name,
         )
         @click.argument(
             'name',

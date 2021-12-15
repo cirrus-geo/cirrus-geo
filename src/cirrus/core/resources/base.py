@@ -7,13 +7,13 @@ from itertools import chain
 
 from cirrus.core.utils.yaml import NamedYamlable
 from cirrus.core.utils import misc
-from cirrus.core.collection_meta import CollectionMeta
+from cirrus.core.group_meta import GroupMeta
 
 
 logger = logging.getLogger(__name__)
 
 
-class ResourceMeta(CollectionMeta):
+class ResourceMeta(GroupMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
         if 'user_extendable' not in attrs:
             attrs['user_extendable'] = True
@@ -69,7 +69,7 @@ class ResourceMeta(CollectionMeta):
 
     def add_show_command(self, show_cmd):
         @show_cmd.command(
-            name=self.collection_name,
+            name=self.group_name,
         )
         @click.argument(
             'name',
@@ -93,9 +93,9 @@ class ResourceMeta(CollectionMeta):
                 for element in elements:
                     element.list_display()
             elif not name:
-                logger.error("Cannot show %s: none found", self.collection_name)
+                logger.error("Cannot show %s: none found", self.group_name)
             else:
-                logger.error("Cannot show %s: no matches for '%s'", self.collection_name, name)
+                logger.error("Cannot show %s: no matches for '%s'", self.group_name, name)
 
 
 class BaseResource(metaclass=ResourceMeta):

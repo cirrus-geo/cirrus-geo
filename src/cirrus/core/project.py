@@ -19,7 +19,7 @@ from cirrus.core.constants import (
 )
 from cirrus.core.config import Config, DEFAULT_CONFIG_PATH
 from cirrus.core.exceptions import CirrusError
-from cirrus.core.collections import make_collections
+from cirrus.core.groups import make_groups
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class Project:
             )
         self.path = path
         self.config = config or self.load_config()
-        self.collections = make_collections(project=self)
+        self.groups = make_groups(project=self)
 
     def __repr__(self):
         return f'<{self.__class__.__name__}: {self.path}>'
@@ -105,8 +105,8 @@ class Project:
 
         self = cls(path)
 
-        for collection in self.collections.extendable_collections:
-            self.path.joinpath(collection.user_dir_name).mkdir(exist_ok=True)
+        for group in self.groups.extendable_groups:
+            self.path.joinpath(group.user_dir_name).mkdir(exist_ok=True)
 
         return self
 
@@ -140,12 +140,12 @@ class Project:
                 existing_dirs.add(d.resolve())
 
         # write serverless config
-        self.config.build(self.collections).to_file(bd.joinpath(DEFAULT_SERVERLESS_FILENAME))
+        self.config.build(self.groups).to_file(bd.joinpath(DEFAULT_SERVERLESS_FILENAME))
 
         # setup all required lambda dirs
         fn_dirs = set()
-        for collection in self.collections.lambda_collections:
-            for fn in collection.values():
+        for group in self.groups.lambda_groups:
+            for fn in group.values():
                 outdir = fn.get_outdir(bd).resolve()
                 if outdir in fn_dirs:
                     logger.debug(

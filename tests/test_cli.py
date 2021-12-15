@@ -6,11 +6,11 @@ import pytest
 from click.testing import CliRunner
 
 from cirrus.cli.commands import cli
-from cirrus.core.collections import make_collections
+from cirrus.core.groups import make_groups
 from cirrus.core.project import Project
 
 
-collections = make_collections()
+groups = make_groups()
 
 
 @pytest.fixture(scope='session')
@@ -85,7 +85,7 @@ def test_build(invoke, project, reference_build, build_dir):
 
 @pytest.mark.parametrize(
     'createable',
-    [c.type for c in collections.extendable_collections
+    [c.type for c in groups.extendable_groups
      if hasattr(c, 'add_create_command')],
 )
 def test_create(createable, module_tmpdir, invoke, project):
@@ -96,16 +96,16 @@ def test_create(createable, module_tmpdir, invoke, project):
     assert len(result.stdout) > 0
 
 
-@pytest.mark.parametrize('collection', [c.collection_name for c in collections])
-def test_show_list(collection, invoke):
-    result = invoke(f'show {collection}')
+@pytest.mark.parametrize('group', [c.group_name for c in groups])
+def test_show_list(group, invoke):
+    result = invoke(f'show {group}')
     assert result.exit_code == 0
     assert len(result.stdout) > 0
 
 
-@pytest.mark.parametrize('collection', [c.collection_name for c in collections])
-def test_show_detail(collection, invoke):
-    item = list(getattr(collections, collection).keys())[0]
-    result = invoke(f'show {collection} {item}')
+@pytest.mark.parametrize('group', [c.group_name for c in groups])
+def test_show_detail(group, invoke):
+    item = list(getattr(groups, group).keys())[0]
+    result = invoke(f'show {group} {item}')
     assert result.exit_code == 0
     assert len(result.stdout) > 0

@@ -51,31 +51,31 @@ class Config(NamedYamlable):
             # deduplicate
             self.plugins = list(set(self.plugins))
 
-    def build(self, collections):
+    def build(self, groups):
         # add all components and resources
         copy = self.copy()
-        for collection in collections:
-            copy.register(collection)
+        for group in groups:
+            copy.register(group)
         return copy
 
-    def register(self, collection) -> None:
+    def register(self, group) -> None:
         from cirrus.core.components.base import Lambda, StepFunction
         from cirrus.core.resources import Resource, Output
-        if issubclass(collection, Lambda):
-            self.register_lambda_collection(collection)
-        elif issubclass(collection, StepFunction):
-            self.register_step_function_collection(collection)
-        elif issubclass(collection, Resource):
-            self.resources.Resources = {e.name: e.definition for e in collection.values()}
-        elif issubclass(collection, Output):
-            self.resources.Outputs = {e.name: e.definition for e in collection.values()}
+        if issubclass(group, Lambda):
+            self.register_lambda_group(group)
+        elif issubclass(group, StepFunction):
+            self.register_step_function_group(group)
+        elif issubclass(group, Resource):
+            self.resources.Resources = {e.name: e.definition for e in group.values()}
+        elif issubclass(group, Output):
+            self.resources.Outputs = {e.name: e.definition for e in group.values()}
         else:
             raise ConfigError(
-                f"Unable to register collection '{collection.name}': unknown type '{collection.type}'",
+                f"Unable to register group '{group.name}': unknown type '{group.type}'",
             )
 
-    def register_lambda_collection(self, lambda_collection) -> None:
-        for lambda_component in lambda_collection.values():
+    def register_lambda_group(self, lambda_group) -> None:
+        for lambda_component in lambda_group.values():
             self.register_lambda(lambda_component)
 
     def register_lambda(self, lambda_component) -> None:
@@ -95,8 +95,8 @@ class Config(NamedYamlable):
 
         self.functions[lambda_component.name] = lambda_component.lambda_config
 
-    def register_step_function_collection(self, sf_collection) -> None:
-        for sf_component in sf_collection.values():
+    def register_step_function_group(self, sf_group) -> None:
+        for sf_component in sf_group.values():
             self.register_step_function(sf_component)
 
     def register_step_function(self, sf_component) -> None:

@@ -10,13 +10,13 @@ import cirrus.builtins
 logger = logging.getLogger(__name__)
 
 
-class CollectionMeta(MutableMapping, ABCMeta):
+class GroupMeta(MutableMapping, ABCMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
-        if 'collection_name' not in attrs:
-            attrs['collection_name'] = f'{name.lower()}s'
+        if 'group_name' not in attrs:
+            attrs['group_name'] = f'{name.lower()}s'
 
-        if 'collection_display_name' not in attrs:
-            attrs['collection_display_name'] = attrs['collection_name'].capitalize()
+        if 'group_display_name' not in attrs:
+            attrs['group_display_name'] = attrs['group_name'].capitalize()
 
         if 'enable_cli' not in attrs:
             attrs['enable_cli'] = True
@@ -24,10 +24,10 @@ class CollectionMeta(MutableMapping, ABCMeta):
         if not attrs.get('user_extendable', False):
             attrs['user_dir_name'] = None
         elif 'user_dir_name' not in attrs or attrs['user_dir_name'] is None:
-            attrs['user_dir_name'] = attrs['collection_name']
+            attrs['user_dir_name'] = attrs['group_name']
 
         attrs['core_dir'] = Path(cirrus.builtins.__file__).parent.joinpath(
-            attrs['collection_name']
+            attrs['group_name']
         )
 
         attrs['_elements'] = None
@@ -38,14 +38,14 @@ class CollectionMeta(MutableMapping, ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is CollectionMeta:
+        if cls is GroupMeta:
             if any("elements" in B.__dict__ for B in C.__mro__):
                 return True
             return False
         return NotImplemented
 
     def __hash__(self):
-        return hash(self.collection_name)
+        return hash(self.group_name)
 
     @property
     def elements(self):
@@ -59,7 +59,7 @@ class CollectionMeta(MutableMapping, ABCMeta):
             return None
         if self.project is None or self.project.path is None:
             logger.warning(
-                f'No cirrus project specified; limited to built-in {self.collection_display_name}.',
+                f'No cirrus project specified; limited to built-in {self.group_display_name}.',
             )
             return None
         return self.project.path.joinpath(self.user_dir_name)
