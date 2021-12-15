@@ -6,8 +6,8 @@ import pytest
 from click.testing import CliRunner
 
 from cirrus.cli.commands import cli
-from cirrus.cli.collections import make_collections
-from cirrus.cli.project import Project
+from cirrus.core.collections import make_collections
+from cirrus.core.project import Project
 
 
 collections = make_collections()

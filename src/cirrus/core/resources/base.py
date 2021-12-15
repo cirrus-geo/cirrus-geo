@@ -5,9 +5,9 @@ import sys
 from pathlib import Path
 from itertools import chain
 
-from cirrus.cli.utils.yaml import NamedYamlable
-from cirrus.cli.utils import misc
-from cirrus.cli.collection_meta import CollectionMeta
+from cirrus.core.utils.yaml import NamedYamlable
+from cirrus.core.utils import misc
+from cirrus.core.collection_meta import CollectionMeta
 
 
 logger = logging.getLogger(__name__)

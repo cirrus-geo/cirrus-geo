@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .. import files
 from .component import Component
-from cirrus.cli.utils.yaml import NamedYamlable
+from cirrus.core.utils.yaml import NamedYamlable
 
 
 logger = logging.getLogger(__name__)

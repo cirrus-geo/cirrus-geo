@@ -2,7 +2,7 @@ import click
 import sys
 import logging
 
-from cirrus.cli.project import Project
+from cirrus.core.project import Project
 
 
 logger = logging.getLogger(__name__)

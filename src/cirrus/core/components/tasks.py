@@ -3,7 +3,7 @@ import click
 
 from .base import Lambda
 from . import files
-from cirrus.cli.resources import Resource
+from cirrus.core.resources import Resource
 
 
 class Task(Lambda):

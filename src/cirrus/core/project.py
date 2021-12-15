@@ -3,17 +3,23 @@ import json
 
 from pathlib import Path
 
-from cirrus.cli.constants import (
+# TODO: it's clear with this import that this whole
+# class need to be refactored to better separate the
+# "cli" concerns from the "core" concerns, i.e., core
+# should stand on it's own and cli should make use of
+# core to implement the cli.
+from cirrus.cli.utils import logging
+
+from cirrus.core.constants import (
     DEFAULT_BUILD_DIR_NAME,
     DEFAULT_CONFIG_FILENAME,
     DEFAULT_SERVERLESS_FILENAME,
     SERVERLESS,
     SERVERLESS_PLUGINS,
 )
-from cirrus.cli.config import Config, DEFAULT_CONFIG_PATH
-from cirrus.cli.exceptions import CirrusError
-from cirrus.cli.utils import logging
-from cirrus.cli.collections import make_collections
+from cirrus.core.config import Config, DEFAULT_CONFIG_PATH
+from cirrus.core.exceptions import CirrusError
+from cirrus.core.collections import make_collections
 
 
 logger = logging.getLogger(__name__)
@@ -109,7 +115,7 @@ class Project:
             raise CirrusError('Cannot build a project without the path set')
 
         import shutil
-        from cirrus.cli.utils import misc
+        from cirrus.core.utils import misc
 
         # get our cirrus-lib version to inject in each lambda
         cirrus_req = [misc.get_cirrus_lib_requirement()]

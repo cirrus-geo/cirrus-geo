@@ -3,9 +3,9 @@ import logging
 
 from typing import Type, TypeVar, Callable
 
-from cirrus.cli.exceptions import ComponentError
-from cirrus.cli.utils.console import console
-from cirrus.cli.utils import misc
+from cirrus.core.exceptions import ComponentError
+from cirrus.core.utils.console import console
+from cirrus.core.utils import misc
 
 
 logger = logging.getLogger(__name__)

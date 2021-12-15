@@ -2,12 +2,12 @@ import logging
 
 from pathlib import Path
 
-from cirrus.cli.constants import (
+from cirrus.core.constants import (
     DEFAULT_CONFIG_FILENAME,
     SERVERLESS_PLUGINS,
 )
-from cirrus.cli.exceptions import ConfigError
-from cirrus.cli.utils.yaml import NamedYamlable
+from cirrus.core.exceptions import ConfigError
+from cirrus.core.utils.yaml import NamedYamlable
 
 
 logger = logging.getLogger(__name__)
@@ -59,8 +59,8 @@ class Config(NamedYamlable):
         return copy
 
     def register(self, collection) -> None:
-        from cirrus.cli.components.base import Lambda, StepFunction
-        from cirrus.cli.resources import Resource, Output
+        from cirrus.core.components.base import Lambda, StepFunction
+        from cirrus.core.resources import Resource, Output
         if issubclass(collection, Lambda):
             self.register_lambda_collection(collection)
         elif issubclass(collection, StepFunction):

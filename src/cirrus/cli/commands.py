@@ -2,7 +2,7 @@ import click
 
 from pathlib import Path
 from cirrus.cli import constants
-from cirrus.cli.project import Project
+from cirrus.core.project import Project
 from cirrus.cli.utils import (
     logging,
     click as utils_click,

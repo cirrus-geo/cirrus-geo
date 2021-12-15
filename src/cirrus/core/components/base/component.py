@@ -6,10 +6,10 @@ from typing import Type, TypeVar
 from pathlib import Path
 
 from ..files import ComponentFile, BaseDefinition
-from cirrus.cli.exceptions import ComponentError
-from cirrus.cli.utils.yaml import NamedYamlable
-from cirrus.cli.utils import misc
-from cirrus.cli.collection_meta import CollectionMeta
+from cirrus.core.exceptions import ComponentError
+from cirrus.core.utils.yaml import NamedYamlable
+from cirrus.core.utils import misc
+from cirrus.core.collection_meta import CollectionMeta
 
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,6 @@ class ComponentMeta(CollectionMeta):
         @self.extra_create_args()
         def _create(name, description, **kwargs):
             import sys
-            from cirrus.cli.exceptions import ComponentError
 
             try:
                 self.create(name, description, **kwargs)

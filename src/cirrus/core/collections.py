@@ -2,7 +2,7 @@ import logging
 
 from collections.abc import Sequence
 
-from cirrus.cli.components import (
+from cirrus.core.components import (
     Lambda,
     StepFunction,
     Function,
@@ -10,7 +10,7 @@ from cirrus.cli.components import (
     Task,
     Workflow,
 )
-from cirrus.cli.resources import BaseResource, Resource, Output
+from cirrus.core.resources import BaseResource, Resource, Output
 
 
 logger = logging.getLogger(__name__)
