@@ -2,7 +2,6 @@ import logging
 
 from .. import files
 from .component import Component
-from cirrus.core.utils.yaml import NamedYamlable
 
 
 logger = logging.getLogger(__name__)

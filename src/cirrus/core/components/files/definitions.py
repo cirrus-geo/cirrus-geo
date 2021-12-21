@@ -9,13 +9,14 @@ logger = logging.getLogger(__name__)
 # TODO: figure out most basic permissions
 lambda_base = '''description: {description}
 iamRoleStatements: []
-python_requirements: []
 environment: {{}}
 '''.format
 
 lambda_lambda = '''lambda:
   memorySize: 128
   timeout: 60
+  pythonRequirements:
+    include: []
 '''.format
 
 lambda_batch = '''batch:

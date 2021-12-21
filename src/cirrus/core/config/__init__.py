@@ -8,6 +8,7 @@ from cirrus.core.constants import (
 )
 from cirrus.core.exceptions import ConfigError
 from cirrus.core.utils.yaml import NamedYamlable
+from cirrus.core.utils import misc
 
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,17 @@ class Config(NamedYamlable):
         self.package.exclude = []
         self.package.exclude.append('**/*')
 
+        # add cirrus-lib dependencies as global
+        if not 'custom' in self:
+            self.custom = {}
+        if not 'pythonRequirements' in self.custom:
+            self.custom.pythonRequirements = {}
+        if not 'include' in self.custom.pythonRequirements:
+            self.custom.pythonRequirements.include = []
+        self.custom.pythonRequirements.include.extend(
+            misc.get_cirrus_lib_requirements(),
+        )
+
         # populate required plugin list
         try:
             self.plugins.extend(SERVERLESS_PLUGINS.keys())
@@ -56,6 +68,7 @@ class Config(NamedYamlable):
         copy = self.copy()
         for group in groups:
             copy.register(group)
+        copy.custom.pythonRequirements.pop('include')
         return copy
 
     def register(self, group) -> None:
@@ -93,20 +106,13 @@ class Config(NamedYamlable):
             )
             return
 
-        self.functions[lambda_component.name] = lambda_component.lambda_config
+        self.functions[lambda_component.name] = lambda_component.copy_for_config()
 
     def register_step_function_group(self, sf_group) -> None:
         for sf_component in sf_group.values():
             self.register_step_function(sf_component)
 
     def register_step_function(self, sf_component) -> None:
-        if not sf_component.enabled:
-            logging.debug(
-                "Skipping disabled step function: '%s'",
-                sf_component.display_name,
-            )
-            return
-
         if sf_component.name in self.stepFunctions.stateMachines and not sf_component.is_core_component:
             logging.warning(
                 f"Duplicate step function declaration '{sf_component.display_name}', skipping",

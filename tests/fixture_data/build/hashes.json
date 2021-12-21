@@ -1,11 +1,11 @@
 {
     "serverless.yml": {
-        "shasum": "49f5377e6a8338a1a7c24d3ef10ff58eaa58e40d39fe9b5763923525d6dfdf25",
-        "size": 58073
+        "shasum": "3a8a51dc514432e09e19716ad732d0b76904711f5634cd2ae23cfb286789c8d5",
+        "size": 59033
     },
     "lambdas/publish-test/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/publish-test/README.md": {
         "shasum": "0e8dc25d1241c9d02eabf0bebf7851606dc161f2834c97e2b5ecc8ff232dc8cc",
@@ -16,132 +16,132 @@
         "size": 590
     },
     "lambdas/feed-stac-crawl/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/feed-stac-crawl/README.md": {
         "shasum": "9ce852981298e80c8859be361a11a6847cc571541a39762133416deb40ce7a76",
         "size": 70
     },
     "lambdas/feed-stac-crawl/lambda_function.py": {
-        "shasum": "a49bcd94fceca09e334e2666ad4f0fba554254e33e3c9e2ac3370e9f722e6ece",
-        "size": 1429
+        "shasum": "7e2d6254b1ef7f4c3defc73ca398499a4e98ec7156c54b1424a3b3d3442f5c3f",
+        "size": 1430
     },
     "lambdas/pre-batch/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/pre-batch/lambda_function.py": {
-        "shasum": "1210d153ddc9ce97eadcdf3d340bfe4630865743fb401876472e99b8cf069964",
-        "size": 754
+        "shasum": "e5db940f7cb2d2c057d8d82ea43ef29b04f14f7c6e3fcb2c59946375d3146f62",
+        "size": 793
     },
     "lambdas/post-batch/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/post-batch/lambda_function.py": {
         "shasum": "81183a231e7d42a76d5938326f411b1b6a5f728001572af751268da9514742e8",
         "size": 1428
     },
     "lambdas/copy-assets/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/copy-assets/README.md": {
         "shasum": "7f2fb18a17278d9aa76b70410b9ac27fb0c311f338b5c9fed847ea2d1b0dde26",
         "size": 1136
     },
     "lambdas/copy-assets/lambda_function.py": {
-        "shasum": "9cbef37e3456e11715cc3c27db45c5551517da81c98b9e0b8cd8346d2cad7533",
-        "size": 1818
+        "shasum": "741c90339b1bc5e2959674d7c0ea4977fa95385259b8f7ac304e149f0d40d2c3",
+        "size": 1820
     },
     "lambdas/feed-stac-api/requirements.txt": {
-        "shasum": "b976b7ba598c55fbcf8687727f1db07e3c9ae139b9609d7efd32d361629c3f18",
-        "size": 38
+        "shasum": "1d1b8abaebb8da53b0ffa7cdcfdd90cdfd13b7d2430f52a5c25d8049149486fa",
+        "size": 81
     },
     "lambdas/feed-stac-api/README.md": {
         "shasum": "a5107a831d1dbae3ae6d00adf0412b79e67edcf2630ccf70e58fdb1817983626",
         "size": 269
     },
     "lambdas/feed-stac-api/lambda_function.py": {
-        "shasum": "0c8729bd630429d4b1967718e64b512b093d18fc33ed9dd8b4b956d48740cf72",
-        "size": 4280
+        "shasum": "4e6e5d869e54419a2c12c761db8642c88fca299a3b42be8818d1719006bd2f8b",
+        "size": 4281
     },
     "lambdas/feed-s3-inventory/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/feed-s3-inventory/README.md": {
         "shasum": "ef297e110da57ba9500090c45a87398dc7c5fc95db111046a09300c791a809b8",
         "size": 987
     },
     "lambdas/feed-s3-inventory/lambda_function.py": {
-        "shasum": "4512f5cbbb0f014848940ada57c3351456a1c08671d34ef416eb3fd69ff5c768",
-        "size": 7745
+        "shasum": "1faabae202bd0b0d970da7c73210264b4bbd408f26ff114330a4ae6ad118e158",
+        "size": 7746
     },
     "lambdas/update-state/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/update-state/README.md": {
         "shasum": "c747c571fc2fdef80b4520b8f85b7edd93b92f3b0fa292410f326fcbfbcc9d6a",
         "size": 83
     },
     "lambdas/update-state/lambda_function.py": {
-        "shasum": "fc90fbbf260807d94799ee533cf0e882128bd15d4e4188ba531bbf2c6ac094d8",
-        "size": 5567
+        "shasum": "44abcd7e66c5925a18a75094462bd51a9d85c45dc419756a06e2d6336808b292",
+        "size": 5609
     },
     "lambdas/publish/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/publish/README.md": {
         "shasum": "df46c55ffe39c090c2790c4e47ff8bd6bea814c796cf4f6479e97afa25b4f0e7",
         "size": 826
     },
     "lambdas/publish/lambda_function.py": {
-        "shasum": "50bca5e60195be1f48f07582e734656e24c462d27717472036205d9fd756ee21",
-        "size": 2015
+        "shasum": "ebee03ebde30cab3db429bd257c2420fe17a6d9369a69c2ca923850cabc15604",
+        "size": 2084
     },
     "lambdas/api/api.yaml": {
         "shasum": "d4fdab7e61372083de65e14be69e08416a7d1a26a76a0a578886ee8dea986385",
         "size": 1403
     },
     "lambdas/api/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/api/lambda_function.py": {
-        "shasum": "7acb40a11d27f6e2f6af9bb002cde8197d249d1f496375eeedf91567849c0ace",
-        "size": 5394
+        "shasum": "4970a4e704be0e82486074b1432539f08ce85209ffbb83d61db9a25d7ecde41a",
+        "size": 5403
     },
     "lambdas/feed-rerun/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/feed-rerun/README.md": {
         "shasum": "7e7ec9226f9d7eb4609f89dc9b46ffe92cffd5a7490ca6f8c77d9a3fce753813",
         "size": 945
     },
     "lambdas/feed-rerun/lambda_function.py": {
-        "shasum": "853bbe9763dd35dc039da33b3df5823829ad9520c991a116673f2707345fd5f1",
-        "size": 2214
+        "shasum": "6acd47d710e205a0496addb86b48e56304a06aca156b003994cdf6ab8b91963e",
+        "size": 2216
     },
     "lambdas/convert-to-cog/requirements.txt": {
-        "shasum": "833362cb5a918ce5e5978384b54715ff035948b2905647d579695ac183e5ae94",
-        "size": 51
+        "shasum": "6dd3d02e12884ba0c5438d083ff498e8c49b8cd2faf06c8afcd6b47ba24a1e5e",
+        "size": 94
     },
     "lambdas/convert-to-cog/README.md": {
         "shasum": "1c63d41de084e813acfc6f3214367196eef567dbf636b3eb82b9d78f9f53dde3",
         "size": 1849
     },
     "lambdas/convert-to-cog/lambda_function.py": {
-        "shasum": "ed0a5c38f22f7cc3a109644a3c6127a7421f498c4150d893b222b002ebf41400",
-        "size": 4083
+        "shasum": "43d98f6a85a4e19440c056e2cefaa1f25f812da43182a85249a1ba3401d1d0d1",
+        "size": 4086
     },
     "lambdas/process/requirements.txt": {
-        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
-        "size": 17
+        "shasum": "ac34d57261fd70bfb4ddbd5a1bd3e54795f24a5975bdae04697de8b26fbb3e58",
+        "size": 60
     },
     "lambdas/process/README.md": {
         "shasum": "396db431f2d8638f21094af3270b680c48276728d19416c759450018d7505844",
@@ -152,19 +152,47 @@
         "size": 3
     },
     "lambdas/process/lambda_function.py": {
-        "shasum": "01f7de534bcedbbc48c580d53faf24de72002675b3b7318b38e544255b3fcf42",
-        "size": 2171
+        "shasum": "6fee7bfe0619aa8c718826163c1108087bd209cdbbcf1037801defc189154ecd",
+        "size": 2181
     },
     "lambdas/add-preview/requirements.txt": {
-        "shasum": "833362cb5a918ce5e5978384b54715ff035948b2905647d579695ac183e5ae94",
-        "size": 51
+        "shasum": "6dd3d02e12884ba0c5438d083ff498e8c49b8cd2faf06c8afcd6b47ba24a1e5e",
+        "size": 94
     },
     "lambdas/add-preview/README.md": {
         "shasum": "a3b594f6f897742d38e6566f8be6cfe3c195fd4ed33077c7f3316f573b2345fe",
         "size": 1721
     },
     "lambdas/add-preview/lambda_function.py": {
-        "shasum": "d77d6b0bef45877a9a74da02a8b8035cfe6500407dbf5361e5c65f763a5b8b77",
-        "size": 8452
+        "shasum": "cf40467d2a44f1ced91e13568a651a811de97a3df20c4f161f85785ea9c20163",
+        "size": 8492
+    },
+    "cirrus/lib/catalog.py": {
+        "shasum": "e0ee1458b8d6b41863da694c15e3842c8ae4aaaf07dafcbfec8acb85daa1c720",
+        "size": 16165
+    },
+    "cirrus/lib/logging.py": {
+        "shasum": "bc3242afe713c5d4f4d4ce859b079c90caf3bdec4343a7d6d91026919f342819",
+        "size": 1849
+    },
+    "cirrus/lib/__init__.py": {
+        "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0
+    },
+    "cirrus/lib/transfer.py": {
+        "shasum": "b1ea435e9a2691d1f99d61948568b57806d0da46e24640a064c86aeccc5076e5",
+        "size": 6401
+    },
+    "cirrus/lib/utils.py": {
+        "shasum": "4cb609767b4660b98429d1c88bd15905f3720fc0f2c7478899bbd7ceb87108da",
+        "size": 3815
+    },
+    "cirrus/lib/errors.py": {
+        "shasum": "15c62d1e8015f09103937c5f400a9814c2d8c2cf01844e0c8e1fcbc49c473e9b",
+        "size": 173
+    },
+    "cirrus/lib/statedb.py": {
+        "shasum": "c9114c54404f2b9b83485ea950d983acc17ebfe695e67099d6ce16d2de3e7a15",
+        "size": 18053
     }
 }

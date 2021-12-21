@@ -115,10 +115,8 @@ class Project:
             raise CirrusError('Cannot build a project without the path set')
 
         import shutil
+        from cirrus import lib
         from cirrus.core.utils import misc
-
-        # get our cirrus-lib version to inject in each lambda
-        cirrus_req = [misc.get_cirrus_lib_requirement()]
 
         # make build dir or clean it up
         bd = self.build_dir
@@ -132,15 +130,30 @@ class Project:
         for f in bd.iterdir():
             if not f.is_dir():
                 continue
-            if f.name == '.serverless':
+            if f.name in ['.serverless', 'cirrus']:
                 continue
             for d in f.iterdir():
-                if not d.is_dir():
+                if d.is_symlink() or not d.is_dir():
                     continue
                 existing_dirs.add(d.resolve())
 
         # write serverless config
-        self.config.build(self.groups).to_file(bd.joinpath(DEFAULT_SERVERLESS_FILENAME))
+        self.config.build(self.groups).to_file(
+            bd.joinpath(DEFAULT_SERVERLESS_FILENAME),
+        )
+
+        # copy cirrus-lib to build dir for packaging
+        lib_dir = bd.joinpath('cirrus', 'lib')
+        shutil.copytree(
+            lib.__path__[0],
+            lib_dir,
+            ignore=shutil.ignore_patterns('*.pyc', '__pycache__'),
+            dirs_exist_ok=True,
+        )
+        try:
+            lib_dir.symlink_to(lib.__path__[0])
+        except FileExistsError:
+            pass
 
         # setup all required lambda dirs
         fn_dirs = set()
@@ -154,10 +167,14 @@ class Project:
                     continue
 
                 fn_dirs.add(outdir)
-                fn.link_to_outdir(outdir, cirrus_req)
+                fn.link_to_outdir(outdir)
+                outdir.joinpath('cirrus').symlink_to(
+                    misc.relative_to(outdir, lib_dir.parent),
+                )
 
         # clean up existing but no longer used lambda dirs
         for d in existing_dirs - fn_dirs:
+            print(d)
             shutil.rmtree(d)
 
     def clean(self) -> None:

@@ -3,9 +3,9 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 import rasterio
-from cirruslib import Catalog, get_task_logger
-from cirruslib.errors import InvalidInput
-from cirruslib.transfer import download_item_assets, upload_item_assets, s3_sessions
+from cirrus.lib import Catalog, get_task_logger
+from cirrus.lib.errors import InvalidInput
+from cirrus.lib.transfer import download_item_assets, upload_item_assets, s3_sessions
 from rasterio.errors import CRSError
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles

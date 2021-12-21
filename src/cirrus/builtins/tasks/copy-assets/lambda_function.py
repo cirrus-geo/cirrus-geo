@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from cirruslib import Catalog, get_task_logger
-from cirruslib.transfer import download_item_assets, upload_item_assets
+from cirrus.lib import Catalog, get_task_logger
+from cirrus.lib.transfer import download_item_assets, upload_item_assets
 from shutil import rmtree
 from tempfile import mkdtemp
 

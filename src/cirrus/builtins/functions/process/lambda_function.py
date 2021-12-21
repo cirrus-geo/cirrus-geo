@@ -1,10 +1,9 @@
 import json
 import os
 
-from cirruslib import Catalog, Catalogs
-from cirruslib.utils import dict_merge
-from cirruslib.logging import get_task_logger
-
+from cirrus.lib.catalog import Catalog, Catalogs
+from cirrus.lib.utils import dict_merge
+from cirrus.lib.logging import get_task_logger
 
 logger = get_task_logger('lambda_function.process', catalog=tuple())
 
