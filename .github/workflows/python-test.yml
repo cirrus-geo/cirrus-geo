@@ -33,6 +33,8 @@ jobs:
           # all Python files should follow PEP8
           flake8 . --count --exit-zero --max-complexity=10 --statistics
       - name: Test with pytest
-        run: coverage run --source=. -m py.test
-      - name: Upload coverage
-        run: coverage report -m
+        run: pytest --cov=./ --cov-report=xml
+      - name: "Upload coverage to Codecov"
+        uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
