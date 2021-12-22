@@ -6,7 +6,7 @@ import pytest
 
 from pathlib import Path
 
-from cirrus.cli.project import Project
+from cirrus.core.project import Project
 
 
 @pytest.fixture(scope='module')

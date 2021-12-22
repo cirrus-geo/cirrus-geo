@@ -4,7 +4,7 @@ import os.path
 
 from setuptools import setup, find_namespace_packages
 
-from cirrus.cli.constants import DESC
+from src.cirrus.cli.constants import DESC
 
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -23,16 +23,17 @@ dependency_links = [x.strip().replace('git+', '') for x in reqs if 'git+' not in
 
 package_data = {
     'cirrus': [
-        'cli/components/**/config/**/*',
-        'cli/resources/**/config/*',
-        'cli/config/*',
+        'builtins/**/**/*',
+        'builtins/**/*',
+        'core/config/*',
     ],
 }
 
 
 setup(
     name='cirrus-geo',
-    packages=find_namespace_packages(exclude=['docs', 'test*']),
+    packages=find_namespace_packages('src'),
+    package_dir={'': 'src'},
     version=VERSION,
     description=DESC,
     long_description=readme,
