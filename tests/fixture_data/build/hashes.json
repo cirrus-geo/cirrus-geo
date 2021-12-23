@@ -1,0 +1,170 @@
+{
+    "serverless.yml": {
+        "shasum": "49f5377e6a8338a1a7c24d3ef10ff58eaa58e40d39fe9b5763923525d6dfdf25",
+        "size": 58073
+    },
+    "lambdas/publish-test/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/publish-test/README.md": {
+        "shasum": "0e8dc25d1241c9d02eabf0bebf7851606dc161f2834c97e2b5ecc8ff232dc8cc",
+        "size": 40
+    },
+    "lambdas/publish-test/lambda_function.py": {
+        "shasum": "7bf2076e679d7fe41a654acc77362ba783879b9cf57b0b90c918ad762e98d42c",
+        "size": 590
+    },
+    "lambdas/feed-stac-crawl/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/feed-stac-crawl/README.md": {
+        "shasum": "9ce852981298e80c8859be361a11a6847cc571541a39762133416deb40ce7a76",
+        "size": 70
+    },
+    "lambdas/feed-stac-crawl/lambda_function.py": {
+        "shasum": "a49bcd94fceca09e334e2666ad4f0fba554254e33e3c9e2ac3370e9f722e6ece",
+        "size": 1429
+    },
+    "lambdas/pre-batch/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/pre-batch/lambda_function.py": {
+        "shasum": "1210d153ddc9ce97eadcdf3d340bfe4630865743fb401876472e99b8cf069964",
+        "size": 754
+    },
+    "lambdas/post-batch/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/post-batch/lambda_function.py": {
+        "shasum": "81183a231e7d42a76d5938326f411b1b6a5f728001572af751268da9514742e8",
+        "size": 1428
+    },
+    "lambdas/copy-assets/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/copy-assets/README.md": {
+        "shasum": "7f2fb18a17278d9aa76b70410b9ac27fb0c311f338b5c9fed847ea2d1b0dde26",
+        "size": 1136
+    },
+    "lambdas/copy-assets/lambda_function.py": {
+        "shasum": "9cbef37e3456e11715cc3c27db45c5551517da81c98b9e0b8cd8346d2cad7533",
+        "size": 1818
+    },
+    "lambdas/feed-stac-api/requirements.txt": {
+        "shasum": "b976b7ba598c55fbcf8687727f1db07e3c9ae139b9609d7efd32d361629c3f18",
+        "size": 38
+    },
+    "lambdas/feed-stac-api/README.md": {
+        "shasum": "a5107a831d1dbae3ae6d00adf0412b79e67edcf2630ccf70e58fdb1817983626",
+        "size": 269
+    },
+    "lambdas/feed-stac-api/lambda_function.py": {
+        "shasum": "0c8729bd630429d4b1967718e64b512b093d18fc33ed9dd8b4b956d48740cf72",
+        "size": 4280
+    },
+    "lambdas/feed-s3-inventory/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/feed-s3-inventory/README.md": {
+        "shasum": "ef297e110da57ba9500090c45a87398dc7c5fc95db111046a09300c791a809b8",
+        "size": 987
+    },
+    "lambdas/feed-s3-inventory/lambda_function.py": {
+        "shasum": "4512f5cbbb0f014848940ada57c3351456a1c08671d34ef416eb3fd69ff5c768",
+        "size": 7745
+    },
+    "lambdas/update-state/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/update-state/README.md": {
+        "shasum": "c747c571fc2fdef80b4520b8f85b7edd93b92f3b0fa292410f326fcbfbcc9d6a",
+        "size": 83
+    },
+    "lambdas/update-state/lambda_function.py": {
+        "shasum": "fc90fbbf260807d94799ee533cf0e882128bd15d4e4188ba531bbf2c6ac094d8",
+        "size": 5567
+    },
+    "lambdas/publish/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/publish/README.md": {
+        "shasum": "df46c55ffe39c090c2790c4e47ff8bd6bea814c796cf4f6479e97afa25b4f0e7",
+        "size": 826
+    },
+    "lambdas/publish/lambda_function.py": {
+        "shasum": "50bca5e60195be1f48f07582e734656e24c462d27717472036205d9fd756ee21",
+        "size": 2015
+    },
+    "lambdas/api/api.yaml": {
+        "shasum": "d4fdab7e61372083de65e14be69e08416a7d1a26a76a0a578886ee8dea986385",
+        "size": 1403
+    },
+    "lambdas/api/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/api/lambda_function.py": {
+        "shasum": "7acb40a11d27f6e2f6af9bb002cde8197d249d1f496375eeedf91567849c0ace",
+        "size": 5394
+    },
+    "lambdas/feed-rerun/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/feed-rerun/README.md": {
+        "shasum": "7e7ec9226f9d7eb4609f89dc9b46ffe92cffd5a7490ca6f8c77d9a3fce753813",
+        "size": 945
+    },
+    "lambdas/feed-rerun/lambda_function.py": {
+        "shasum": "853bbe9763dd35dc039da33b3df5823829ad9520c991a116673f2707345fd5f1",
+        "size": 2214
+    },
+    "lambdas/convert-to-cog/requirements.txt": {
+        "shasum": "833362cb5a918ce5e5978384b54715ff035948b2905647d579695ac183e5ae94",
+        "size": 51
+    },
+    "lambdas/convert-to-cog/README.md": {
+        "shasum": "1c63d41de084e813acfc6f3214367196eef567dbf636b3eb82b9d78f9f53dde3",
+        "size": 1849
+    },
+    "lambdas/convert-to-cog/lambda_function.py": {
+        "shasum": "ed0a5c38f22f7cc3a109644a3c6127a7421f498c4150d893b222b002ebf41400",
+        "size": 4083
+    },
+    "lambdas/process/requirements.txt": {
+        "shasum": "3a40ff0505f0a437892ae102f688b1c2ef7d572dd6eefd89c05941a001d738a4",
+        "size": 17
+    },
+    "lambdas/process/README.md": {
+        "shasum": "396db431f2d8638f21094af3270b680c48276728d19416c759450018d7505844",
+        "size": 25
+    },
+    "lambdas/process/processes.json": {
+        "shasum": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "size": 3
+    },
+    "lambdas/process/lambda_function.py": {
+        "shasum": "01f7de534bcedbbc48c580d53faf24de72002675b3b7318b38e544255b3fcf42",
+        "size": 2171
+    },
+    "lambdas/add-preview/requirements.txt": {
+        "shasum": "833362cb5a918ce5e5978384b54715ff035948b2905647d579695ac183e5ae94",
+        "size": 51
+    },
+    "lambdas/add-preview/README.md": {
+        "shasum": "a3b594f6f897742d38e6566f8be6cfe3c195fd4ed33077c7f3316f573b2345fe",
+        "size": 1721
+    },
+    "lambdas/add-preview/lambda_function.py": {
+        "shasum": "d77d6b0bef45877a9a74da02a8b8035cfe6500407dbf5361e5c65f763a5b8b77",
+        "size": 8452
+    }
+}
