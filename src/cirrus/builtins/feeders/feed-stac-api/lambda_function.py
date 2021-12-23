@@ -10,7 +10,7 @@ import time
 from copy import deepcopy
 from dateutil.parser import parse
 
-from cirruslib.utils import submit_batch_job
+from cirrus.lib.utils import submit_batch_job
 from satsearch import Search
 
 

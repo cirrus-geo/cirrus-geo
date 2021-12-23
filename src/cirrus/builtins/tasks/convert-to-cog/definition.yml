@@ -8,6 +8,7 @@ lambda:
   layers:
     - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda:2
     - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1
-python_requirements:
-  - rasterio==1.2.8
-  - rio-cogeo~=1.1.10
+  pythonRequirements:
+    include:
+      - rasterio==1.2.8
+      - rio-cogeo~=1.1.10

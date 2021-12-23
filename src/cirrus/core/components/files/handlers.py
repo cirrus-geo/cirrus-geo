@@ -7,7 +7,8 @@ logger = logging.getLogger(__name__)
 
 
 default_handler = '''#!/usr/bin/env python
-from cirruslib import Catalog, get_task_logger
+from cirrus.lib.catalog import Catalog
+from cirrus.lib.logging import get_task_logger
 
 
 LAMBDA_TYPE = '{component_type}'

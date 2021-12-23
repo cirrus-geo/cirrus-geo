@@ -6,7 +6,7 @@ node_modules/
 .serverless
 .dist/
 dist/
-build/
+/build/
 .env
 packages/
 *.egg-info/

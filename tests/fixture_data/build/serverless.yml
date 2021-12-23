@@ -149,13 +149,13 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: &id001
+      CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
-      CIRRUS_DATA_BUCKET: &id002
+      CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET: &id003
+      CIRRUS_CATALOG_BUCKET:
         Ref: Catalogs
-      CIRRUS_STATE_DB: &id004
+      CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
@@ -184,10 +184,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -211,10 +215,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -256,10 +264,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -281,10 +293,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -306,10 +322,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -331,10 +351,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -356,10 +380,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -386,10 +414,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -416,10 +448,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -441,10 +477,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -466,10 +506,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -491,10 +535,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
@@ -517,10 +565,14 @@ functions:
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET: *id001
-      CIRRUS_DATA_BUCKET: *id002
-      CIRRUS_CATALOG_BUCKET: *id003
-      CIRRUS_STATE_DB: *id004
+      CIRRUS_BUCKET:
+        Ref: ServerlessDeploymentBucket
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_CATALOG_BUCKET:
+        Ref: Catalogs
+      CIRRUS_STATE_DB:
+        Ref: StateTable
       CIRRUS_STACK: ${self:service}-${self:provider.stage}
       BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
       CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process

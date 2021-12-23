@@ -1,7 +1,9 @@
 import json
 from os import getenv
 
-from cirruslib import Catalog, StateDB, get_task_logger
+from cirrus.lib.catalog import Catalog
+from cirrus.lib.statedb import StateDB
+from cirrus.lib.logging import get_task_logger
 
 # envvars
 DATA_BUCKET = getenv('CIRRUS_DATA_BUCKET')

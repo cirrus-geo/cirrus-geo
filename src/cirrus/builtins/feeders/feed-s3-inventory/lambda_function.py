@@ -12,7 +12,7 @@ from os import getenv, path as op
 
 import pyorc
 from boto3utils import s3
-from cirruslib.utils import submit_batch_job
+from cirrus.lib.utils import submit_batch_job
 
 
 # envvars

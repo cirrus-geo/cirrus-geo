@@ -4,8 +4,9 @@ import boto3
 
 from os import getenv
 
-from cirruslib import Catalog, StateDB
-from cirruslib.logging import get_task_logger
+from cirrus.lib.catalog import Catalog
+from cirrus.lib.statedb import StateDB
+from cirrus.lib.logging import get_task_logger
 
 
 logger = get_task_logger('lambda_function.update-state', catalog=tuple())
@@ -135,7 +136,8 @@ def get_execution_error(arn):
     return error
 
 
-# TODO: in cirruslib make a factory class that returns classes
+
+# TODO: in cirrus.lib make a factory class that returns classes
 # for each error type, and generalize the processing here into
 # a well-known type interface
 def parse_payload(payload):

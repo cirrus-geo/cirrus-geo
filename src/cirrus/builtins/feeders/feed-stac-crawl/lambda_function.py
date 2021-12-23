@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 
-from cirruslib.utils import submit_batch_job
+from cirrus.lib.utils import submit_batch_job
 from pystac import Catalog
 
 # envvars
