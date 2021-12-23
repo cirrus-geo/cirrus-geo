@@ -115,6 +115,9 @@ def test_build(invoke, project, reference_build, build_dir):
         print(f'Files in missing from build: {missing}')
         print(f'Files added in build: {added}')
         print(f'Files different in build: {changed}')
+        for f in changed:
+            print(f"Content of '{f}':")
+            print(build_dir.joinpath(f).read_text())
 
         if 'serverless.yml' in changed:
             with reference_build.joinpath('serverless.yml').open() as f1:

@@ -40,8 +40,13 @@ class Lambda(Component):
 
         if not hasattr(self.lambda_config, 'pythonRequirements'):
             self.lambda_config.pythonRequirements = {}
+        # note the set to deduplicate requirements
+        # TODO: multiple versions of the same requirement
+        # will not be deduplicated
         self.lambda_config.pythonRequirements['include'] = sorted(list({
             req for req in
+            # list of all requirements specified in lambda config
+            # and the global pythonRequiments from cirrus.yml
             self.lambda_config.pythonRequirements.get('include', [])
             + list(self.project.config.custom.pythonRequirements.include)
         }))
@@ -69,6 +74,7 @@ class Lambda(Component):
         click.echo(textwrap.indent(self.lambda_config.to_yaml(), '  '))
 
     def copy_for_config(self):
+        '''any modifications to config for serverless.yml go here'''
         lc = copy.deepcopy(self.lambda_config)
         lc.pop('pythonRequirements', None)
         return lc
@@ -76,7 +82,7 @@ class Lambda(Component):
     def get_outdir(self, project_build_dir: Path) -> Path:
         return project_build_dir.joinpath(self.lambda_config.module)
 
-    def link_to_outdir(self, outdir: Path) -> None:
+    def copy_to_outdir(self, outdir: Path) -> None:
         import shutil
 
         try:
@@ -88,11 +94,12 @@ class Lambda(Component):
             if _file.name == self.definition.name:
                 logger.debug('Skipping linking definition file')
                 continue
-            # TODO: could have a problem on windows
-            # if lambda has a directory in it
-            # probably affects handler default too
             if _file.is_dir():
-                shutil.copytree(_file, outdir.joinpath(_file.name))
+                shutil.copytree(
+                    _file,
+                    outdir.joinpath(_file.name),
+                    ignore=shutil.ignore_patterns('*.pyc', '__pycache__'),
+                )
             else:
                 shutil.copyfile(_file, outdir.joinpath(_file.name))
 

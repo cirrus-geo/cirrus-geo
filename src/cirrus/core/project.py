@@ -115,7 +115,7 @@ class Project:
             raise CirrusError('Cannot build a project without the path set')
 
         import shutil
-        from cirrus import lib
+        import cirrus.lib
         from cirrus.core.utils import misc
 
         # make build dir or clean it up
@@ -130,8 +130,10 @@ class Project:
         for f in bd.iterdir():
             if not f.is_dir():
                 continue
-            if f.name in ['.serverless', 'cirrus']:
+            if f.name in ['.serverless']:
                 continue
+            if f.name in ['cirrus']:
+                shutil.rmtree(f)
             for d in f.iterdir():
                 if d.is_symlink() or not d.is_dir():
                     continue
@@ -145,15 +147,10 @@ class Project:
         # copy cirrus-lib to build dir for packaging
         lib_dir = bd.joinpath('cirrus', 'lib')
         shutil.copytree(
-            lib.__path__[0],
+            cirrus.lib.__path__[0],
             lib_dir,
             ignore=shutil.ignore_patterns('*.pyc', '__pycache__'),
-            dirs_exist_ok=True,
         )
-        try:
-            lib_dir.symlink_to(lib.__path__[0])
-        except FileExistsError:
-            pass
 
         # setup all required lambda dirs
         fn_dirs = set()
@@ -166,15 +163,17 @@ class Project:
                     )
                     continue
 
+                # create lambda dir
                 fn_dirs.add(outdir)
-                fn.link_to_outdir(outdir)
+                # copy contents
+                fn.copy_to_outdir(outdir)
+                # link in cirrus-lib
                 outdir.joinpath('cirrus').symlink_to(
                     misc.relative_to(outdir, lib_dir.parent),
                 )
 
         # clean up existing but no longer used lambda dirs
         for d in existing_dirs - fn_dirs:
-            print(d)
             shutil.rmtree(d)
 
     def clean(self) -> None:
