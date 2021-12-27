@@ -10,7 +10,7 @@ from cirrus.core.components import (
     Task,
     Workflow,
 )
-from cirrus.core.resources import BaseResource, Resource, Output
+from cirrus.core.resources import BaseCFObject, Resource, Output
 
 
 logger = logging.getLogger(__name__)
@@ -39,8 +39,8 @@ class Groups(Sequence):
         return [c for c in self.groups if issubclass(c, StepFunction)]
 
     @property
-    def resource_groups(self):
-        return [c for c in self.groups if issubclass(c, BaseResource)]
+    def cf_groups(self):
+        return [c for c in self.groups if issubclass(c, BaseCFObject)]
 
     @property
     def extendable_groups(self):
