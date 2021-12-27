@@ -19,8 +19,8 @@ def lambda_handler(payload, context={}):
     item = catalog['features'][0]  # collection=catalog['collections'][0])
 
     # configuration options
-    config = catalog['process']['tasks'].get('convert-to-cog', {})
-    outopts = catalog['process'].get('output_options', {})
+    config = catalog.get_task('convert-to-cog', {})
+    outopts = catalog.process.get('output_options', {})
     assets = config.get('assets')
 
     # create temporary work directory
