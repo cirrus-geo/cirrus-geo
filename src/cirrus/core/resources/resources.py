@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from .base import BaseResource
+from .base import BaseCFObject
 
 
 JOB_DEFINITION_TYPE = 'AWS::Batch::JobDefinition'
@@ -20,7 +20,7 @@ def convert_batch_env_to_env(env):
     return _env
 
 
-class Resource(BaseResource):
+class Resource(BaseCFObject):
     top_level_key = 'Resources'
     task_batch_resource_attr = 'batch_resources'
 
