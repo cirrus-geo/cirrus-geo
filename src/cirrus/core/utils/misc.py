@@ -10,10 +10,8 @@ def get_cirrus_lib_requirements() -> List[str]:
     '''
     try:
         from importlib import metadata
-        print("using importlib")
     except ImportError:
         import importlib_metadata as metadata
-        print("using importlib_metadata")
 
     return [
         req.split(';')[0].translate(str.maketrans('','',' ()'))
