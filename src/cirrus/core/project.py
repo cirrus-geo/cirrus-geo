@@ -125,6 +125,11 @@ class Project:
         except FileExistsError:
             pass
 
+        try:
+            shutil.rmtree(bd.joinpath('cirrus'))
+        except FileNotFoundError:
+            pass
+
         # find existing lambda dirs, if any
         existing_dirs = set()
         for f in bd.iterdir():
@@ -132,8 +137,6 @@ class Project:
                 continue
             if f.name in ['.serverless']:
                 continue
-            if f.name in ['cirrus']:
-                shutil.rmtree(f)
             for d in f.iterdir():
                 if d.is_symlink() or not d.is_dir():
                     continue
