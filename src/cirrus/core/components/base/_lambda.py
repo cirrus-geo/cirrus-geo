@@ -31,7 +31,11 @@ class Lambda(Component):
         self.lambda_config.description = self.description
         self.lambda_config.environment = self.config.get('environment', {})
 
+        project_reqs = []
         if self.project and self.project.config:
+            project_reqs = list(
+                self.project.config.custom.pythonRequirements.include
+            )
             self.lambda_config.environment.update(self.project.config.provider.environment)
 
         self.lambda_config.package = {}
@@ -48,7 +52,7 @@ class Lambda(Component):
             # list of all requirements specified in lambda config
             # and the global pythonRequiments from cirrus.yml
             self.lambda_config.pythonRequirements.get('include', [])
-            + list(self.project.config.custom.pythonRequirements.include)
+            + project_reqs
         }))
 
         if not hasattr(self.lambda_config, 'module'):
