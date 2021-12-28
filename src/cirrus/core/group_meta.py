@@ -78,6 +78,9 @@ class GroupMeta(MutableMapping, ABCMeta):
     def reset_elements(self):
         self._elements = None
 
+    def register_parent(self, parent):
+        self.parent = parent
+
     def register_project(self, project):
         self.project = project
         self.reset_elements()
