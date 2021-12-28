@@ -10,15 +10,16 @@ from cirrus.core.components import (
     Task,
     Workflow,
 )
-from cirrus.core.resources import BaseCFObject, Resource, Output
+from cirrus.core.cloudformation import CloudFormation
 
 
 logger = logging.getLogger(__name__)
 
 
 class Groups(Sequence):
-    def __init__(self, *groups, project=None):
+    def __init__(self, *groups, parent=None, project=None):
         self.groups = groups
+        self.parent = parent
         self.project = project
 
         for group in self.groups:
@@ -48,7 +49,7 @@ class Groups(Sequence):
 
     def register_group(self, group):
         setattr(self, group.group_name, group)
-        group.parent = self
+        group.register_parent(self)
         group.register_project(self.project)
 
     def register_project(self, project):
@@ -63,7 +64,6 @@ def make_groups(project=None):
         Feeder,
         Task,
         Workflow,
-        Resource,
-        Output,
+        CloudFormation,
         project=project,
     )

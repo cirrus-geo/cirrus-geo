@@ -73,15 +73,13 @@ class Config(NamedYamlable):
 
     def register(self, group) -> None:
         from cirrus.core.components.base import Lambda, StepFunction
-        from cirrus.core.resources import Resource, Output
+        from cirrus.core.cloudformation import CloudFormation
         if issubclass(group, Lambda):
             self.register_lambda_group(group)
         elif issubclass(group, StepFunction):
             self.register_step_function_group(group)
-        elif issubclass(group, Resource):
-            self.resources.Resources = {e.name: e.definition for e in group.values()}
-        elif issubclass(group, Output):
-            self.resources.Outputs = {e.name: e.definition for e in group.values()}
+        elif issubclass(group, CloudFormation):
+            self.register_cloud_formation_group(group)
         else:
             raise ConfigError(
                 f"Unable to register group '{group.name}': unknown type '{group.type}'",
@@ -125,3 +123,8 @@ class Config(NamedYamlable):
             )
             return
         self.stepFunctions.stateMachines[sf_component.name] = sf_component.config
+
+    def register_cloud_formation_group(self, cf_group) -> None:
+        for top_level_key, cf_objects in cf_group.cf_objects.items():
+            self.resources[top_level_key] = \
+                {cf.name: cf.definition for cf in cf_objects}

@@ -25,7 +25,7 @@ class Resource(BaseCFObject):
     task_batch_resource_attr = 'batch_resources'
 
     def __new__(cls, name, definition, *args, **kwargs):
-        resource_type = definition.get('Type', '')
+        resource_type = definition.get('Type')
 
         if resource_type == JOB_DEFINITION_TYPE:
             cls = JobDefinition
@@ -34,25 +34,6 @@ class Resource(BaseCFObject):
         self.resource_type = resource_type
 
         return self
-
-    def __init__(self, *args, parent_task=None, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.parent_task = parent_task
-
-    @property
-    def display_source(self):
-        if self.parent_task:
-            built_in = 'built-in ' if self.parent_task.is_core_component else ''
-            return f'from {built_in}task {self.parent_task.name}'
-        return super().display_source
-
-    @property
-    def display_name(self):
-        return '{}{} ({})'.format(
-            self.name,
-            f' [{self.resource_type}]' if self.resource_type else '',
-            self.display_source,
-        )
 
 
 class JobDefinition(Resource):
