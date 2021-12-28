@@ -1,5 +1,6 @@
 import logging
 import click
+import textwrap
 
 from pathlib import Path
 from itertools import chain
@@ -13,7 +14,19 @@ logger = logging.getLogger(__name__)
 
 
 class CFObjectMeta(GroupMeta):
+    # All concrete subclasses are added to this dict
+    # using their `top_level_key` as the dict key.
+    # We use this class as a lookup when instantiating
+    # an object for each cloudformation object in a
+    # cf file in `from_file`, and anywhere else we need
+    # a reference to all the top_level_keys/cf classes.
     cf_types = {}
+
+    # Skipped types are those we don't care to copy
+    # over into the output cf template. Generally,
+    # these are things that cannot be unique across
+    #templates, i.e., only one value in the output
+    # template is acceptable.
     skipped_cf_types = [
         'AWSTemplateFormatVersion',
         'Description',
@@ -24,12 +37,34 @@ class CFObjectMeta(GroupMeta):
     # level key
     _cf_objects = None
 
+    ### here we have all the bits we need to manage cf_objects
+    @property
+    def cf_objects(self):
+        if self._cf_objects is None:
+            self.find()
+        return self._cf_objects
+
+    def reset_elements(self, *args, **kwargs):
+        super().reset_elements(*args, **kwargs)
+        self._cf_objects = None
+
+    def __setitem__(self, key, val):
+        super().__setitem__(key, val)
+        self.cf_objects[val.top_level_key][key] = val
+
+    def __delitem__(self, key):
+        del cf_objects[self.elements[key].top_level_key][key]
+        super().__delitem__(key)
+    ###
+
     def __new__(cls, name, bases, attrs, **kwargs):
         if 'user_extendable' not in attrs:
             attrs['user_extendable'] = True
 
         abstract = attrs.get('abstract', False)
 
+        # top_level_key is like `Resources` or `Outputs`
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html
         top_level_key = attrs.get('top_level_key', None)
         if not (
             top_level_key
@@ -53,31 +88,36 @@ class CFObjectMeta(GroupMeta):
         super().__init__(*args, **kwargs)
         self.type = self.__name__.lower()
 
-    @property
-    def cf_objects(self):
-        if self._cf_objects is None:
-            self.find()
-        return self._cf_objects
-
-    def reset_elements(self, *args, **kwargs):
-        super().reset_elements(*args, **kwargs)
-        self._cf_objects = None
-
     def from_file(self, path: Path):
+        # parse a yml cf file
         cf = NamedYamlable.from_file(path)
+        is_builtin = (
+            path.parent.samefile(self.core_dir)
+            if path and self.core_dir.is_dir() else False
+        )
+
+        # iterate through all top_level_keys in the file
         for top_level_key, cf_objects in cf.items():
             if top_level_key in self.skipped_cf_types:
                 continue
+
+            # resolve the top_level_key to a cf object class
             cls = self.cf_types.get(top_level_key, None)
+
+            def log_unknown(name):
+                logger.warning(
+                    "Skipping item '%s': Unknown cloudformation object type '%s'",
+                    name,
+                    top_level_key,
+                )
+
+            # iterate through and instantiate all cf objects
             for name, definition in cf_objects.items():
                 if cls is None:
-                    logger.warning(
-                        "Skipping item '%s': Unknown cloudformation object type '%s'",
-                        name,
-                        top_level_key,
-                    )
-                    continue
-                yield cls(name, definition, path)
+                    # we log here so we can log each skipped unknown item
+                    log_unknown(name)
+                else:
+                    yield cls(name, definition, path, is_builtin=is_builtin)
 
     def _find(self, search_dirs=None):
         if search_dirs is None:
@@ -92,7 +132,7 @@ class CFObjectMeta(GroupMeta):
 
     def find(self):
         self._elements = {}
-        self._cf_objects = {tlk: list() for tlk in self.cf_types.keys()}
+        self._cf_objects = {tlk: {} for tlk in self.cf_types.keys()}
 
         def cf_finder():
             # order here matters
@@ -103,15 +143,17 @@ class CFObjectMeta(GroupMeta):
                 self.parent.tasks.values(),
             )))
 
+        # cf_finder yields cf object instances, so here
+        # we iterate through all cf objects it finds
         for cf_object in cf_finder():
             if cf_object.name in self._elements:
                 logger.warning(
                     "Duplicate %s declaration '%s', overriding",
-                    self.type,
+                    cf_object.type.capitalize(),
                     cf_object.name,
                 )
             self._elements[cf_object.name] = cf_object
-            self._cf_objects[cf_object.top_level_key].append(cf_object)
+            self._cf_objects[cf_object.top_level_key][cf_object.name] = cf_object
 
     def add_show_command(self, show_cmd):
         @show_cmd.command(
@@ -137,9 +179,16 @@ class CFObjectMeta(GroupMeta):
         def _show(name, filter_types=None):
             # filter cf object lists by selected filter types
             object_items = [
-                (tlk, cfos)
-                for tlk, cfos in self.cf_objects.items()
-                if not filter_types or tlk in filter_types
+                (
+                    top_level_key,
+                    sorted(
+                        cf_objects.values(),
+                        # sort alpha on name, with builtin all first
+                        key=lambda x: (not x.is_builtin, x.name),
+                    ),
+                )
+                for top_level_key, cf_objects in self.cf_objects.items()
+                if not filter_types or top_level_key in filter_types
             ]
 
             # iterate through the different cf types
@@ -174,7 +223,7 @@ class CFObjectMeta(GroupMeta):
                         first_line = False
                     else:
                         click.echo('')
-                    click.secho(tlk, fg='green')
+                    click.secho(f'[{tlk}]', fg='green')
                     for element in els:
                         element.list_display()
             elif not name:
@@ -194,25 +243,27 @@ class BaseCFObject(metaclass=CFObjectMeta):
     '''Base class for all cloudformation types.'''
     abstract = True
 
-    def __init__(self, name, definition,
-                 path: Path=None, parent_task=None) -> None:
+    def __init__(
+        self,
+        name,
+        definition,
+        path: Path=None,
+        parent_task=None,
+        is_builtin=False,
+    ) -> None:
         self.name = name
         self.definition = definition
         self.path = path
         self.resource_type = definition.get('Type', None)
         self.parent_task = parent_task
-        # TODO: fix is_core_component logic
-        self.is_core_component = (
-            self.path.parent.samefile(self.core_dir)
-            if self.path and self.core_dir.is_dir() else False
-        )
+        self.is_builtin = is_builtin
 
     @property
     def display_source(self):
         if self.parent_task:
             built_in = 'built-in ' if self.parent_task.is_core_component else ''
             return f'from {built_in}task {self.parent_task.name}'
-        elif self.is_core_component:
+        elif self.is_builtin:
             return 'built-in'
         return misc.relative_to_cwd(self.path)
 
@@ -233,7 +284,12 @@ class BaseCFObject(metaclass=CFObjectMeta):
 
     def detail_display(self):
         self.list_display(show_type=False)
-        click.echo(self.definition.to_yaml())
+        click.echo(f'{self.top_level_key}:')
+        click.echo(f'  {self.name}:')
+        click.echo(textwrap.indent(
+            self.definition.to_yaml(),
+            '    ',
+        ))
 
 
 class CloudFormation(metaclass=CFObjectMeta):
