@@ -115,19 +115,24 @@ def test_build(invoke, project, reference_build, build_dir):
         print(f'Files in missing from build: {missing}')
         print(f'Files added in build: {added}')
         print(f'Files different in build: {changed}')
+        # TODO: rather than printing out each of the changed files,
+        # it might be worthwhile to build into a local untracked dir,
+        # such that the user can choose to inspect any changed files
+        # in an easily-accessible and well-known location.
         for f in changed:
-            print(f"Content of '{f}':")
-            print(build_dir.joinpath(f).read_text())
+            if f == 'serverless.yml':
+                with reference_build.joinpath('serverless.yml').open() as f1:
+                    with build_dir.joinpath('serverless.yml').open() as f2:
+                        sys.stdout.writelines(difflib.unified_diff(
+                            f1.readlines(),
+                            f2.readlines(),
+                            fromfile='expected serverless.yml',
+                            tofile='generated serverless.yml',
+                        ))
+            else:
+                print(f"Content of '{f}':")
+                print(build_dir.joinpath(f).read_text())
 
-        if 'serverless.yml' in changed:
-            with reference_build.joinpath('serverless.yml').open() as f1:
-                with build_dir.joinpath('serverless.yml').open() as f2:
-                    sys.stdout.writelines(difflib.unified_diff(
-                        f1.readlines(),
-                        f2.readlines(),
-                        fromfile='expected serverless.yml',
-                        tofile='generated serverless.yml',
-                    ))
 
         print(
             'If all highlighted changes are expected, simply remove '
