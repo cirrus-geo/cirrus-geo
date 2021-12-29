@@ -19,7 +19,7 @@ def lambda_handler(payload, context):
     catalog = Catalog.from_payload(payload)
     logger = get_task_logger("task.publish", catalog=catalog)
 
-    config = catalog['process']['tasks'].get('publish', {})
+    config = catalog.get_task('publish', {})
     public = config.get('public', False)
     # additional SNS topics to publish to
     topics = config.get('sns', [])
@@ -42,15 +42,15 @@ def lambda_handler(payload, context):
                 item['links'].append(link)
 
         # publish to s3
-        s3urls = catalog.publish_to_s3(DATA_BUCKET, public=public)
+        s3urls = catalog.publish_items_to_s3(DATA_BUCKET, public=public)
 
         # publish to Cirrus SNS publish topic
-        catalog.publish_to_sns()
+        catalog.publish_items_to_sns()
 
         # Deprecated additional topics
         if PUBLISH_TOPICS:
             for t in PUBLISH_TOPICS.split(','):
-                catalog.publish_to_sns(t)
+                catalog.publish_items_to_sns()
 
         for t in topics:
             catalog.publish_to_sns(t)

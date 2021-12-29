@@ -12,6 +12,7 @@ from cirrus.lib.logging import get_task_logger
 logger = get_task_logger('lambda_function.update-state', catalog=tuple())
 
 # envvars
+PROCESS_SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN', None)
 FAILED_TOPIC_ARN = getenv('CIRRUS_FAILED_TOPIC_ARN', None)
 INVALID_TOPIC_ARN = getenv('CIRRUS_INVALID_TOPIC_ARN', None)
 
@@ -37,7 +38,13 @@ def unknown_error():
 
 
 def workflow_completed(catalog, error):
+    # I think changing the state should be done before
+    # trying the sns publish, but I could see it the other
+    # way too. If we have issues here we might want to consider
+    # a different order/behavior (fail on error or something?).
     statedb.set_completed(catalog['id'])
+    for next_catalog in catalog.next_workflows():
+        next_catalog.publish_to_sns(PROCESS_SNS_TOPIC)
 
 
 def workflow_failed(catalog, error):

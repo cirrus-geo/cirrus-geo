@@ -53,6 +53,6 @@ def lambda_handler(payload, context):
 
     if len(catalogs) > 0:
         cats = Catalogs(catalogs)
-        cats.process()
+        cats()
 
     return len(catalogs)

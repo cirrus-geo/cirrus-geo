@@ -18,8 +18,8 @@ def lambda_handler(payload, context={}):
     logger = get_task_logger("task.add-preview", catalog=catalog)
 
     # get step configuration
-    config = catalog['process']['tasks'].get('add-preview', {})
-    outopts = catalog['process'].get('output_options', {})
+    config = catalog.get_task('add-preview', {})
+    outopts = catalog.process.get('output_options', {})
     assets = config.pop('assets', None)
     thumb = config.pop('thumbnail', False)
     config.pop('batch')
