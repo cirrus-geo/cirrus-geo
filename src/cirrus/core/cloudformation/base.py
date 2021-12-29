@@ -5,6 +5,10 @@ import textwrap
 from pathlib import Path
 from itertools import chain
 
+from cirrus.core.exceptions import (
+    CloudFormationError,
+    CloudFormationSkipped,
+)
 from cirrus.core.utils.yaml import NamedYamlable
 from cirrus.core.utils import misc
 from cirrus.core.group_meta import GroupMeta
@@ -88,6 +92,45 @@ class CFObjectMeta(GroupMeta):
         super().__init__(*args, **kwargs)
         self.type = self.__name__.lower()
 
+    def resolve_cls(self, top_level_key):
+        if top_level_key in self.skipped_cf_types:
+            raise CloudFormationSkipped()
+
+        try:
+            return self.cf_types[top_level_key]
+        except IndexError:
+            raise CloudFormationError(
+                "Unknown cloudformation type '%s'",
+                top_level_key,
+            )
+
+    def create_cf_objects(
+        self,
+        path,
+        top_level_key,
+        objects,
+        is_builtin,
+        parent_component=None,
+    ):
+        for name, definition in objects.items():
+            try:
+                yield CFObject(
+                    top_level_key,
+                    name,
+                    definition,
+                    path,
+                    is_builtin=is_builtin,
+                    parent_task=parent_component,
+                )
+            except CloudFormationSkipped:
+                pass
+            except CloudFormationError as e:
+                logger.warning(
+                    "Skipping item '%s': %s",
+                    name,
+                    e,
+                )
+
     def from_file(self, path: Path):
         # parse a yml cf file
         cf = NamedYamlable.from_file(path)
@@ -96,28 +139,14 @@ class CFObjectMeta(GroupMeta):
             if path and self.core_dir.is_dir() else False
         )
 
-        # iterate through all top_level_keys in the file
+        # iterate through and instantiate all cf objects
         for top_level_key, cf_objects in cf.items():
-            if top_level_key in self.skipped_cf_types:
-                continue
-
-            # resolve the top_level_key to a cf object class
-            cls = self.cf_types.get(top_level_key, None)
-
-            def log_unknown(name):
-                logger.warning(
-                    "Skipping item '%s': Unknown cloudformation object type '%s'",
-                    name,
-                    top_level_key,
-                )
-
-            # iterate through and instantiate all cf objects
-            for name, definition in cf_objects.items():
-                if cls is None:
-                    # we log here so we can log each skipped unknown item
-                    log_unknown(name)
-                else:
-                    yield cls(name, definition, path, is_builtin=is_builtin)
+            yield from self.create_cf_objects(
+                path,
+                top_level_key,
+                cf_objects,
+                is_builtin,
+            )
 
     def _find(self, search_dirs=None):
         if search_dirs is None:
@@ -134,12 +163,15 @@ class CFObjectMeta(GroupMeta):
         self._elements = {tlk: {} for tlk in self.cf_types.keys()}
 
         def cf_finder():
-            # order here matters
-            # later takes precedence
+            # order here matters, later takes precedence
+            # so we prefer objects defined on tasks
             yield from self._find(search_dirs=self.get_search_dirs())
             yield from chain.from_iterable(filter(bool, map(
-                lambda r: r.batch_resources if r.batch_enabled else None,
-                self.parent.tasks.values(),
+                lambda task:
+                    task.batch_cloudformation
+                    if task.batch_enabled
+                    else None,
+                self.parent.tasks,
             )))
 
         # cf_finder yields cf object instances, so here
@@ -288,6 +320,18 @@ class BaseCFObject(metaclass=CFObjectMeta):
             self.definition.to_yaml(),
             '    ',
         ))
+
+
+class CFObject(BaseCFObject):
+    '''Used as a class to instantiate all other CF object classes
+    via class resolution to find the relevant CF object type from
+    the provided top_level_key.
+    '''
+    abstract = True
+
+    def __new__(cls, top_level_key, *args, **kwargs):
+        cls = cls.resolve_cls(top_level_key)
+        return cls(*args, **kwargs)
 
 
 class CloudFormation(metaclass=CFObjectMeta):

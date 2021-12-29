@@ -3,7 +3,7 @@ import click
 
 from .base import Lambda
 from . import files
-from cirrus.core.cloudformation import Resource
+from cirrus.core.cloudformation import CFObject
 
 
 class Task(Lambda):
@@ -21,18 +21,17 @@ class Task(Lambda):
         self.batch_env = self.config.get('environment', {})
         batch = self.config.get('batch', {})
         self.batch_enabled = batch.get('enabled', True) and self._enabled and bool(batch)
-        self.batch_resources = [
-            self.create_batch_resource(name, definition)
-            for name, definition in batch.get('Resources', {}).items()
+        self.batch_cloudformation = [
+            cf_object
+            for top_level_key, cf_items in batch.get('resources', {}).items()
+            for cf_object in CFObject.create_cf_objects(
+                self.definition.path,
+                top_level_key,
+                cf_items,
+                is_builtin=self.is_core_component,
+                parent_component=self,
+            )
         ]
-
-    def create_batch_resource(self, name, definition):
-        resource = Resource(name, definition, self.definition.path, parent_task=self)
-
-        if self.batch_env and hasattr(resource, 'update_environment'):
-            resource.update_environment(self.batch_env)
-
-        return resource
 
     def display_attrs(self):
         yield from super().display_attrs()
@@ -44,10 +43,10 @@ class Task(Lambda):
     def detail_display(self):
         super().detail_display()
         click.echo(f'Batch enabled: {self.batch_enabled}')
-        if not self.batch_resources:
+        if not self.batch_cloudformation:
             return
         click.echo('Batch resources:')
-        for resource in self.batch_resources:
+        for resource in self.batch_cloudformation:
             click.echo("  {}:\n{}".format(
                 click.style(resource.name, fg='yellow'),
                 textwrap.indent(

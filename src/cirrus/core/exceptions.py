@@ -8,3 +8,9 @@ class ConfigError(CirrusError):
 
 class ComponentError(CirrusError):
     pass
+
+class CloudFormationError(CirrusError):
+    pass
+
+class CloudFormationSkipped(CloudFormationError):
+    pass

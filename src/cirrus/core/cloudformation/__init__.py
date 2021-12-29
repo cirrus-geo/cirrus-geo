@@ -1,5 +1,5 @@
 from .base import (
-    BaseCFObject,
+    CFObject,
     CloudFormation,
 )
 from .conditions import Condition
