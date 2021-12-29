@@ -32,30 +32,30 @@ class CFObjectMeta(GroupMeta):
         'Description',
     ]
 
-    # we use _cf_objects as an extension of the GroupMeta
-    # _elements property, to index all cf objects by top
-    # level key
-    _cf_objects = None
+    ####
+    # We use the `elements` property a bit different here than
+    # on the `GroupMeta` base class. We need to maintain a list of
+    # cf objects per type, rather than one list across all types.
+    # As a result, we end up with a heirarchial dict like:
+    #
+    #     elements[cf_top_level_key][cf_object_name]: cf_object
+    #
+    # See `find` for where we initialize `elements`.
+    #
+    # We override the following `GroupMeta` method`s as a consequence.
+    def __iter__(self):
+        yield from (
+            cf_obj
+            for cf_type in self.elements.values()
+            for cf_obj in cf_type.values()
+        )
 
-    ### here we have all the bits we need to manage cf_objects
-    @property
-    def cf_objects(self):
-        if self._cf_objects is None:
-            self.find()
-        return self._cf_objects
-
-    def reset_elements(self, *args, **kwargs):
-        super().reset_elements(*args, **kwargs)
-        self._cf_objects = None
+    def __len__(self):
+        return sum(len(d) for d in self.elements.values())
 
     def __setitem__(self, key, val):
-        super().__setitem__(key, val)
-        self.cf_objects[val.top_level_key][key] = val
-
-    def __delitem__(self, key):
-        del cf_objects[self.elements[key].top_level_key][key]
-        super().__delitem__(key)
-    ###
+        self.elements[val.top_level_key][key] = val
+    ####
 
     def __new__(cls, name, bases, attrs, **kwargs):
         if 'user_extendable' not in attrs:
@@ -131,8 +131,7 @@ class CFObjectMeta(GroupMeta):
                 yield from self.from_file(yml)
 
     def find(self):
-        self._elements = {}
-        self._cf_objects = {tlk: {} for tlk in self.cf_types.keys()}
+        self._elements = {tlk: {} for tlk in self.cf_types.keys()}
 
         def cf_finder():
             # order here matters
@@ -146,14 +145,13 @@ class CFObjectMeta(GroupMeta):
         # cf_finder yields cf object instances, so here
         # we iterate through all cf objects it finds
         for cf_object in cf_finder():
-            if cf_object.name in self._elements:
+            if cf_object.name in self[cf_object.top_level_key]:
                 logger.warning(
                     "Duplicate %s declaration '%s', overriding",
-                    cf_object.type.capitalize(),
+                    cf_object.top_level_key,
                     cf_object.name,
                 )
-            self._elements[cf_object.name] = cf_object
-            self._cf_objects[cf_object.top_level_key][cf_object.name] = cf_object
+            self[cf_object.name] = cf_object
 
     def add_show_command(self, show_cmd):
         @show_cmd.command(
@@ -187,7 +185,7 @@ class CFObjectMeta(GroupMeta):
                         key=lambda x: (not x.is_builtin, x.name),
                     ),
                 )
-                for top_level_key, cf_objects in self.cf_objects.items()
+                for top_level_key, cf_objects in self.items()
                 if not filter_types or top_level_key in filter_types
             ]
 
