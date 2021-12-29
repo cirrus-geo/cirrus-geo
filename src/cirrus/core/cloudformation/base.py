@@ -120,7 +120,7 @@ class CFObjectMeta(GroupMeta):
                     definition,
                     path,
                     is_builtin=is_builtin,
-                    parent_task=parent_component,
+                    parent_component=parent_component,
                 )
             except CloudFormationSkipped:
                 pass
@@ -278,21 +278,25 @@ class BaseCFObject(metaclass=CFObjectMeta):
         name,
         definition,
         path: Path=None,
-        parent_task=None,
+        parent_component=None,
         is_builtin=False,
     ) -> None:
         self.name = name
         self.definition = definition
         self.path = path
         self.resource_type = definition.get('Type', None)
-        self.parent_task = parent_task
+        self.parent_component = parent_component
         self.is_builtin = is_builtin
 
     @property
     def display_source(self):
-        if self.parent_task:
-            built_in = 'built-in ' if self.parent_task.is_core_component else ''
-            return f'from {built_in}task {self.parent_task.name}'
+        if self.parent_component:
+            built_in = (
+                'built-in '
+                if self.parent_component.is_core_component
+                else ''
+            )
+            return f'from {built_in}task {self.parent_component.name}'
         elif self.is_builtin:
             return 'built-in'
         return misc.relative_to_cwd(self.path)
