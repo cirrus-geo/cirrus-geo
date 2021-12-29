@@ -1228,278 +1228,6 @@ resources:
         State: ENABLED
         Priority: 1
         JobQueueName: '#{AWS::StackName}-basic-spot'
-    GeoLambdaAsBatchJob:
-      Type: AWS::Batch::JobDefinition
-      Properties:
-        JobDefinitionName: '#{AWS::StackName}-geolambda-as-batch'
-        Type: Container
-        Parameters:
-          lambda_function: ''
-          url: ''
-        ContainerProperties:
-          Command:
-            - run
-            - Ref::lambda_function
-            - Ref::url
-          Environment:
-            - Name: CIRRUS_LOG_LEVEL
-              Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
-            - Name: CIRRUS_BUCKET
-              Value: ${self:provider.environment.CIRRUS_BUCKET}
-            - Name: CIRRUS_DATA_BUCKET
-              Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
-            - Name: CIRRUS_CATALOG_BUCKET
-              Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
-            - Name: CIRRUS_STATE_DB
-              Value: ${self:provider.environment.CIRRUS_STATE_DB}
-            - Name: CIRRUS_STACK
-              Value: ${self:provider.environment.CIRRUS_STACK}
-            - Name: CIRRUS_QUEUE_TOPIC_ARN
-              Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
-            - Name: CIRRUS_PROCESS_QUEUE
-              Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
-            - Name: BASE_WORKFLOW_ARN
-              Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
-            - Name: AWS_DEFAULT_REGION
-              Value: ${self:provider.region}
-            - Name: AWS_REGION
-              Value: ${self:provider.region}
-            - Name: GDAL_DATA
-              Value: /usr/local/share/gdal
-            - Name: PROJ_LIB
-              Value: /usr/local/share/proj
-          Memory: ${self:custom.batch.GeoLambdaAsBatchJob.Memory}
-          Vcpus: ${self:custom.batch.GeoLambdaAsBatchJob.Vcpus}
-          Image: cirrusgeo/run-geolambda:0.2.1
-        RetryStrategy:
-          Attempts: 1
-    LambdaAsBatchJob:
-      Type: AWS::Batch::JobDefinition
-      Properties:
-        JobDefinitionName: '#{AWS::StackName}-lambda-as-batch'
-        Type: Container
-        Parameters:
-          lambda_function: ''
-          url: ''
-        ContainerProperties:
-          Command:
-            - run
-            - Ref::lambda_function
-            - Ref::url
-          Environment:
-            - Name: CIRRUS_LOG_LEVEL
-              Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
-            - Name: CIRRUS_BUCKET
-              Value: ${self:provider.environment.CIRRUS_BUCKET}
-            - Name: CIRRUS_DATA_BUCKET
-              Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
-            - Name: CIRRUS_CATALOG_BUCKET
-              Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
-            - Name: CIRRUS_STATE_DB
-              Value: ${self:provider.environment.CIRRUS_STATE_DB}
-            - Name: CIRRUS_STACK
-              Value: ${self:provider.environment.CIRRUS_STACK}
-            - Name: CIRRUS_QUEUE_TOPIC_ARN
-              Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
-            - Name: CIRRUS_PROCESS_QUEUE
-              Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
-            - Name: BASE_WORKFLOW_ARN
-              Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
-            - Name: AWS_DEFAULT_REGION
-              Value: ${self:provider.region}
-            - Name: AWS_REGION
-              Value: ${self:provider.region}
-          Memory: ${self:custom.batch.LambdaAsBatchJob.Memory}
-          Vcpus: ${self:custom.batch.LambdaAsBatchJob.Vcpus}
-          Image: cirrusgeo/run-lambda:0.2.1
-        RetryStrategy:
-          Attempts: 1
-    CustomOnDemandComputeEnvironment:
-      Type: AWS::Batch::ComputeEnvironment
-      Properties:
-        Type: MANAGED
-        ServiceRole:
-          Fn::GetAtt:
-            - BatchServiceRole
-            - Arn
-        ComputeEnvironmentName: '#{AWS::StackName}-custom-ondemand'
-        ComputeResources:
-          ImageId: ${self:custom.batch.CustomComputeEnvironments.ImageId}
-          MaxvCpus: ${self:custom.batch.CustomComputeEnvironments.MaxvCpus}
-          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
-          Subnets: ${self:custom.batch.Subnets}
-          InstanceTypes:
-            - optimal
-          Type: EC2
-          AllocationStrategy: BEST_FIT_PROGRESSIVE
-          MinvCpus: 0
-          InstanceRole:
-            Fn::GetAtt:
-              - BatchInstanceProfile
-              - Arn
-          Tags:
-            Name: 'Batch Instance - #{AWS::StackName}'
-          DesiredvCpus: 0
-        State: ENABLED
-    CustomOnDemandJobQueue:
-      Type: AWS::Batch::JobQueue
-      Properties:
-        ComputeEnvironmentOrder:
-          - Order: 1
-            ComputeEnvironment:
-              Ref: CustomOnDemandComputeEnvironment
-        State: ENABLED
-        Priority: 1
-        JobQueueName: '#{AWS::StackName}-custom-ondemand'
-    CustomSpotComputeEnvironment:
-      Type: AWS::Batch::ComputeEnvironment
-      Properties:
-        Type: MANAGED
-        ServiceRole:
-          Fn::GetAtt:
-            - BatchServiceRole
-            - Arn
-        ComputeEnvironmentName: '#{AWS::StackName}-custom-spot'
-        ComputeResources:
-          ImageId: ${self:custom.batch.CustomComputeEnvironments.ImageId}
-          MaxvCpus: ${self:custom.batch.CustomComputeEnvironments.MaxvCpus}
-          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
-          Subnets: ${self:custom.batch.Subnets}
-          InstanceTypes:
-            - optimal
-          Type: SPOT
-          AllocationStrategy: BEST_FIT_PROGRESSIVE
-          SpotIamFleetRole:
-            Fn::GetAtt:
-              - EC2SpotRole
-              - Arn
-          MinvCpus: 0
-          InstanceRole:
-            Fn::GetAtt:
-              - BatchInstanceProfile
-              - Arn
-          Tags:
-            Name: 'Batch Instance - #{AWS::StackName}'
-          DesiredvCpus: 0
-        State: ENABLED
-    CustomSpotJobQueue:
-      Type: AWS::Batch::JobQueue
-      Properties:
-        ComputeEnvironmentOrder:
-          - Order: 1
-            ComputeEnvironment:
-              Ref: CustomSpotComputeEnvironment
-        State: ENABLED
-        Priority: 1
-        JobQueueName: '#{AWS::StackName}-custom-spot'
-    Data:
-      Type: AWS::S3::Bucket
-    Catalogs:
-      Type: AWS::S3::Bucket
-      Properties:
-        LifecycleConfiguration:
-          Rules:
-            - ExpirationInDays: 10
-              Prefix: batch/
-              Status: Enabled
-            - ExpirationInDays: 10
-              Prefix: payloads/
-              Status: Enabled
-    QueueTopic:
-      Type: AWS::SNS::Topic
-      Properties:
-        TopicName: ${self:service}-${self:provider.stage}-queue
-    PublishTopic:
-      Type: AWS::SNS::Topic
-      Properties:
-        TopicName: ${self:service}-${self:provider.stage}-publish
-    FailedTopic:
-      Type: AWS::SNS::Topic
-      Properties:
-        TopicName: ${self:service}-${self:provider.stage}-failed
-    ProcessQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: ${self:service}-${self:provider.stage}-process
-        VisibilityTimeout: 1000
-        RedrivePolicy:
-          deadLetterTargetArn:
-            Fn::GetAtt:
-              - ProcessDeadLetterQueue
-              - Arn
-          maxReceiveCount: 5
-    ProcessDeadLetterQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: ${self:service}-${self:provider.stage}-process-dead-letter
-    ProcessQueuePolicy:
-      Type: AWS::SQS::QueuePolicy
-      Properties:
-        Queues:
-          - Ref: ProcessQueue
-        PolicyDocument:
-          Statement:
-            - Sid: allow-sqs-sendmessage
-              Effect: Allow
-              Principal:
-                AWS: '*'
-              Action: SQS:SendMessage
-              Resource:
-                Fn::GetAtt:
-                  - ProcessQueue
-                  - Arn
-              Condition:
-                ArnEquals:
-                  aws:SourceArn:
-                    - Ref: QueueTopic
-                    - Ref: PublishTopic
-    ProcessQueueSubsciption:
-      Type: AWS::SNS::Subscription
-      Properties:
-        Endpoint:
-          Fn::GetAtt:
-            - ProcessQueue
-            - Arn
-        Protocol: sqs
-        Region: '#{AWS::Region}'
-        TopicArn:
-          Ref: QueueTopic
-    StateTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: collections_workflow
-            AttributeType: S
-          - AttributeName: itemids
-            AttributeType: S
-          - AttributeName: state_updated
-            AttributeType: S
-          - AttributeName: updated
-            AttributeType: S
-        KeySchema:
-          - AttributeName: collections_workflow
-            KeyType: HASH
-          - AttributeName: itemids
-            KeyType: RANGE
-        GlobalSecondaryIndexes:
-          - IndexName: state_updated
-            KeySchema:
-              - AttributeName: collections_workflow
-                KeyType: HASH
-              - AttributeName: state_updated
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
-          - IndexName: updated
-            KeySchema:
-              - AttributeName: collections_workflow
-                KeyType: HASH
-              - AttributeName: updated
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
-        BillingMode: PAY_PER_REQUEST
-        TableName: ${self:service}-${self:provider.stage}-state
     BatchInstanceProfile:
       Type: AWS::IAM::InstanceProfile
       Properties:
@@ -1589,6 +1317,97 @@ resources:
         Path: /
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+    Catalogs:
+      Type: AWS::S3::Bucket
+      Properties:
+        LifecycleConfiguration:
+          Rules:
+            - ExpirationInDays: 10
+              Prefix: batch/
+              Status: Enabled
+            - ExpirationInDays: 10
+              Prefix: payloads/
+              Status: Enabled
+    CustomOnDemandComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeEnvironmentName: '#{AWS::StackName}-custom-ondemand'
+        ComputeResources:
+          ImageId: ${self:custom.batch.CustomComputeEnvironments.ImageId}
+          MaxvCpus: ${self:custom.batch.CustomComputeEnvironments.MaxvCpus}
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: EC2
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name: 'Batch Instance - #{AWS::StackName}'
+          DesiredvCpus: 0
+        State: ENABLED
+    CustomOnDemandJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: CustomOnDemandComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName: '#{AWS::StackName}-custom-ondemand'
+    CustomSpotComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeEnvironmentName: '#{AWS::StackName}-custom-spot'
+        ComputeResources:
+          ImageId: ${self:custom.batch.CustomComputeEnvironments.ImageId}
+          MaxvCpus: ${self:custom.batch.CustomComputeEnvironments.MaxvCpus}
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: SPOT
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          SpotIamFleetRole:
+            Fn::GetAtt:
+              - EC2SpotRole
+              - Arn
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name: 'Batch Instance - #{AWS::StackName}'
+          DesiredvCpus: 0
+        State: ENABLED
+    CustomSpotJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: CustomSpotComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName: '#{AWS::StackName}-custom-spot'
+    Data:
+      Type: AWS::S3::Bucket
     EC2SpotRole:
       Type: AWS::IAM::Role
       Properties:
@@ -1604,10 +1423,197 @@ resources:
         Path: /
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole
+    FailedTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-${self:provider.stage}-failed
+    GeoLambdaAsBatchJob:
+      Type: AWS::Batch::JobDefinition
+      Properties:
+        JobDefinitionName: '#{AWS::StackName}-geolambda-as-batch'
+        Type: Container
+        Parameters:
+          lambda_function: ''
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - Ref::lambda_function
+            - Ref::url
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
+            - Name: CIRRUS_BUCKET
+              Value: ${self:provider.environment.CIRRUS_BUCKET}
+            - Name: CIRRUS_DATA_BUCKET
+              Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
+            - Name: CIRRUS_CATALOG_BUCKET
+              Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
+            - Name: CIRRUS_STATE_DB
+              Value: ${self:provider.environment.CIRRUS_STATE_DB}
+            - Name: CIRRUS_STACK
+              Value: ${self:provider.environment.CIRRUS_STACK}
+            - Name: CIRRUS_QUEUE_TOPIC_ARN
+              Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
+            - Name: CIRRUS_PROCESS_QUEUE
+              Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
+            - Name: BASE_WORKFLOW_ARN
+              Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
+            - Name: AWS_DEFAULT_REGION
+              Value: ${self:provider.region}
+            - Name: AWS_REGION
+              Value: ${self:provider.region}
+            - Name: GDAL_DATA
+              Value: /usr/local/share/gdal
+            - Name: PROJ_LIB
+              Value: /usr/local/share/proj
+          Memory: ${self:custom.batch.GeoLambdaAsBatchJob.Memory}
+          Vcpus: ${self:custom.batch.GeoLambdaAsBatchJob.Vcpus}
+          Image: cirrusgeo/run-geolambda:0.2.1
+        RetryStrategy:
+          Attempts: 1
+    LambdaAsBatchJob:
+      Type: AWS::Batch::JobDefinition
+      Properties:
+        JobDefinitionName: '#{AWS::StackName}-lambda-as-batch'
+        Type: Container
+        Parameters:
+          lambda_function: ''
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - Ref::lambda_function
+            - Ref::url
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
+            - Name: CIRRUS_BUCKET
+              Value: ${self:provider.environment.CIRRUS_BUCKET}
+            - Name: CIRRUS_DATA_BUCKET
+              Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
+            - Name: CIRRUS_CATALOG_BUCKET
+              Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
+            - Name: CIRRUS_STATE_DB
+              Value: ${self:provider.environment.CIRRUS_STATE_DB}
+            - Name: CIRRUS_STACK
+              Value: ${self:provider.environment.CIRRUS_STACK}
+            - Name: CIRRUS_QUEUE_TOPIC_ARN
+              Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
+            - Name: CIRRUS_PROCESS_QUEUE
+              Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
+            - Name: BASE_WORKFLOW_ARN
+              Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
+            - Name: AWS_DEFAULT_REGION
+              Value: ${self:provider.region}
+            - Name: AWS_REGION
+              Value: ${self:provider.region}
+          Memory: ${self:custom.batch.LambdaAsBatchJob.Memory}
+          Vcpus: ${self:custom.batch.LambdaAsBatchJob.Vcpus}
+          Image: cirrusgeo/run-lambda:0.2.1
+        RetryStrategy:
+          Attempts: 1
+    ProcessDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-process-dead-letter
+    ProcessQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-process
+        VisibilityTimeout: 1000
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt:
+              - ProcessDeadLetterQueue
+              - Arn
+          maxReceiveCount: 5
+    ProcessQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - Ref: ProcessQueue
+        PolicyDocument:
+          Statement:
+            - Sid: allow-sqs-sendmessage
+              Effect: Allow
+              Principal:
+                AWS: '*'
+              Action: SQS:SendMessage
+              Resource:
+                Fn::GetAtt:
+                  - ProcessQueue
+                  - Arn
+              Condition:
+                ArnEquals:
+                  aws:SourceArn:
+                    - Ref: QueueTopic
+                    - Ref: PublishTopic
+    ProcessQueueSubsciption:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint:
+          Fn::GetAtt:
+            - ProcessQueue
+            - Arn
+        Protocol: sqs
+        Region: '#{AWS::Region}'
+        TopicArn:
+          Ref: QueueTopic
+    PublishTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-${self:provider.stage}-publish
+    QueueTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-${self:provider.stage}-queue
+    StateTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: collections_workflow
+            AttributeType: S
+          - AttributeName: itemids
+            AttributeType: S
+          - AttributeName: state_updated
+            AttributeType: S
+          - AttributeName: updated
+            AttributeType: S
+        KeySchema:
+          - AttributeName: collections_workflow
+            KeyType: HASH
+          - AttributeName: itemids
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: state_updated
+            KeySchema:
+              - AttributeName: collections_workflow
+                KeyType: HASH
+              - AttributeName: state_updated
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: updated
+            KeySchema:
+              - AttributeName: collections_workflow
+                KeyType: HASH
+              - AttributeName: updated
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:service}-${self:provider.stage}-state
   Outputs:
     CirrusQueueSnsArn:
       Value:
         Ref: QueueTopic
+  Conditions: {}
+  Mappings: {}
+  Metadata: {}
+  Parameters: {}
+  Rules: {}
+  Transform: {}
 package:
   individually: true
   exclude:
