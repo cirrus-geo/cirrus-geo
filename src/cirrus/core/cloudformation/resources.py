@@ -40,8 +40,8 @@ class JobDefinition(Resource):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if self.parent_task and self.parent_task.batch_env:
-            self.update_environment(self.parent_task.batch_env)
+        if self.parent_component and self.parent_component.batch_env:
+            self.update_environment(self.parent_component.batch_env)
 
     def update_environment(self, env):
         item = self.definition
