@@ -157,23 +157,22 @@ class Project:
 
         # setup all required lambda dirs
         fn_dirs = set()
-        for group in self.groups.lambda_groups:
-            for fn in group.values():
-                outdir = fn.get_outdir(bd).resolve()
-                if outdir in fn_dirs:
-                    logger.debug(
-                        f"Duplicate function name '{fn.name}': skipping",
-                    )
-                    continue
-
-                # create lambda dir
-                fn_dirs.add(outdir)
-                # copy contents
-                fn.copy_to_outdir(outdir)
-                # link in cirrus-lib
-                outdir.joinpath('cirrus').symlink_to(
-                    misc.relative_to(outdir, lib_dir.parent),
+        for fn in self.groups.lambdas:
+            outdir = fn.get_outdir(bd).resolve()
+            if outdir in fn_dirs:
+                logger.debug(
+                    f"Duplicate function name '{fn.name}': skipping",
                 )
+                continue
+
+            # create lambda dir
+            fn_dirs.add(outdir)
+            # copy contents
+            fn.copy_to_outdir(outdir)
+            # link in cirrus-lib
+            outdir.joinpath('cirrus').symlink_to(
+                misc.relative_to(outdir, lib_dir.parent),
+            )
 
         # clean up existing but no longer used lambda dirs
         for d in existing_dirs - fn_dirs:
