@@ -134,6 +134,7 @@ def test_build(invoke, project, reference_build, build_dir):
                 print(build_dir.joinpath(f).read_text())
 
 
+        print()
         print(
             'If all highlighted changes are expected, simply remove '
             f'{misc.relative_to_cwd(reference_build)} and rerun the '
@@ -165,7 +166,7 @@ def test_show_list(group, invoke):
 
 @pytest.mark.parametrize('group', [c.group_name for c in groups])
 def test_show_detail(group, invoke):
-    item = list(getattr(groups, group).keys())[0]
+    item = next(iter(getattr(groups, group))).name
     result = invoke(f'show {group} {item}')
     assert result.exit_code == 0
     assert len(result.stdout) > 0
