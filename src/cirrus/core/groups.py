@@ -31,21 +31,26 @@ class Groups(Sequence):
     def __getitem__(self, index):
         return self.groups[index]
 
-    @property
-    def lambda_groups(self):
-        return [c for c in self.groups if issubclass(c, Lambda)]
+    def _yield_type(self, _type):
+        yield from (c for g in self.groups if issubclass(g, _type) for c in g)
 
     @property
-    def stepfunction_groups(self):
-        return [c for c in self.groups if issubclass(c, StepFunction)]
+    def lambdas(self):
+        yield from self._yield_type(Lambda)
 
     @property
-    def cf_groups(self):
-        return [c for c in self.groups if issubclass(c, BaseCFObject)]
+    def stepfunctions(self):
+        yield from self._yield_type(StepFunction)
+
+    @property
+    def cf_objects(self):
+        yield from self._yield_type(CloudFormation)
 
     @property
     def extendable_groups(self):
-        return [c for c in self.groups if c.user_extendable]
+        for group in self.groups:
+            if group.user_extendable:
+                yield group
 
     def register_group(self, group):
         setattr(self, group.group_name, group)

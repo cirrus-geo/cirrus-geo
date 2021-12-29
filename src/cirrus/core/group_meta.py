@@ -95,7 +95,7 @@ class GroupMeta(MutableMapping, ABCMeta):
         return self.elements.values()
 
     def __iter__(self):
-        return iter(self.elements)
+        return iter(self.elements.values())
 
     def __len__(self):
         return len(self.elements)
