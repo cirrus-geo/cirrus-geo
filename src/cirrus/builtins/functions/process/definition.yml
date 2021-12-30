@@ -5,3 +5,29 @@ lambda:
   events:
     - sqs:
         arn: !GetAtt ProcessQueue.Arn
+  iamRoleStatementsInherit: true
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - states:StartExecution
+      Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:BatchGetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:DescribeTable
+      Resource:
+        - !GetAtt StateTable.Arn
+        - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
+    - Effect: "Allow"
+      Action:
+        - sqs:GetQueueUrl
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
+      Resource:
+        - !GetAtt ProcessQueue.Arn

@@ -2,3 +2,15 @@ description: Publish resulting STAC Collections and Items to catalog, and option
 lambda:
   memorySize: 128
   timeout: 30
+  iamRoleStatementsInherit: true
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - SNS:Publish
+      Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
+    - Effect: "Allow"
+      Action:
+        - dynamodb:UpdateItem
+      Resource:
+        - !GetAtt StateTable.Arn
+          # - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]

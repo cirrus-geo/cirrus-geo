@@ -5,3 +5,18 @@ lambda:
   events:
     - http: GET /
     - http: GET {proxy+}
+  iamRoleStatementsInherit: true
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:BatchGetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:DescribeTable
+      Resource:
+        - !GetAtt StateTable.Arn
+        - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
