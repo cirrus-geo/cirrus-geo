@@ -10,7 +10,7 @@ from os import getenv
 
 
 # envvars
-SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN')
+SNS_TOPIC = getenv('CIRRUS_PROCESS_TOPIC_ARN')
 
 # boto clients
 SNS_CLIENT = boto3.client('sns')

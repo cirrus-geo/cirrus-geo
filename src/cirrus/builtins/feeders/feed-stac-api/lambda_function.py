@@ -15,7 +15,7 @@ from satsearch import Search
 
 
 # envvars
-SNS_TOPIC = os.getenv('CIRRUS_QUEUE_TOPIC_ARN')
+SNS_TOPIC = os.getenv('CIRRUS_PROCESS_TOPIC_ARN')
 MAX_ITEMS_REQUEST = 5000
 
 # boto clients

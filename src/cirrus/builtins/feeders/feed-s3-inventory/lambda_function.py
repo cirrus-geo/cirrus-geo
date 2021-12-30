@@ -16,7 +16,7 @@ from cirrus.lib.utils import submit_batch_job
 
 
 # envvars
-SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN')
+SNS_TOPIC = getenv('CIRRUS_PROCESS_TOPIC_ARN')
 
 # clients
 SNS_CLIENT = boto3.client('sns')

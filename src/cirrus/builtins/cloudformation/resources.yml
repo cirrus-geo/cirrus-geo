@@ -15,10 +15,10 @@ Resources:
             Prefix: payloads/
             Status: Enabled
   # SNS Topic for adding input data to Cirrus
-  QueueTopic:
+  ProcessTopic:
     Type: 'AWS::SNS::Topic'
     Properties:
-      TopicName: ${self:service}-${self:provider.stage}-queue
+      TopicName: ${self:service}-${self:provider.stage}-process
   # SNS Topic for adding input data to Cirrus
   PublishTopic:
     Type: 'AWS::SNS::Topic'
@@ -73,7 +73,7 @@ Resources:
             Condition:
               ArnEquals:
                 aws:SourceArn:
-                  - !Ref QueueTopic
+                  - !Ref ProcessTopic
                   - !Ref PublishTopic
   ProcessQueueSubsciption:
     Type: AWS::SNS::Subscription
@@ -81,7 +81,7 @@ Resources:
       Endpoint: !GetAtt ProcessQueue.Arn
       Protocol: sqs
       Region: "#{AWS::Region}"
-      TopicArn: !Ref QueueTopic
+      TopicArn: !Ref ProcessTopic
   StateTable:
     Type: AWS::DynamoDB::Table
     Properties:
