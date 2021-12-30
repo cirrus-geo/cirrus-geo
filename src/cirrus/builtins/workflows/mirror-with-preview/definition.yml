@@ -110,10 +110,9 @@ definition:
       Resource: arn:aws:states:::batch:submitJob.sync
       Parameters:
         JobName: add-preview-batch
-        JobQueue: "#{BasicSpotJobQueue}"
-        JobDefinition: "#{GeoLambdaAsBatchJob}"
+        JobQueue: "#{AddPreviewJobQueue}"
+        JobDefinition: "#{AddPreviewAsBatchJob}"
         Parameters:
-          lambda_function: ${self:service}-${self:provider.stage}-add-preview
           url.$: "$.url"
       Next: add-preview-post-batch
       Retry:
