@@ -97,9 +97,6 @@ custom:
       - ${env:SUBNET_4}
     BasicComputeEnvironments:
       MaxvCpus: 128
-    CustomComputeEnvironments:
-      MaxvCpus: 8000
-      ImageId: ami-0762f74aea69d4143
     LambdaAsBatchJob:
       Memory: 2048
       Vcpus: 1
