@@ -1,6 +1,6 @@
 {
     "serverless.yml": {
-        "shasum": "de387d66989c64d6e1a56cc4c8f421c85a68373b534a04c5f5e24b49074b14a9",
+        "shasum": "c4c5d4e86877e439b7372fcfc2239871e7f8010dea862f0f1fc17df2881d4249",
         "size": 59125
     },
     "lambdas/publish-test/requirements.txt": {

@@ -17,8 +17,6 @@ class Task(Lambda):
         if self.lambda_enabled:
             self.handler.validate(required=True)
 
-        # global env vars from cirrus.yml inherited in config build step
-        self.batch_env = self.config.get('environment', {})
         batch = self.config.get('batch', {})
         self.batch_enabled = batch.get('enabled', True) and self._enabled and bool(batch)
         self.batch_cloudformation = [

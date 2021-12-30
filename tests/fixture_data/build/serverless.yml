@@ -408,8 +408,6 @@ functions:
       - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1
     description: Create a preview and/or thumbnail from one or more assets
     environment:
-      GDAL_DATA: /opt/share/gdal
-      PROJ_LIB: /opt/share/proj
       CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
@@ -429,6 +427,8 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      GDAL_DATA: /opt/share/gdal
+      PROJ_LIB: /opt/share/proj
     package:
       include:
         - ./lambdas/add-preview/**
@@ -442,8 +442,6 @@ functions:
       - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1
     description: Convert specified assets into Cloud Optimized GeoTIFFs
     environment:
-      GDAL_DATA: /opt/share/gdal
-      PROJ_LIB: /opt/share/proj
       CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
       CIRRUS_PUBLIC_CATALOG: false
       CIRRUS_STAC_VERSION: 1.0.0-beta.2
@@ -463,6 +461,8 @@ functions:
       CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
       CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
       CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      GDAL_DATA: /opt/share/gdal
+      PROJ_LIB: /opt/share/proj
     package:
       include:
         - ./lambdas/convert-to-cog/**
