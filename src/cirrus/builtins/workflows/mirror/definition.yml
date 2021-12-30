@@ -35,10 +35,9 @@ definition:
       Resource: arn:aws:states:::batch:submitJob.sync
       Parameters:
         JobName: copy-assets-batch
-        JobQueue: "#{BasicSpotJobQueue}"
-        JobDefinition: "#{GeoLambdaAsBatchJob}"
+        JobQueue: "#{CopyAssetsJobQueue}"
+        JobDefinition: "#{CopyAssetsAsBatchJob}"
         Parameters:
-          lambda_function: ${self:service}-${self:provider.stage}-copy-assets
           url.$: "$.url"
       Next: copy-assets-post-batch
       Retry:

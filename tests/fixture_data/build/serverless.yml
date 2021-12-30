@@ -834,10 +834,9 @@ stepFunctions:
             Resource: arn:aws:states:::batch:submitJob.sync
             Parameters:
               JobName: copy-assets-batch
-              JobQueue: '#{BasicSpotJobQueue}'
-              JobDefinition: '#{GeoLambdaAsBatchJob}'
+              JobQueue: '#{CopyAssetsJobQueue}'
+              JobDefinition: '#{CopyAssetsAsBatchJob}'
               Parameters:
-                lambda_function: ${self:service}-${self:provider.stage}-copy-assets
                 url.$: $.url
             Next: copy-assets-post-batch
             Retry:
@@ -953,10 +952,9 @@ stepFunctions:
             Resource: arn:aws:states:::batch:submitJob.sync
             Parameters:
               JobName: copy-assets-batch
-              JobQueue: '#{BasicSpotJobQueue}'
-              JobDefinition: '#{GeoLambdaAsBatchJob}'
+              JobQueue: '#{CopyAssetsJobQueue}'
+              JobDefinition: '#{CopyAssetsAsBatchJob}'
               Parameters:
-                lambda_function: ${self:service}-${self:provider.stage}-copy-assets
                 url.$: $.url
             Next: copy-assets-post-batch
             Retry:
@@ -1328,6 +1326,97 @@ resources:
             - ExpirationInDays: 10
               Prefix: payloads/
               Status: Enabled
+    CopyAssetsAsBatchJob:
+      Type: AWS::Batch::JobDefinition
+      Properties:
+        JobDefinitionName: '#{AWS::StackName}-copy-assets-as-batch'
+        Type: Container
+        Parameters:
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - ${self:service}-${self:provider.stage}-copy-assets
+            - Ref::url
+          Memory: 12000
+          Vcpus: 1
+          Image: cirrusgeo/run-geolambda:0.2.1
+          Environment:
+            - Name: CIRRUS_STAC_DESCRIPTION
+              Value: ${self:service}-${self:provider.stage} STAC
+            - Name: CIRRUS_PUBLIC_CATALOG
+              Value: false
+            - Name: CIRRUS_STAC_VERSION
+              Value: 1.0.0-beta.2
+            - Name: CIRRUS_LOG_LEVEL
+              Value: DEBUG
+            - Name: CIRRUS_BUCKET
+              Value:
+                Ref: ServerlessDeploymentBucket
+            - Name: CIRRUS_DATA_BUCKET
+              Value:
+                Ref: Data
+            - Name: CIRRUS_CATALOG_BUCKET
+              Value:
+                Ref: Catalogs
+            - Name: CIRRUS_STATE_DB
+              Value:
+                Ref: StateTable
+            - Name: CIRRUS_STACK
+              Value: ${self:service}-${self:provider.stage}
+            - Name: BASE_WORKFLOW_ARN
+              Value: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
+            - Name: CIRRUS_PROCESS_QUEUE
+              Value: ${self:service}-${self:provider.stage}-process
+            - Name: CIRRUS_QUEUE_TOPIC_ARN
+              Value: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
+            - Name: CIRRUS_PUBLISH_TOPIC_ARN
+              Value: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
+            - Name: CIRRUS_FAILED_TOPIC_ARN
+              Value: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+            - Name: CIRRUS_INVALID_TOPIC_ARN
+              Value: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+        RetryStrategy:
+          Attempts: 1
+    CopyAssetsComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeResources:
+          MaxvCpus: 1000
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: SPOT
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          SpotIamFleetRole:
+            Fn::GetAtt:
+              - EC2SpotRole
+              - Arn
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name: 'Batch Instance - #{AWS::StackName}'
+          DesiredvCpus: 0
+        State: ENABLED
+    CopyAssetsJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: CopyAssetsComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName: '#{AWS::StackName}-copy-assets-jq'
     CustomOnDemandComputeEnvironment:
       Type: AWS::Batch::ComputeEnvironment
       Properties:
