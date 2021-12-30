@@ -1,4 +1,5 @@
 import os
+import os.path
 
 from typing import List
 from pathlib import Path
@@ -45,4 +46,7 @@ def relative_to(path1: Path, path2: Path) -> Path:
 
 
 def relative_to_cwd(path: Path) -> Path:
-    return relative_to(Path(os.getcwd()), path)
+    return '.{}{}'.format(
+        os.path.sep,
+        relative_to(Path(os.getcwd()), path),
+    )
