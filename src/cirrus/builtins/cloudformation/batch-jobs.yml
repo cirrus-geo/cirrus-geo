@@ -25,8 +25,8 @@ Resources:
             Value: ${self:provider.environment.CIRRUS_STATE_DB}
           - Name: CIRRUS_STACK
             Value: ${self:provider.environment.CIRRUS_STACK}
-          - Name: CIRRUS_QUEUE_TOPIC_ARN
-            Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
+          - Name: CIRRUS_PROCESS_TOPIC_ARN
+            Value: ${self:provider.environment.CIRRUS_PROCESS_TOPIC_ARN}
           - Name: CIRRUS_PROCESS_QUEUE
             Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
           - Name: BASE_WORKFLOW_ARN
@@ -70,8 +70,8 @@ Resources:
             Value: ${self:provider.environment.CIRRUS_STATE_DB}
           - Name: CIRRUS_STACK
             Value: ${self:provider.environment.CIRRUS_STACK}
-          - Name: CIRRUS_QUEUE_TOPIC_ARN
-            Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
+          - Name: CIRRUS_PROCESS_TOPIC_ARN
+            Value: ${self:provider.environment.CIRRUS_PROCESS_TOPIC_ARN}
           - Name: CIRRUS_PROCESS_QUEUE
             Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
           - Name: BASE_WORKFLOW_ARN

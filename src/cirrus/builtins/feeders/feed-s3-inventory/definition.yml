@@ -10,7 +10,7 @@ lambda:
     - Effect: "Allow"
       Action:
         - SNS:Publish
-      Resource: !Ref: QueueTopic
+      Resource: !Ref ProcessTopic
     - Effect: "Allow"
       Action:
         - batch:SubmitJob
