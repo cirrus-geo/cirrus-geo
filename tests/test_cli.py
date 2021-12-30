@@ -35,6 +35,8 @@ def hash_tree(src_dir):
     for root, dirs, files in os.walk(src_dir):
         root = Path(root)
         for f in files:
+            if f.startswith('.'):
+                continue
             f = root.joinpath(f)
             hashed[str(f.relative_to(src_dir))] = {
                 'shasum': shasum(f),
