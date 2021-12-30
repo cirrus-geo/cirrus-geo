@@ -2,10 +2,13 @@ Resources:
   # Main data bucket
   Data:
     Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ${self:service}-${self:provider.stage}-data
   # Bucket for storing input catalogs
   Catalogs:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName: ${self:service}-${self:provider.stage}-catalogs
       LifecycleConfiguration:
         Rules:
           - ExpirationInDays: 10
