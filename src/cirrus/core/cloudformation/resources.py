@@ -40,13 +40,16 @@ class JobDefinition(Resource):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if self.parent_component and self.parent_component.batch_env:
-            self.update_environment(self.parent_component.batch_env)
+        if self.parent_component:
+            self.update_environment(self.parent_component.environment)
 
     def update_environment(self, env):
+        if not env:
+            return
+
+        # default job defn keys above Environment, if needed
         item = self.definition
         keys = ['Properties', 'ContainerProperties']
-
         for key in keys:
             if key not in item:
                 item[key] = {}
@@ -55,7 +58,8 @@ class JobDefinition(Resource):
         try:
             _env = item['Environment']
         except KeyError:
-            item['Environment'] = env
+            # we don't have an env defined on the job yet
+            item['Environment'] = list(convert_env_to_batch_env(env))
         else:
             # prefers the env vars set in the batch env
             # over those inherited from the task env config

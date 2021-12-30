@@ -25,18 +25,26 @@ class Lambda(Component):
         # simpler if we know we are batch disabled for all Lambdas
         self.batch_enabled = False
         self.description = self.config.get('description', '')
+        self.environment = self.config.get('environment', NamedYamlable())
 
         self.lambda_config = self.config.get('lambda', NamedYamlable())
         self.lambda_enabled = self.lambda_config.pop('enabled', True) and self._enabled and bool(self.lambda_config)
         self.lambda_config.description = self.description
-        self.lambda_config.environment = self.config.get('environment', {})
 
         project_reqs = []
         if self.project and self.project.config:
             project_reqs = list(
                 self.project.config.custom.pythonRequirements.include
             )
-            self.lambda_config.environment.update(self.project.config.provider.environment)
+            # update task env with defaults from project config
+            self.environment = (
+                self.project.config.provider.environment | self.environment
+            )
+
+        # update lambda env with the merged project/task env
+        self.lambda_config.environment = (
+            self.environment | self.lambda_config.get('environment', {})
+        )
 
         self.lambda_config.package = {}
         self.lambda_config.package.include = []
