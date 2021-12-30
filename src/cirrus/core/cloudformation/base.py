@@ -132,6 +132,14 @@ class CFObjectMeta(GroupMeta):
                 )
 
     def from_file(self, path: Path):
+        # only process files
+        if not path.is_file():
+            return
+
+        # ignore files starting with '.'
+        if path.name.startswith('.'):
+            return
+
         # parse a yml cf file
         cf = NamedYamlable.from_file(path)
         is_builtin = (
