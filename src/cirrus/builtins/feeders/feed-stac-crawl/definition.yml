@@ -5,3 +5,23 @@ lambda:
   pythonRequirements:
     include:
       - git+git://github.com/stac-utils/pystac@develop
+  iamRoleStatementsInherit: true
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - SNS:Publish
+      Resource: !Ref: QueueTopic
+    - Effect: "Allow"
+      Action:
+        - batch:SubmitJob
+      Resource:
+        - !Ref LambdaAsBatchJob
+        - !Ref BasicOnDemandJobQueue
+    - Effect: "Allow"
+      Action:
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        - ec2:CreateNetworkInterface
+        - ec2:DescribeNetworkInterfaces
+        - ec2:DeleteNetworkInterface
+      Resource: "*"

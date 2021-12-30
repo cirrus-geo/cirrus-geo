@@ -27,35 +27,6 @@ provider:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
-      - dynamodb:Query
-      - dynamodb:Scan
-      - dynamodb:GetItem
-      - dynamodb:BatchGetItem
-      - dynamodb:PutItem
-      - dynamodb:UpdateItem
-      - dynamodb:DeleteItem
-      - dynamodb:DescribeTable
-      Resource:
-        - !GetAtt StateTable.Arn
-        - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
-    - Effect: "Allow"
-      Action:
-        - sqs:GetQueueUrl
-        - sqs:SendMessage
-        - sqs:ReceiveMessage
-        - sqs:DeleteMessage
-      Resource:
-        - !GetAtt ProcessQueue.Arn
-    - Effect: "Allow"
-      Action:
-        - SNS:Publish
-      Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
-    - Effect: "Allow"
-      Action:
-        - states:StartExecution
-      Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
-    - Effect: "Allow"
-      Action:
         - lambda:InvokeFunction
       Resource:
         - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:cirrus*
@@ -66,25 +37,6 @@ provider:
       Action: secretsmanager:GetSecretValue
       Resource:
         - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
-    - Effect: "Allow"
-      Action:
-        - batch:SubmitJob
-      Resource:
-        - arn:aws:batch:#{AWS::Region}:#{AWS::AccountId}:job-definition/cirrus*
-        - arn:aws:batch:#{AWS::Region}:#{AWS::AccountId}:job-queue/cirrus*
-    - Effect: "Allow"
-      Action:
-        - logs:GetLogEvents
-      Resource:
-        - arn:aws:logs:#{AWS::Region}:#{AWS::AccountId}:log-group:/aws/batch/*
-    - Effect: "Allow"
-      Action:
-        - logs:CreateLogStream
-        - logs:PutLogEvents
-        - ec2:CreateNetworkInterface
-        - ec2:DescribeNetworkInterfaces
-        - ec2:DeleteNetworkInterface
-      Resource: "*"
 
 custom:
   batch:

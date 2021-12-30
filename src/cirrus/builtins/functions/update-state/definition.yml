@@ -17,8 +17,23 @@ lambda:
               - FAILED
   iamRoleStatementsInherit: true
   iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DescribeTable
+      Resource:
+        - !GetAtt StateTable.Arn
+        - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
     - Effect: Allow
       Action:
         - states:GetExecutionHistory
       Resource:
         - arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:execution:*
+    - Effect: "Allow"
+      Action:
+        - SNS:Publish
+      Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
