@@ -165,7 +165,14 @@ class CFObjectMeta(GroupMeta):
 
         for d in search_dirs:
             for yml in sorted(d.glob('*.yml')):
-                yield from self.from_file(yml)
+                try:
+                    yield from self.from_file(yml)
+                except ValueError as e:
+                    logger.warning (
+                        "Unable to load cloudformation file '%s': "
+                        'appears malformatted',
+                        misc.relative_to_cwd(yml),
+                    )
 
     def find(self):
         self._elements = {tlk: {} for tlk in self.cf_types.keys()}
