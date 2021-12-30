@@ -106,10 +106,9 @@ definition:
       Resource: arn:aws:states:::batch:submitJob.sync
       Parameters:
         JobName: convert-to-cog-batch
-        JobQueue: "#{CustomSpotJobQueue}"
-        JobDefinition: "#{GeoLambdaAsBatchJob}"
+        JobQueue: "#{ConvertToCOGJobQueue}"
+        JobDefinition: "#{ConvertToCOGAsBatchJob}"
         Parameters:
-          lambda_function: ${self:service}-${self:provider.stage}-convert-to-cog
           url.$: "$.url"
       Next: convert-to-cog-post-batch
       Retry:
