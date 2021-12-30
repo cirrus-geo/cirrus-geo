@@ -68,10 +68,11 @@ class AliasedShortMatchGroup(click.Group):
 
         # if that fails, let's look for any partial matches
         # allows user to shorten commands to shortest unique string
-        matches = [
-            cmd for cmd in self.list_commands(ctx) + list(self._alias2cmd.keys())
+        matches = list({
+            self.resolve_alias(cmd)
+            for cmd in self.list_commands(ctx) + list(self._alias2cmd.keys())
             if cmd.startswith(cmd_name)
-        ]
+        })
 
         # no matches no command
         if not matches:
