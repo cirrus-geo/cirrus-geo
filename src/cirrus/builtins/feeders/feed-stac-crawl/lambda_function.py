@@ -9,7 +9,7 @@ from cirrus.lib.utils import submit_batch_job
 from pystac import Catalog
 
 # envvars
-SNS_TOPIC = os.getenv('CIRRUS_QUEUE_TOPIC_ARN')
+SNS_TOPIC = os.getenv('CIRRUS_PROCESS_TOPIC_ARN')
 
 # clients
 SNS_CLIENT = boto3.client('sns')

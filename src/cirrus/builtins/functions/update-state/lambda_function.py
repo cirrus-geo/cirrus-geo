@@ -12,7 +12,7 @@ from cirrus.lib.logging import get_task_logger
 logger = get_task_logger('lambda_function.update-state', catalog=tuple())
 
 # envvars
-PROCESS_SNS_TOPIC = getenv('CIRRUS_QUEUE_TOPIC_ARN', None)
+PROCESS_SNS_TOPIC = getenv('CIRRUS_PROCESS_TOPIC_ARN', None)
 FAILED_TOPIC_ARN = getenv('CIRRUS_FAILED_TOPIC_ARN', None)
 INVALID_TOPIC_ARN = getenv('CIRRUS_INVALID_TOPIC_ARN', None)
 
