@@ -128,6 +128,7 @@ class ComponentMeta(GroupMeta):
 
         @show_cmd.command(
             name=self.group_name,
+            aliases=self.cmd_aliases
         )
         @click.argument(
             'name',

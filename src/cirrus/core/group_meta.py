@@ -21,6 +21,9 @@ class GroupMeta(MutableMapping, ABCMeta):
         if 'enable_cli' not in attrs:
             attrs['enable_cli'] = True
 
+        if 'cmd_aliases' not in attrs:
+            attrs['cmd_aliases'] = []
+
         if not attrs.get('user_extendable', False):
             attrs['user_dir_name'] = None
         elif 'user_dir_name' not in attrs or attrs['user_dir_name'] is None:
