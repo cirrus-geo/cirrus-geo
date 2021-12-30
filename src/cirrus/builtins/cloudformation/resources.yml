@@ -155,35 +155,9 @@ Resources:
                   - lambda:GetFunction
                 Resource:
                   - arn:aws:lambda:*:*:function:${self:service}-${self:provider.stage}-*
-              - Effect: "Allow"
-                Action:
-                  - dynamodb:Query
-                  - dynamodb:Scan
-                  - dynamodb:GetItem
-                  - dynamodb:PutItem
-                  - dynamodb:UpdateItem
-                  - dynamodb:DeleteItem
-                Resource:
-                  - Fn::GetAtt: [StateTable, Arn]
-                  - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
-              - Effect: Allow
-                Action: SNS:Publish
-                Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:cirrus*
-              - Effect: Allow
-                Action:
-                  - sqs:GetQueueUrl
-                  - sqs:SendMessage
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                Resource:
-                  - !GetAtt ProcessQueue.Arn
-              - Effect: "Allow"
-                Action:
-                  - states:StartExecution
-                Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
   BatchServiceRole:
     Type: AWS::IAM::Role
     Properties:
