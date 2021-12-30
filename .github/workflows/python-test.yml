@@ -33,7 +33,7 @@ jobs:
           # all Python files should follow PEP8
           flake8 . --count --exit-zero --max-complexity=10 --statistics
       - name: Test with pytest
-        run: pytest --cov=./ --cov-report=xml
+        run: pytest --cov=cirrus --cov-report=xml
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v2
         with:
