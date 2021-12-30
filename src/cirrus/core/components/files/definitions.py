@@ -20,56 +20,56 @@ lambda_lambda = '''lambda:
 '''.format
 
 lambda_batch = '''batch:
-  Resources:
-    {name}ComputeEnvironment:
-      Type: AWS::Batch::ComputeEnvironment
-      Properties:
-        Type: MANAGED
-        ServiceRole:
-          Fn::GetAtt: [ BatchServiceRole, Arn ]
-        ComputeResources:
-          MaxvCpus: ${{self:custom.batch.BasicComputeEnvironments.MaxvCpus}}
-          SecurityGroupIds: ${{self:custom.batch.SecurityGroupIds}}
-          Subnets: ${{self:custom.batch.Subnets}}
-          InstanceTypes:
-            - optimal
-          Type: SPOT
-          AllocationStrategy: BEST_FIT_PROGRESSIVE
-          SpotIamFleetRole:
-            Fn::GetAtt: [ EC2SpotRole, Arn ]
-          MinvCpus: 0
-          InstanceRole:
-            Fn::GetAtt: [ BatchInstanceProfile, Arn ]
-          Tags: {{"Name": "Batch Instance - #{{AWS::StackName}}"}}
-          DesiredvCpus: 0
-        State: ENABLED
-    {name}JobQueue:
-      Type: AWS::Batch::JobQueue
-      Properties:
-        ComputeEnvironmentOrder:
-          - Order: 1
-            ComputeEnvironment: !Ref {name}ComputeEnvironment
-        State: ENABLED
-        Priority: 1
-    {name}AsBatchJob:
-      Type: "AWS::Batch::JobDefinition"
-      Properties:
-        JobDefinitionName: '#{{AWS::StackName}}-{name}'
-        Type: Container
-        Parameters:
-          lambda_function: ""
-          url: ""
-        ContainerProperties:
-          Command:
-            - run
-            - Ref::lambda_function
-            - Ref::url
-          Environment: []
-          Memory: 128
-          Vcpus: 1
-          Image: 'cirrusgeo/run-lambda:0.2.1'
-        RetryStrategy:
-          Attempts: 1
+  resources:
+      Resources:
+        {name}ComputeEnvironment:
+          Type: AWS::Batch::ComputeEnvironment
+          Properties:
+            Type: MANAGED
+            ServiceRole:
+              Fn::GetAtt: [ BatchServiceRole, Arn ]
+            ComputeResources:
+              MaxvCpus: 1000
+              SecurityGroupIds: ${{self:custom.batch.SecurityGroupIds}}
+              Subnets: ${{self:custom.batch.Subnets}}
+              InstanceTypes:
+                - optimal
+              Type: SPOT
+              AllocationStrategy: BEST_FIT_PROGRESSIVE
+              SpotIamFleetRole:
+                Fn::GetAtt: [ EC2SpotRole, Arn ]
+              MinvCpus: 0
+              InstanceRole:
+                Fn::GetAtt: [ BatchInstanceProfile, Arn ]
+              Tags: {{"Name": "Batch Instance - #{{AWS::StackName}}"}}
+              DesiredvCpus: 0
+            State: ENABLED
+        {name}JobQueue:
+          Type: AWS::Batch::JobQueue
+          Properties:
+            ComputeEnvironmentOrder:
+              - Order: 1
+                ComputeEnvironment: !Ref {name}ComputeEnvironment
+            State: ENABLED
+            Priority: 1
+        {name}AsBatchJob:
+          Type: "AWS::Batch::JobDefinition"
+          Properties:
+            JobDefinitionName: '#{{AWS::StackName}}-{name}'
+            Type: Container
+            Parameters:
+              url: ""
+            ContainerProperties:
+              Command:
+                - run
+                - ${{self:service}}-${{self:provider.stage}}-{name}
+                - Ref::url
+              Environment: []
+              Memory: 128
+              Vcpus: 1
+              Image: 'cirrusgeo/run-lambda:0.2.1'
+            RetryStrategy:
+              Attempts: 1
 '''.format
 
 
