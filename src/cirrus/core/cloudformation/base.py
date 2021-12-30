@@ -203,6 +203,7 @@ class CFObjectMeta(GroupMeta):
     def add_show_command(self, show_cmd):
         @show_cmd.command(
             name=self.group_name,
+            aliases=self.cmd_aliases,
         )
         @click.argument(
             'name',
@@ -360,3 +361,4 @@ class CloudFormation(metaclass=CFObjectMeta):
     abstract = True
     group_name = 'cloudformation'
     group_display_name = 'CloudFormation'
+    cmd_aliases=['cf']
