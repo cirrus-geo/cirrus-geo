@@ -59,7 +59,8 @@ class NamedYamlableMeta(type(MutableMapping)):
 class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
     _dict_type = odict.ODict
 
-    # FUTURE: once not supporting py versions <3.8, use the '/' version of this signature
+    # FUTURE: once not supporting py versions <3.8,
+    # use the '/' version of this signature
     #def __init__(self, dict=None, /, **kwargs):
     def __init__(self, dict=None, **kwargs):
         self._dict = type(self)._dict_type()
@@ -135,6 +136,14 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
 
     def __repr__(self):
         return f'{type(self).__qualname__}({repr(self._dict)})'
+
+    def __or__(self, other):
+        new = self.copy()
+        new.update(other)
+        return new
+
+    def __ior__(self, other):
+        self.update(other)
 
     def items(self):
         return self._dict.items()
