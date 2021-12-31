@@ -7,17 +7,17 @@ logger = logging.getLogger(__name__)
 
 
 default_handler = '''#!/usr/bin/env python
-from cirrus.lib.catalog import Catalog
+from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.logging import get_task_logger
 
 
 LAMBDA_TYPE = '{component_type}'
 
 
-def lambda_handler(payload, context={{}}):
-    catalog = Catalog.from_payload(payload)
-    logger = get_task_logger(f'{{LAMBDA_TYPE}}.{name}', catalog=catalog)
-    return catalog
+def lambda_handler(event, context={{}}):
+    payload = ProcessPayload.from_event(event)
+    logger = get_task_logger(f'{{LAMBDA_TYPE}}.{name}', payload=payload)
+    return payload
 '''.format
 
 
