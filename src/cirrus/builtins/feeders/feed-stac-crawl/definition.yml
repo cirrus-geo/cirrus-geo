@@ -4,7 +4,7 @@ lambda:
   timeout: 900
   pythonRequirements:
     include:
-      - git+git://github.com/stac-utils/pystac@develop
+      - pystac~=1.2.0
   iamRoleStatementsInherit: true
   iamRoleStatements:
     - Effect: "Allow"
