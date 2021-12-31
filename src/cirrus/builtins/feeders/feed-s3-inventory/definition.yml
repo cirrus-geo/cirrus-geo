@@ -4,7 +4,7 @@ lambda:
   timeout: 900
   pythonRequirements:
     include:
-      - pyorc==0.3.0
+      - pyorc~=0.5.0
   iamRoleStatementsInherit: true
   iamRoleStatements:
     - Effect: "Allow"
