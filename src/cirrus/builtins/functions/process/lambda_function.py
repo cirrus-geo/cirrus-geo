@@ -1,11 +1,11 @@
 import json
 import os
 
-from cirrus.lib.catalog import Catalog, Catalogs
+from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
 from cirrus.lib.utils import dict_merge
 from cirrus.lib.logging import get_task_logger
 
-logger = get_task_logger('lambda_function.process', catalog=tuple())
+logger = get_task_logger('lambda_function.process', payload=tuple())
 
 # Default PROCESSES
 # TODO: put this configuration into the cirrus.yml
@@ -13,46 +13,54 @@ with open(os.path.join(os.path.dirname(__file__), 'processes.json')) as f:
     PROCESSES = json.loads(f.read())
 
 
-def lambda_handler(payload, context):
-    logger.debug(json.dumps(payload))
+def lambda_handler(event, context):
+    logger.debug(json.dumps(event))
 
-    # Read SQS payload
-    if 'Records' not in payload:
+    # Read SQS event
+    if 'Records' not in event:
         raise ValueError("Input not from SQS")
 
     # TODO: a large number of input collections will cause a timeout
     # find a way to process each input message, deleting it from the queue
     # any not processed before timeout will be retried on the next execution
-    catalogs = []
-    for record in [json.loads(r['body']) for r in payload['Records']]:
-        cat = json.loads(record['Message'])
-        logger.debug('cat: %s' % json.dumps(cat))
-        # expand catids to full catalogs
-        if 'catids' in cat:
-            _cats = Catalogs.from_catids(cat['catids'])
-            if 'process_update' in cat:
-                logger.debug("Process update: %s", json.dumps(cat['process_update']))
-                for c in _cats:
-                    c['process'] = dict_merge(c['process'], cat['process_update'])
-            cats = Catalogs(_cats)
-            cats.process(replace=True)
-        elif cat.get('type', '') == 'Feature':
-            # If Item, create Catalog and use default process for that collection
-            if cat['collection'] not in PROCESSES.keys():
-                raise ValueError(
-                    f"Default process not provided for collection {cat['collection']}",
+    payloads = []
+    for record in [json.loads(r['body']) for r in event['Records']]:
+        payload = json.loads(record['Message'])
+        logger.debug('payload: %s', json.dumps(payload))
+        # expand payload_ids to full payloads
+        if 'payload_ids' in payload:
+            _payloads = ProcessPayloads.from_payload_ids(payload['payload_ids'])
+            if 'process_update' in payload:
+                logger.debug(
+                    "Process update: %s",
+                    json.dumps(payload['process_update']),
                 )
-            cat_json = {
+                for c in _payloads:
+                    c['process'] = dict_merge(
+                        c['process'],
+                        payload['process_update'],
+                    )
+            payloads = ProcessPayloads(_payloads)
+            payloads.process(replace=True)
+        elif payload.get('type', '') == 'Feature':
+            # If Item, create ProcessPayload and
+            # use default process for that collection
+            if payload['collection'] not in PROCESSES.keys():
+                raise ValueError(
+                    "Default process not provided for "
+                    f"collection {payload['collection']}",
+                )
+            payload_json = {
                 'type': 'FeatureCollection',
-                'features': [cat],
-                'process': PROCESSES[cat['collection']]
+                'features': [payload],
+                'process': PROCESSES[payload['collection']]
             }
-            catalogs.append(Catalog(cat_json, update=True))
+            payloads.append(ProcessPayload(payload_json, update=True))
         else:
-            catalogs.append(Catalog(cat, update=True))
+            payloads.append(ProcessPayload(payload, update=True))
 
-    if len(catalogs) > 0:
-        cats = Catalogs(catalogs)
-        cats()
+    if len(payloads) > 0:
+        _payloads = ProcessPayloads(payloads)
+        _payloads.process()
 
-    return len(catalogs)
+    return len(payloads)

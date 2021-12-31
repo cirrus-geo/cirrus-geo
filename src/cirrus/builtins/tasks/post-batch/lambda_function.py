@@ -3,11 +3,11 @@ import json
 
 import boto3
 
-from cirruslib import Catalog
-from cirruslib.logging import get_task_logger
+from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib.logging import get_task_logger
 
 
-logger = get_task_logger('lambda_function.update-state', catalog=tuple())
+logger = get_task_logger('lambda_function.update-state', payload=tuple())
 
 BATCH_LOG_GROUP = '/aws/batch/job'
 LOG_CLIENT = boto3.client('logs')
@@ -15,12 +15,11 @@ DEFAULT_ERROR = 'UnknownError'
 ERROR_REGEX = re.compile(r'^(?:cirrus\.?lib\.errors\.)?(?:([\.\w]+):)?\s*(.*)')
 
 
-def lambda_handler(payload, context):
-    if 'error' not in payload:
-        catalog = Catalog.from_payload(payload)
-        return catalog
+def lambda_handler(event, context):
+    if 'error' not in event:
+        return event
 
-    error = payload.get('error', {})
+    error = event.get('error', {})
     cause = json.loads(error['Cause'])
     logname = cause['Attempts'][-1]['Container']['LogStreamName']
 

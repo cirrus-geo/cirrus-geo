@@ -169,7 +169,7 @@ def lambda_handler(payload, context={}):
     base_url = payload.pop('base_url', None)
 
     # these are all required
-    catids = []
+    payload_ids = []
     if inventory_files and keys and process:
         # filter filenames
         logger.info("Parsing %s inventory files", len(inventory_files))
@@ -196,30 +196,33 @@ def lambda_handler(payload, context={}):
                         }
                     }
                 }
-                catalog = {
+                payload = {
                     'type': 'FeatureCollection',
                     'features': [item],
                     'process': process
                 }
 
                 # feed to cirrus through SNS topic
-                SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(catalog))
-                if (len(catids) % 1000) == 0:
+                SNS_CLIENT.publish(
+                    TopicArn=SNS_TOPIC,
+                    Message=json.dumps(payload),
+                )
+                if (len(payload_ids) % 1000) == 0:
                     logger.debug(
-                        "Published %s catalogs to %s: %s",
-                        len(catids),
+                        "Published %s payloads to %s: %s",
+                        len(payload_ids),
                         SNS_TOPIC,
-                        json.dumps(catalog),
+                        json.dumps(payload),
                     )
 
-                catids.append(item['id'])
+                payload_ids.append(item['id'])
 
         logger.info(
-            "Published %s catalogs from %s inventory files",
-            len(catids),
+            "Published %s payloads from %s inventory files",
+            len(payload_ids),
             len(inventory_files),
         )
-        return catids
+        return payload_ids
 
 
 if __name__ == "__main__":

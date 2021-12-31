@@ -5,10 +5,10 @@ Resources:
     Properties:
       BucketName: ${self:service}-${self:provider.stage}-data
   # Bucket for storing input catalogs
-  Catalogs:
+  Payloads:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: ${self:service}-${self:provider.stage}-catalogs
+      BucketName: ${self:service}-${self:provider.stage}-payloads
       LifecycleConfiguration:
         Rules:
           - ExpirationInDays: 10

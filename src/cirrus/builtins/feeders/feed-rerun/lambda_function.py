@@ -24,7 +24,7 @@ logger = logging.getLogger("feeder.rerun")
 
 def submit(ids, process_update=None):
     payload = {
-        "catids": ids
+        "payload_ids": ids
     }
     if process_update is not None:
         payload['process_update'] = process_update
@@ -41,7 +41,7 @@ def lambda_handler(payload, context={}):
     limit = payload.get('limit', None)
     batch = payload.get('batch', False)
     process_update = payload.get('process_update', None)
-    catid_batch = 5
+    payload_id_batch = 5
 
     # if this is a lambda and batch is set
     if batch and hasattr(context, "invoked_function_arn"):
@@ -56,18 +56,18 @@ def lambda_handler(payload, context={}):
     )
 
     nitems = len(items)
-    logger.debug(f"Rerunning {nitems} catalogs")
+    logger.debug(f"Rerunning {nitems} payloads")
 
-    catids = []
+    payload_ids = []
     for i, item in enumerate(items):
-        catids.append(item['catid'])
-        if (i % catid_batch) == 0:
-            submit(catids, process_update=process_update)
-            catids = []
+        payload_ids.append(item['payload_id'])
+        if (i % payload_id_batch) == 0:
+            submit(payload_ids, process_update=process_update)
+            payload_ids = []
         if (i % 1000) == 0:
-            logger.debug(f"Queued {i} catalogs")
-    if len(catids) > 0:
-        submit(catids, process_update=process_update)
+            logger.debug(f"Queued {i} payloads")
+    if len(payload_ids) > 0:
+        submit(payload_ids, process_update=process_update)
 
     return {
         "found": nitems

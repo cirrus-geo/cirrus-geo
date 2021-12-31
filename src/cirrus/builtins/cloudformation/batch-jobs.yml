@@ -19,8 +19,8 @@ Resources:
             Value: ${self:provider.environment.CIRRUS_BUCKET}
           - Name: CIRRUS_DATA_BUCKET
             Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
-          - Name: CIRRUS_CATALOG_BUCKET
-            Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
+          - Name: CIRRUS_PAYLOAD_BUCKET
+            Value: ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
           - Name: CIRRUS_STATE_DB
             Value: ${self:provider.environment.CIRRUS_STATE_DB}
           - Name: CIRRUS_STACK
@@ -64,8 +64,8 @@ Resources:
             Value: ${self:provider.environment.CIRRUS_BUCKET}
           - Name: CIRRUS_DATA_BUCKET
             Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
-          - Name: CIRRUS_CATALOG_BUCKET
-            Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
+          - Name: CIRRUS_PAYLOAD_BUCKET
+            Value: ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
           - Name: CIRRUS_STATE_DB
             Value: ${self:provider.environment.CIRRUS_STATE_DB}
           - Name: CIRRUS_STACK

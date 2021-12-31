@@ -106,16 +106,18 @@ def lambda_handler(event, context):
     parts = [p for p in event.get('path', '').split('/') if p != '']
     if len(parts) > 0 and parts[0] == stage:
         parts = parts[1:]
-    catid = '/'.join(parts)
+    payload_id = '/'.join(parts)
 
     legacy = False
-    if catid.startswith('item'):
+    if payload_id.startswith('item'):
         legacy = True
-        catid = catid.replace('item/', '', 1)
-    if catid.startswith('collections'):
+        payload_id = payload_id.replace('item/', '', 1)
+    if payload_id.startswith('collections'):
         legacy = True
-        catid = catid.replace('collections/', '', 1)
-    logger.info("Path parameters: %s", catid)
+        payload_id = payload_id.replace('collections/', '', 1)
+    logger.info("Path parameters: %s", payload_id)
+
+    transform = to_legacy if legacy else to_current
 
     # get query parameters
     qparams = event['queryStringParameters'] if event.get('queryStringParameters') else {}
@@ -130,13 +132,13 @@ def lambda_handler(event, context):
     #legacy = qparams.get('legacy', False)
 
     # root endpoint
-    if catid == '':
+    if payload_id == '':
         return response(get_root(root_url))
 
-    if '/workflow-' not in catid:
+    if '/workflow-' not in payload_id:
         return response(f"{path} not found", status_code=400)
 
-    key = statedb.catid_to_key(catid)
+    key = statedb.payload_id_to_key(payload_id)
 
     if key['itemids'] == '':
         # get summary of collection
@@ -162,28 +164,29 @@ def lambda_handler(event, context):
             sort_ascending=sort_ascending,
             sort_index=sort_index,
         )
-        if legacy:
-            items = [to_legacy(item) for item in items]
-
-        return response(items)
+        return response(transform(item) for item in items)
     else:
         # get individual item
-        item = statedb.dbitem_to_item(statedb.get_dbitem(catid))
-        if legacy:
-            item = to_legacy(item)
-        return response(item)
+        item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
+        return response(transform(item))
+
+
+def to_current(item):
+    item['catid'] = item['payload_id']
+    item['catalog'] = item['payload']
+    return item
 
 
 def to_legacy(item):
     _item = {
-        'id': item['catid'],
-        'catid': item['catid'],
+        'id': item['payload_id'],
+        'catid': item['payload_id'],
         'input_collections': item['collections'],
         'current_state': f"{item['state']}_{item['updated']}",
         'state': item['state'],
         'created_at': item['created'],
         'updated_at': item['updated'],
-        'input_catalog': item['catalog']
+        'input_catalog': item['payload']
     }
     if 'executions' in item:
         _item['execution'] = item['executions'][-1]
