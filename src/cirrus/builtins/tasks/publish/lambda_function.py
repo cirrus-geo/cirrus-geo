@@ -1,7 +1,7 @@
 import json
 from os import getenv
 
-from cirrus.lib.catalog import Catalog
+from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.logging import get_task_logger
 
@@ -15,11 +15,11 @@ PUBLISH_TOPICS = getenv('CIRRUS_PUBLISH_SNS', None)
 statedb = StateDB()
 
 
-def lambda_handler(payload, context):
-    catalog = Catalog.from_payload(payload)
-    logger = get_task_logger("task.publish", catalog=catalog)
+def lambda_handler(event, context):
+    payload = ProcessPayload.from_event(event)
+    logger = get_task_logger("task.publish", payload=payload)
 
-    config = catalog.get_task('publish', {})
+    config = payload.get_task('publish', {})
     public = config.get('public', False)
     # additional SNS topics to publish to
     topics = config.get('sns', [])
@@ -32,28 +32,28 @@ def lambda_handler(payload, context):
 
         if API_URL is not None:
             link = {
-                'title': catalog['id'],
+                'title': payload['id'],
                 'rel': 'via-cirrus',
-                'href': f"{API_URL}/catid/{catalog['id']}"
+                'href': f"{API_URL}/catid/{payload['id']}"
             }
             logger.debug(json.dumps(link))
             # add cirrus-source relation
-            for item in catalog['features']:
+            for item in payload['features']:
                 item['links'].append(link)
 
         # publish to s3
-        s3urls = catalog.publish_items_to_s3(DATA_BUCKET, public=public)
+        s3urls = payload.publish_items_to_s3(DATA_BUCKET, public=public)
 
         # publish to Cirrus SNS publish topic
-        catalog.publish_items_to_sns()
+        payload.publish_items_to_sns()
 
         # Deprecated additional topics
         if PUBLISH_TOPICS:
             for t in PUBLISH_TOPICS.split(','):
-                catalog.publish_items_to_sns()
+                payload.publish_items_to_sns()
 
         for t in topics:
-            catalog.publish_to_sns(t)
+            payload.publish_to_sns(t)
     except Exception as err:
         msg = f"publish: failed publishing output items ({err})"
         logger.error(msg, exc_info=True)
@@ -61,10 +61,10 @@ def lambda_handler(payload, context):
 
     try:
         # update job outputs in table
-        statedb.set_outputs(catalog['id'], outputs=s3urls)
+        statedb.set_outputs(payload['id'], outputs=s3urls)
     except Exception as err:
         msg = f"publish: failed setting statedb outputs ({err})"
         logger.error(msg, exc_info=True)
         raise Exception(msg) from err
 
-    return catalog
+    return payload

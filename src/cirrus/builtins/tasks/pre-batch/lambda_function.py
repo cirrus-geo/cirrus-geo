@@ -2,24 +2,24 @@ import uuid
 from os import getenv
 
 from boto3utils import s3
-from cirrus.lib.catalog import Catalog
+from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.logging import get_task_logger
 
 # envvars
-CATALOG_BUCKET = getenv('CIRRUS_CATALOG_BUCKET')
+PAYLOAD_BUCKET = getenv('CIRRUS_PAYLOAD_BUCKET')
 
 
-def lambda_handler(payload, context):
-    catalog = Catalog.from_payload(payload)
-    logger = get_task_logger("task.pre-batch", catalog=catalog)
+def lambda_handler(event, context):
+    payload = ProcessPayload.from_event(event)
+    logger = get_task_logger("task.pre-batch", payload=payload)
 
-    url = f"s3://{CATALOG_BUCKET}/batch/{catalog['id']}/{uuid.uuid1()}.json"
+    url = f"s3://{PAYLOAD_BUCKET}/batch/{payload['id']}/{uuid.uuid1()}.json"
 
     try:
         # copy payload to s3
-        s3().upload_json(catalog, url)
+        s3().upload_json(payload, url)
 
-        logger.debug(f"Uploaded catalog to {url}")
+        logger.debug(f"Uploaded payload to {url}")
         return {
             'url': url
         }

@@ -3,24 +3,29 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 import rasterio
-from cirrus.lib import Catalog, get_task_logger
+from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib.logging import get_task_logger
 from cirrus.lib.errors import InvalidInput
-from cirrus.lib.transfer import download_item_assets, upload_item_assets, s3_sessions
+from cirrus.lib.transfer import (
+    download_item_assets,
+    upload_item_assets,
+    s3_sessions,
+)
 from rasterio.errors import CRSError
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
 
 
-def lambda_handler(payload, context={}):
-    catalog = Catalog.from_payload(payload)
-    logger = get_task_logger("task.convert-to-cog", catalog=catalog)
+def lambda_handler(event, context={}):
+    payload = ProcessPayload.from_event(event)
+    logger = get_task_logger("task.convert-to-cog", payload=payload)
 
     # TODO - make this more general for more items/collections
-    item = catalog['features'][0]  # collection=catalog['collections'][0])
+    item = payload['features'][0]  # collection=payload['collections'][0])
 
     # configuration options
-    config = catalog.get_task('convert-to-cog', {})
-    outopts = catalog.process.get('output_options', {})
+    config = payload.get_task('convert-to-cog', {})
+    outopts = payload.process.get('output_options', {})
     assets = config.get('assets')
 
     # create temporary work directory
@@ -66,7 +71,7 @@ def lambda_handler(payload, context={}):
         for asset in [a for a in config.get('drop_assets', []) if a in item['assets'].keys()]:
             item['assets'].pop(asset)
 
-        catalog['features'][0] = item
+        payload['features'][0] = item
     except CRSError as err:
         msg = f"convert-to-cog: invalid CRS ({err})"
         logger.error(msg, exc_info=True)
@@ -84,7 +89,7 @@ def lambda_handler(payload, context={}):
         logger.debug('Removing work directory %s' % tmpdir)
         rmtree(tmpdir)
 
-    return catalog
+    return payload
 
 
 def cogify(fin, fout, nodata=None, web_optimized=False, blocksize=256,

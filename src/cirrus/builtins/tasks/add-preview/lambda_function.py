@@ -5,7 +5,7 @@ import tempfile
 
 import gdal
 import rasterio
-from cirrus.lib.catalog import Catalog
+from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.transfer import download_item_assets, upload_item_assets
 from rio_cogeo.cogeo import cog_translate
@@ -13,13 +13,13 @@ from rio_cogeo.profiles import cog_profiles
 from rasterio.warp import calculate_default_transform, reproject as _reproject, Resampling
 
 
-def lambda_handler(payload, context={}):
-    catalog = Catalog.from_payload(payload)
-    logger = get_task_logger("task.add-preview", catalog=catalog)
+def lambda_handler(event, context={}):
+    payload = ProcessPayload.from_event(event)
+    logger = get_task_logger("task.add-preview", payload=payload)
 
     # get step configuration
-    config = catalog.get_task('add-preview', {})
-    outopts = catalog.process.get('output_options', {})
+    config = payload.get_task('add-preview', {})
+    outopts = payload.process.get('output_options', {})
     assets = config.pop('assets', None)
     thumb = config.pop('thumbnail', False)
     config.pop('batch')
@@ -32,7 +32,7 @@ def lambda_handler(payload, context={}):
     # create temporary work directory
     tmpdir = tempfile.mkdtemp()
     items = []
-    for item in catalog['features']:
+    for item in payload['features']:
         # find asset to use for preview
         asset = None
         for a in assets:
@@ -76,8 +76,8 @@ def lambda_handler(payload, context={}):
     shutil.rmtree(tmpdir)
 
     # return new items
-    catalog['features'] = items
-    return catalog
+    payload['features'] = items
+    return payload
 
 
 def create_thumbnail(filename, logger, scale_percent=5):
