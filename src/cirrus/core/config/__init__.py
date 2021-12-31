@@ -126,5 +126,7 @@ class Config(NamedYamlable):
 
     def register_cloud_formation_group(self, cf_group) -> None:
         for top_level_key, cf_objects in cf_group.items():
+            if not cf_objects:
+                continue
             self.resources[top_level_key] = \
                 {cf.name: cf.definition for cf in cf_objects.values()}
