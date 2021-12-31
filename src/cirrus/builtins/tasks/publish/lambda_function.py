@@ -53,7 +53,7 @@ def lambda_handler(event, context):
                 payload.publish_items_to_sns()
 
         for t in topics:
-            payload.publish_to_sns(t)
+            payload.publish_items_to_sns(t)
     except Exception as err:
         msg = f"publish: failed publishing output items ({err})"
         logger.error(msg, exc_info=True)
