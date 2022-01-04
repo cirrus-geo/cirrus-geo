@@ -5,6 +5,7 @@ environment:
 lambda:
   memorySize: 1024
   timeout: 900
+  runtime: python3.7
   layers:
     - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda:2
     - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1
