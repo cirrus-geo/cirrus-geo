@@ -51,6 +51,7 @@ custom:
       Memory: 2048
       Vcpus: 1
   pythonRequirements:
+    useStaticCache: false
     slim: true
     slimPatternsAppendDefaults: false
     slimPatterns:
