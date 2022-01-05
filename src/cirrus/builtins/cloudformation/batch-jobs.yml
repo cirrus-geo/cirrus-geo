@@ -13,28 +13,6 @@ Resources:
           - Ref::lambda_function
           - Ref::url
         Environment:
-          - Name: CIRRUS_LOG_LEVEL
-            Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
-          - Name: CIRRUS_BUCKET
-            Value: ${self:provider.environment.CIRRUS_BUCKET}
-          - Name: CIRRUS_DATA_BUCKET
-            Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
-          - Name: CIRRUS_PAYLOAD_BUCKET
-            Value: ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-          - Name: CIRRUS_STATE_DB
-            Value: ${self:provider.environment.CIRRUS_STATE_DB}
-          - Name: CIRRUS_STACK
-            Value: ${self:provider.environment.CIRRUS_STACK}
-          - Name: CIRRUS_PROCESS_TOPIC_ARN
-            Value: ${self:provider.environment.CIRRUS_PROCESS_TOPIC_ARN}
-          - Name: CIRRUS_PROCESS_QUEUE
-            Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
-          - Name: BASE_WORKFLOW_ARN
-            Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
-          - Name: AWS_DEFAULT_REGION
-            Value: ${self:provider.region}
-          - Name: AWS_REGION
-            Value: ${self:provider.region}
           - Name: GDAL_DATA
             Value: /usr/local/share/gdal
           - Name: PROJ_LIB
@@ -58,28 +36,6 @@ Resources:
           - Ref::lambda_function
           - Ref::url
         Environment:
-          - Name: CIRRUS_LOG_LEVEL
-            Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
-          - Name: CIRRUS_BUCKET
-            Value: ${self:provider.environment.CIRRUS_BUCKET}
-          - Name: CIRRUS_DATA_BUCKET
-            Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
-          - Name: CIRRUS_PAYLOAD_BUCKET
-            Value: ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-          - Name: CIRRUS_STATE_DB
-            Value: ${self:provider.environment.CIRRUS_STATE_DB}
-          - Name: CIRRUS_STACK
-            Value: ${self:provider.environment.CIRRUS_STACK}
-          - Name: CIRRUS_PROCESS_TOPIC_ARN
-            Value: ${self:provider.environment.CIRRUS_PROCESS_TOPIC_ARN}
-          - Name: CIRRUS_PROCESS_QUEUE
-            Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
-          - Name: BASE_WORKFLOW_ARN
-            Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
-          - Name: AWS_DEFAULT_REGION
-            Value: ${self:provider.region}
-          - Name: AWS_REGION
-            Value: ${self:provider.region}
         Memory: ${self:custom.batch.LambdaAsBatchJob.Memory}
         Vcpus: ${self:custom.batch.LambdaAsBatchJob.Vcpus}
         Image: 'cirrusgeo/run-lambda:0.2.1'

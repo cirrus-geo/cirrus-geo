@@ -15,7 +15,7 @@ def convert_env_to_batch_env(env):
 
 def convert_batch_env_to_env(env):
     _env = {}
-    for item in env:
+    for item in (env or []):
         _env[item['Name']] = item['Value']
     return _env
 
@@ -45,8 +45,15 @@ class JobDefinition(Resource):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        inherit_env = None
         if self.parent_component:
-            self.update_environment(self.parent_component.environment)
+            # we have a task parent and should use its env
+            self.parent_component.environment
+        elif self.project and self.project.config:
+            # this a job def unassociated with a task and
+            # we should use the global environment vars
+            inherit_env = self.project.config.provider.environment
+        self.update_environment(inherit_env)
 
     def update_environment(self, env):
         if not env:
@@ -64,13 +71,6 @@ class JobDefinition(Resource):
                 item[key] = {}
             item = item[key]
 
-        try:
-            _env = item['Environment']
-        except KeyError:
-            # we don't have an env defined on the job yet
-            item['Environment'] = list(convert_env_to_batch_env(update_env))
-        else:
-            # prefers the env vars set in the batch env
-            # over those inherited from the task env config
-            update_env.update(convert_batch_env_to_env(_env))
-            item['Environment'] = list(convert_env_to_batch_env(update_env))
+        _env = item.get('Environment', {})
+        update_env.update(convert_batch_env_to_env(_env))
+        item['Environment'] = list(convert_env_to_batch_env(update_env))
