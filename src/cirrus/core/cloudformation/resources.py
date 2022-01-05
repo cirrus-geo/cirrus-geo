@@ -37,6 +37,11 @@ class Resource(BaseCFObject):
 
 
 class JobDefinition(Resource):
+    default_batch_env = {
+        'AWS_DEFAULT_REGION': '#{AWS::Region}',
+        'AWS_REGION': '#{AWS::Region}',
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -46,6 +51,10 @@ class JobDefinition(Resource):
     def update_environment(self, env):
         if not env:
             return
+
+        # add default batch env vars to inherited env
+        update_env = deepcopy(env)
+        update_env.update(self.default_batch_env)
 
         # default job defn keys above Environment, if needed
         item = self.definition
@@ -59,10 +68,9 @@ class JobDefinition(Resource):
             _env = item['Environment']
         except KeyError:
             # we don't have an env defined on the job yet
-            item['Environment'] = list(convert_env_to_batch_env(env))
+            item['Environment'] = list(convert_env_to_batch_env(update_env))
         else:
             # prefers the env vars set in the batch env
             # over those inherited from the task env config
-            update_env = deepcopy(env)
             update_env.update(convert_batch_env_to_env(_env))
             item['Environment'] = list(convert_env_to_batch_env(update_env))
