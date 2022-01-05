@@ -8,17 +8,12 @@ provider:
   region: ${opt:region, 'us-west-2'}
   runtime: python3.9
   environment:
-    CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-    CIRRUS_PUBLIC_CATALOG: False
-    #CIRRUS_API_URL: <url>
-    CIRRUS_STAC_VERSION: 1.0.0-beta.2
     CIRRUS_LOG_LEVEL: DEBUG
     CIRRUS_BUCKET: !Ref ServerlessDeploymentBucket
     CIRRUS_DATA_BUCKET: !Ref Data
     CIRRUS_PAYLOAD_BUCKET: !Ref Payloads
     CIRRUS_STATE_DB: !Ref StateTable
     CIRRUS_STACK: "#{AWS::StackName}"
-    BASE_WORKFLOW_ARN: "arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-"
     CIRRUS_PROCESS_QUEUE: !Ref ProcessQueue
     CIRRUS_PROCESS_TOPIC_ARN: !Ref ProcessTopic
     CIRRUS_PUBLISH_TOPIC_ARN: !Ref PublishTopic
