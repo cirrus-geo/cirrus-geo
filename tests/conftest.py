@@ -17,13 +17,15 @@ def fixture_data(pytestconfig):
 
 
 @pytest.fixture(scope='module')
-def module_tmpdir():
+def project_testdir(pytestconfig):
+    pdir = pytestconfig.rootpath.joinpath('tests', 'output')
+    if pdir.is_dir():
+        shutil.rmtree(pdir)
+    pdir.mkdir()
     old_cwd = os.getcwd()
-    newpath = tempfile.mkdtemp()
-    os.chdir(newpath)
-    yield Path(newpath)
+    os.chdir(pdir)
+    yield pdir
     os.chdir(old_cwd)
-    shutil.rmtree(newpath)
 
 
 @pytest.fixture
