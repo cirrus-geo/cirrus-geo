@@ -12,7 +12,6 @@ from pathlib import Path
 from cirrus.cli.commands import cli
 from cirrus.core.groups import make_groups
 from cirrus.core.project import Project
-from cirrus.core.utils import misc
 
 
 groups = make_groups()
@@ -58,8 +57,8 @@ def invoke(cli_runner):
 
 
 @pytest.fixture
-def build_dir(module_tmpdir):
-    return module_tmpdir.joinpath('.cirrus')
+def build_dir(project_testdir):
+    return project_testdir.joinpath('.cirrus')
 
 
 @pytest.fixture
@@ -78,14 +77,14 @@ def reference_build(fixture_data, build_dir):
         )
 
 
-def test_init(invoke, module_tmpdir):
+def test_init(invoke, project_testdir):
     result = invoke('init')
     print(result.stdout, result.stderr)
     assert result.exit_code == 0
-    assert Project.dir_is_project(module_tmpdir) is True
+    assert Project.dir_is_project(project_testdir) is True
 
 
-def test_reinit(module_tmpdir, invoke, project):
+def test_reinit(project_testdir, invoke, project):
     result = invoke(f'init {project.path}')
     assert result.exit_code == 0
 
@@ -117,30 +116,26 @@ def test_build(invoke, project, reference_build, build_dir):
         print(f'Files in missing from build: {missing}')
         print(f'Files added in build: {added}')
         print(f'Files different in build: {changed}')
-        # TODO: rather than printing out each of the changed files,
-        # it might be worthwhile to build into a local untracked dir,
-        # such that the user can choose to inspect any changed files
-        # in an easily-accessible and well-known location.
-        for f in changed:
-            if f == 'serverless.yml':
-                with reference_build.joinpath('serverless.yml').open() as f1:
-                    with build_dir.joinpath('serverless.yml').open() as f2:
-                        sys.stdout.writelines(difflib.unified_diff(
-                            f1.readlines(),
-                            f2.readlines(),
-                            fromfile='expected serverless.yml',
-                            tofile='generated serverless.yml',
-                        ))
-            else:
-                print(f"Content of '{f}':")
-                print(build_dir.joinpath(f).read_text())
 
+        # we diff serverless as that is the most complicated
+        if 'serverless.yml' in changed:
+            with reference_build.joinpath('serverless.yml').open() as f1:
+                with build_dir.joinpath('serverless.yml').open() as f2:
+                    sys.stdout.writelines(difflib.unified_diff(
+                        f1.readlines(),
+                        f2.readlines(),
+                        fromfile='expected serverless.yml',
+                        tofile='generated serverless.yml',
+                    ))
 
-        print()
         print(
-            'If all highlighted changes are expected, simply remove '
-            f'{misc.relative_to_cwd(reference_build)} and rerun the '
-            'tests to update the reference files.'
+            '\n'
+            f'Reference build: {reference_build}\n'
+            f'Test build directory: {build_dir}\n'
+            '\n'
+            'If all highlighted changes are expected, simply remove \n'
+            'the reference_build directory and rerun the tests to update \n'
+            'the reference files.'
         )
 
         assert not (missing or added or changed)
@@ -151,7 +146,7 @@ def test_build(invoke, project, reference_build, build_dir):
     [c.type for c in groups.extendable_groups
      if hasattr(c, 'add_create_command')],
 )
-def test_create(createable, module_tmpdir, invoke, project):
+def test_create(createable, project_testdir, invoke, project):
     result = invoke(f'create {createable} test_{createable} description')
     assert result.exit_code == 0
     result = invoke(f'show {createable} test_{createable}')

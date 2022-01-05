@@ -9,4 +9,5 @@ dist/
 /build/
 .env
 packages/
+output/
 *.egg-info/
