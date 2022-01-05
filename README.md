@@ -10,7 +10,7 @@ Cirrus workflows can be as simple as containing no processing at all, where the 
 
 ![](docs/images/highlevel.png)
 
-As shown in this high-level overview of Cirrus, users input data to Cirrus through the user of *feeders*. Feeders are simply programs that get/generate some type of STAC metadata, combine it with processing parameters and passes it into Cirrus in the format Cirrus expects.
+As shown in this high-level overview of Cirrus, users input data to Cirrus through the use of *feeders*. Feeders are simply programs that get/generate some type of STAC metadata, combine it with processing parameters and pass it into Cirrus in the format Cirrus expects.
 
 Because Cirrus output is published via SNS, a Feeder can be configured to subscribe to that SNS and thus workflows can be chained, such that the output of one workflow becomes the input to another workflow and creates multiple levels of products, all with published STAC metadata and clear links showing data provenance.
 
