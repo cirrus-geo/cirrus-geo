@@ -112,6 +112,7 @@ class CFObjectMeta(GroupMeta):
         is_builtin,
         parent_component=None,
     ):
+        project = parent_component.project if parent_component else self.project
         for name, definition in objects.items():
             try:
                 yield CFObject(
@@ -121,6 +122,7 @@ class CFObjectMeta(GroupMeta):
                     path,
                     is_builtin=is_builtin,
                     parent_component=parent_component,
+                    project=project,
                 )
             except CloudFormationSkipped:
                 pass
@@ -294,6 +296,7 @@ class BaseCFObject(metaclass=CFObjectMeta):
         name,
         definition,
         path: Path=None,
+        project=None,
         parent_component=None,
         is_builtin=False,
     ) -> None:
@@ -301,6 +304,7 @@ class BaseCFObject(metaclass=CFObjectMeta):
         self.definition = definition
         self.path = path
         self.resource_type = definition.get('Type', None)
+        self.project = project
         self.parent_component = parent_component
         self.is_builtin = is_builtin
 
