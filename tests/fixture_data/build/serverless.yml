@@ -5,69 +5,32 @@ provider:
   region: ${opt:region, 'us-west-2'}
   runtime: python3.9
   environment:
-    CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-    CIRRUS_PUBLIC_CATALOG: false
-    CIRRUS_STAC_VERSION: 1.0.0-beta.2
     CIRRUS_LOG_LEVEL: DEBUG
     CIRRUS_BUCKET:
       Ref: ServerlessDeploymentBucket
     CIRRUS_DATA_BUCKET:
       Ref: Data
-    CIRRUS_CATALOG_BUCKET:
-      Ref: Catalogs
+    CIRRUS_PAYLOAD_BUCKET:
+      Ref: Payloads
     CIRRUS_STATE_DB:
       Ref: StateTable
-    CIRRUS_STACK: ${self:service}-${self:provider.stage}
-    BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-    CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-    CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-    CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-    CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-    CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+    CIRRUS_STACK: '#{AWS::StackName}'
+    CIRRUS_PROCESS_QUEUE:
+      Ref: ProcessQueue
+    CIRRUS_PROCESS_TOPIC_ARN:
+      Ref: ProcessTopic
+    CIRRUS_PUBLISH_TOPIC_ARN:
+      Ref: PublishTopic
+    CIRRUS_FAILED_TOPIC_ARN:
+      Ref: FailedTopic
+    CIRRUS_INVALID_TOPIC_ARN:
+      Ref: FailedTopic
   iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:BatchGetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-        - dynamodb:DescribeTable
-      Resource:
-        - Fn::GetAtt:
-            - StateTable
-            - Arn
-        - Fn::Join:
-            - ''
-            - - Fn::GetAtt:
-                  - StateTable
-                  - Arn
-              - /index/*
-    - Effect: Allow
-      Action:
-        - sqs:GetQueueUrl
-        - sqs:SendMessage
-        - sqs:ReceiveMessage
-        - sqs:DeleteMessage
-      Resource:
-        - Fn::GetAtt:
-            - ProcessQueue
-            - Arn
-    - Effect: Allow
-      Action:
-        - SNS:Publish
-      Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
-    - Effect: Allow
-      Action:
-        - states:StartExecution
-      Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
     - Effect: Allow
       Action:
         - lambda:InvokeFunction
       Resource:
-        - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:cirrus*
+        - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:#{AWS::StackName}*
     - Effect: Allow
       Action: s3:*
       Resource: '*'
@@ -75,25 +38,6 @@ provider:
       Action: secretsmanager:GetSecretValue
       Resource:
         - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
-    - Effect: Allow
-      Action:
-        - batch:SubmitJob
-      Resource:
-        - arn:aws:batch:#{AWS::Region}:#{AWS::AccountId}:job-definition/cirrus*
-        - arn:aws:batch:#{AWS::Region}:#{AWS::AccountId}:job-queue/cirrus*
-    - Effect: Allow
-      Action:
-        - logs:GetLogEvents
-      Resource:
-        - arn:aws:logs:#{AWS::Region}:#{AWS::AccountId}:log-group:/aws/batch/*
-    - Effect: Allow
-      Action:
-        - logs:CreateLogStream
-        - logs:PutLogEvents
-        - ec2:CreateNetworkInterface
-        - ec2:DescribeNetworkInterfaces
-        - ec2:DeleteNetworkInterface
-      Resource: '*'
 custom:
   batch:
     SecurityGroupIds:
@@ -105,9 +49,6 @@ custom:
       - ${env:SUBNET_4}
     BasicComputeEnvironments:
       MaxvCpus: 128
-    CustomComputeEnvironments:
-      MaxvCpus: 8000
-      ImageId: ami-0762f74aea69d4143
     LambdaAsBatchJob:
       Memory: 2048
       Vcpus: 1
@@ -115,6 +56,7 @@ custom:
       Memory: 2048
       Vcpus: 1
   pythonRequirements:
+    useStaticCache: false
     slim: true
     slimPatternsAppendDefaults: false
     slimPatterns:
@@ -143,27 +85,50 @@ functions:
     events:
       - http: GET /
       - http: GET {proxy+}
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:BatchGetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+          - dynamodb:DescribeTable
+        Resource:
+          - Fn::GetAtt:
+              - StateTable
+              - Arn
+          - Fn::Join:
+              - ''
+              - - Fn::GetAtt:
+                    - StateTable
+                    - Arn
+                - /index/*
     description: Cirrus API
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
     package:
       include:
         - ./lambdas/api/**
@@ -178,62 +143,68 @@ functions:
             Fn::GetAtt:
               - ProcessQueue
               - Arn
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - states:StartExecution
+        Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:BatchGetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+          - dynamodb:DescribeTable
+        Resource:
+          - Fn::GetAtt:
+              - StateTable
+              - Arn
+          - Fn::Join:
+              - ''
+              - - Fn::GetAtt:
+                    - StateTable
+                    - Arn
+                - /index/*
+      - Effect: Allow
+        Action:
+          - sqs:GetQueueUrl
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+        Resource:
+          - Fn::GetAtt:
+              - ProcessQueue
+              - Arn
     description: Consumes Process Catalogs from queue and invokes workflow
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}-
     package:
       include:
         - ./lambdas/process/**
     module: lambdas/process
-    handler: lambda_function.lambda_handler
-  publish-test:
-    memorySize: 128
-    timeout: 60
-    events:
-      - sns: ${self:provider.environment.CIRRUS_PUBLISH_TOPIC_ARN}
-    description: Test Feeder data
-    environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
-      CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
-      CIRRUS_DATA_BUCKET:
-        Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
-      CIRRUS_STATE_DB:
-        Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-    package:
-      include:
-        - ./lambdas/publish-test/**
-    module: lambdas/publish-test
     handler: lambda_function.lambda_handler
   update-state:
     memorySize: 128
@@ -247,7 +218,7 @@ functions:
               - Step Functions Execution Status Change
             detail:
               stateMachineArn:
-                - prefix: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:cirrus
+                - prefix: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}
               status:
                 - SUCCEEDED
                 - FAILED
@@ -255,30 +226,53 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DescribeTable
+        Resource:
+          - Fn::GetAtt:
+              - StateTable
+              - Arn
+          - Fn::Join:
+              - ''
+              - - Fn::GetAtt:
+                    - StateTable
+                    - Arn
+                - /index/*
+      - Effect: Allow
+        Action:
           - states:GetExecutionHistory
         Resource:
-          - arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:execution:*
+          - arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:execution:#{AWS::StackName}
+      - Effect: Allow
+        Action:
+          - SNS:Publish
+        Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
     description: update the cirrus database with the execution state
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
     package:
       include:
         - ./lambdas/update-state/**
@@ -287,27 +281,49 @@ functions:
   feed-rerun:
     memorySize: 128
     timeout: 900
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - SNS:Publish
+        Resource:
+          Ref: ProcessTopic
+      - Effect: Allow
+        Action:
+          - batch:SubmitJob
+        Resource:
+          - Ref: GeoLambdaAsBatchJob
+          - Ref: BasicOnDemandJobQueue
+      - Effect: Allow
+        Action:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+        Resource: '*'
     description: Rerun items in the database
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
     package:
       include:
         - ./lambdas/feed-rerun/**
@@ -316,27 +332,49 @@ functions:
   feed-s3-inventory:
     memorySize: 128
     timeout: 900
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - SNS:Publish
+        Resource:
+          Ref: ProcessTopic
+      - Effect: Allow
+        Action:
+          - batch:SubmitJob
+        Resource:
+          - Ref: LambdaAsBatchJob
+          - Ref: BasicOnDemandJobQueue
+      - Effect: Allow
+        Action:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+        Resource: '*'
     description: Feed Sentinel AWS inventory data to Cirrus for cataloging
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
     package:
       include:
         - ./lambdas/feed-s3-inventory/**
@@ -345,27 +383,49 @@ functions:
   feed-stac-api:
     memorySize: 128
     timeout: 900
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - SNS:Publish
+        Resource:
+          Ref: ProcessTopic
+      - Effect: Allow
+        Action:
+          - batch:SubmitJob
+        Resource:
+          - Ref: LambdaAsBatchJob
+          - Ref: BasicOnDemandJobQueue
+      - Effect: Allow
+        Action:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+        Resource: '*'
     description: Feed data from a STAC API to Cirrus for processing
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
     package:
       include:
         - ./lambdas/feed-stac-api/**
@@ -374,27 +434,49 @@ functions:
   feed-stac-crawl:
     memorySize: 128
     timeout: 900
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - SNS:Publish
+        Resource:
+          Ref: ProcessTopic
+      - Effect: Allow
+        Action:
+          - batch:SubmitJob
+        Resource:
+          - Ref: LambdaAsBatchJob
+          - Ref: BasicOnDemandJobQueue
+      - Effect: Allow
+        Action:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+        Resource: '*'
     description: Crawl static STAC assets
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
     package:
       include:
         - ./lambdas/feed-stac-crawl/**
@@ -403,30 +485,32 @@ functions:
   add-preview:
     memorySize: 1024
     timeout: 900
+    runtime: python3.7
     layers:
       - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda:2
       - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1
     description: Create a preview and/or thumbnail from one or more assets
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
       GDAL_DATA: /opt/share/gdal
       PROJ_LIB: /opt/share/proj
     package:
@@ -437,30 +521,32 @@ functions:
   convert-to-cog:
     memorySize: 1024
     timeout: 900
+    runtime: python3.7
     layers:
       - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda:2
       - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1
     description: Convert specified assets into Cloud Optimized GeoTIFFs
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
       GDAL_DATA: /opt/share/gdal
       PROJ_LIB: /opt/share/proj
     package:
@@ -473,25 +559,26 @@ functions:
     timeout: 60
     description: Copy specified assets from Item(s) to an S3 bucket
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
     package:
       include:
         - ./lambdas/copy-assets/**
@@ -500,27 +587,35 @@ functions:
   post-batch:
     memorySize: 128
     timeout: 15
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - logs:GetLogEvents
+        Resource:
+          - arn:aws:logs:#{AWS::Region}:#{AWS::AccountId}:log-group:/aws/batch/*
     description: Post process batch job by copying input from S3
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
     package:
       include:
         - ./lambdas/post-batch/**
@@ -531,25 +626,26 @@ functions:
     timeout: 15
     description: Pre process batch job by copying input to S3
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
     package:
       include:
         - ./lambdas/pre-batch/**
@@ -558,28 +654,42 @@ functions:
   publish:
     memorySize: 128
     timeout: 30
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - SNS:Publish
+        Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource:
+          - Fn::GetAtt:
+              - StateTable
+              - Arn
     description: Publish resulting STAC Collections and Items to catalog, and optionally
       SNS
     environment:
-      CIRRUS_STAC_DESCRIPTION: ${self:service}-${self:provider.stage} STAC
-      CIRRUS_PUBLIC_CATALOG: false
-      CIRRUS_STAC_VERSION: 1.0.0-beta.2
       CIRRUS_LOG_LEVEL: DEBUG
       CIRRUS_BUCKET:
         Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
-      CIRRUS_CATALOG_BUCKET:
-        Ref: Catalogs
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
-      CIRRUS_STACK: ${self:service}-${self:provider.stage}
-      BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-      CIRRUS_PROCESS_QUEUE: ${self:service}-${self:provider.stage}-process
-      CIRRUS_QUEUE_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-      CIRRUS_PUBLISH_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-      CIRRUS_FAILED_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-      CIRRUS_INVALID_TOPIC_ARN: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
+      CIRRUS_STACK: '#{AWS::StackName}'
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
+      CIRRUS_PROCESS_TOPIC_ARN:
+        Ref: ProcessTopic
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
     package:
       include:
         - ./lambdas/publish/**
@@ -630,10 +740,9 @@ stepFunctions:
             Resource: arn:aws:states:::batch:submitJob.sync
             Parameters:
               JobName: copy-assets-batch
-              JobQueue: '#{BasicSpotJobQueue}'
-              JobDefinition: '#{GeoLambdaAsBatchJob}'
+              JobQueue: '#{CopyAssetsJobQueue}'
+              JobDefinition: '#{CopyAssetsAsBatchJob}'
               Parameters:
-                lambda_function: ${self:service}-${self:provider.stage}-copy-assets
                 url.$: $.url
             Next: copy-assets-post-batch
             Retry:
@@ -716,10 +825,9 @@ stepFunctions:
             Resource: arn:aws:states:::batch:submitJob.sync
             Parameters:
               JobName: convert-to-cog-batch
-              JobQueue: '#{CustomSpotJobQueue}'
-              JobDefinition: '#{GeoLambdaAsBatchJob}'
+              JobQueue: '#{ConvertToCOGJobQueue}'
+              JobDefinition: '#{ConvertToCOGAsBatchJob}'
               Parameters:
-                lambda_function: ${self:service}-${self:provider.stage}-convert-to-cog
                 url.$: $.url
             Next: convert-to-cog-post-batch
             Retry:
@@ -1043,10 +1151,9 @@ stepFunctions:
             Resource: arn:aws:states:::batch:submitJob.sync
             Parameters:
               JobName: add-preview-batch
-              JobQueue: '#{BasicSpotJobQueue}'
-              JobDefinition: '#{GeoLambdaAsBatchJob}'
+              JobQueue: '#{AddPreviewJobQueue}'
+              JobDefinition: '#{AddPreviewAsBatchJob}'
               Parameters:
-                lambda_function: ${self:service}-${self:provider.stage}-add-preview
                 url.$: $.url
             Next: add-preview-post-batch
             Retry:
@@ -1150,6 +1257,62 @@ stepFunctions:
 resources:
   Description: Cirrus STAC Processing Framework
   Resources:
+    AddPreviewAsBatchJob:
+      Type: AWS::Batch::JobDefinition
+      Properties:
+        JobDefinitionName: '#{AWS::StackName}-add-preview-as-batch'
+        Type: Container
+        Parameters:
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - ${self:service}-${self:provider.stage}-add-preview
+            - Ref::url
+          Memory: 12000
+          Vcpus: 1
+          Image: cirrusgeo/run-geolambda:0.2.1
+        RetryStrategy:
+          Attempts: 1
+    AddPreviewComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeResources:
+          MaxvCpus: 1000
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: SPOT
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          SpotIamFleetRole:
+            Fn::GetAtt:
+              - EC2SpotRole
+              - Arn
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name: 'Batch Instance - #{AWS::StackName}'
+          DesiredvCpus: 0
+        State: ENABLED
+    AddPreviewJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: AddPreviewComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName: '#{AWS::StackName}-add-preview-jq'
     BasicOnDemandComputeEnvironment:
       Type: AWS::Batch::ComputeEnvironment
       Properties:
@@ -1261,45 +1424,10 @@ resources:
                   Action:
                     - lambda:GetFunction
                   Resource:
-                    - arn:aws:lambda:*:*:function:${self:service}-${self:provider.stage}-*
-                - Effect: Allow
-                  Action:
-                    - dynamodb:Query
-                    - dynamodb:Scan
-                    - dynamodb:GetItem
-                    - dynamodb:PutItem
-                    - dynamodb:UpdateItem
-                    - dynamodb:DeleteItem
-                  Resource:
-                    - Fn::GetAtt:
-                        - StateTable
-                        - Arn
-                    - Fn::Join:
-                        - ''
-                        - - Fn::GetAtt:
-                              - StateTable
-                              - Arn
-                          - /index/*
+                    - arn:aws:lambda:*:*:function:#{AWS::StackName}-*
                 - Effect: Allow
                   Action: secretsmanager:GetSecretValue
                   Resource: arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
-                - Effect: Allow
-                  Action: SNS:Publish
-                  Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:cirrus*
-                - Effect: Allow
-                  Action:
-                    - sqs:GetQueueUrl
-                    - sqs:SendMessage
-                    - sqs:ReceiveMessage
-                    - sqs:DeleteMessage
-                  Resource:
-                    - Fn::GetAtt:
-                        - ProcessQueue
-                        - Arn
-                - Effect: Allow
-                  Action:
-                    - states:StartExecution
-                  Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
     BatchServiceRole:
       Type: AWS::IAM::Role
       Properties:
@@ -1315,17 +1443,62 @@ resources:
         Path: /
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
-    Catalogs:
-      Type: AWS::S3::Bucket
+    ConvertToCOGAsBatchJob:
+      Type: AWS::Batch::JobDefinition
       Properties:
-        LifecycleConfiguration:
-          Rules:
-            - ExpirationInDays: 10
-              Prefix: batch/
-              Status: Enabled
-            - ExpirationInDays: 10
-              Prefix: payloads/
-              Status: Enabled
+        JobDefinitionName: '#{AWS::StackName}-convert-to-cog-as-batch'
+        Type: Container
+        Parameters:
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - ${self:service}-${self:provider.stage}-convert-to-cog
+            - Ref::url
+          Memory: 12000
+          Vcpus: 1
+          Image: cirrusgeo/run-geolambda:0.2.1
+        RetryStrategy:
+          Attempts: 1
+    ConvertToCOGComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeResources:
+          MaxvCpus: 1000
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: SPOT
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          SpotIamFleetRole:
+            Fn::GetAtt:
+              - EC2SpotRole
+              - Arn
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name: 'Batch Instance - #{AWS::StackName}'
+          DesiredvCpus: 0
+        State: ENABLED
+    ConvertToCOGJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: ConvertToCOGComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName: '#{AWS::StackName}-convert-to-cog-jq'
     CopyAssetsAsBatchJob:
       Type: AWS::Batch::JobDefinition
       Properties:
@@ -1341,41 +1514,6 @@ resources:
           Memory: 12000
           Vcpus: 1
           Image: cirrusgeo/run-geolambda:0.2.1
-          Environment:
-            - Name: CIRRUS_STAC_DESCRIPTION
-              Value: ${self:service}-${self:provider.stage} STAC
-            - Name: CIRRUS_PUBLIC_CATALOG
-              Value: false
-            - Name: CIRRUS_STAC_VERSION
-              Value: 1.0.0-beta.2
-            - Name: CIRRUS_LOG_LEVEL
-              Value: DEBUG
-            - Name: CIRRUS_BUCKET
-              Value:
-                Ref: ServerlessDeploymentBucket
-            - Name: CIRRUS_DATA_BUCKET
-              Value:
-                Ref: Data
-            - Name: CIRRUS_CATALOG_BUCKET
-              Value:
-                Ref: Catalogs
-            - Name: CIRRUS_STATE_DB
-              Value:
-                Ref: StateTable
-            - Name: CIRRUS_STACK
-              Value: ${self:service}-${self:provider.stage}
-            - Name: BASE_WORKFLOW_ARN
-              Value: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-${self:provider.stage}-
-            - Name: CIRRUS_PROCESS_QUEUE
-              Value: ${self:service}-${self:provider.stage}-process
-            - Name: CIRRUS_QUEUE_TOPIC_ARN
-              Value: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-queue
-            - Name: CIRRUS_PUBLISH_TOPIC_ARN
-              Value: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
-            - Name: CIRRUS_FAILED_TOPIC_ARN
-              Value: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
-            - Name: CIRRUS_INVALID_TOPIC_ARN
-              Value: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-failed
         RetryStrategy:
           Attempts: 1
     CopyAssetsComputeEnvironment:
@@ -1417,86 +1555,10 @@ resources:
         State: ENABLED
         Priority: 1
         JobQueueName: '#{AWS::StackName}-copy-assets-jq'
-    CustomOnDemandComputeEnvironment:
-      Type: AWS::Batch::ComputeEnvironment
-      Properties:
-        Type: MANAGED
-        ServiceRole:
-          Fn::GetAtt:
-            - BatchServiceRole
-            - Arn
-        ComputeEnvironmentName: '#{AWS::StackName}-custom-ondemand'
-        ComputeResources:
-          ImageId: ${self:custom.batch.CustomComputeEnvironments.ImageId}
-          MaxvCpus: ${self:custom.batch.CustomComputeEnvironments.MaxvCpus}
-          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
-          Subnets: ${self:custom.batch.Subnets}
-          InstanceTypes:
-            - optimal
-          Type: EC2
-          AllocationStrategy: BEST_FIT_PROGRESSIVE
-          MinvCpus: 0
-          InstanceRole:
-            Fn::GetAtt:
-              - BatchInstanceProfile
-              - Arn
-          Tags:
-            Name: 'Batch Instance - #{AWS::StackName}'
-          DesiredvCpus: 0
-        State: ENABLED
-    CustomOnDemandJobQueue:
-      Type: AWS::Batch::JobQueue
-      Properties:
-        ComputeEnvironmentOrder:
-          - Order: 1
-            ComputeEnvironment:
-              Ref: CustomOnDemandComputeEnvironment
-        State: ENABLED
-        Priority: 1
-        JobQueueName: '#{AWS::StackName}-custom-ondemand'
-    CustomSpotComputeEnvironment:
-      Type: AWS::Batch::ComputeEnvironment
-      Properties:
-        Type: MANAGED
-        ServiceRole:
-          Fn::GetAtt:
-            - BatchServiceRole
-            - Arn
-        ComputeEnvironmentName: '#{AWS::StackName}-custom-spot'
-        ComputeResources:
-          ImageId: ${self:custom.batch.CustomComputeEnvironments.ImageId}
-          MaxvCpus: ${self:custom.batch.CustomComputeEnvironments.MaxvCpus}
-          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
-          Subnets: ${self:custom.batch.Subnets}
-          InstanceTypes:
-            - optimal
-          Type: SPOT
-          AllocationStrategy: BEST_FIT_PROGRESSIVE
-          SpotIamFleetRole:
-            Fn::GetAtt:
-              - EC2SpotRole
-              - Arn
-          MinvCpus: 0
-          InstanceRole:
-            Fn::GetAtt:
-              - BatchInstanceProfile
-              - Arn
-          Tags:
-            Name: 'Batch Instance - #{AWS::StackName}'
-          DesiredvCpus: 0
-        State: ENABLED
-    CustomSpotJobQueue:
-      Type: AWS::Batch::JobQueue
-      Properties:
-        ComputeEnvironmentOrder:
-          - Order: 1
-            ComputeEnvironment:
-              Ref: CustomSpotComputeEnvironment
-        State: ENABLED
-        Priority: 1
-        JobQueueName: '#{AWS::StackName}-custom-spot'
     Data:
       Type: AWS::S3::Bucket
+      Properties:
+        BucketName: '#{AWS::StackName}-data'
     EC2SpotRole:
       Type: AWS::IAM::Role
       Properties:
@@ -1515,7 +1577,7 @@ resources:
     FailedTopic:
       Type: AWS::SNS::Topic
       Properties:
-        TopicName: ${self:service}-${self:provider.stage}-failed
+        TopicName: '#{AWS::StackName}-failed'
     GeoLambdaAsBatchJob:
       Type: AWS::Batch::JobDefinition
       Properties:
@@ -1531,27 +1593,40 @@ resources:
             - Ref::url
           Environment:
             - Name: CIRRUS_LOG_LEVEL
-              Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
+              Value: DEBUG
             - Name: CIRRUS_BUCKET
-              Value: ${self:provider.environment.CIRRUS_BUCKET}
+              Value:
+                Ref: ServerlessDeploymentBucket
             - Name: CIRRUS_DATA_BUCKET
-              Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
-            - Name: CIRRUS_CATALOG_BUCKET
-              Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
+              Value:
+                Ref: Data
+            - Name: CIRRUS_PAYLOAD_BUCKET
+              Value:
+                Ref: Payloads
             - Name: CIRRUS_STATE_DB
-              Value: ${self:provider.environment.CIRRUS_STATE_DB}
+              Value:
+                Ref: StateTable
             - Name: CIRRUS_STACK
-              Value: ${self:provider.environment.CIRRUS_STACK}
-            - Name: CIRRUS_QUEUE_TOPIC_ARN
-              Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
+              Value: '#{AWS::StackName}'
             - Name: CIRRUS_PROCESS_QUEUE
-              Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
-            - Name: BASE_WORKFLOW_ARN
-              Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
+              Value:
+                Ref: ProcessQueue
+            - Name: CIRRUS_PROCESS_TOPIC_ARN
+              Value:
+                Ref: ProcessTopic
+            - Name: CIRRUS_PUBLISH_TOPIC_ARN
+              Value:
+                Ref: PublishTopic
+            - Name: CIRRUS_FAILED_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: CIRRUS_INVALID_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
             - Name: AWS_DEFAULT_REGION
-              Value: ${self:provider.region}
+              Value: '#{AWS::Region}'
             - Name: AWS_REGION
-              Value: ${self:provider.region}
+              Value: '#{AWS::Region}'
             - Name: GDAL_DATA
               Value: /usr/local/share/gdal
             - Name: PROJ_LIB
@@ -1576,40 +1651,65 @@ resources:
             - Ref::url
           Environment:
             - Name: CIRRUS_LOG_LEVEL
-              Value: ${self:provider.environment.CIRRUS_LOG_LEVEL}
+              Value: DEBUG
             - Name: CIRRUS_BUCKET
-              Value: ${self:provider.environment.CIRRUS_BUCKET}
+              Value:
+                Ref: ServerlessDeploymentBucket
             - Name: CIRRUS_DATA_BUCKET
-              Value: ${self:provider.environment.CIRRUS_DATA_BUCKET}
-            - Name: CIRRUS_CATALOG_BUCKET
-              Value: ${self:provider.environment.CIRRUS_CATALOG_BUCKET}
+              Value:
+                Ref: Data
+            - Name: CIRRUS_PAYLOAD_BUCKET
+              Value:
+                Ref: Payloads
             - Name: CIRRUS_STATE_DB
-              Value: ${self:provider.environment.CIRRUS_STATE_DB}
+              Value:
+                Ref: StateTable
             - Name: CIRRUS_STACK
-              Value: ${self:provider.environment.CIRRUS_STACK}
-            - Name: CIRRUS_QUEUE_TOPIC_ARN
-              Value: ${self:provider.environment.CIRRUS_QUEUE_TOPIC_ARN}
+              Value: '#{AWS::StackName}'
             - Name: CIRRUS_PROCESS_QUEUE
-              Value: ${self:provider.environment.CIRRUS_PROCESS_QUEUE}
-            - Name: BASE_WORKFLOW_ARN
-              Value: ${self:provider.environment.BASE_WORKFLOW_ARN}
+              Value:
+                Ref: ProcessQueue
+            - Name: CIRRUS_PROCESS_TOPIC_ARN
+              Value:
+                Ref: ProcessTopic
+            - Name: CIRRUS_PUBLISH_TOPIC_ARN
+              Value:
+                Ref: PublishTopic
+            - Name: CIRRUS_FAILED_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: CIRRUS_INVALID_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
             - Name: AWS_DEFAULT_REGION
-              Value: ${self:provider.region}
+              Value: '#{AWS::Region}'
             - Name: AWS_REGION
-              Value: ${self:provider.region}
+              Value: '#{AWS::Region}'
           Memory: ${self:custom.batch.LambdaAsBatchJob.Memory}
           Vcpus: ${self:custom.batch.LambdaAsBatchJob.Vcpus}
           Image: cirrusgeo/run-lambda:0.2.1
         RetryStrategy:
           Attempts: 1
+    Payloads:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: '#{AWS::StackName}-payloads'
+        LifecycleConfiguration:
+          Rules:
+            - ExpirationInDays: 10
+              Prefix: batch/
+              Status: Enabled
+            - ExpirationInDays: 10
+              Prefix: payloads/
+              Status: Enabled
     ProcessDeadLetterQueue:
       Type: AWS::SQS::Queue
       Properties:
-        QueueName: ${self:service}-${self:provider.stage}-process-dead-letter
+        QueueName: '#{AWS::StackName}-process-dead-letter'
     ProcessQueue:
       Type: AWS::SQS::Queue
       Properties:
-        QueueName: ${self:service}-${self:provider.stage}-process
+        QueueName: '#{AWS::StackName}-process'
         VisibilityTimeout: 1000
         RedrivePolicy:
           deadLetterTargetArn:
@@ -1636,7 +1736,7 @@ resources:
               Condition:
                 ArnEquals:
                   aws:SourceArn:
-                    - Ref: QueueTopic
+                    - Ref: ProcessTopic
                     - Ref: PublishTopic
     ProcessQueueSubsciption:
       Type: AWS::SNS::Subscription
@@ -1648,15 +1748,15 @@ resources:
         Protocol: sqs
         Region: '#{AWS::Region}'
         TopicArn:
-          Ref: QueueTopic
+          Ref: ProcessTopic
+    ProcessTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: '#{AWS::StackName}-process'
     PublishTopic:
       Type: AWS::SNS::Topic
       Properties:
-        TopicName: ${self:service}-${self:provider.stage}-publish
-    QueueTopic:
-      Type: AWS::SNS::Topic
-      Properties:
-        TopicName: ${self:service}-${self:provider.stage}-queue
+        TopicName: '#{AWS::StackName}-publish'
     StateTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -1692,17 +1792,11 @@ resources:
             Projection:
               ProjectionType: ALL
         BillingMode: PAY_PER_REQUEST
-        TableName: ${self:service}-${self:provider.stage}-state
+        TableName: '#{AWS::StackName}-state'
   Outputs:
     CirrusQueueSnsArn:
       Value:
-        Ref: QueueTopic
-  Conditions: {}
-  Mappings: {}
-  Metadata: {}
-  Parameters: {}
-  Rules: {}
-  Transform: {}
+        Ref: ProcessTopic
 package:
   individually: true
   exclude:
