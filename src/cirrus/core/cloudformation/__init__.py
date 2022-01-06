@@ -1,5 +1,4 @@
 from .base import (
-    CFObject,
     CloudFormation,
 )
 from .conditions import Condition

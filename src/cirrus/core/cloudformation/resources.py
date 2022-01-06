@@ -20,7 +20,7 @@ def convert_batch_env_to_env(env):
     return _env
 
 
-class Resource(BaseCFObject):
+class Resource(BaseCFObject, top_level_key='Resources'):
     top_level_key = 'Resources'
     task_batch_resource_attr = 'batch_resources'
 

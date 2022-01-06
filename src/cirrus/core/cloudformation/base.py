@@ -98,7 +98,7 @@ class CFObjectMeta(GroupMeta):
 
         try:
             return self.cf_types[top_level_key]
-        except IndexError:
+        except KeyError:
             raise CloudFormationError(
                 "Unknown cloudformation type '%s'",
                 top_level_key,
@@ -115,7 +115,7 @@ class CFObjectMeta(GroupMeta):
         project = parent_component.project if parent_component else self.project
         for name, definition in objects.items():
             try:
-                yield CFObject(
+                yield CloudFormation(
                     top_level_key,
                     name,
                     definition,
@@ -133,7 +133,22 @@ class CFObjectMeta(GroupMeta):
                     e,
                 )
 
-    def from_file(self, path: Path):
+
+class CloudFormation(metaclass=CFObjectMeta):
+    '''Used as the group added to Groups.
+    Tracks all cloudformation objects of other types.
+    '''
+    abstract = True
+    group_name = 'cloudformation'
+    group_display_name = 'CloudFormation'
+    cmd_aliases=['cf']
+
+    def __new__(cls, top_level_key, *args, **kwargs):
+        cls = cls.resolve_cls(top_level_key)
+        return cls(*args, **kwargs)
+
+    @classmethod
+    def from_file(cls, path: Path):
         # only process files
         if not path.is_file():
             return
@@ -145,30 +160,31 @@ class CFObjectMeta(GroupMeta):
         # parse a yml cf file
         cf = NamedYamlable.from_file(path)
         is_builtin = (
-            path.parent.samefile(self.core_dir)
-            if path and self.core_dir.is_dir() else False
+            path.parent.samefile(cls.core_dir)
+            if path and cls.core_dir.is_dir() else False
         )
 
         # iterate through and instantiate all cf objects
         for top_level_key, cf_objects in cf.items():
-            yield from self.create_cf_objects(
+            yield from cls.create_cf_objects(
                 path,
                 top_level_key,
                 cf_objects,
                 is_builtin,
             )
 
-    def _find(self, search_dirs=None):
+    @classmethod
+    def _find(cls, search_dirs=None):
         if search_dirs is None:
             search_dirs = []
 
-        if self.core_dir.is_dir():
-            search_dirs = [self.core_dir] + search_dirs
+        if cls.core_dir.is_dir():
+            search_dirs = [cls.core_dir] + search_dirs
 
         for d in search_dirs:
             for yml in sorted(d.glob('*.yml')):
                 try:
-                    yield from self.from_file(yml)
+                    yield from cls.from_file(yml)
                 except ValueError as e:
                     logger.warning (
                         "Unable to load cloudformation file '%s': "
@@ -176,36 +192,38 @@ class CFObjectMeta(GroupMeta):
                         misc.relative_to_cwd(yml),
                     )
 
-    def find(self):
-        self._elements = {tlk: {} for tlk in self.cf_types.keys()}
+    @classmethod
+    def find(cls):
+        cls._elements = {tlk: {} for tlk in cls.cf_types.keys()}
 
         def cf_finder():
             # order here matters, later takes precedence
             # so we prefer objects defined on tasks
-            yield from self._find(search_dirs=self.get_search_dirs())
+            yield from cls._find(search_dirs=cls.get_search_dirs())
             yield from chain.from_iterable(filter(bool, map(
                 lambda task:
                     task.batch_cloudformation
                     if task.batch_enabled
                     else None,
-                self.parent.tasks,
+                cls.parent.tasks,
             )))
 
         # cf_finder yields cf object instances, so here
         # we iterate through all cf objects it finds
         for cf_object in cf_finder():
-            if cf_object.name in self[cf_object.top_level_key]:
+            if cf_object.name in cls[cf_object.top_level_key]:
                 logger.warning(
                     "Duplicate %s declaration '%s', overriding",
                     cf_object.top_level_key,
                     cf_object.name,
                 )
-            self[cf_object.name] = cf_object
+            cls[cf_object.name] = cf_object
 
-    def add_show_command(self, show_cmd):
+    @classmethod
+    def add_show_command(cls, show_cmd):
         @show_cmd.command(
-            name=self.group_name,
-            aliases=self.cmd_aliases,
+            name=cls.group_name,
+            aliases=cls.cmd_aliases,
         )
         @click.argument(
             'name',
@@ -220,7 +238,7 @@ class CFObjectMeta(GroupMeta):
             'filter_types',
             multiple=True,
             type=click.Choice(
-                self.cf_types.keys(),
+                cls.cf_types.keys(),
                 case_sensitive=False,
             ),
         )
@@ -235,7 +253,7 @@ class CFObjectMeta(GroupMeta):
                         key=lambda x: (not x.is_builtin, x.name),
                     ),
                 )
-                for top_level_key, cf_objects in self.items()
+                for top_level_key, cf_objects in cls.items()
                 if not filter_types or top_level_key in filter_types
             ]
 
@@ -277,19 +295,27 @@ class CFObjectMeta(GroupMeta):
             elif not name:
                 logger.error(
                     'Cannot show %s: none found',
-                    self.group_display_name,
+                    cls.group_display_name,
                 )
             else:
                 logger.error(
                     "Cannot show %s: no matches for '%s'",
-                    self.group_display_name,
+                    cls.group_display_name,
                     name,
                 )
 
 
-class BaseCFObject(metaclass=CFObjectMeta):
+class BaseCFObject():
     '''Base class for all cloudformation types.'''
-    abstract = True
+    def __init_subclass__(cls, abstract=False, top_level_key=None, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if top_level_key:
+            if top_level_key in CloudFormation.cf_types:
+                raise ValueError(
+                    f"Cannot declare class '{cls.__name__}' with top_level_key "
+                    f"'{top_level_key}': already in use"
+                )
+            CloudFormation.cf_types[top_level_key] = cls
 
     def __init__(
         self,
@@ -344,25 +370,3 @@ class BaseCFObject(metaclass=CFObjectMeta):
             self.definition.to_yaml(),
             '    ',
         ))
-
-
-class CFObject(BaseCFObject):
-    '''Used as a class to instantiate all other CF object classes
-    via class resolution to find the relevant CF object type from
-    the provided top_level_key.
-    '''
-    abstract = True
-
-    def __new__(cls, top_level_key, *args, **kwargs):
-        cls = cls.resolve_cls(top_level_key)
-        return cls(*args, **kwargs)
-
-
-class CloudFormation(metaclass=CFObjectMeta):
-    '''Used as the group added to Groups.
-    Tracks all cloudformation objects of other types.
-    '''
-    abstract = True
-    group_name = 'cloudformation'
-    group_display_name = 'CloudFormation'
-    cmd_aliases=['cf']

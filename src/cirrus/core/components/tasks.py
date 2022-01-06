@@ -3,7 +3,7 @@ import click
 
 from .base import Lambda
 from . import files
-from cirrus.core.cloudformation import CFObject
+from cirrus.core.cloudformation import CloudFormation
 
 
 class Task(Lambda):
@@ -22,7 +22,7 @@ class Task(Lambda):
         self.batch_cloudformation = [
             cf_object
             for top_level_key, cf_items in batch.get('resources', {}).items()
-            for cf_object in CFObject.create_cf_objects(
+            for cf_object in CloudFormation.create_cf_objects(
                 self.definition.path,
                 top_level_key,
                 cf_items,
