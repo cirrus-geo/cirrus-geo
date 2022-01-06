@@ -3,12 +3,12 @@ Resources:
   Data:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: ${self:service}-${self:provider.stage}-data
+      BucketName: "#{AWS::StackName}-data"
   # Bucket for storing input catalogs
   Payloads:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: ${self:service}-${self:provider.stage}-payloads
+      BucketName: "#{AWS::StackName}-payloads"
       LifecycleConfiguration:
         Rules:
           - ExpirationInDays: 10
@@ -21,17 +21,17 @@ Resources:
   ProcessTopic:
     Type: 'AWS::SNS::Topic'
     Properties:
-      TopicName: ${self:service}-${self:provider.stage}-process
+      TopicName: "#{AWS::StackName}-process"
   # SNS Topic for adding input data to Cirrus
   PublishTopic:
     Type: 'AWS::SNS::Topic'
     Properties:
-      TopicName: ${self:service}-${self:provider.stage}-publish
+      TopicName: "#{AWS::StackName}-publish"
   # SNS Topic for failed workflows
   FailedTopic:
     Type: 'AWS::SNS::Topic'
     Properties:
-      TopicName: ${self:service}-${self:provider.stage}-failed
+      TopicName: "#{AWS::StackName}-failed"
   # Allow anyone to subscribe to publish topic
   #PublishTopicPolicy:
   #  Type: 'AWS::SNS::TopicPolicy'
@@ -51,7 +51,7 @@ Resources:
   ProcessQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: ${self:service}-${self:provider.stage}-process
+      QueueName: "#{AWS::StackName}-process"
       VisibilityTimeout: 1000
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
@@ -59,7 +59,7 @@ Resources:
   ProcessDeadLetterQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: ${self:service}-${self:provider.stage}-process-dead-letter
+      QueueName: "#{AWS::StackName}-process-dead-letter"
   ProcessQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
@@ -120,7 +120,7 @@ Resources:
           Projection:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
-      TableName: ${self:service}-${self:provider.stage}-state
+      TableName: "#{AWS::StackName}-state"
   # Batch IAM Roles
   BatchInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -157,7 +157,7 @@ Resources:
                 Action:
                   - lambda:GetFunction
                 Resource:
-                  - arn:aws:lambda:*:*:function:${self:service}-${self:provider.stage}-*
+                  - arn:aws:lambda:*:*:function:#{AWS::StackName}-*
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
