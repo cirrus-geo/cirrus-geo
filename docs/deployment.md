@@ -1,21 +1,31 @@
 # Cirrus Deployment
 
-Cirrus uses the [serverless](https://www.serverless.com/) framework for packaging and deployment. Everything needed to deployed is within the `cirrus` repository:
+Cirrus uses the [serverless](https://www.serverless.com/) framework for
+packaging and deployment. The `cirrus` CLI tooling provides a veneer over
+top of serverless to allow the Cirrus project structure and reduce boiler
+plate.
 
-```
-$ git clone https://github.com/cirrus-geo/cirrus
-```
+Running `cirrus init` in a directory will initialize a new project within.
+As part of that initialization, a `cirrus.yml` config file will be created,
+along with a `package.json` file containing the serverless and serverless
+plugin versions required by Cirrus. An `npm install` will install serverless
+and the requried plugins in the project directory.
 
-## Serverless Configuration
 
-Once cloned you will need to make a copy of the `serverless.yml.example`, save as `serverless.yml` and edit the files relevant sections are shown here:
+## Cirrus Configuration
 
-#### serverless.yml
+The `cirrus.yml` configuration file is, more or less, a serverless configuration
+file minus all the pieces that get assembled at build time. Out of the box, it
+is almost ready to go, but some minor customization is required.
 
 ```yaml
+service: cirrus
+
 provider:
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-west-2'}
+  ...
+
 custom:
   batch:
     SecurityGroupIds:
@@ -26,48 +36,66 @@ custom:
       - ${env:SUBNET_1}
       - ${env:SUBNET_2}
       - ...
-    BasicComputeEnvironments:
-      MaxvCpus: 128
 ```
 
-The default `stage` and `region` in the `provider` block can be changed from `dev` and `us-west-2` (they can also be specified at deploy time). The deployed CloudFormation stack will be named `cirrus-<stage>`, so the stage needs to be changed if there are multiple Cirrus deployments.
+The `service` name defaults to `cirrus`, but can be updated as required for
+a given deployment.
 
-The `custom` section contains some additional user defined variables. `SecurityGroupIds` and `Subnets` reference Environment Variables. Define 1 or more environment variables `SECURITY_GROUP_X` and `SUBNET_X` and edit the serverless yaml file accordingly. `SECURITY_GROUP_X` is an AWS Security Group (EC2->Security Groups in AWS Console). Every AWS account should have a default Security Group which can be used, or SecurityGroup(s) from a custom VPC. `Subnets` are the IDs of 1 or more (preferably 4 or more) Subnets (VPC->Subnets in AWS Console).
+The default `stage` and `region` in the `provider` block can be changed from
+`dev` and `us-west-2`. They can also be specified at deploy time as options to
+the `cirrus serverless` command.
 
-The `BasicComputeEnvironments.MaxvCpus` controls the maximum number of Virtual CPUs that can run at one time in AWS Batch. The number of vCPUs, and required memory, for each Batch Job is specified in [jobs.yml](../batch/jobs.yml)
+The deployed CloudFormation stack will be named `<service>-<stage>`, so the
+`service` and/or `stage` need to be changed if multiple Cirrus deployments will
+exist within the same account.
+
+The `custom` section contains some additional user defined variables.
+`SecurityGroupIds` and `Subnets` reference Environment Variables.
+Define 1 or more environment variables `SECURITY_GROUP_X` and `SUBNET_X`
+and edit the `cirrus.yml` file accordingly (the number defined in the
+environment in the config must be equal). `SECURITY_GROUP_X` is an
+AWS Security Group (EC2->Security Groups in AWS Console).
+Every AWS account should have a default Security Group which can be used,
+or SecurityGroup(s) from a custom VPC. `Subnets` are the IDs of 1 or more
+(preferably 4 or more) Subnets (VPC->Subnets in AWS Console).
 
 
 ## Deploy!
 
-Once `serverless.yml` has been edited, you are ready to package and deploy. To use `serverless` it must be installed. If `NVM` is used there is an `.nvmrc` file included, otherwise use NodeJS v12.13.
+Once `cirrus.yml` has been edited, you are ready to package and deploy.
+To use `serverless` it must be installed via the `npm install` command
+previously mentioned.
+
+The `serverless` framework will build/package all the Lambda functions before
+deploying using the `serverless-python-requirements` plugin. Note that
+the common dependency `cirrus-lib` will be automaticall injected into all
+Lambdas packaged in a Cirrus project, along with its dependencies.
 
 ```
-# If using NVM, this will switch to correct NodeJS version
-$ nvm use
-
-# Installs serverless and dependencies, must be run from the root directory of the repo
-$ npm install
-```
-
-The `serverless` framework will build/package all the Lambda functions before deploying using the `serverless-python-requirements` plugin.
-
-```
-# Calls the `deploy` npm script
-$ npm run deploy
-
-# The above npm script effectively runs the following command to run serverless directly.  If running directly `serverless` will need to be installed globally with `npm install -g serverless`
-$ sls deploy
+# Deploy the project
+$ cirrus serverless deploy
 
 # Just build/package, don't deploy anything
-$ sls deploy --noDeploy
+# Note that serverless is also aliased to sls
+$ cirrus sls package
 
 # Specify a stage
-$ sls deploy --stage myStage
+$ cirrus sls deploy --stage myStage
 ```
 
-Deployment can take 20 minutes or more. Once completed there should be a CloudFormation stack named `cirrus-<stage>`, along with all the resources: DynamoDB, SQS, SNS, Lambda, Batch Compute Environments, Batch Jobs, and Step Functions, all starting with `cirrus-<stage>`
+Deployment can take several minutes or more due to the Lambda packaging.
+Once completed there should be a CloudFormation stack named `<service>-<stage>`,
+along with all the resources: DynamoDB, SQS, SNS, Lambda, Batch Compute
+Environments, Batch Jobs, and Step Functions, all named starting with
+`<service>-<stage>`.
 
 
 ## Using a STAC API
 
-Cirrus does not include a STAC API, it only writes static files. It is recommended to use a STAC API, such as [stac-server](https://github.com/stac-utils/stac-server), to index the metadata so it can be searched. If using stac-server, the SQS can be subscribed to the Cirrus Publish SNS to add published items to the index. A Filter can be added to the subscription (AWS Console SNS->Subscriptions) to only index certain Items.
+Cirrus does not include a STAC API, it only writes static files.
+It is recommended to use a STAC API, such as
+[stac-server](https://github.com/stac-utils/stac-server),
+to index the metadata so it can be searched. If using stac-server,
+the ingest SQS can subscribe to the Cirrus Publish SNS to add published
+items to the index. A Filter can be added to the subscription
+(AWS Console SNS->Subscriptions) to only index certain Items, if desired.

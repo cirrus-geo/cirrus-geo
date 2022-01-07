@@ -4,20 +4,42 @@
 
 # Cirrus
 
-Cirrus is a [STAC](https://stacspec.org/)-based processing pipeline. As input, Cirrus takes a GeoJSON FeatureCollection with 1 or more STAC Items. This input is run through workflows that generate 1 or more STAC Items as output. These output Items are added to the Cirrus static STAC catalog, and are also broadcast via an SNS topic that can be subscribed to for triggering additional workflows, such as keeping a dynamic STAC catalog up to date (for example, [STAC-server](https://github.com/stac-utils/stac-server)).
+Cirrus is a [STAC](https://stacspec.org/)-based processing pipeline.
+As input, Cirrus takes a GeoJSON FeatureCollection with 1 or more STAC Items
+(an `ItemCollection` in pystack nomeclature), with a process definition block.
+That input is called a cirrus `ProcessPayload` (CPP).
 
-Cirrus workflows can be as simple as containing no processing at all, where the input is passed through and published. It could be more complex where the STAC Items and underlying data are transformed, and then those are published.  The current state (QUEUED, PROCESSING, COMPLETED, FAILED) is tracked during processing, preventing inputs from getting ingested more than once and allows for a user to follow the state of any input through the pipeline.
+An input is run through a workflow that generates one or more output STAC Items.
+These output Items are added to the Cirrus static STAC catalog in S3,
+and are also broadcast via an SNS topic. Subscrptions to that topic can
+triggering additional workflows or external processes, such as for keeping
+a dynamic STAC catalog up to date (for example,
+[STAC-server](https://github.com/stac-utils/stac-server)).
+
+Cirrus workflows range from the simple publishing of unmodified input items to
+the complex transformation of input Items and generation of wholly-new output
+Items. The current state of CPP processing is tracked in a state database
+to prevent duplicate processing and allow for a user to follow the state of any
+input through the pipeline.
 
 ![](docs/images/highlevel.png)
 
-As shown in this high-level overview of Cirrus, users input data to Cirrus through the use of *feeders*. Feeders are simply programs that get/generate some type of STAC metadata, combine it with processing parameters and pass it into Cirrus in the format Cirrus expects.
+As shown in this high-level overview of Cirrus, users input data to Cirrus
+through the use of *feeders*. Feeders are simply programs that get/generate
+some type of STAC metadata, combine it with processing parameters, and pass it
+into Cirrus as a CPP.
 
-Because Cirrus output is published via SNS, a Feeder can be configured to subscribe to that SNS and thus workflows can be chained, such that the output of one workflow becomes the input to another workflow and creates multiple levels of products, all with published STAC metadata and clear links showing data provenance.
+Because Cirrus output is published via SNS, a Feeder can be configured to
+subscribe to that SNS and thus workflows can be chained, such that the output
+of one workflow becomes the input to another workflow, createing multiple levels
+of products all with published STAC metadata and clear links showing data
+provenance.
 
 
 ## Cirrus Quickstart
 
-A Cirrus project is managed via the `cirrus` cli tool. Here's everything required to create, modify, and deploy a new project:
+A Cirrus project is managed via the `cirrus` cli tool.
+Here's everything required to create, modify, and deploy a new project:
 
 ```
 # Make a new directory for a project
@@ -60,7 +82,7 @@ Commands:
 Succesfully initialized project in '/Users/jkeifer/cirrus-project'.
 
 ❯ ls
-.venv/	cirrus.yml  feeders/  functions/  outputs/  package.json  resources/  tasks/  workflows/
+.venv/	cirrus.yml  /cloudformation  feeders/  functions/  package.json  tasks/  workflows/
 
 # The cirrus.yml is almost good to go for a minimal install,
 # but it does require a few parameters either set in the
@@ -143,21 +165,24 @@ lambdas/  serverless.yml
 
 ## Cirrus Project Structure
 
-A Cirrus project, most basically, is a directory containing a cirrus.yml configuration file. However, several subfolders are used to organize additional object definitions for custom implementations.
+A Cirrus project, most basically, is a directory containing a cirrus.yml
+configuration file. However, several subfolders are used to organize
+additional object definitions for custom implementations.
 
-| Folder     | Purpose |
-|:-----------|---------|
-| feeders    | Feeder Lambda functions used to add data to Cirrus |
-| functions  | Misc Lambda functions required by a project |
-| outputs    | Cloudformation output templates |
-| resources  | Cloudformation resource templates |
-| tasks      | Task Lambda function used within workflows |
-| workflows  | AWS Step Function definitions describing data processing workflows |
+| Folder         | Purpose |
+|:---------------|---------|
+| cloudformation | Raw cloudformation templates to include in the project
+| feeders        | Feeder Lambda functions used to add data to Cirrus |
+| functions      | Misc Lambda functions required by a project |
+| tasks          | Task Lambda function used within workflows |
+| workflows      | AWS Step Function definitions describing data processing workflows |
 
 
 ## Cirrus Repositories
 
-Cirrus is divided up into several repositories, all under the [cirrus-geo](https://github.com/cirrus-geo) organization on GitHub, with this repository (`cirrus-geo`) the main one of interest to users.
+Cirrus is divided up into several repositories, all under the
+[cirrus-geo](https://github.com/cirrus-geo) organization on GitHub,
+with this repository (`cirrus-geo`) the main one of interest to users.
 
 | Repository         | Purpose |
 |:------------------ |---------|
@@ -165,20 +190,29 @@ Cirrus is divided up into several repositories, all under the [cirrus-geo](https
 | [cirrus-lib](https://github.com/cirrus-geo/cirrus-lib) | A Python library of convenience functions to interact with Cirrus. Lambda functions are kept lightweight |
 | [cirrus-task-images](https://github.com/cirrus-geo/cirrus-task-images)  | Dockerfiles and code for publishing Cirrus Docker images to Docker Hub that are used in Cirrus Batch tasks |
 
-The `cirrus` cli utilitiy is what is used to create, manage, and deploy Cirrus projects, and is pip-installable. The pip-installable python library `cirrus-lib` is used from all Cirrus Lambdas and tasks and is available to developers for writing their own tasks.
+The `cirrus` cli utilitiy is what is used to create, manage, and deploy
+Cirrus projects, and is pip-installable. The pip-installable python
+library `cirrus-lib` is used from all Cirrus Lambdas and tasks and is
+available to developers for writing their own tasks.
 
 
 ## Documentation
 
-Documentation for deploying, using, and customizing Cirrus is contained within the [docs](docs/) directory:
+Documentation for deploying, using, and customizing Cirrus is contained
+within the [docs](docs/) directory:
 
 - Understand the [architecture](docs/architecture.md) of Cirrus and key concepts
 - [Deploy](docs/deployment.md) Cirrus to your own AWS account
-- [Use](docs/usage.md) Cirrus to process input data and publish resulting STAC Items
-- [Customize](docs/customize.md) Cirrus by adding tasks, workflows, and compute environments
+- [Use](docs/usage.md) Cirrus to process input data and publish resulting
+  STAC Items
+- [Customize](docs/customize.md) Cirrus by adding tasks, workflows,
+  and compute environments
 
 ## About
-Cirrus is an Open-Source pipeline for processing geospatial data in AWS. Cirrus was developed by [Element 84](https://element84.com/) originally under a [NASA ACCESS project](https://earthdata.nasa.gov/esds/competitive-programs/access) called [Community Tools for Analysis of NASA Earth Observation System Data in the Cloud](https://earthdata.nasa.gov/esds/competitive-programs/access/eos-data-cloud).
+Cirrus is an Open-Source pipeline for processing geospatial data in AWS.
+Cirrus was developed by [Element 84](https://element84.com/) originally
+under a [NASA ACCESS project](https://earthdata.nasa.gov/esds/competitive-programs/access)
+called [Community Tools for Analysis of NASA Earth Observation System Data in the Cloud](https://earthdata.nasa.gov/esds/competitive-programs/access/eos-data-cloud).
 
 
 [build-status-image]: https://github.com/cirrus-geo/cirrus-geo/actions/workflows/python-test.yml/badge.svg
