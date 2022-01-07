@@ -98,7 +98,7 @@ class CFObjectMeta(GroupMeta):
 
         try:
             return self.cf_types[top_level_key]
-        except IndexError:
+        except KeyError:
             raise CloudFormationError(
                 "Unknown cloudformation type '%s'",
                 top_level_key,
