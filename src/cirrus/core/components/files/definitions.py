@@ -6,7 +6,6 @@ from .base import ComponentFile
 logger = logging.getLogger(__name__)
 
 
-# TODO: figure out most basic permissions
 lambda_base = '''description: {description}
 iamRoleStatements: []
 environment: {{}}
