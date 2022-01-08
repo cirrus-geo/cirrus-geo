@@ -6,23 +6,151 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-- Add permission to `update-state` to allow getting step function execution histories
+
+## [v0.5.0] - 2021-01-12
+
+This release includes a number of small internal changes and bugfixes not
+listed below. Please refer to the full commit log for this release for
+additional details about the changes included in this release.
+
+### ⚠️ Breaking changes
+
+- lambda `python_requirements` renamed `pythonRequirements` and nested under
+  `lambda` key in lambda definition; requirements listed under `include` key
+
+  Example `definition.yml`:
+
+  ```
+  description: example
+  lambda:
+    ...
+    pythonRequirements:
+      include:
+        - 'a_package==1.2.3'
+  ```
+- now using `cirrus-lib>=0.6.0`; see the
+  [breaking changes in the 0.6.0 release][cl0.6.0]
+  and update lambda handlers accordingly
+- all CloudFormation templates move from `resources/` and `outputs/` to
+  `cloudformation/`
+- the custom compute environment resources have been removed, so batch jobs
+  using those need to declare their own; switching to batch tasks is recommended
+- global IAM permissions have been removed; audit all IAM permissions and
+  declare them as needed in the corresponding component's `definition.yml`
+- `queue` topic renamed `process`
+- if using the default S3 bucket configurations, the buckets will be recreated
+  with the new default names ([#47]); redeclare with the current bucket names
+  or migrate all data and delete the old buckets
+- global env vars have been cleaned up; make sure all lambdas/batch jobs have
+  the vars they require
+
+Some of the above do not apply unless `cirrus.yml` is recreated from the new
+default template. It is recommended to delete `cirrus.yml`, rerun `cirrus init`,
+and then replace all custom `cirrus.yml` content that is still required.
+
+### Added
+
+- README badges and codecov support ([#88])
+- workflow chaining support ([#74])
+- CloudFormation support for all types beyond Resources and Outputs ([#64])
+- `AWS_REGION` and `AWS_DEFAULT_REGION` env vars injected into batch job
+  definitions by default ([44bebc5])
+
+### Changed
+
+- converted builtin tasks supporting batch to new "batch task" paradigm ([#65])
+- documentation cleanup ([#62])
+- builtins moved to `cirrus.builtins` ([#53])
+- non-cli code moved to `cirrus.core` ([#53])
+- `cirrus` package moved under `src` ([#87])
+- rename `CollectionMeta` and `Collection` to `GroupMeta` and `Group` ([#54])
+- `cirrus-lib` injected into lambda packages from python env rather than
+  installed from pip ([#89])
+- build test fixtures don't need to store copies of all files ([#90])
+- test output stored locally in untracked dir to enable post-test inspection
+  ([ba3e04b])
+- `queue` topic renamed `process` ([#79])
+- all uses of `cirrus-lib` `Catalog` renamed to `ProcessPayload` ([#79])
+- default S3 buckets drop random postfix in names ([#47])
+- files/dirs starting with `.` should be ignored by all tooling
+
+### Fixed
+
+- `post-batch` refactoring and bugfixes ([#75])
+- issues with batch CloudFormation on tasks
+- environment variable inheritence for lambdas and batch jobs now appropriately
+  inherits from global env vars and task-level env vars, always preferring the
+  more-specific context
+- builtin tasks using geospatial libraries pinned to `python3.7` runtime due
+  to lambda layer requirements
+- `cirrus show` not showing yaml fn arguments ([#98])
+
+### Removed
+
+- custom compute environments and variables ([#65])
+- `test` directory and contents ([#51])
+- `publish-test` function
+
+
+## [v0.5.0a5] - 2021-01-07
+
+### Changed
+
+- `cirrus-lib` dependency pinned strictly to v0.5.1 to prevent pulling in
+  incompatiable newer release ([9f56981])
+
+
+## [v0.5.0a4] - 2021-11-19
+
+### Fixes
+
+- Don't load step function definitions twice ([f25acd4])
+- Add `__subclass__` hook to `CollectionMeta` to fix tests ([1b89611])
+- Fix `enabled` support for workflows ([#82])
+
+
+## [v0.5.0a3] - 2021-11-19
+
+### Fixes
+
+- ensure `enabled` is popped off component definitions ([85464f5])
+- `update-state` premissions now allow getting step function execution
+  history ([#73])
+
 
 ## [v0.5.0a2] - 2021-10-06
 
-- Always go to post batch after batch jobs, even on error, to use the new behavior to pull and re-raise batch errors
+### Changed
+
+- `post-batch` pulls batch job errors and re-raises, if necessary ([#72])
+- Workflows always go to `post-batch` after batch jobs, even on error, to use
+  the new behavior to pull and re-raise batch errors ([#72])
+
+### Fixes
+
+- builtin component linting/fixes ([#71])
+
 
 ## [v0.5.0a1] - 2021-10-05
 
-- Separate lambda packages only contain code/files specific to each respective lambda
+### Changed
+
+- Separate lambda packages only contain code/files specific to each respective
+  lambda
+
 
 ## [v0.5.0a0] - 2021-10-05
 
-Now a python package that installs a `cirrus` cli tool to manage cirrus
-projects. Existing projects are supported with some manual migration/cleanup
-steps.
+### ⚠️ Notice
+
+This repo is now a python package that installs a `cirrus` cli tool to manage
+cirrus projects. Existing projects are supported with some manual migration
+cleanup steps.
+
+### Changed
 
 - bumped rasterio version to 1.2.8 where applicable
+
 
 ## [v0.4.2] - 2021-01-12
 
@@ -132,14 +260,51 @@ steps.
 
 Initial release
 
-[Unreleased]: https://github.com/cirrus-geo/cirrus/compare/v0.4.2...main
-[v0.5.0a1]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.5.0a0...v0.5.0a1
-[v0.5.0a0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.4.2...v0.5.0a0
-[v0.4.2]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.4.1...v0.4.2
-[v0.4.1]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.4.0...v0.4.1
-[v0.4.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.3.0...v0.4.0
-[v0.3.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.2.1...v0.3.0
-[v0.2.1]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.2.0...v0.2.1
-[v0.2.0]: https://github.com/cirrus-geo/cirrus-lib/compare/v0.1.0...v0.2.0
-[v0.1.0]: https://github.com/cirrus-geo/cirrus/cirrus/tree/legacy
 
+
+[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0...main
+[v0.5.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a5...v0.5.0
+[v0.5.0a5]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a4...v0.5.0a5
+[v0.5.0a4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a3...v0.5.0a4
+[v0.5.0a3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a2...v0.5.0a3
+[v0.5.0a2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a1...v0.5.0a2
+[v0.5.0a1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a0...v0.5.0a1
+[v0.5.0a0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.4.2...v0.5.0a0
+[v0.4.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.4.1...v0.4.2
+[v0.4.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.4.0...v0.4.1
+[v0.4.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.3.0...v0.4.0
+[v0.3.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.2.1...v0.3.0
+[v0.2.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.2.0...v0.2.1
+[v0.2.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.1.0...v0.2.0
+[v0.1.0]: https://github.com/cirrus-geo/cirrus-geo/cirrus/tree/legacy
+
+[#47]: https://github.com/cirrus-geo/cirrus-geo/issues/47
+[#51]: https://github.com/cirrus-geo/cirrus-geo/issues/51
+[#53]: https://github.com/cirrus-geo/cirrus-geo/issues/53
+[#54]: https://github.com/cirrus-geo/cirrus-geo/issues/54
+[#62]: https://github.com/cirrus-geo/cirrus-geo/issues/62
+[#64]: https://github.com/cirrus-geo/cirrus-geo/issues/64
+[#65]: https://github.com/cirrus-geo/cirrus-geo/issues/65
+[#74]: https://github.com/cirrus-geo/cirrus-geo/issues/74
+[#75]: https://github.com/cirrus-geo/cirrus-geo/issues/75
+[#79]: https://github.com/cirrus-geo/cirrus-geo/issues/79
+[#82]: https://github.com/cirrus-geo/cirrus-geo/issues/82
+[#98]: https://github.com/cirrus-geo/cirrus-geo/issues/98
+
+[#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
+[#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
+[#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73
+[#87]: https://github.com/cirrus-geo/cirrus-geo/pull/87
+[#88]: https://github.com/cirrus-geo/cirrus-geo/pull/88
+[#89]: https://github.com/cirrus-geo/cirrus-geo/pull/89
+[#90]: https://github.com/cirrus-geo/cirrus-geo/pull/90
+
+[f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
+[85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
+[1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
+[1e652f2]: https://github.com/cirrus-geo/cirrus-geo/commit/1e652f20ef38298f56ebc81aea0d61aaad135f67
+[9f56981]: https://github.com/cirrus-geo/cirrus-geo/commit/9f569819d1c4a59fc71f15642b3ea0b30058c885
+[44bebc5]: https://github.com/cirrus-geo/cirrus-geo/commit/44bebc5d1e2d802fc0e596be381fb3e1e1042170
+[ba3e04b]: https://github.com/cirrus-geo/cirrus-geo/commit/ba3e04ba2c2ae554fecf9b80e22c71690a9eb518
+
+[cl0.6.0]: https://github.com/cirrus-geo/cirrus-lib/releases/tag/v0.6.0
