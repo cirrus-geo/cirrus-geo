@@ -48,7 +48,7 @@ class JobDefinition(Resource):
         inherit_env = None
         if self.parent_component:
             # we have a task parent and should use its env
-            self.parent_component.environment
+            inherit_env = self.parent_component.environment
         elif self.project and self.project.config:
             # this a job def unassociated with a task and
             # we should use the global environment vars

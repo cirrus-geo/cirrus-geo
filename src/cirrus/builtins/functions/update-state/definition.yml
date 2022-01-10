@@ -11,7 +11,7 @@ lambda:
             - Step Functions Execution Status Change
           detail:
             stateMachineArn:
-              - prefix: "arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}"
+              - prefix: "arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}-"
             status:
               - SUCCEEDED
               - FAILED
@@ -32,7 +32,7 @@ lambda:
       Action:
         - states:GetExecutionHistory
       Resource:
-        - arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:execution:#{AWS::StackName}
+        - arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:execution:#{AWS::StackName}-*
     - Effect: "Allow"
       Action:
         - SNS:Publish
