@@ -10,7 +10,8 @@ lambda:
       Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
     - Effect: "Allow"
       Action:
+        - dynamodb:PutItem
         - dynamodb:UpdateItem
       Resource:
         - !GetAtt StateTable.Arn
-          # - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
+        - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]

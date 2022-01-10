@@ -12,7 +12,7 @@ lambda:
     - Effect: "Allow"
       Action:
         - states:StartExecution
-      Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
+      Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}-*
     - Effect: "Allow"
       Action:
         - dynamodb:Query
@@ -21,7 +21,6 @@ lambda:
         - dynamodb:BatchGetItem
         - dynamodb:PutItem
         - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
         - dynamodb:DescribeTable
       Resource:
         - !GetAtt StateTable.Arn
