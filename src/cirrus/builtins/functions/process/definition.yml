@@ -1,13 +1,13 @@
 description: Consumes Process Catalogs from queue and invokes workflow
 environment:
   CIRRUS_BASE_WORKFLOW_ARN: "arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}-"
+  CIRRUS_PROCESS_QUEUE: !Ref ProcessQueue
 lambda:
   memorySize: 128
   timeout: 900
   events:
     - sqs:
         arn: !GetAtt ProcessQueue.Arn
-  iamRoleStatementsInherit: true
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -32,3 +32,22 @@ lambda:
         - sqs:DeleteMessage
       Resource:
         - !GetAtt ProcessQueue.Arn
+    - Effect: "Allow"
+      Action:
+        - "s3:ListBucket"
+        - "s3:GetObject"
+        - "s3:GetBucketLocation"
+      Resource: "*"
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+      Resource:
+        - !Join
+          - ''
+          - - 'arn:aws:s3:::'
+            - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+            - '*'
+    - Effect: "Allow"
+      Action: secretsmanager:GetSecretValue
+      Resource:
+        - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*

@@ -15,7 +15,6 @@ lambda:
             status:
               - SUCCEEDED
               - FAILED
-  iamRoleStatementsInherit: true
   iamRoleStatements:
     - Effect: "Allow"
       Action:

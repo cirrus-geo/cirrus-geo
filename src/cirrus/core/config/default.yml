@@ -14,24 +14,10 @@ provider:
     CIRRUS_PAYLOAD_BUCKET: !Ref Payloads
     CIRRUS_STATE_DB: !Ref StateTable
     CIRRUS_STACK: "#{AWS::StackName}"
-    CIRRUS_PROCESS_QUEUE: !Ref ProcessQueue
     CIRRUS_PROCESS_TOPIC_ARN: !Ref ProcessTopic
     CIRRUS_PUBLISH_TOPIC_ARN: !Ref PublishTopic
     CIRRUS_FAILED_TOPIC_ARN: !Ref FailedTopic
     CIRRUS_INVALID_TOPIC_ARN: !Ref FailedTopic
-  iamRoleStatements:
-    - Effect: "Allow"
-      Action:
-        - lambda:InvokeFunction
-      Resource:
-        - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:#{AWS::StackName}*
-    - Effect: "Allow"
-      Action: "s3:*"
-      Resource: "*"
-    - Effect: "Allow"
-      Action: secretsmanager:GetSecretValue
-      Resource:
-        - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
 
 custom:
   batch:

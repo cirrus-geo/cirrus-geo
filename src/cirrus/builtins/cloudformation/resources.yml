@@ -148,19 +148,35 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Effect: Allow
+              - Effect: "Allow"
                 Action:
-                  - s3:*
+                  - "s3:PutObject"
                 Resource:
-                  - "*"
-              - Effect: Allow
+                  - !Join
+                    - ''
+                    - - 'arn:aws:s3:::'
+                      - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+                      - '*'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:s3:::'
+                      - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                      - '*'
+              - Effect: "Allow"
+                Action:
+                  - "s3:ListBucket"
+                  - "s3:GetObject"
+                  - "s3:GetBucketLocation"
+                Resource: "*"
+              - Effect: "Allow"
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
+              - Effect: "Allow"
                 Action:
                   - lambda:GetFunction
                 Resource:
-                  - arn:aws:lambda:*:*:function:#{AWS::StackName}-*
-              - Effect: Allow
-                Action: secretsmanager:GetSecretValue
-                Resource: arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
+                  - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:#{AWS::StackName}-*
   BatchServiceRole:
     Type: AWS::IAM::Role
     Properties:

@@ -2,7 +2,6 @@ description: Publish resulting STAC Collections and Items to catalog, and option
 lambda:
   memorySize: 128
   timeout: 30
-  iamRoleStatementsInherit: true
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -15,3 +14,22 @@ lambda:
       Resource:
         - !GetAtt StateTable.Arn
         - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+      Resource:
+        - !Join
+          - ''
+          - - 'arn:aws:s3:::'
+            - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+            - '*'
+    - Effect: "Allow"
+      Action:
+        - "s3:ListBucket"
+        - "s3:GetObject"
+        - "s3:GetBucketLocation"
+      Resource: "*"
+    - Effect: "Allow"
+      Action: secretsmanager:GetSecretValue
+      Resource:
+        - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*
