@@ -9,7 +9,6 @@ provider:
   runtime: python3.9
   environment:
     CIRRUS_LOG_LEVEL: DEBUG
-    CIRRUS_BUCKET: !Ref ServerlessDeploymentBucket
     CIRRUS_DATA_BUCKET: !Ref Data
     CIRRUS_PAYLOAD_BUCKET: !Ref Payloads
     CIRRUS_STATE_DB: !Ref StateTable
