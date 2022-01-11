@@ -86,4 +86,4 @@ class ComponentFile:
         path.write_text(self.content_fn(parent_component))
 
     def show(self):
-        self.console.print(self.content)
+        self.console.print_escaped(self.content)
