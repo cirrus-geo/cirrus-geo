@@ -5,7 +5,6 @@ lambda:
   pythonRequirements:
     include:
       - pystac~=1.2.0
-  iamRoleStatementsInherit: true
   iamRoleStatements:
     - Effect: "Allow"
       Action:

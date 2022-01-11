@@ -2,7 +2,6 @@ description: Rerun items in the database
 lambda:
   memorySize: 128
   timeout: 900
-  iamRoleStatementsInherit: true
   iamRoleStatements:
     - Effect: "Allow"
       Action:

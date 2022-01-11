@@ -5,7 +5,6 @@ lambda:
   pythonRequirements:
     include:
       - pyorc~=0.5.0
-  iamRoleStatementsInherit: true
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -24,4 +23,10 @@ lambda:
         - ec2:CreateNetworkInterface
         - ec2:DescribeNetworkInterfaces
         - ec2:DeleteNetworkInterface
+      Resource: "*"
+    - Effect: "Allow"
+      Action:
+        - "s3:ListBucket"
+        - "s3:GetObject"
+        - "s3:GetBucketLocation"
       Resource: "*"

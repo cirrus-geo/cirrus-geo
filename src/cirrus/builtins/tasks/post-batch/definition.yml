@@ -2,10 +2,19 @@ description: Post process batch job by copying input from S3
 lambda:
   memorySize: 128
   timeout: 15
-  iamRoleStatementsInherit: true
   iamRoleStatements:
     - Effect: "Allow"
       Action:
         - logs:GetLogEvents
       Resource:
         - arn:aws:logs:#{AWS::Region}:#{AWS::AccountId}:log-group:/aws/batch/*
+    - Effect: "Allow"
+      Action:
+        - "s3:ListBucket"
+        - "s3:GetObject"
+        - "s3:GetBucketLocation"
+      Resource: "*"
+    - Effect: "Allow"
+      Action: secretsmanager:GetSecretValue
+      Resource:
+        - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*

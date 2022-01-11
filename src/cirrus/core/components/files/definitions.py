@@ -7,7 +7,26 @@ logger = logging.getLogger(__name__)
 
 
 lambda_base = '''description: {description}
-iamRoleStatements: []
+iamRoleStatements:
+  - Effect: "Allow"
+    Action:
+      - "s3:ListBucket"
+      - "s3:GetObject"
+      - "s3:GetBucketLocation"
+    Resource: "*"
+  - Effect: "Allow"
+    Action:
+      - "s3:PutObject"
+    Resource:
+      - !Join
+        - ''
+        - - 'arn:aws:s3:::'
+          - ${{self:provider.environment.CIRRUS_DATA_BUCKET}}
+          - '*'
+  - Effect: "Allow"
+    Action: secretsmanager:GetSecretValue
+    Resource:
+      - arn:aws:secretsmanager:#{{AWS::Region}}:#{{AWS::AccountId}}:secret:cirrus*
 environment: {{}}
 '''.format
 
