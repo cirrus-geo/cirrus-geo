@@ -6,8 +6,6 @@ provider:
   runtime: python3.9
   environment:
     CIRRUS_LOG_LEVEL: DEBUG
-    CIRRUS_BUCKET:
-      Ref: ServerlessDeploymentBucket
     CIRRUS_DATA_BUCKET:
       Ref: Data
     CIRRUS_PAYLOAD_BUCKET:
@@ -15,8 +13,6 @@ provider:
     CIRRUS_STATE_DB:
       Ref: StateTable
     CIRRUS_STACK: '#{AWS::StackName}'
-    CIRRUS_PROCESS_QUEUE:
-      Ref: ProcessQueue
     CIRRUS_PROCESS_TOPIC_ARN:
       Ref: ProcessTopic
     CIRRUS_PUBLISH_TOPIC_ARN:
@@ -25,19 +21,6 @@ provider:
       Ref: FailedTopic
     CIRRUS_INVALID_TOPIC_ARN:
       Ref: FailedTopic
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - lambda:InvokeFunction
-      Resource:
-        - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:#{AWS::StackName}*
-    - Effect: Allow
-      Action: s3:*
-      Resource: '*'
-    - Effect: Allow
-      Action: secretsmanager:GetSecretValue
-      Resource:
-        - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
 custom:
   batch:
     SecurityGroupIds:
@@ -85,17 +68,28 @@ functions:
     events:
       - http: GET /
       - http: GET {proxy+}
-    iamRoleStatementsInherit: true
     iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
       - Effect: Allow
         Action:
           - dynamodb:Query
           - dynamodb:Scan
           - dynamodb:GetItem
           - dynamodb:BatchGetItem
-          - dynamodb:PutItem
-          - dynamodb:UpdateItem
-          - dynamodb:DeleteItem
           - dynamodb:DescribeTable
         Resource:
           - Fn::GetAtt:
@@ -110,8 +104,6 @@ functions:
     description: Cirrus API
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -119,8 +111,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -143,12 +133,11 @@ functions:
             Fn::GetAtt:
               - ProcessQueue
               - Arn
-    iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
         Action:
           - states:StartExecution
-        Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:*
+        Resource: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}-*
       - Effect: Allow
         Action:
           - dynamodb:Query
@@ -157,7 +146,6 @@ functions:
           - dynamodb:BatchGetItem
           - dynamodb:PutItem
           - dynamodb:UpdateItem
-          - dynamodb:DeleteItem
           - dynamodb:DescribeTable
         Resource:
           - Fn::GetAtt:
@@ -178,11 +166,28 @@ functions:
           - Fn::GetAtt:
               - ProcessQueue
               - Arn
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*
     description: Consumes Process Catalogs from queue and invokes workflow
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -190,8 +195,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -201,6 +204,8 @@ functions:
       CIRRUS_INVALID_TOPIC_ARN:
         Ref: FailedTopic
       CIRRUS_BASE_WORKFLOW_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}-
+      CIRRUS_PROCESS_QUEUE:
+        Ref: ProcessQueue
     package:
       include:
         - ./lambdas/process/**
@@ -218,11 +223,10 @@ functions:
               - Step Functions Execution Status Change
             detail:
               stateMachineArn:
-                - prefix: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}
+                - prefix: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}-
               status:
                 - SUCCEEDED
                 - FAILED
-    iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -246,7 +250,7 @@ functions:
         Action:
           - states:GetExecutionHistory
         Resource:
-          - arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:execution:#{AWS::StackName}
+          - arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:execution:#{AWS::StackName}-*
       - Effect: Allow
         Action:
           - SNS:Publish
@@ -254,8 +258,6 @@ functions:
     description: update the cirrus database with the execution state
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -263,8 +265,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -281,7 +281,6 @@ functions:
   feed-rerun:
     memorySize: 128
     timeout: 900
-    iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -305,8 +304,6 @@ functions:
     description: Rerun items in the database
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -314,8 +311,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -332,7 +327,6 @@ functions:
   feed-s3-inventory:
     memorySize: 128
     timeout: 900
-    iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -353,11 +347,15 @@ functions:
           - ec2:DescribeNetworkInterfaces
           - ec2:DeleteNetworkInterface
         Resource: '*'
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
     description: Feed Sentinel AWS inventory data to Cirrus for cataloging
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -365,8 +363,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -383,7 +379,6 @@ functions:
   feed-stac-api:
     memorySize: 128
     timeout: 900
-    iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -407,8 +402,6 @@ functions:
     description: Feed data from a STAC API to Cirrus for processing
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -416,8 +409,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -434,7 +425,6 @@ functions:
   feed-stac-crawl:
     memorySize: 128
     timeout: 900
-    iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -458,8 +448,6 @@ functions:
     description: Crawl static STAC assets
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -467,8 +455,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -489,11 +475,29 @@ functions:
     layers:
       - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda:2
       - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*
     description: Create a preview and/or thumbnail from one or more assets
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -501,8 +505,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -525,11 +527,29 @@ functions:
     layers:
       - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda:2
       - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda-python:1
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*
     description: Convert specified assets into Cloud Optimized GeoTIFFs
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -537,8 +557,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -557,11 +575,29 @@ functions:
   copy-assets:
     memorySize: 768
     timeout: 60
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*
     description: Copy specified assets from Item(s) to an S3 bucket
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -569,8 +605,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -587,18 +621,25 @@ functions:
   post-batch:
     memorySize: 128
     timeout: 15
-    iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
         Action:
           - logs:GetLogEvents
         Resource:
           - arn:aws:logs:#{AWS::Region}:#{AWS::AccountId}:log-group:/aws/batch/*
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*
     description: Post process batch job by copying input from S3
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -606,8 +647,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -624,11 +663,29 @@ functions:
   pre-batch:
     memorySize: 128
     timeout: 15
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*
     description: Pre process batch job by copying input to S3
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -636,8 +693,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -654,7 +709,6 @@ functions:
   publish:
     memorySize: 128
     timeout: 30
-    iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -662,17 +716,41 @@ functions:
         Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
       - Effect: Allow
         Action:
+          - dynamodb:PutItem
           - dynamodb:UpdateItem
         Resource:
           - Fn::GetAtt:
               - StateTable
               - Arn
+          - Fn::Join:
+              - ''
+              - - Fn::GetAtt:
+                    - StateTable
+                    - Arn
+                - /index/*
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*
     description: Publish resulting STAC Collections and Items to catalog, and optionally
       SNS
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
-      CIRRUS_BUCKET:
-        Ref: ServerlessDeploymentBucket
       CIRRUS_DATA_BUCKET:
         Ref: Data
       CIRRUS_PAYLOAD_BUCKET:
@@ -680,8 +758,6 @@ functions:
       CIRRUS_STATE_DB:
         Ref: StateTable
       CIRRUS_STACK: '#{AWS::StackName}'
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
       CIRRUS_PROCESS_TOPIC_ARN:
         Ref: ProcessTopic
       CIRRUS_PUBLISH_TOPIC_ARN:
@@ -1272,6 +1348,40 @@ resources:
           Memory: 12000
           Vcpus: 1
           Image: cirrusgeo/run-geolambda:0.2.1
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: DEBUG
+            - Name: CIRRUS_DATA_BUCKET
+              Value:
+                Ref: Data
+            - Name: CIRRUS_PAYLOAD_BUCKET
+              Value:
+                Ref: Payloads
+            - Name: CIRRUS_STATE_DB
+              Value:
+                Ref: StateTable
+            - Name: CIRRUS_STACK
+              Value: '#{AWS::StackName}'
+            - Name: CIRRUS_PROCESS_TOPIC_ARN
+              Value:
+                Ref: ProcessTopic
+            - Name: CIRRUS_PUBLISH_TOPIC_ARN
+              Value:
+                Ref: PublishTopic
+            - Name: CIRRUS_FAILED_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: CIRRUS_INVALID_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: GDAL_DATA
+              Value: /opt/share/gdal
+            - Name: PROJ_LIB
+              Value: /opt/share/proj
+            - Name: AWS_DEFAULT_REGION
+              Value: '#{AWS::Region}'
+            - Name: AWS_REGION
+              Value: '#{AWS::Region}'
         RetryStrategy:
           Attempts: 1
     AddPreviewComputeEnvironment:
@@ -1417,17 +1527,33 @@ resources:
               Statement:
                 - Effect: Allow
                   Action:
-                    - s3:*
+                    - s3:PutObject
                   Resource:
-                    - '*'
+                    - Fn::Join:
+                        - ''
+                        - - 'arn:aws:s3:::'
+                          - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+                          - '*'
+                    - Fn::Join:
+                        - ''
+                        - - 'arn:aws:s3:::'
+                          - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                          - '*'
+                - Effect: Allow
+                  Action:
+                    - s3:ListBucket
+                    - s3:GetObject
+                    - s3:GetBucketLocation
+                  Resource: '*'
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource:
+                    - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
                 - Effect: Allow
                   Action:
                     - lambda:GetFunction
                   Resource:
-                    - arn:aws:lambda:*:*:function:#{AWS::StackName}-*
-                - Effect: Allow
-                  Action: secretsmanager:GetSecretValue
-                  Resource: arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
+                    - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:#{AWS::StackName}-*
     BatchServiceRole:
       Type: AWS::IAM::Role
       Properties:
@@ -1458,6 +1584,40 @@ resources:
           Memory: 12000
           Vcpus: 1
           Image: cirrusgeo/run-geolambda:0.2.1
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: DEBUG
+            - Name: CIRRUS_DATA_BUCKET
+              Value:
+                Ref: Data
+            - Name: CIRRUS_PAYLOAD_BUCKET
+              Value:
+                Ref: Payloads
+            - Name: CIRRUS_STATE_DB
+              Value:
+                Ref: StateTable
+            - Name: CIRRUS_STACK
+              Value: '#{AWS::StackName}'
+            - Name: CIRRUS_PROCESS_TOPIC_ARN
+              Value:
+                Ref: ProcessTopic
+            - Name: CIRRUS_PUBLISH_TOPIC_ARN
+              Value:
+                Ref: PublishTopic
+            - Name: CIRRUS_FAILED_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: CIRRUS_INVALID_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: GDAL_DATA
+              Value: /opt/share/gdal
+            - Name: PROJ_LIB
+              Value: /opt/share/proj
+            - Name: AWS_DEFAULT_REGION
+              Value: '#{AWS::Region}'
+            - Name: AWS_REGION
+              Value: '#{AWS::Region}'
         RetryStrategy:
           Attempts: 1
     ConvertToCOGComputeEnvironment:
@@ -1514,6 +1674,36 @@ resources:
           Memory: 12000
           Vcpus: 1
           Image: cirrusgeo/run-geolambda:0.2.1
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: DEBUG
+            - Name: CIRRUS_DATA_BUCKET
+              Value:
+                Ref: Data
+            - Name: CIRRUS_PAYLOAD_BUCKET
+              Value:
+                Ref: Payloads
+            - Name: CIRRUS_STATE_DB
+              Value:
+                Ref: StateTable
+            - Name: CIRRUS_STACK
+              Value: '#{AWS::StackName}'
+            - Name: CIRRUS_PROCESS_TOPIC_ARN
+              Value:
+                Ref: ProcessTopic
+            - Name: CIRRUS_PUBLISH_TOPIC_ARN
+              Value:
+                Ref: PublishTopic
+            - Name: CIRRUS_FAILED_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: CIRRUS_INVALID_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: AWS_DEFAULT_REGION
+              Value: '#{AWS::Region}'
+            - Name: AWS_REGION
+              Value: '#{AWS::Region}'
         RetryStrategy:
           Attempts: 1
     CopyAssetsComputeEnvironment:
@@ -1594,9 +1784,6 @@ resources:
           Environment:
             - Name: CIRRUS_LOG_LEVEL
               Value: DEBUG
-            - Name: CIRRUS_BUCKET
-              Value:
-                Ref: ServerlessDeploymentBucket
             - Name: CIRRUS_DATA_BUCKET
               Value:
                 Ref: Data
@@ -1608,9 +1795,6 @@ resources:
                 Ref: StateTable
             - Name: CIRRUS_STACK
               Value: '#{AWS::StackName}'
-            - Name: CIRRUS_PROCESS_QUEUE
-              Value:
-                Ref: ProcessQueue
             - Name: CIRRUS_PROCESS_TOPIC_ARN
               Value:
                 Ref: ProcessTopic
@@ -1652,9 +1836,6 @@ resources:
           Environment:
             - Name: CIRRUS_LOG_LEVEL
               Value: DEBUG
-            - Name: CIRRUS_BUCKET
-              Value:
-                Ref: ServerlessDeploymentBucket
             - Name: CIRRUS_DATA_BUCKET
               Value:
                 Ref: Data
@@ -1666,9 +1847,6 @@ resources:
                 Ref: StateTable
             - Name: CIRRUS_STACK
               Value: '#{AWS::StackName}'
-            - Name: CIRRUS_PROCESS_QUEUE
-              Value:
-                Ref: ProcessQueue
             - Name: CIRRUS_PROCESS_TOPIC_ARN
               Value:
                 Ref: ProcessTopic
