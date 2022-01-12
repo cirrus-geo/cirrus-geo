@@ -52,6 +52,7 @@ and then replace all custom `cirrus.yml` content that is still required.
 
 - README badges and codecov support ([#88])
 - workflow chaining support ([#74])
+- item filter support for workflow chaining ([#99])
 - CloudFormation support for all types beyond Resources and Outputs ([#64])
 - `AWS_REGION` and `AWS_DEFAULT_REGION` env vars injected into batch job
   definitions by default ([44bebc5])
@@ -290,6 +291,7 @@ Initial release
 [#79]: https://github.com/cirrus-geo/cirrus-geo/issues/79
 [#82]: https://github.com/cirrus-geo/cirrus-geo/issues/82
 [#98]: https://github.com/cirrus-geo/cirrus-geo/issues/98
+[#99]: https://github.com/cirrus-geo/cirrus-geo/issues/99
 
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
