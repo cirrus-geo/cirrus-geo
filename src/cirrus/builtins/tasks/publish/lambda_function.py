@@ -49,11 +49,11 @@ def lambda_handler(event, context):
 
         # Deprecated additional topics
         if PUBLISH_TOPICS:
-            for t in PUBLISH_TOPICS.split(','):
-                payload.publish_items_to_sns()
+            for topic in PUBLISH_TOPICS.split(','):
+                payload.publish_items_to_sns(topic)
 
-        for t in topics:
-            payload.publish_items_to_sns(t)
+        for topic in topics:
+            payload.publish_items_to_sns(topic)
     except Exception as err:
         msg = f"publish: failed publishing output items ({err})"
         logger.error(msg, exc_info=True)
