@@ -17,7 +17,7 @@ ERROR_REGEX = re.compile(r'^(?:cirrus\.?lib\.errors\.)?(?:([\.\w]+):)?\s*(.*)')
 
 def lambda_handler(event, context):
     if 'error' not in event:
-        return event
+        return ProcessPayload.from_event(event)
 
     error = event.get('error', {})
     cause = json.loads(error['Cause'])
