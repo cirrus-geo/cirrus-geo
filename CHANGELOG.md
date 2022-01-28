@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.5.1] - 2021-01-28
+
+### Fixed
+
+- `post-batch` returns process payload when no batch error, not batch output ([#107])
+- `publish` publishes items to `PUBLISH_SNS` topics again ([#108])
+- node package pinning in default package.json using correct semantics ([#102])
+
 
 ## [v0.5.0] - 2021-01-12
 
@@ -263,7 +271,8 @@ Initial release
 
 
 
-[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0...main
+[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.1...main
+[v0.5.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0...v0.5.1
 [v0.5.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a5...v0.5.0
 [v0.5.0a5]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a4...v0.5.0a5
 [v0.5.0a4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a3...v0.5.0a4
@@ -292,6 +301,9 @@ Initial release
 [#82]: https://github.com/cirrus-geo/cirrus-geo/issues/82
 [#98]: https://github.com/cirrus-geo/cirrus-geo/issues/98
 [#99]: https://github.com/cirrus-geo/cirrus-geo/issues/99
+[#102]: https://github.com/cirrus-geo/cirrus-geo/issues/102
+[#107]: https://github.com/cirrus-geo/cirrus-geo/issues/107
+[#108]: https://github.com/cirrus-geo/cirrus-geo/issues/108
 
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
