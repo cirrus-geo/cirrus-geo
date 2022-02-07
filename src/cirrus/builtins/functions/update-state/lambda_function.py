@@ -37,17 +37,19 @@ def unknown_error():
     }
 
 
-def workflow_completed(payload, error):
+def workflow_completed(input_payload, output_payload, error):
     # I think changing the state should be done before
     # trying the sns publish, but I could see it the other
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
-    statedb.set_completed(payload['id'])
-    for next_payload in payload.next_payloads():
+    statedb.set_completed(input_payload['id'])
+    if not output_payload:
+        return
+    for next_payload in output_payload.next_payloads():
         next_payload.publish_to_sns(PROCESS_SNS_TOPIC)
 
 
-def workflow_failed(payload, error):
+def workflow_failed(input_payload, output_payload, error):
     # error type
     error_type = error.get('Error', "unknown")
 
@@ -65,10 +67,10 @@ def workflow_failed(payload, error):
 
     try:
         if error_type == "InvalidInput":
-            statedb.set_invalid(payload['id'], error)
+            statedb.set_invalid(input_payload['id'], error)
             notification_topic_arn = INVALID_TOPIC_ARN
         else:
-            statedb.set_failed(payload['id'], error)
+            statedb.set_failed(input_payload['id'], error)
             notification_topic_arn = FAILED_TOPIC_ARN
     except Exception as err:
         msg = f"Failed marking as failed: {err}"
@@ -77,7 +79,7 @@ def workflow_failed(payload, error):
 
     if notification_topic_arn is not None:
         try:
-            item = statedb.dbitem_to_item(statedb.get_dbitem(payload['id']))
+            item = statedb.dbitem_to_item(statedb.get_dbitem(input_payload['id']))
             attrs = {
                 'collections': {
                     'DataType': 'String',
@@ -102,8 +104,6 @@ def workflow_failed(payload, error):
             msg = f"Failed publishing to {notification_topic_arn}: {err}"
             logger.error(msg, exc_info=True)
             raise err
-
-    return payload
 
 
 def get_execution_error(arn):
@@ -154,9 +154,10 @@ def parse_event(event):
     #   - error object
     try:
         if 'error' in event:
-            logger.debug('looks like a stac record with an error message, i.e., workflow-failed')
+            logger.debug('looks like a payload with an error message, i.e., workflow-failed')
             return (
                 ProcessPayload.from_event(event),
+                None,
                 FAILED,
                 event.get('error', {}),
             )
@@ -167,7 +168,9 @@ def parse_event(event):
             if status == FAILED:
                 error = get_execution_error(event['detail']['executionArn'])
             return (
-                ProcessPayload.from_event(json.loads(event['detail']['input'])),
+                ProcessPayload(json.loads(event['detail']['input'])),
+                ProcessPayload(json.loads(event['detail']['output']))
+                    if event['detail'].get('output', None) else None,
                 status,
                 error,
             )
@@ -175,12 +178,12 @@ def parse_event(event):
             raise Exception()
     except Exception:
         logger.error('Unknown event: %s', json.dumps(event))
-        return None, None, None
+        return None, None, None, None
 
 
 def lambda_handler(event, context={}):
     logger.debug(event)
-    payload, status, error = parse_event(event)
+    input_payload, output_payload, status, error = parse_event(event)
 
     status_update_map = {
         FAILED: workflow_failed,
@@ -191,4 +194,4 @@ def lambda_handler(event, context={}):
         logger.info("Status does not support updates")
         return
 
-    status_update_map[status](payload, error)
+    status_update_map[status](input_payload, output_payload, error)

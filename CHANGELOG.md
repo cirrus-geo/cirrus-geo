@@ -6,7 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [v0.5.1] - 2021-01-28
+## [v0.5.2] - 2022-02-09
+
+### Fixed
+
+- `update-state` needs to use step function output for workflow chaining ([#111])
+
+
+## [v0.5.1] - 2022-01-28
 
 ### Fixed
 
@@ -15,7 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - node package pinning in default package.json using correct semantics ([#102])
 
 
-## [v0.5.0] - 2021-01-12
+## [v0.5.0] - 2022-01-12
 
 This release includes a number of small internal changes and bugfixes not
 listed below. Please refer to the full commit log for this release for
@@ -101,7 +108,7 @@ and then replace all custom `cirrus.yml` content that is still required.
 - `publish-test` function
 
 
-## [v0.5.0a5] - 2021-01-07
+## [v0.5.0a5] - 2022-01-07
 
 ### Changed
 
@@ -252,7 +259,7 @@ cleanup steps.
 - Update cirrus-lib to 0.3.0
 - IAM configuration (previously batch/iam.yml) combined into Core resources (core.yml)
 - `pre-batch` and `post-batch` Lambda functions moved from `core` to `tasks` (since they are tasks that can be used in a workflow)
-- `add-preview` now suffixes thumbnails with "_thumb.png" instead of "_preview.png"
+- `add-preview` now suffixes thumbnails with `_thumb.png` instead of `_preview.png`
 - Batch processes now write output payload back to a new file rather than overwriting the input payload.
 
 ### Removed
@@ -271,7 +278,8 @@ Initial release
 
 
 
-[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.1...main
+[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.2...main
+[v0.5.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.1...v0.5.2
 [v0.5.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0...v0.5.1
 [v0.5.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a5...v0.5.0
 [v0.5.0a5]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a4...v0.5.0a5
@@ -304,6 +312,7 @@ Initial release
 [#102]: https://github.com/cirrus-geo/cirrus-geo/issues/102
 [#107]: https://github.com/cirrus-geo/cirrus-geo/issues/107
 [#108]: https://github.com/cirrus-geo/cirrus-geo/issues/108
+[#111]: https://github.com/cirrus-geo/cirrus-geo/issues/111
 
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
