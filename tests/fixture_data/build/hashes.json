@@ -140,8 +140,8 @@
         "size": 3
     },
     "lambdas/process/lambda_function.py": {
-        "shasum": "446cabd81e5005e5cd4b90e0cb2e234cbffd3419e24ee60d605e834403834d47",
-        "size": 2515
+        "shasum": "44c275d248541937a1adb9a2739d0328011b71d75ccc4f284dd4857ca9e2f6b7",
+        "size": 2483
     },
     "lambdas/add-preview/requirements.txt": {
         "shasum": "37117d09918af3cae01d4cc4938df3e7ed92c72e8c4c17ace63c41a8c64a109f",
