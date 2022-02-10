@@ -164,7 +164,7 @@ def lambda_handler(event, context):
             sort_ascending=sort_ascending,
             sort_index=sort_index,
         )
-        return response(transform(item) for item in items)
+        return response({'items': [transform(item) for item in items['items']]})
     else:
         # get individual item
         item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
