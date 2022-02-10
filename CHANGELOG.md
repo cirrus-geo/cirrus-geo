@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 
+## [v0.5.4] - 2022-02-10
+
+### Fixed
+
+- `process` bug due to variable name reuse ([#116])
+
+
 ## [v0.5.3] - 2022-02-10
 
 ### Fixed
@@ -286,8 +293,8 @@ Initial release
 
 
 
-[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.3...main
-[v0.5.3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.2...v0.5.3
+[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.4...main
+[v0.5.3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.3...v0.5.4
 [v0.5.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.1...v0.5.2
 [v0.5.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0...v0.5.1
 [v0.5.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a5...v0.5.0
@@ -323,6 +330,7 @@ Initial release
 [#108]: https://github.com/cirrus-geo/cirrus-geo/issues/108
 [#111]: https://github.com/cirrus-geo/cirrus-geo/issues/111
 [#114]: https://github.com/cirrus-geo/cirrus-geo/issues/114
+[#116]: https://github.com/cirrus-geo/cirrus-geo/issues/116
 
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72

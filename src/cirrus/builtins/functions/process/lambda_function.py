@@ -40,8 +40,7 @@ def lambda_handler(event, context):
                         c['process'],
                         payload['process_update'],
                     )
-            payloads = ProcessPayloads(_payloads)
-            payloads.process(replace=True)
+            ProcessPayloads(_payloads).process(replace=True)
         elif payload.get('type', '') == 'Feature':
             # If Item, create ProcessPayload and
             # use default process for that collection
