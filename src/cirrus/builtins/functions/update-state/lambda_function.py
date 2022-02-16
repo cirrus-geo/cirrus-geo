@@ -27,13 +27,16 @@ statedb = StateDB()
 # for an error cause in a FAILED state
 MAX_EXECUTION_EVENTS = 10
 
+SUCCEEDED = 'SUCCEEDED'
 FAILED = 'FAILED'
+ABORTED = 'ABORTED'
+TIMED_OUT = 'TIMED_OUT'
 
 
-def unknown_error():
+def mk_error(error, cause):
     return {
-        'Error': 'Unknown',
-        'Cause': 'update-state failed to find a specific error condition',
+        'Error': error,
+        'Cause': cause,
     }
 
 
@@ -47,6 +50,10 @@ def workflow_completed(input_payload, output_payload, error):
         return
     for next_payload in output_payload.next_payloads():
         next_payload.publish_to_sns(PROCESS_SNS_TOPIC)
+
+
+def workflow_aborted(input_payload, output_payload, error):
+    statedb.set_aborted(input_payload['id'])
 
 
 def workflow_failed(input_payload, output_payload, error):
@@ -139,7 +146,10 @@ def get_execution_error(arn):
     if error:
         logger.debug("Error found: '%s'", error)
     else:
-        error = unknown_error()
+        error = mk_error(
+            'Unknown',
+            'update-state failed to find a specific error condition.',
+        )
     return error
 
 
@@ -149,7 +159,8 @@ def get_execution_error(arn):
 # a well-known type interface
 def parse_event(event):
     # return a tuple of:
-    #   - ProcessPayload object
+    #   - workflow input ProcessPayload object
+    #   - workflow output ProcessPayload object or None (if not success)
     #   - status string
     #   - error object
     try:
@@ -163,10 +174,20 @@ def parse_event(event):
             )
         elif event.get('source', '') == "aws.states":
             status = event['detail']['status']
-            logger.debug("looks like a step function event message, status '%s'", status)
             error = None
-            if status == FAILED:
+            if status == SUCCEEDED:
+                pass
+            elif status == FAILED:
                 error = get_execution_error(event['detail']['executionArn'])
+            elif status == ABORTED:
+                pass
+            elif status == TIMED_OUT:
+                error = mk_error(
+                    'TimedOutError',
+                    'The step function execution timed out.',
+                )
+            else:
+                logger.warning('Unknown status: %s', status)
             return (
                 ProcessPayload(json.loads(event['detail']['input'])),
                 ProcessPayload(json.loads(event['detail']['output']))
@@ -186,12 +207,14 @@ def lambda_handler(event, context={}):
     input_payload, output_payload, status, error = parse_event(event)
 
     status_update_map = {
+        SUCCEEDED: workflow_completed,
         FAILED: workflow_failed,
-        'SUCCEEDED': workflow_completed,
+        ABORTED: workflow_aborted,
+        TIMED_OUT: workflow_failed,
     }
 
     if status not in status_update_map:
-        logger.info("Status does not support updates")
+        logger.info('Status does not support updates: %s', status)
         return
 
     status_update_map[status](input_payload, output_payload, error)

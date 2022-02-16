@@ -227,6 +227,8 @@ functions:
               status:
                 - SUCCEEDED
                 - FAILED
+                - ABORTED
+                - TIMED_OUT
     iamRoleStatements:
       - Effect: Allow
         Action:

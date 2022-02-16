@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- `update-state` now supports `ABORTED` and `TIMED_OUT` step function events ([#85])
+
 
 ## [v0.5.4] - 2022-02-10
 
@@ -323,6 +327,7 @@ Initial release
 [#75]: https://github.com/cirrus-geo/cirrus-geo/issues/75
 [#79]: https://github.com/cirrus-geo/cirrus-geo/issues/79
 [#82]: https://github.com/cirrus-geo/cirrus-geo/issues/82
+[#85]: https://github.com/cirrus-geo/cirrus-geo/issues/85
 [#98]: https://github.com/cirrus-geo/cirrus-geo/issues/98
 [#99]: https://github.com/cirrus-geo/cirrus-geo/issues/99
 [#102]: https://github.com/cirrus-geo/cirrus-geo/issues/102
