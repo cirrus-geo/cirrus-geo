@@ -130,7 +130,7 @@ class Lambda(Component):
             return
 
         for _file in contents:
-            if not _file.is_symlink() and  _file.is_dir():
+            if not _file.is_symlink() and _file.is_dir():
                 shutil.rmtree(_file)
             else:
                 _file.unlink()
