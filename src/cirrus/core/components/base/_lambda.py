@@ -123,10 +123,14 @@ class Lambda(Component):
         )
 
     def clean_outdir(self, outdir: Path):
+        import shutil
         try:
             contents = outdir.iterdir()
         except FileNotFoundError:
             return
 
         for _file in contents:
-            _file.unlink()
+            if not _file.is_symlink() and _file.is_dir():
+                shutil.rmtree(_file)
+            else:
+                _file.unlink()
