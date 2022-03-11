@@ -23,6 +23,8 @@ lambda:
         - dynamodb:UpdateItem
         - dynamodb:DescribeTable
       Resource:
+        - !GetAtt WorkflowCallbacksTable.Arn
+        - !Join ['', [!GetAtt WorkflowCallbacksTable.Arn, '/index/*']]
         - !GetAtt StateTable.Arn
         - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
     - Effect: "Allow"

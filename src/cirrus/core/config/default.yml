@@ -12,6 +12,7 @@ provider:
     CIRRUS_DATA_BUCKET: !Ref Data
     CIRRUS_PAYLOAD_BUCKET: !Ref Payloads
     CIRRUS_STATE_DB: !Ref StateTable
+    CIRRUS_CALLBACK_DB: !Ref WorkflowCallbacksTable
     CIRRUS_STACK: "#{AWS::StackName}"
     CIRRUS_PROCESS_TOPIC_ARN: !Ref ProcessTopic
     CIRRUS_PUBLISH_TOPIC_ARN: !Ref PublishTopic
