@@ -189,8 +189,8 @@ def parse_event(event):
             else:
                 logger.warning('Unknown status: %s', status)
             return (
-                ProcessPayload(json.loads(event['detail']['input'])),
-                ProcessPayload(json.loads(event['detail']['output']))
+                ProcessPayload.from_event(json.loads(event['detail']['input'])),
+                ProcessPayload.from_event(json.loads(event['detail']['output']))
                     if event['detail'].get('output', None) else None,
                 status,
                 error,
@@ -198,7 +198,7 @@ def parse_event(event):
         else:
             raise Exception()
     except Exception:
-        logger.error('Unknown event: %s', json.dumps(event))
+        logger.exception('Unknown event: %s', json.dumps(event))
         return None, None, None, None
 
 
