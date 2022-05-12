@@ -1,0 +1,4 @@
+sphinx==4.4.0
+sphinx_rtd_theme==1.0.0
+myst_parser==0.17.0
+sphinxcontrib-mermaid==0.7.1
