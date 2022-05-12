@@ -1,6 +1,9 @@
 import click
+import click_plugins
 
 from pathlib import Path
+from pkg_resources import iter_entry_points
+
 from cirrus.cli import constants
 from cirrus.core.project import Project
 from cirrus.cli.utils import (
@@ -12,6 +15,7 @@ from cirrus.cli.utils import (
 logger = logging.getLogger(__name__)
 
 
+@click_plugins.with_plugins(iter_entry_points('cirrus.plugins'))
 @click.group(
     name=constants.PROG,
     help=constants.DESC,

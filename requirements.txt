@@ -1,5 +1,6 @@
 pyyaml~=5.4
 click~=8.0
+click-plugins~=1.1
 rich~=10.6
 cfn-flip~=1.2
 cirrus-lib~=0.7.0
