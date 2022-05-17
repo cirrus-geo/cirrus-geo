@@ -1,5 +1,4 @@
 import click
-import click_plugins
 
 from pathlib import Path
 from pkg_resources import iter_entry_points
@@ -15,7 +14,7 @@ from cirrus.cli.utils import (
 logger = logging.getLogger(__name__)
 
 
-@click_plugins.with_plugins(iter_entry_points('cirrus.commands'))
+@utils_click.plugin_entrypoint('cirrus.commands')
 @click.group(
     name=constants.PROG,
     help=constants.DESC,
