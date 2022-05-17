@@ -20,11 +20,3 @@ Welcome to Cirrus's documentation!
    statedb
    monitoring
    examples/index
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
