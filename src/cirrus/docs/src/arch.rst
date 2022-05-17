@@ -6,7 +6,7 @@ Cirrus overview
 
 An overall picture of Cirrus looks like this:
 
-.. image:: /images/arch-overview.png
+.. image:: images/arch-overview.png
 
 As shown in that diagram, input Cirrus Process Payloads are published into an
 input SNS topic via users or automated :doc:`Feeder <components/feeders>`
@@ -38,7 +38,7 @@ Workflows are composed of one or more :doc:`Tasks <components/tasks/index>`, whi
 an input Cirrus Process Payload to define input metadata/assets for the Task
 processing. A workflow could look something like this:
 
-.. image:: /images/workflow-example.png
+.. image:: images/workflow-example.png
 
 This example workflow begins with a preprocessing step to do some initial
 metadata modifications. Following that, a batch task to perform some
