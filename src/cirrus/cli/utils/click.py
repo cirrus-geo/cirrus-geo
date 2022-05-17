@@ -1,6 +1,9 @@
 import click
+import click_plugins
 import sys
 import logging
+
+from pkg_resources import iter_entry_points
 
 from cirrus.core.project import Project
 
@@ -124,3 +127,9 @@ class AliasedShortMatchGroup(click.Group):
         # always return the full command name
         _, cmd, args = super().resolve_command(ctx, args)
         return cmd.name, cmd, args
+
+
+def plugin_entrypoint(entrypoint_name: str):
+    def decorator(group):
+        return click_plugins.with_plugins(iter_entry_points(entrypoint_name))(group)
+    return decorator
