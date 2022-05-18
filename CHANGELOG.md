@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- rerun feeder has required permissions ([#131])
 
 ## [v0.6.0] - 2022-02-18
 
