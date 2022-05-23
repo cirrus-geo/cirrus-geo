@@ -1,41 +1,54 @@
-# Minimal makefile for Sphinx documentation
-#
+BUILDDIR = _build
+VERSION ?= $(shell git rev-parse --abbrev-ref HEAD) 
 
-# You can set these variables from the command line, and also
-# from the environment for the first two.
-SPHINXOPTS    +=
-SPHINXBUILD   ?= sphinx-build
-SOURCEDIR     = src
-BUILDDIR      = _build
+gh-pages:
+	git worktree add gh-pages gh-pages
 
-# Put it first so that "make" without argument is like "make help".
-help:
-	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+gh-pages/index.html: gh-pages
+	cat > gh-pages/index.html <<"EOF"
+	<!DOCTYPE html>
+	<html>
+	  <head>
+		<title>Redirecting to latest stable version docs</title>
+		<meta charset="utf-8">
+		<meta http-equiv="refresh" content="0; url=./stable/index.html">
+	  </head>
+	</html>
+	EOF
 
-.PHONY: help Makefile
+gh-pages/$(VERSION): gh-pages
+	mkdir gh-pages/$(VERSION)
 
-#gh-pages:
-#	git worktree add gh-pages gh-pages
-#
-#.PHONY: gh-pages-clean
-#gh-pages-clean: gh-pages
-#	rm -rf gh-pages/*
-#
-#.PHONY: gh-pages-copy
-#gh-pages-copy: gh-pages-clean
-#	cp -r $(BUILDDIR)/html/* gh-pages/
-#
-#.PHONY: gh-pages-update 
-#gh-pages-update: html gh-pages-copy
+.PHONY: gh-pages-clean
+gh-pages-clean: gh-pages/$(VERSION)
+	rm -rf gh-pages/$(VERSION)*
+
+.PHONY: gh-pages-copy
+gh-pages-copy: gh-pages-clean
+	cp -r $(BUILDDIR)/html/* gh-pages/$(VERSION)
+
+.PHONY: gh-pages-update
+gh-pages-update: clean build gh-pages-copy gh-pages/index.html
+	# TODO: script to update latest and stable links in gh-pages
+	# TODO: also need to update versions for the list in the theme
 
 .PHONY: clean
 clean:
-	rm -rf $(BUILDDIR)/*
+	cirrus docs clean
 
-symlink:
-	ln -s ../src/cirrus/docs src
+.PHONY: stage
+stage:
+	cirrus docs stage \
+		--staging-dir ./_src \
+		--conf-file ./conf.py \
+		--exclude-project-docs \
+		--exclude-lib-docs \
+		--exclude-plugin-docs \
 
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile symlink
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+.PHONY: build
+build: stage
+	cirrus docs build \
+		--staging-dir ./_src \
+		--output-dir ./_build \
+
