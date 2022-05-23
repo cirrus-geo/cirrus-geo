@@ -50,3 +50,12 @@ def relative_to_cwd(path: Path) -> Path:
         os.path.sep,
         relative_to(Path(os.getcwd()), path),
     )
+
+
+def clean_dir(directory: Path) -> None:
+    import shutil
+    for f in directory.iterdir():
+        if not f.is_symlink() and f.is_dir():
+            shutil.rmtree(f)
+        else:
+            f.unlink()
