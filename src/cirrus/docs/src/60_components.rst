@@ -31,14 +31,14 @@ named for their respective component types, like so::
 Each component types has in-depth documentation detailing any supported files
 and the ``definition.yml`` format. Some components share a common set of
 required files and configuration format, such as all :doc:`Lambda-based
-components <lambdas>`.
+components <components/lambdas>`.
 
 .. toctree::
    :maxdepth: 2
    :caption: Component documentation:
 
-   lambdas
-   feeders
-   tasks/index
-   workflows/index
-   functions
+   components/lambdas
+   components/feeders
+   components/tasks/index
+   components/workflows/index
+   components/functions

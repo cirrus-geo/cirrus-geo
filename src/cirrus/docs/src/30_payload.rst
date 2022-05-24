@@ -16,10 +16,10 @@ single execution of a workflow.
      - string
      - Type of the GeoJSON Object. If set, it must be set to FeatureCollection.
    * - features
-     - [:ref:`Item`]
+     - [:ref:`payload-item`]
      - An array of STAC-like input items
    * - process
-     - [:ref:`ProcessDefinition`]
+     - [:ref:`payload-processdef`]
      - An array of process definitions
 
 
@@ -46,6 +46,7 @@ At a high-level, the payload looks like a GeoJSON FeatureCollection with an addi
 A workflow task may take 1 or more items as input, and could output 1 or more items.
 One common use-case is to take in a single input item and generate a single output item.
 
+ .. _payload-item:
 
 Item
 ^^^^
@@ -58,7 +59,7 @@ Sentinel STAC Item.
 However, sometimes workflows are also responsible for creating proper STAC Items,
 mapping metadata in different formats into STAC. Thus, as far as Cirrus is concerned,
 the only required field in the payload is an `id` field. The `id` is used to track
-the individual execution of a workflow. 
+the individual execution of a workflow.
 
 .. list-table:: Item
    :widths: 25 25 50
@@ -107,8 +108,10 @@ metadata, the final output of a Cirrus workflow should always contain an array
 of actual STAC Items.
 
 
-ProcessDefinition
-^^^^^^^^^^^^^^^^^
+ .. _payload-processdef:
+
+Process Definition
+^^^^^^^^^^^^^^^^^^
 
 .. list-table:: Process Definition
    :widths: 25 25 50
@@ -127,7 +130,7 @@ ProcessDefinition
      - string
      - An identifier representing the set of collections the input items belong to
    * - output_options
-     - :ref:`OutputOptions`
+     - :ref:`payload-outputopts`
      - Parameters affecting the upload of item assets
    * - tasks
      - Map<string, Map<str, object>>
@@ -140,7 +143,7 @@ input_collections
 The `input_collections` field is a way to explicitly group together input items
 across executions of workflows. It is optional, and if not provided `input_collections`
 is derived from all the collections the input items belong to. For instance, if
-a payload contains a single item, and it belongs in the collection `sat-a-l1`, 
+a payload contains a single item, and it belongs in the collection `sat-a-l1`,
 then `input_collections` is `sat-a-l1`.
 
 If the payload contains multiple items spanning more than 1 collection, then
@@ -156,10 +159,12 @@ contains a dictionary of parameters for the task. The documentation for each tas
 will supply the list of available parameters.
 
 
-OutputOptions
-^^^^^^^^^^^^^
+.. _payload-outputopts:
 
-The output options object is a dictionary of parameters to used to control the 
+Output Options
+^^^^^^^^^^^^^^
+
+The output options object is a dictionary of parameters to used to control the
 publishing of the metadata and uploading data assets. Any task that uploads
 data should use the OutputOptions to control where and how that data is uploaded.
 See the cirrus-lib function `transfer.upload_item_assets`

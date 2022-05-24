@@ -1,46 +1,50 @@
+HTTP_PORT= 8000
+STAGEDIR = _src
 BUILDDIR = _build
-VERSION ?= $(shell git rev-parse --abbrev-ref HEAD) 
+CONFFILE = src/conf.py
+INCLUDE  = src/index.include
+CIRRUS_VERSION ?= $(shell git rev-parse --abbrev-ref HEAD) 
 
 gh-pages:
 	git worktree add gh-pages gh-pages
 
-gh-pages/index.html: gh-pages
-	cat > gh-pages/index.html <<"EOF"
-	<!DOCTYPE html>
-	<html>
-	  <head>
-		<title>Redirecting to latest stable version docs</title>
-		<meta charset="utf-8">
-		<meta http-equiv="refresh" content="0; url=./stable/index.html">
-	  </head>
-	</html>
-	EOF
+gh-pages/.nojekyll:
+	touch $@
 
-gh-pages/$(VERSION): gh-pages
-	mkdir gh-pages/$(VERSION)
+gh-pages/index.html: gh-pages/.nojekyll src/index.html
+	cp src/index.html $@
+
+gh-pages/$(CIRRUS_VERSION):
+	mkdir $@
 
 .PHONY: gh-pages-clean
-gh-pages-clean: gh-pages/$(VERSION)
-	rm -rf gh-pages/$(VERSION)*
+gh-pages-clean:
+	rm -rf gh-pages/$(CIRRUS_VERSION)
 
 .PHONY: gh-pages-copy
-gh-pages-copy: gh-pages-clean
-	cp -r $(BUILDDIR)/html/* gh-pages/$(VERSION)
+gh-pages-copy: gh-pages-clean gh-pages/$(CIRRUS_VERSION)
+	cp -r $(BUILDDIR)/html/* gh-pages/$(CIRRUS_VERSION)
+
+.PHONY:
+gh-pages-versions-update: gh-pages
+	python3 update-versions.py gh-pages
 
 .PHONY: gh-pages-update
-gh-pages-update: clean build gh-pages-copy gh-pages/index.html
-	# TODO: script to update latest and stable links in gh-pages
-	# TODO: also need to update versions for the list in the theme
+gh-pages-update: clean build gh-pages/index.html gh-pages-copy gh-pages-versions-update
 
 .PHONY: clean
 clean:
-	cirrus docs clean
+	cirrus docs clean \
+		--staging-dir $(STAGEDIR) \
+		--output-dir $(BUILDDIR) \
+
 
 .PHONY: stage
 stage:
 	cirrus docs stage \
-		--staging-dir ./_src \
-		--conf-file ./conf.py \
+		--staging-dir $(STAGEDIR) \
+		--conf-file $(CONFFILE) \
+		--custom-index-include $(INCLUDE) \
 		--exclude-project-docs \
 		--exclude-lib-docs \
 		--exclude-plugin-docs \
@@ -49,6 +53,10 @@ stage:
 .PHONY: build
 build: stage
 	cirrus docs build \
-		--staging-dir ./_src \
-		--output-dir ./_build \
+		--staging-dir $(STAGEDIR) \
+		--output-dir $(BUILDDIR) \
 
+
+.PHONY: serve
+serve: gh-pages
+	python -m http.server $(HTTP_PORT) -d gh-pages 

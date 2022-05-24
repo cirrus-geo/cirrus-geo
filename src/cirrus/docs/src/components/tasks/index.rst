@@ -10,7 +10,7 @@ Tasks
 
 Tasks in Cirrus implement a unit of processing, to be composed together into a
 :doc:`Workflow <../workflows/index>`. Tasks are expected to support both input and
-output formatted as a :doc:`Cirrus Process Payload </payload>`. As part of its
+output formatted as a :doc:`Cirrus Process Payload <../../30_payload>`. As part of its
 processing, a task can make any requisite modifications to its input payload
 and/or derive any output assets, pushing them to the canonical storage location
 in S3.
@@ -206,7 +206,7 @@ Task parameters
 ---------------
 
 Tasks can take arguments at runtime via process definition parameters. See the
-:doc:`Cirrus Process Payload </payload>` docs for more information. When
+:doc:`Cirrus Process Payload <../../30_payload>` docs for more information. When
 authoring a task, be sure to document all supported task parameters in the
 task's ``README.md``. In using an existing task, the task README can always be
 view via the cli::

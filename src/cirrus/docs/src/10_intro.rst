@@ -30,7 +30,7 @@ STAC-based workflows
 ^^^^^^^^^^^^^^^^^^^^
 
 A key principal of Cirrus is the use of the `STAC`_ metadata specification as a
-central tenant of the :doc:`Cirrus Process Payload <payload>` format. In this
+central tenant of the :doc:`Cirrus Process Payload <30_payload>` format. In this
 way Cirrus encourages a highly-interoperable, metadata-first focus for both
 pipeline operators and end-users alike.
 
@@ -45,7 +45,7 @@ Cirrus Components
 ^^^^^^^^^^^^^^^^^
 
 Cirrus is organized into reusable blocks called :doc:`Components
-<components/index>`, which can be broken down into three main types:
+<60_components>`, which can be broken down into three main types:
 
 * :doc:`Feeders <components/feeders>`: take arbitrary input in and create a
   Cirrus Process Payload, which is enqueue for processing
@@ -142,7 +142,7 @@ Algorithm Developers
 
 *Those writing code to be run as Cirrus tasks within workflows.*
 
-* :doc:`Components <components/index>`
+* :doc:`Components <60_components>`
 * :doc:`Tasks <components/tasks/index>`
-* :doc:`Cirrus Process Payload format <payload>`
+* :doc:`Cirrus Process Payload format <30_payload>`
 * ``cirrus-lib`` documentation
