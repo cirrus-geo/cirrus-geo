@@ -40,6 +40,7 @@ def lambda_handler(payload, context={}):
     since = payload.get('since', None)
     limit = payload.get('limit', None)
     batch = payload.get('batch', False)
+    error_begins_with = payload.get('error_begins_with', None)
     process_update = payload.get('process_update', None)
     payload_id_batch = 5
 
@@ -53,6 +54,7 @@ def lambda_handler(payload, context={}):
         state=state,
         since=since,
         limit=limit,
+        error_begins_with=error_begins_with
     )
 
     nitems = len(items)
