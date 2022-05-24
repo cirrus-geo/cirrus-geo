@@ -126,6 +126,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - support for cli plugins via the `cirrus.plugins` entrypoint ([#138])
 - documentation within the package for projects to build into their docs ([#138])
 - `update-state` now supports `ABORTED` and `TIMED_OUT` step function events ([#85])
+- `rerun` feeder supports `error_begins_with` to search for payloads to rerun by
+  the error message ([#143])
 
 ### Changed
 
@@ -521,6 +523,7 @@ Initial release
 [#89]: https://github.com/cirrus-geo/cirrus-geo/pull/89
 [#90]: https://github.com/cirrus-geo/cirrus-geo/pull/90
 [#138]: https://github.com/cirrus-geo/cirrus-geo/pull/138
+[#143]: https://github.com/cirrus-geo/cirrus-geo/pull/143
 
 [f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
