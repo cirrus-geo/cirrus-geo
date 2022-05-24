@@ -12,7 +12,7 @@ As shown in that diagram, input Cirrus Process Payloads are published into an
 input SNS topic via users or automated :doc:`Feeder <components/feeders>`
 processes. Those input payloads are enqueued in an SQS queue for processing by
 the ``process`` lambda.  ``process`` creates or updates the :doc:`State DB
-<statedb>` record for the payload and starts a :doc:`Workflow
+<70_statedb>` record for the payload and starts a :doc:`Workflow
 <components/workflows/index>` execution by dispatching the payload to the
 specified Workflow.
 

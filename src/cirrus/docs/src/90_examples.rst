@@ -5,4 +5,4 @@ Cirrus Examples
    :maxdepth: 2
    :caption: Contents:
 
-   e2e-notebook
+   examples/e2e-notebook

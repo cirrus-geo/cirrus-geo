@@ -21,15 +21,6 @@ install_requires = [x.strip() for x in reqs if 'git+' not in x]
 dependency_links = [x.strip().replace('git+', '') for x in reqs if 'git+' not in x]
 
 
-package_data = {
-    'cirrus': [
-        'builtins/**/**/*',
-        'builtins/**/*',
-        'core/config/*',
-    ],
-}
-
-
 setup(
     name='cirrus-geo',
     packages=find_namespace_packages('src'),
@@ -51,7 +42,6 @@ setup(
     ],
     license='Apache-2.0',
     include_package_data=True,
-    package_data=package_data,
     entry_points='''
         [console_scripts]
         cirrus=cirrus.cli.__main__:main

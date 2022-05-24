@@ -2,7 +2,7 @@ Feeders
 =======
 
 Conceptually, a feeder is anything that generates a :doc:`Cirrus Process
-Payload <../payload>` and queues it for processing. In practice this could be
+Payload <../30_payload>` and queues it for processing. In practice this could be
 anything from a user hand-rolling JSON and pasting it into the AWS console, to
 an automated process that turns external events into process payloads and
 publishes them to the Cirrus process topic.
