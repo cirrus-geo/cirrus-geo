@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - rerun feeder has required permissions ([#131])
+- `update-state` lambda supports payload URLs ([#135])
 
 ## [v0.6.0] - 2022-02-18
 
@@ -350,6 +351,7 @@ Initial release
 [#114]: https://github.com/cirrus-geo/cirrus-geo/issues/114
 [#116]: https://github.com/cirrus-geo/cirrus-geo/issues/116
 [#131]: https://github.com/cirrus-geo/cirrus-geo/issues/131
+[#135]: https://github.com/cirrus-geo/cirrus-geo/issues/135
 
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
