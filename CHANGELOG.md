@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - rerun feeder has required permissions ([#131])
 - `update-state` lambda supports payload URLs ([#135])
 
+### Removed
+
+- all non-core builtins ([#78]):
+  - feed-s3-inventory (feeder)
+  - feed-stac-api (feeder)
+  - feed-stac-crawl (feeder)
+  - add-preview (task)
+  - convert-to-cog (task)
+  - copy-assets (task)
+  - cog-archive (workflow)
+  - mirror-with-preview (workfow)
+  - mirror (workflow)
+
+
 ## [v0.6.0] - 2022-02-18
 
 ### Fixed
@@ -350,6 +364,7 @@ Initial release
 [#65]: https://github.com/cirrus-geo/cirrus-geo/issues/65
 [#74]: https://github.com/cirrus-geo/cirrus-geo/issues/74
 [#75]: https://github.com/cirrus-geo/cirrus-geo/issues/75
+[#78]: https://github.com/cirrus-geo/cirrus-geo/issues/78
 [#79]: https://github.com/cirrus-geo/cirrus-geo/issues/79
 [#82]: https://github.com/cirrus-geo/cirrus-geo/issues/82
 [#85]: https://github.com/cirrus-geo/cirrus-geo/issues/85
