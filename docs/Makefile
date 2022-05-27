@@ -8,7 +8,7 @@ CIRRUS_VERSION ?= $(shell git rev-parse --abbrev-ref HEAD)
 gh-pages:
 	git worktree add gh-pages gh-pages
 
-gh-pages/.nojekyll:
+gh-pages/.nojekyll: gh-pages
 	touch $@
 
 gh-pages/index.html: gh-pages/.nojekyll src/index.html
