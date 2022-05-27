@@ -1,3 +1,4 @@
+import sys
 import click
 
 from pathlib import Path
@@ -112,12 +113,12 @@ def serverless(project, sls_args):
     bd = project.build_dir
     if not bd.is_dir():
         logger.error('No build directory; have you run a build?')
-        return
+        sys.exit(2)
 
     sls = project.path.joinpath('node_modules', 'serverless', 'bin', 'serverless.js')
     if not sls.is_file():
         logger.error('No serverless binary; have you run `npm install`?')
-        return
+        sys.exit(1)
 
     os.chdir(bd)
     os.execv(sls, ['serverless'] + list(sls_args))
