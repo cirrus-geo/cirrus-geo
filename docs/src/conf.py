@@ -9,7 +9,7 @@ import os
 
 from pathlib import Path
 
-from cirrus.docs.base_conf import *
+from cirrus.plugins.docs.base_conf import *
 
 
 THIS_DIR = Path(__file__).resolve().parent
