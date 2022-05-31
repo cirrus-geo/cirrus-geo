@@ -1,1 +1,1 @@
-cirrus-docs
+cirrus-docs==0.1.0
