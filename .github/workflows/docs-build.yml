@@ -1,0 +1,33 @@
+name: Docs
+on:
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - published
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Sphinx build
+        uses: ammaraskar/sphinx-action@master
+        with:
+          build-command: make gh-pages-update
+          docs-folder: "./docs"
+        env:
+          CIRRUS_VERSION: ${{ github.event.release.tag_name }}
+      - name: Commit documentation changes
+        run: |
+          cd gh-pages
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "CI doc updates" -a ||:
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: gh-pages
+          directory: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
