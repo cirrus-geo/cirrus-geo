@@ -48,8 +48,8 @@
         "size": 100
     },
     "lambdas/feed-stac-api/README.md": {
-        "shasum": "a5107a831d1dbae3ae6d00adf0412b79e67edcf2630ccf70e58fdb1817983626",
-        "size": 269
+        "shasum": "b85ba6b3d1d3bb3cbe1cbe69d687c7d654ba1b38c0b9201d73872eac85dd98ea",
+        "size": 271
     },
     "lambdas/feed-stac-api/lambda_function.py": {
         "shasum": "109055bb18c52ace7b5821ef7b0915fb033ae8e1e4606ebabdf0181cf16b3a12",
