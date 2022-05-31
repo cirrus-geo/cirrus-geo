@@ -161,6 +161,11 @@ def test_show_list(group, invoke):
     assert len(result.stdout) > 0
 
 
+def test_show_plugins(invoke):
+    result = invoke(f'show plugins')
+    assert result.exit_code == 0
+
+
 @pytest.mark.parametrize('group', [c.group_name for c in groups])
 def test_show_detail(group, invoke):
     item = next(iter(getattr(groups, group))).name
