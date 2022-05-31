@@ -141,6 +141,13 @@ def test_build(invoke, project, reference_build, build_dir):
         assert not (missing or added or changed)
 
 
+def test_clean(invoke, project, build_dir):
+    assert len(list(build_dir.iterdir())) > 0
+    result = invoke('clean')
+    assert result.exit_code == 0
+    assert len(list(build_dir.iterdir())) == 0
+
+
 @pytest.mark.parametrize(
     'createable',
     [c.type for c in groups.extendable_groups
