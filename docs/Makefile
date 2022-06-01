@@ -11,9 +11,6 @@ gh-pages:
 gh-pages/.nojekyll: gh-pages
 	touch $@
 
-gh-pages/index.html: gh-pages/.nojekyll src/index.html
-	cp src/index.html $@
-
 gh-pages/$(CIRRUS_VERSION): gh-pages
 	mkdir -p $@
 
@@ -26,7 +23,7 @@ gh-pages-copy: gh-pages-clean gh-pages/$(CIRRUS_VERSION)
 	cp -r $(BUILDDIR)/html/* gh-pages/$(CIRRUS_VERSION)
 
 .PHONY:
-gh-pages-versions-update: gh-pages/index.html gh-pages
+gh-pages-versions-update: gh-pages/.nojekyll
 	python3 update-versions.py gh-pages
 
 .PHONY: gh-pages-update
