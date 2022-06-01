@@ -53,7 +53,7 @@ def main(gh_pages_dir):
     gh_pages_dir.joinpath('versions.txt').write_text('\n'.join(all_versions))
 
     # create index.html redirect
-    index_version = stable_version if stable_version else LATEST_TARGET
+    index_version = stable_version if stable_version else LATEST_LINK_NAME
     gh_pages_dir.joinpath(INDEX).write_text(REDIRECT(index_version))
 
 
