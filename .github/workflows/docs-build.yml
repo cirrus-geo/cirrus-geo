@@ -14,37 +14,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: git describe
-        run: git --git-dir .git describe --long --tags --dirty
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
           python-version: '3.10'
       - name: Install dependencies
         run: |
-          pip install -v .
+          pip install .
           pip install -r requirements-docs.txt
       - name: Build documentation
         run: |
           cd ./docs
-          make gh-pages-update
-        env:
-          CIRRUS_VERSION: ${{ github.event.release.tag_name }}
-      - name: Commit documentation changes
+          make clean build CIRRUS_VERSION=$GITHUB_REF_NAME
+      - name: Copy documentation into gh-pages
         if: github.event_name != 'pull_request'
         run: |
-          cd gh-pages
+          cd ./docs
+          make gh-pages-copy gh-pages-versions-update CIRRUS_VERSION=$GITHUB_REF_NAME
+      - name: Commit gh-pages changes
+        if: github.event_name != 'pull_request'
+        run: |
+          cd ./docs/gh-pages
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
           git commit -m "CI doc updates" -a ||:
-      - name: Push changes
+      - name: Push gh-pages changes
         if: github.event_name != 'pull_request'
         uses: ad-m/github-push-action@master
         with:
           branch: gh-pages
-          directory: gh-pages
+          directory: ./docs/gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -3,7 +3,7 @@ STAGEDIR = _src
 BUILDDIR = _build
 CONFFILE = src/conf.py
 INCLUDE  = src/index.include
-CIRRUS_VERSION ?= $(shell git rev-parse --abbrev-ref HEAD) 
+export CIRRUS_VERSION := $(or $(CIRRUS_VERSION),$(shell git rev-parse --abbrev-ref HEAD))
 
 gh-pages:
 	git worktree add gh-pages gh-pages
@@ -14,8 +14,8 @@ gh-pages/.nojekyll: gh-pages
 gh-pages/index.html: gh-pages/.nojekyll src/index.html
 	cp src/index.html $@
 
-gh-pages/$(CIRRUS_VERSION):
-	mkdir $@
+gh-pages/$(CIRRUS_VERSION): gh-pages
+	mkdir -p $@
 
 .PHONY: gh-pages-clean
 gh-pages-clean:
@@ -26,11 +26,11 @@ gh-pages-copy: gh-pages-clean gh-pages/$(CIRRUS_VERSION)
 	cp -r $(BUILDDIR)/html/* gh-pages/$(CIRRUS_VERSION)
 
 .PHONY:
-gh-pages-versions-update: gh-pages
+gh-pages-versions-update: gh-pages/index.html gh-pages
 	python3 update-versions.py gh-pages
 
 .PHONY: gh-pages-update
-gh-pages-update: clean build gh-pages/index.html gh-pages-copy gh-pages-versions-update
+gh-pages-update: clean build gh-pages-copy gh-pages-versions-update
 
 .PHONY: clean
 clean:
