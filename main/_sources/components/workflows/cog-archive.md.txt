@@ -1,0 +1,5 @@
+cog-archive
+===========
+
+
+This component appears to missing a README.

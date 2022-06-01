@@ -1,0 +1,13 @@
+Workflows
+=========
+
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :titlesonly:
+
+   cog-archive <cog-archive.md>
+   mirror <mirror.md>
+   mirror-with-preview <mirror-with-preview.md>
+   publish-only <publish-only.md>

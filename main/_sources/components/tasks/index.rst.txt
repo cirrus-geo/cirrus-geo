@@ -1,0 +1,15 @@
+Tasks
+=====
+
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :titlesonly:
+
+   add-preview <add-preview.md>
+   convert-to-cog <convert-to-cog.md>
+   copy-assets <copy-assets.md>
+   post-batch <post-batch.md>
+   pre-batch <pre-batch.md>
+   publish <publish.md>

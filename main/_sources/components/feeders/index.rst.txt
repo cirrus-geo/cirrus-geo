@@ -1,0 +1,13 @@
+Feeders
+=======
+
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :titlesonly:
+
+   feed-rerun <feed-rerun.md>
+   feed-s3-inventory <feed-s3-inventory.md>
+   feed-stac-api <feed-stac-api.md>
+   feed-stac-crawl <feed-stac-crawl.md>
