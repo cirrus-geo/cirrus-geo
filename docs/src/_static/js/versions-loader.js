@@ -12,7 +12,8 @@ const findRoot = () => {
 const findPage = () => {
   const href = window.location.href;
   const components = href.split('/');
-  const upDirCount = dataRootUrl.split('/').length;
+  const upDirCount =
+    ((dataRootUrl === './') ? 1 : dataRootUrl.split('/').length);
   return components.slice(components.length - upDirCount).join('/');
 }
 
