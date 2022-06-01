@@ -2,14 +2,14 @@
 import sys
 
 from pathlib import Path
-from packaging.version import Version, parse
+from packaging.version import parse
 
 
 def main(gh_pages_dir):
     gh_pages_dir = Path(gh_pages_dir)
 
     all_versions = []
-    latest_stable = Version('0.0.0')
+    latest_stable = parse('')
     for f in gh_pages_dir.iterdir():
         if f.is_dir():
            all_versions.append(f.name)
