@@ -1,6 +1,8 @@
 import click
 
 from pathlib import Path
+from pkg_resources import iter_entry_points
+
 from cirrus.cli import constants
 from cirrus.core.project import Project
 from cirrus.cli.utils import (
@@ -12,6 +14,7 @@ from cirrus.cli.utils import (
 logger = logging.getLogger(__name__)
 
 
+@utils_click.plugin_entrypoint('cirrus.commands')
 @click.group(
     name=constants.PROG,
     help=constants.DESC,
@@ -132,9 +135,41 @@ def create(project):
 @cli.group(cls=utils_click.AliasedShortMatchGroup)
 def show():
     '''
-    Multifunction command to list/show components, component files, and resources.
+    Multifunction command to list/show components, files, etc.
     '''
     pass
+
+
+@show.command()
+def plugins():
+    '''
+    View installed plugins.
+    '''
+    try:
+        from importlib import metadata as _metadata
+    except ImportError:
+        import importlib_metadata as _metadata
+
+    for entry_point in iter_entry_points('cirrus.plugins'):
+        color = 'blue'
+        name = entry_point.name
+
+        try:
+            metadata = _metadata.metadata(name)
+        except _metadata.PackageNotFoundError:
+            desc = None
+            color = 'red'
+            name += ' (unknown package)'
+        else:
+            desc = metadata['Summary']
+
+        click.echo('{}{}'.format(
+            click.style(
+                f'{name}:',
+                fg=color,
+            ),
+            f' {desc}' if desc else '',
+        ))
 
 
 if __name__ == '__main__':

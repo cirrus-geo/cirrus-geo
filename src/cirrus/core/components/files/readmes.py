@@ -8,7 +8,7 @@ from .base import ComponentFile
 logger = logging.getLogger(__name__)
 
 
-default_readme = '''#{name}
+default_readme = '''# {name}
 
 Fill in this README with details for this {type}
 

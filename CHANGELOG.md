@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- rerun feeder has required permissions ([#131])
+- `update-state` lambda supports payload URLs ([#135])
 
 ## [v0.6.0] - 2022-02-18
 
@@ -15,7 +19,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Support for cli plugins ([#138])
+- Documentation within the package for projects to build into their docs ([#138])
 - `update-state` now supports `ABORTED` and `TIMED_OUT` step function events ([#85])
+
+
+### Fixed
+
+- Component README template missing space in header ([#138])
+
+
+### Removed
+
+- Cleaned up old docs ([#138])
 
 
 ## [v0.5.4] - 2022-02-10
@@ -346,6 +362,8 @@ Initial release
 [#111]: https://github.com/cirrus-geo/cirrus-geo/issues/111
 [#114]: https://github.com/cirrus-geo/cirrus-geo/issues/114
 [#116]: https://github.com/cirrus-geo/cirrus-geo/issues/116
+[#131]: https://github.com/cirrus-geo/cirrus-geo/issues/131
+[#135]: https://github.com/cirrus-geo/cirrus-geo/issues/135
 
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
@@ -354,6 +372,7 @@ Initial release
 [#88]: https://github.com/cirrus-geo/cirrus-geo/pull/88
 [#89]: https://github.com/cirrus-geo/cirrus-geo/pull/89
 [#90]: https://github.com/cirrus-geo/cirrus-geo/pull/90
+[#138]: https://github.com/cirrus-geo/cirrus-geo/pull/138
 
 [f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1

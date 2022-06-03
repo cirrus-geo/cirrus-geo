@@ -1,7 +1,7 @@
 {
     "serverless.yml": {
-        "shasum": "80c8a5d044b798e56535477d20b19b20938405316fa3fa6fa905a8bed54bf601",
-        "size": 59442
+        "shasum": "a8f7dde3c495bd35040a848246909b83bd2db00f071bf88170afbf76cdcb7a41",
+        "size": 59877
     },
     "lambdas/feed-stac-crawl/requirements.txt": {
         "shasum": "fd987d18dd2ae211b1a4d9b92ab263d66d65a0231b548cde8976b87ea3380d2e",
@@ -48,8 +48,8 @@
         "size": 100
     },
     "lambdas/feed-stac-api/README.md": {
-        "shasum": "a5107a831d1dbae3ae6d00adf0412b79e67edcf2630ccf70e58fdb1817983626",
-        "size": 269
+        "shasum": "b85ba6b3d1d3bb3cbe1cbe69d687c7d654ba1b38c0b9201d73872eac85dd98ea",
+        "size": 271
     },
     "lambdas/feed-stac-api/lambda_function.py": {
         "shasum": "109055bb18c52ace7b5821ef7b0915fb033ae8e1e4606ebabdf0181cf16b3a12",
@@ -76,8 +76,8 @@
         "size": 83
     },
     "lambdas/update-state/lambda_function.py": {
-        "shasum": "235cfb678e8adb1d8ca640c4798f83c442d7bd28167b123a6ef7b96a9d8c45e1",
-        "size": 7000
+        "shasum": "cc1302a743c50791928b3ed893ab4f45e18368839636a1e16994f07f125a8871",
+        "size": 7026
     },
     "lambdas/publish/requirements.txt": {
         "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",

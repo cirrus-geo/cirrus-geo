@@ -182,12 +182,7 @@ class Project:
         if self.path is None:
             raise CirrusError('Cannot clean a project without the path set')
 
-        import shutil
-        bd = self.build_dir
-        if not bd.is_dir():
+        from cirrus.core.utils.misc import clean_dir
+        if not self.build_dir.is_dir():
             return
-        for f in self.build_dir.iterdir():
-            if f.is_dir():
-                shutil.rmtree(f)
-            else:
-                f.unlink()
+        clean_dir(self.build_dir)

@@ -303,6 +303,23 @@ functions:
           - ec2:DescribeNetworkInterfaces
           - ec2:DeleteNetworkInterface
         Resource: '*'
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:BatchGetItem
+          - dynamodb:DescribeTable
+        Resource:
+          - Fn::GetAtt:
+              - StateTable
+              - Arn
+          - Fn::Join:
+              - ''
+              - - Fn::GetAtt:
+                    - StateTable
+                    - Arn
+                - /index/*
     description: Rerun items in the database
     environment:
       CIRRUS_LOG_LEVEL: DEBUG

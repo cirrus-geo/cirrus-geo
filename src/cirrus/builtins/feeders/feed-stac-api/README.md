@@ -4,7 +4,7 @@ Crawls bucket for STAC records and feeds them to Cirrus
 
 
 
-# Process configuration
+## Process configuration
 '''
 {
     "url": "https://stac-api-endpoint",
