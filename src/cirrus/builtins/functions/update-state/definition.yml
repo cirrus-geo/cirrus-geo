@@ -38,3 +38,12 @@ lambda:
       Action:
         - SNS:Publish
       Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
+    - Effect: "Allow"
+      Action:
+        - s3:GetObject
+      Resource:
+        - !Join
+          - ''
+          - - 'arn:aws:s3:::'
+            - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+            - '*'
