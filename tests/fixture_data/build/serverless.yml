@@ -257,6 +257,15 @@ functions:
         Action:
           - SNS:Publish
         Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                - '*'
     description: update the cirrus database with the execution state
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
