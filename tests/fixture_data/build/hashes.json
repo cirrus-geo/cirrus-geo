@@ -1,7 +1,7 @@
 {
     "serverless.yml": {
-        "shasum": "a8f7dde3c495bd35040a848246909b83bd2db00f071bf88170afbf76cdcb7a41",
-        "size": 59877
+        "shasum": "350c1f16205203c5fe0830a44e7f45712e20348bb68f93e4f59970704200a2f1",
+        "size": 60124
     },
     "lambdas/feed-stac-crawl/requirements.txt": {
         "shasum": "fd987d18dd2ae211b1a4d9b92ab263d66d65a0231b548cde8976b87ea3380d2e",
