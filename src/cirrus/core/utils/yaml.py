@@ -3,7 +3,10 @@ import copy
 
 from pathlib import Path
 from collections.abc import MutableMapping, MutableSequence
-from cfn_tools import odict, yaml_loader, yaml_dumper
+from cfn_tools import odict, yaml_loader
+from cfn_flip import yaml_dumper
+
+from . import pseudo_parameters
 
 
 def _yamlable_representer(dumper, data):
@@ -23,7 +26,10 @@ class YamlableList(MutableSequence):
         elif isinstance(val, list):
             return type(self)(*val)
         else:
-            return val
+            return pseudo_parameters.replace_pseudo_params_with_sub(
+                None,
+                val,
+            )
 
     def __len__(self):
         return len(self.list)
@@ -81,8 +87,13 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
     def validate(self) -> None:
         pass
 
-    def _dump(self, *args, **kwargs) -> str:
-        return yaml.dump(self._dict, *args, Dumper=yaml_dumper.CfnYamlDumper, **kwargs)
+    def _dump(self, *args, clean_up: bool=True, long_form: bool=True, **kwargs) -> str:
+        return yaml.dump(
+            self._dict,
+            *args,
+            Dumper=yaml_dumper.get_dumper(clean_up=clean_up, long_form=long_form),
+            **kwargs,
+        )
 
     def to_yaml(self) -> str:
         return self._dump()
@@ -104,7 +115,10 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
         elif isinstance(val, list):
             self._dict[name] = YamlableList(*val)
         else:
-            self._dict[name] = val
+            self._dict[name] = pseudo_parameters.replace_pseudo_params_with_sub(
+                name,
+                val,
+            )
 
     def __getattr__(self, name):
         if name == '_dict':
@@ -126,7 +140,7 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
         return self._dict[key]
 
     def __setitem__(self, key, val):
-        self._dict[key] = val
+        self.__setattr__(key, val)
 
     def __delitem__(self, key):
         del self._dict[key]
