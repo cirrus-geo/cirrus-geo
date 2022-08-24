@@ -6,9 +6,74 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### ⚠️ Breaking changes
+
+- Serverless versions through 3.x now supported. Minimum serverless of 2.3.0 is now
+  required per pseudo parameters now being parsed within cirrus, rather than via the
+  `serverless-pseudo-parameters` plugin. ({#139])
+- All lambda component definitions need the `handler` populated if not already.
+  Previously cirrus was defaulting `handler` to `lambda_function.lambda_handler`
+  if it were omitted. Now the default lambda `definition.yml` includes
+  `handler: lambda_function.lambda_handler`, allowing users to remove it if not
+  compatible with their needs (i.e., specifying a container `image`). ([#139])
+- S3 buckets `Data` and `Payload` are no longer defined as builtins. Projects that
+  do not otherwise define their required S3 buckets should ensure they have both
+  of these buckets defined in their cloudformation resource templates. The
+  previously-default configuration looks like this ([#147]):
+
+  ```
+  # cloudformation/s3.yml
+  Resources:
+    # Main data bucket
+    Data:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: "#{AWS::StackName}-data"
+    # Bucket for storing input catalogs
+    Payloads:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: "#{AWS::StackName}-payloads"
+        LifecycleConfiguration:
+          Rules:
+            - ExpirationInDays: 10
+              Prefix: batch/
+              Status: Enabled
+            - ExpirationInDays: 10
+              Prefix: payloads/
+              Status: Enabled
+  ```
+- Batch IAM role best practices have changed, and some builtin roles have changed
+  or been removed. See [#149] for additional context. In summary:
+  - Do not specify the service role on batch compute environments. The builtin
+    `BatchServiceRole` has been removed from cirrus. The default role automatically
+    provided by `AWS` automatically is sufficient.
+  - All non-standard permissions have been removed from the `BatchInstanceRole`.
+    If you have been overriding that role with custom permissions review the new
+    `BatchJobRole` and override with any further permissions instead. Better yet,
+    create a unique role per batch task based on the `BatchJobRole`.
+  - When using `BatchJobRole` or a custom role per batch task, ensure it is specified
+    on the job definition as the `ContainerProperties` `JobRoleArn`.
+
+### Added
+
+- support for lambdas using container images ([#139])
+- `init` will now create cloudformation templates for the minimum set of resources
+  not provided by builtins ([#147])
+
+### Changed
+
+- `BatchInstanceRole` no longer has cirrus-specific permissions. Specify a `JobRoleArn`
+  on batch job definitions pointing to the builtin `BatchJobRole` or a custom role. ([#149])
+- support for modern versions of serverless; minimum version supported is now 2.3.0 ([#139])
+- lambda components definitions require `handler` to be specified when not using container
+  images (previous default: `handler: lambda_function.lambda_handler`) ([#139])
+
 ### Fixed
 
-- rerun feeder has required permissions ([#131])
+- `rerun` feeder has required permissions ([#131])
+- cirrus.yml default template now has missing provider vpc configuration ([#132])
+- `sls`/`serverless` command returns non-0 on errors ([#134])
 - `update-state` lambda supports payload URLs ([#135])
 
 ### Removed
@@ -23,6 +88,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - cog-archive (workflow)
   - mirror-with-preview (workfow)
   - mirror (workflow)
+- builtin S3 bucket resources ([#147])
+- builtin `BatchServiceRole` resource ([#149])
+- dependency on `servereles-pseudo-parameters` ([#139])
 
 
 ## [v0.6.0] - 2022-02-18
@@ -378,7 +446,12 @@ Initial release
 [#114]: https://github.com/cirrus-geo/cirrus-geo/issues/114
 [#116]: https://github.com/cirrus-geo/cirrus-geo/issues/116
 [#131]: https://github.com/cirrus-geo/cirrus-geo/issues/131
+[#132]: https://github.com/cirrus-geo/cirrus-geo/issues/132
 [#135]: https://github.com/cirrus-geo/cirrus-geo/issues/135
+[#134]: https://github.com/cirrus-geo/cirrus-geo/issues/134
+[#139]: https://github.com/cirrus-geo/cirrus-geo/issues/139
+[#147]: https://github.com/cirrus-geo/cirrus-geo/issues/147
+[#149]: https://github.com/cirrus-geo/cirrus-geo/issues/149
 
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
