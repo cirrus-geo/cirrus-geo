@@ -2,6 +2,7 @@ description: update the cirrus database with the execution state
 lambda:
   memorySize: 128
   timeout: 15
+  handler: lambda_function.lambda_handler
   events:
     - eventBridge:
         pattern:

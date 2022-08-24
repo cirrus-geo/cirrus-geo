@@ -2,6 +2,7 @@ description: Cirrus API
 lambda:
   memorySize: 128
   timeout: 10
+  handler: lambda_function.lambda_handler
   events:
     - http: GET /
     - http: GET /{proxy+}

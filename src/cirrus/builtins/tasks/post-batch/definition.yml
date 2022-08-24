@@ -2,6 +2,7 @@ description: Post process batch job by copying input from S3
 lambda:
   memorySize: 128
   timeout: 15
+  handler: lambda_function.lambda_handler
   iamRoleStatements:
     - Effect: "Allow"
       Action:

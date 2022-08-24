@@ -2,6 +2,7 @@ description: Rerun items in the database
 lambda:
   memorySize: 128
   timeout: 900
+  handler: lambda_function.lambda_handler
   iamRoleStatements:
     - Effect: "Allow"
       Action:

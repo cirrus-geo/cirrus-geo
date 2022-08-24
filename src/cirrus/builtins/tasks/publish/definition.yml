@@ -2,6 +2,7 @@ description: Publish resulting STAC Collections and Items to catalog, and option
 lambda:
   memorySize: 128
   timeout: 30
+  handler: lambda_function.lambda_handler
   iamRoleStatements:
     - Effect: "Allow"
       Action:
