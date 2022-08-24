@@ -4,8 +4,6 @@ Resources:
     Type: AWS::Batch::ComputeEnvironment
     Properties:
       Type: MANAGED
-      ServiceRole:
-        Fn::GetAtt: [ BatchServiceRole, Arn ]
       ComputeEnvironmentName: '#{AWS::StackName}-basic-ondemand'
       ComputeResources:
         MaxvCpus: ${self:custom.batch.BasicComputeEnvironments.MaxvCpus}
@@ -35,8 +33,6 @@ Resources:
     Type: AWS::Batch::ComputeEnvironment
     Properties:
       Type: MANAGED
-      ServiceRole:
-        Fn::GetAtt: [ BatchServiceRole, Arn ]
       ComputeEnvironmentName: '#{AWS::StackName}-basic-spot'
       ComputeResources:
         MaxvCpus: ${self:custom.batch.BasicComputeEnvironments.MaxvCpus}

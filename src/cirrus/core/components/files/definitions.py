@@ -44,8 +44,6 @@ lambda_batch = '''batch:
           Type: AWS::Batch::ComputeEnvironment
           Properties:
             Type: MANAGED
-            ServiceRole:
-              Fn::GetAtt: [ BatchServiceRole, Arn ]
             ComputeResources:
               MaxvCpus: 1000
               SecurityGroupIds: ${{self:custom.batch.SecurityGroupIds}}
@@ -70,6 +68,58 @@ lambda_batch = '''batch:
                 ComputeEnvironment: !Ref {name}ComputeEnvironment
             State: ENABLED
             Priority: 1
+        {name}JobRole:
+          Type: AWS::IAM::Role
+          Properties:
+            AssumeRolePolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: 'Allow'
+                  Principal:
+                    Service:
+                      - 'ecs-tasks.amazonaws.com'
+                  Action:
+                    - 'sts:AssumeRole'
+                  Condition:
+                    ArnLike:
+                      aws:SourceArn: "arn:aws:ecs:#{{AWS::Region}}:#{{AWS::AccountId}}:*"
+                    StringEquals:
+                      aws:SourceAccount: "#{{AWS::AccountId}}"
+            Path: '/'
+            Policies:
+              - PolicyName: 'Cirrus'
+                PolicyDocument:
+                  Version: '2012-10-17'
+                  Statement:
+                    - Effect: "Allow"
+                      Action:
+                        - "s3:PutObject"
+                      Resource:
+                        - !Join
+                          - ''
+                          - - 'arn:aws:s3:::'
+                            - ${{self:provider.environment.CIRRUS_DATA_BUCKET}}
+                            - '*'
+                        - !Join
+                          - ''
+                          - - 'arn:aws:s3:::'
+                            - ${{self:provider.environment.CIRRUS_PAYLOAD_BUCKET}}
+                            - '*'
+                    - Effect: "Allow"
+                      Action:
+                        - "s3:ListBucket"
+                        - "s3:GetObject"
+                        - "s3:GetBucketLocation"
+                      Resource: "*"
+                    - Effect: "Allow"
+                      Action: secretsmanager:GetSecretValue
+                      Resource:
+                        - arn:aws:secretsmanager:#{{AWS::Region}}:#{{AWS::AccountId}}:secret:cirrus*
+                    - Effect: "Allow"
+                      Action:
+                        - lambda:GetFunction
+                      Resource:
+                        - arn:aws:lambda:#{{AWS::Region}}:#{{AWS::AccountId}}:function:#{{AWS::StackName}}-*
         {name}AsBatchJob:
           Type: "AWS::Batch::JobDefinition"
           Properties:
@@ -86,6 +136,7 @@ lambda_batch = '''batch:
               Memory: 128
               Vcpus: 1
               Image: 'cirrusgeo/run-lambda:0.2.1'
+              JobRoleArn: !Fn::GetAtt {name}JobRole.Arn
             RetryStrategy:
               Attempts: 1
 '''.format
