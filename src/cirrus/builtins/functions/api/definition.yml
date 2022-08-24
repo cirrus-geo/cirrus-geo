@@ -4,7 +4,7 @@ lambda:
   timeout: 10
   events:
     - http: GET /
-    - http: GET {proxy+}
+    - http: GET /{proxy+}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
