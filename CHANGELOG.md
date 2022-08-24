@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - support for lambdas using container images ([#139])
+- `init` creates a minimal .gitignore in the project root ([#140])
 - `init` will now create cloudformation templates for the minimum set of resources
   not provided by builtins ([#147])
 
@@ -450,6 +451,7 @@ Initial release
 [#135]: https://github.com/cirrus-geo/cirrus-geo/issues/135
 [#134]: https://github.com/cirrus-geo/cirrus-geo/issues/134
 [#139]: https://github.com/cirrus-geo/cirrus-geo/issues/139
+[#140]: https://github.com/cirrus-geo/cirrus-geo/issues/140
 [#147]: https://github.com/cirrus-geo/cirrus-geo/issues/147
 [#149]: https://github.com/cirrus-geo/cirrus-geo/issues/149
 
