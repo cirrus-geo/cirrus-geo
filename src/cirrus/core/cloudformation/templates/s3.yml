@@ -1,0 +1,16 @@
+Resources:
+  # Main data bucket
+  Data:
+    Type: AWS::S3::Bucket
+  # Bucket for storing input catalogs
+  Payloads:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 10
+            Prefix: batch/
+            Status: Enabled
+          - ExpirationInDays: 10
+            Prefix: payloads/
+            Status: Enabled

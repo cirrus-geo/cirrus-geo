@@ -62,6 +62,10 @@ class Groups(Sequence):
         for group in self.groups:
             group.register_project(self.project)
 
+    def ensure_created(self):
+        for group in self.extendable_groups:
+            group.ensure_created()
+
 
 def make_groups(project=None):
     return Groups(

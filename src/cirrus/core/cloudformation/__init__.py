@@ -10,3 +10,6 @@ from .parameters import Parameter
 from .resources import Resource
 from .rules import Rule
 from .transform import Transformation
+
+from .templates import templates
+templates = tuple(templates.values())

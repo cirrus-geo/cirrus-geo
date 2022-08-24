@@ -46,7 +46,7 @@ class CFObjectMeta(GroupMeta):
     #
     # See `find` for where we initialize `elements`.
     #
-    # We override the following `GroupMeta` method`s as a consequence.
+    # We override the following `GroupMeta` methods as a consequence.
     def __iter__(self):
         yield from (
             cf_obj
@@ -201,6 +201,17 @@ class CFObjectMeta(GroupMeta):
                     cf_object.name,
                 )
             self[cf_object.name] = cf_object
+
+    def create_user_dir(self):
+        import shutil
+        from . import templates
+        super().create_user_dir()
+        for template in templates:
+            dest = self.user_dir.joinpath(template.name)
+            if dest.exists():
+                continue
+            shutil.copyfile(template, dest)
+
 
     def add_show_command(self, show_cmd):
         @show_cmd.command(

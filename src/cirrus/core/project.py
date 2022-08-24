@@ -104,9 +104,7 @@ class Project:
         ))
 
         self = cls(path)
-
-        for group in self.groups.extendable_groups:
-            self.path.joinpath(group.user_dir_name).mkdir(exist_ok=True)
+        self.groups.ensure_created()
 
         return self
 
