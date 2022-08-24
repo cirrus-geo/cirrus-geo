@@ -33,6 +33,7 @@ environment: {{}}
 lambda_lambda = '''lambda:
   memorySize: 128
   timeout: 60
+  handler: lambda_function.lambda_handler
   pythonRequirements:
     include: []
 '''.format

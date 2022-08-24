@@ -158,6 +158,9 @@ class Project:
         # setup all required lambda dirs
         fn_dirs = set()
         for fn in self.groups.lambdas:
+            if not fn.lambda_enabled:
+                continue
+
             outdir = fn.get_outdir(bd).resolve()
             if outdir in fn_dirs:
                 logger.debug(

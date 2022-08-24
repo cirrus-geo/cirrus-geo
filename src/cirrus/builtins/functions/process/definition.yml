@@ -5,6 +5,7 @@ environment:
 lambda:
   memorySize: 128
   timeout: 900
+  handler: lambda_function.lambda_handler
   events:
     - sqs:
         arn: !GetAtt ProcessQueue.Arn
