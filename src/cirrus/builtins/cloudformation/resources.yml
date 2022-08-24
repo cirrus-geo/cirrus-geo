@@ -1,22 +1,4 @@
 Resources:
-  # Main data bucket
-  Data:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: "#{AWS::StackName}-data"
-  # Bucket for storing input catalogs
-  Payloads:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: "#{AWS::StackName}-payloads"
-      LifecycleConfiguration:
-        Rules:
-          - ExpirationInDays: 10
-            Prefix: batch/
-            Status: Enabled
-          - ExpirationInDays: 10
-            Prefix: payloads/
-            Status: Enabled
   # SNS Topic for adding input data to Cirrus
   ProcessTopic:
     Type: 'AWS::SNS::Topic'
@@ -32,21 +14,6 @@ Resources:
     Type: 'AWS::SNS::Topic'
     Properties:
       TopicName: "#{AWS::StackName}-failed"
-  # Allow anyone to subscribe to publish topic
-  #PublishTopicPolicy:
-  #  Type: 'AWS::SNS::TopicPolicy'
-  #  Properties:
-  #    Topics:
-  #      - !Ref PublishTopic
-  #    PolicyDocument:
-  #      Statement:
-  #        - Sid: public-sns-subscriptions
-  #          Effect: Allow
-  #          Principal: "*"
-  #          Action:
-  #            - sns:Subscribe
-  #          Resource:
-  #            - arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:service}-${self:provider.stage}-publish
   # Process Queue
   ProcessQueue:
     Type: AWS::SQS::Queue

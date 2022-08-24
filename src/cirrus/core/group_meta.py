@@ -88,6 +88,18 @@ class GroupMeta(MutableMapping, ABCMeta):
         self.project = project
         self.reset_elements()
 
+    def create_user_dir(self):
+        '''Used on project init to create any default files.
+        Useful for things that most projects require but shouldn't
+        be managed by default by cirrus, e.g., cloudformation templates
+        for S3 buckets.'''
+        self.user_dir.mkdir(exist_ok=True)
+
+    def ensure_created(self):
+        if not (self.user_extendable and self.user_dir):
+            return False
+        self.create_user_dir()
+
     def items(self):
         return self.elements.items()
 

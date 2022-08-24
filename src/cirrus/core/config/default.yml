@@ -7,6 +7,11 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-west-2'}
   runtime: python3.9
+  vpc:
+    securityGroupIds:
+      - !GetAtt pubPrivateVPC.DefaultSecurityGroup
+    subnetIds:
+      - !Ref privateSubnet1
   environment:
     CIRRUS_LOG_LEVEL: DEBUG
     CIRRUS_DATA_BUCKET: !Ref Data
@@ -21,12 +26,9 @@ provider:
 custom:
   batch:
     SecurityGroupIds:
-      - ${env:SECURITY_GROUP_1}
+      - !GetAtt pubPrivateVPC.DefaultSecurityGroup
     Subnets:
-      - ${env:SUBNET_1}
-      - ${env:SUBNET_2}
-      - ${env:SUBNET_3}
-      - ${env:SUBNET_4}
+      - !Ref privateSubnet2
     BasicComputeEnvironments:
       MaxvCpus: 128
     LambdaAsBatchJob:
