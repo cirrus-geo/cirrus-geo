@@ -82,6 +82,7 @@ def test_init(invoke, project_testdir):
     print(result.stdout, result.stderr)
     assert result.exit_code == 0
     assert Project.dir_is_project(project_testdir) is True
+    assert project_testdir.joinpath('.gitignore').is_file()
 
 
 def test_reinit(project_testdir, invoke, project):

@@ -14,6 +14,7 @@ from cirrus.core.constants import (
     DEFAULT_BUILD_DIR_NAME,
     DEFAULT_CONFIG_FILENAME,
     DEFAULT_SERVERLESS_FILENAME,
+    DEFAULT_GIT_IGNORE,
     SERVERLESS,
     SERVERLESS_PLUGINS,
 )
@@ -102,6 +103,7 @@ class Project:
             },
             indent=2,
         ))
+        maybe_write_file('.gitignore', DEFAULT_GIT_IGNORE)
 
         self = cls(path)
         self.groups.ensure_created()
