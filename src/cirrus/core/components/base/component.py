@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar('T', bound='Component')
 
+BUILT_IN = 'built-in'
+
 
 class ComponentMeta(GroupMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
@@ -46,7 +48,7 @@ class ComponentMeta(GroupMeta):
         super().__init__(*args, **kwargs)
         self.type = self.__name__.lower()
 
-    def from_dir(self, d: Path, name: str=None) -> Type[T]:
+    def from_dir(self, d: Path, name: str=None, source: str=None) -> Type[T]:
         if not d.is_dir():
             return
 
@@ -57,26 +59,26 @@ class ComponentMeta(GroupMeta):
             if name and component_dir.name != name:
                 continue
             try:
-                yield self(component_dir)
+                yield self(component_dir, source=source)
             except ComponentError as e:
                 logger.warning(
                     f"Skipping {self.type} '{component_dir.name}': {e}",
                 )
                 continue
 
-    def _find(self, name: str=None, search_dirs: list=None) -> Type[T]:
-        if search_dirs is None:
-            search_dirs = []
-
+    def _find(self, name: str=None) -> Type[T]:
         if self.core_dir.is_dir():
-            search_dirs = [self.core_dir] + search_dirs
+            yield from self.from_dir(self.core_dir, name=name, source='built-in')
 
-        for _dir in search_dirs:
-            yield from self.from_dir(_dir, name=name)
+        for source, _dir in self.resource_plugins.items():
+            yield from self.from_dir(_dir, name=name, source=source)
+
+        if self.user_dir and self.user_dir.is_dir():
+            yield from self.from_dir(self.user_dir, name=name)
 
     def find(self):
         self._elements = {}
-        for element in self._find(search_dirs=self.get_search_dirs()):
+        for element in self._find():
             if element.name in self._elements:
                 logger.warning(
                     "Duplicate %s declaration '%s', overriding",
@@ -165,15 +167,13 @@ class ComponentMeta(GroupMeta):
 class Component(metaclass=ComponentMeta):
     definition = BaseDefinition()
 
-    def __init__(self, path: Path, description: str='', load: bool=True) -> None:
+    def __init__(self, path: Path, description: str='', load: bool=True, source: str=None) -> None:
         self.path = path
         self.name = path.name
         self.config = None
         self.description = description
-        self.is_core_component = (
-            self.path.parent.samefile(self.__class__.core_dir)
-            if self.__class__.core_dir.is_dir() else False
-        )
+        self.source = source
+        self.is_builtin = source == BUILT_IN
 
         self.files = {}
         for fname, f in self.__class__.files.items():
@@ -193,8 +193,8 @@ class Component(metaclass=ComponentMeta):
     def display_attrs(self):
         if not self.enabled:
             yield 'DISABLED'
-        if self.is_core_component:
-            yield 'built-in'
+        if self.source:
+            yield self.source
 
     @property
     def display_name(self):

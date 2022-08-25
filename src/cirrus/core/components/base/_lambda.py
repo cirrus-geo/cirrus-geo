@@ -18,6 +18,7 @@ class Lambda(Component):
     definition = files.LambdaDefinition()
     # TODO: Readme should be required once we have one per task
     readme = files.Readme(optional=True)
+    user_extendable = False
 
     def load_config(self):
         super().load_config()

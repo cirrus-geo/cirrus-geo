@@ -11,6 +11,7 @@ class StepFunction(Component):
     definition = files.StepFunctionDefinition()
     # TODO: Readme should be required once we have one per task
     readme = files.Readme(optional=True)
+    user_extendable = False
 
     def load_config(self):
         super().load_config()
