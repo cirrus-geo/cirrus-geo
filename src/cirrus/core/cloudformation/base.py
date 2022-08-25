@@ -16,6 +16,8 @@ from cirrus.core.group_meta import GroupMeta
 
 logger = logging.getLogger(__name__)
 
+BUILT_IN = 'built-in'
+
 
 class CFObjectMeta(GroupMeta):
     # All concrete subclasses are added to this dict
@@ -63,7 +65,7 @@ class CFObjectMeta(GroupMeta):
 
     def __new__(cls, name, bases, attrs, **kwargs):
         if 'user_extendable' not in attrs:
-            attrs['user_extendable'] = True
+            attrs['user_extendable'] = False
 
         abstract = attrs.get('abstract', False)
 
@@ -109,7 +111,7 @@ class CFObjectMeta(GroupMeta):
         path,
         top_level_key,
         objects,
-        is_builtin,
+        source: str=None,
         parent_component=None,
     ):
         project = parent_component.project if parent_component else self.project
@@ -120,7 +122,7 @@ class CFObjectMeta(GroupMeta):
                     name,
                     definition,
                     path,
-                    is_builtin=is_builtin,
+                    source=source,
                     parent_component=parent_component,
                     project=project,
                 )
@@ -133,7 +135,7 @@ class CFObjectMeta(GroupMeta):
                     e,
                 )
 
-    def from_file(self, path: Path):
+    def from_file(self, path: Path, source: str=None):
         # only process files
         if not path.is_file():
             return
@@ -144,10 +146,6 @@ class CFObjectMeta(GroupMeta):
 
         # parse a yml cf file
         cf = NamedYamlable.from_file(path)
-        is_builtin = (
-            path.parent.samefile(self.core_dir)
-            if path and self.core_dir.is_dir() else False
-        )
 
         # iterate through and instantiate all cf objects
         for top_level_key, cf_objects in cf.items():
@@ -155,20 +153,14 @@ class CFObjectMeta(GroupMeta):
                 path,
                 top_level_key,
                 cf_objects,
-                is_builtin,
+                source=source,
             )
 
-    def _find(self, search_dirs=None):
-        if search_dirs is None:
-            search_dirs = []
-
-        if self.core_dir.is_dir():
-            search_dirs = [self.core_dir] + search_dirs
-
-        for d in search_dirs:
-            for yml in sorted(d.glob('*.yml')):
+    def _find(self):
+        def search_dir(path, source=None):
+            for yml in sorted(path.glob('*.yml')):
                 try:
-                    yield from self.from_file(yml)
+                    yield from self.from_file(yml, source=source)
                 except ValueError as e:
                     logger.warning (
                         "Unable to load cloudformation file '%s': "
@@ -176,13 +168,22 @@ class CFObjectMeta(GroupMeta):
                         misc.relative_to_cwd(yml),
                     )
 
+        if self.core_dir.is_dir():
+            yield from search_dir(self.core_dir, source=BUILT_IN)
+
+        for source, _dir in self.resource_plugins.items():
+            yield from search_dir(_dir, source=source)
+
+        if self.user_dir and self.user_dir.is_dir():
+            yield from search_dir(self.user_dir)
+
     def find(self):
         self._elements = {tlk: {} for tlk in self.cf_types.keys()}
 
         def cf_finder():
             # order here matters, later takes precedence
             # so we prefer objects defined on tasks
-            yield from self._find(search_dirs=self.get_search_dirs())
+            yield from self._find()
             yield from chain.from_iterable(filter(bool, map(
                 lambda task:
                     task.batch_cloudformation
@@ -211,7 +212,6 @@ class CFObjectMeta(GroupMeta):
             if dest.exists():
                 continue
             shutil.copyfile(template, dest)
-
 
     def add_show_command(self, show_cmd):
         @show_cmd.command(
@@ -309,7 +309,7 @@ class BaseCFObject(metaclass=CFObjectMeta):
         path: Path=None,
         project=None,
         parent_component=None,
-        is_builtin=False,
+        source: str=None,
     ) -> None:
         self.name = name
         self.definition = definition
@@ -317,20 +317,21 @@ class BaseCFObject(metaclass=CFObjectMeta):
         self.resource_type = definition.get('Type', None)
         self.project = project
         self.parent_component = parent_component
-        self.is_builtin = is_builtin
+
+        self.source = source
+        if self.parent_component:
+            parent_source = (
+                f' [{self.parent_component.source}]'
+                if self.parent_component.source
+                else ''
+            )
+            self.source = f'task {self.parent_component.name}{parent_source}'
+
+        self.is_builtin = self.source == BUILT_IN
 
     @property
     def display_source(self):
-        if self.parent_component:
-            built_in = (
-                'built-in '
-                if self.parent_component.is_core_component
-                else ''
-            )
-            return f'from {built_in}task {self.parent_component.name}'
-        elif self.is_builtin:
-            return 'built-in'
-        return misc.relative_to_cwd(self.path)
+        return self.source if self.source else misc.relative_to_cwd(self.path)
 
     def make_display_name(self, show_type=True):
         show_type = show_type and self.resource_type
@@ -376,4 +377,5 @@ class CloudFormation(metaclass=CFObjectMeta):
     abstract = True
     group_name = 'cloudformation'
     group_display_name = 'CloudFormation'
-    cmd_aliases=['cf']
+    cmd_aliases = ['cf']
+    user_extendable = True

@@ -97,7 +97,7 @@ class Config(NamedYamlable):
             )
             return
 
-        if lambda_component.name in self.functions and not lambda_component.is_core_component:
+        if lambda_component.name in self.functions and not lambda_component.is_builtin:
             logging.warning(
                 "Duplicate lambda declaration: '%s', skipping",
                 lambda_component.display_name,
@@ -117,7 +117,7 @@ class Config(NamedYamlable):
                 sf_component.display_name,
             )
             return
-        if sf_component.name in self.stepFunctions.stateMachines and not sf_component.is_core_component:
+        if sf_component.name in self.stepFunctions.stateMachines and not sf_component.is_builtin:
             logging.warning(
                 f"Duplicate step function declaration '{sf_component.display_name}', skipping",
             )

@@ -3,11 +3,25 @@ import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import MutableMapping
 from pathlib import Path
+from pkg_resources import iter_entry_points
 
 import cirrus.builtins
 
 
 logger = logging.getLogger(__name__)
+
+
+def resource_plugins(resource_type):
+    plugins = {}
+    for entrypoint in iter_entry_points('cirrus.resources'):
+        plugin_path = Path(entrypoint.resolve().__file__).parent.joinpath(resource_type)
+
+        if not plugin_path.is_dir():
+            continue
+
+        plugins[entrypoint.name] = plugin_path
+
+    return plugins
 
 
 class GroupMeta(MutableMapping, ABCMeta):
@@ -24,13 +38,21 @@ class GroupMeta(MutableMapping, ABCMeta):
         if 'cmd_aliases' not in attrs:
             attrs['cmd_aliases'] = []
 
-        if not attrs.get('user_extendable', False):
+        attrs['user_extendable'] = attrs.get('user_extendable', False)
+
+        if not attrs['user_extendable']:
             attrs['user_dir_name'] = None
         elif 'user_dir_name' not in attrs or attrs['user_dir_name'] is None:
             attrs['user_dir_name'] = attrs['group_name']
 
         attrs['core_dir'] = Path(cirrus.builtins.__file__).parent.joinpath(
             attrs['group_name']
+        )
+
+        attrs['resource_plugins'] = (
+            resource_plugins(attrs['group_name'])
+            if attrs['user_extendable']
+            else {}
         )
 
         attrs['_elements'] = None
@@ -62,17 +84,10 @@ class GroupMeta(MutableMapping, ABCMeta):
             return None
         if self.project is None or self.project.path is None:
             logger.warning(
-                f'No cirrus project specified; limited to built-in {self.group_display_name}.',
+                f'No cirrus project specified; limited to {self.group_display_name} built-in and from plugins.',
             )
             return None
         return self.project.path.joinpath(self.user_dir_name)
-
-    def get_search_dirs(self):
-        user_dir = self.user_dir
-        if user_dir and user_dir.is_dir():
-            return [self.user_dir]
-        else:
-            return None
 
     @abstractmethod
     def find(self):

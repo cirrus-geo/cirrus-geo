@@ -26,7 +26,6 @@ class Task(Lambda):
                 self.definition.path,
                 top_level_key,
                 cf_items,
-                is_builtin=self.is_core_component,
                 parent_component=self,
             )
         ]
