@@ -46,10 +46,6 @@ class GroupMeta(MutableMapping, ABCMeta):
         elif 'user_dir_name' not in attrs or attrs['user_dir_name'] is None:
             attrs['user_dir_name'] = attrs['group_name']
 
-        attrs['core_dir'] = Path(cirrus.builtins.__file__).parent.joinpath(
-            attrs['group_name']
-        )
-
         attrs['_plugins'] = None
         attrs['_elements'] = None
         attrs['project'] = None
