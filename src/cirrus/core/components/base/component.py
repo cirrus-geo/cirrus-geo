@@ -70,8 +70,8 @@ class ComponentMeta(GroupMeta):
         if self.core_dir.is_dir():
             yield from self.from_dir(self.core_dir, name=name, source='built-in')
 
-        for source, _dir in self.resource_plugins.items():
-            yield from self.from_dir(_dir, name=name, source=source)
+        for plugin_name, plugin_dir in self.plugins.items():
+            yield from self.from_dir(plugin_dir, name=name, source=plugin_name)
 
         if self.user_dir and self.user_dir.is_dir():
             yield from self.from_dir(self.user_dir, name=name)

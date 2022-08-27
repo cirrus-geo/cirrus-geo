@@ -2,20 +2,22 @@ import sys
 import click
 
 from pathlib import Path
-from pkg_resources import iter_entry_points
 
-from cirrus.cli import constants
-from cirrus.core.project import Project
+# import logging first, so it does configure
 from cirrus.cli.utils import (
     logging,
     click as utils_click,
 )
 
+from cirrus.cli import constants
+from cirrus.core.project import Project
+from cirrus.core.utils import plugins as plugin_utils
+
 
 logger = logging.getLogger(__name__)
 
 
-@utils_click.plugin_entrypoint('cirrus.commands')
+@utils_click.plugin_entrypoint(plugin_utils.COMMANDS_GROUP)
 @click.group(
     name=constants.PROG,
     help=constants.DESC,
@@ -151,7 +153,7 @@ def plugins():
     except ImportError:
         import importlib_metadata as _metadata
 
-    for entry_point in iter_entry_points('cirrus.plugins'):
+    for entry_point in plugin_utils.iter_plugins():
         color = 'blue'
         name = entry_point.name
 

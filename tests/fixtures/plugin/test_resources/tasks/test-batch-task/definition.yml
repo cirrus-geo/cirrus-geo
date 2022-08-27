@@ -1,0 +1,55 @@
+description: Does nothing of note
+environment:
+  GDAL_DATA: /opt/share/gdal
+  PROJ_LIB: /opt/share/proj
+batch:
+  resources:
+    Resources:
+      TestPluginTaskAsBatchJob:
+        Type: "AWS::Batch::JobDefinition"
+        Properties:
+          JobDefinitionName: '#{AWS::StackName}-test-plugin-task-as-batch'
+          Type: Container
+          Parameters:
+            url: ""
+          ContainerProperties:
+            Command:
+              - run
+              - test-plugin-task
+              - Ref::url
+            Memory: 12000
+            Vcpus: 1
+            Image: 'cirrusgeo/run-geolambda:0.2.1'
+          RetryStrategy:
+            Attempts: 1
+      TestPluginTaskComputeEnvironment:
+        Type: AWS::Batch::ComputeEnvironment
+        Properties:
+          Type: MANAGED
+          ServiceRole:
+            Fn::GetAtt: [ BatchServiceRole, Arn ]
+          ComputeResources:
+            MaxvCpus: 1000
+            SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+            Subnets: ${self:custom.batch.Subnets}
+            InstanceTypes:
+              - optimal
+            Type: SPOT
+            AllocationStrategy: BEST_FIT_PROGRESSIVE
+            SpotIamFleetRole:
+              Fn::GetAtt: [ EC2SpotRole, Arn ]
+            MinvCpus: 0
+            InstanceRole:
+              Fn::GetAtt: [ BatchInstanceProfile, Arn ]
+            Tags: {"Name": "Batch Instance - #{AWS::StackName}"}
+            DesiredvCpus: 0
+          State: ENABLED
+      TestPluginTaskJobQueue:
+        Type: AWS::Batch::JobQueue
+        Properties:
+          ComputeEnvironmentOrder:
+            - Order: 1
+              ComputeEnvironment: !Ref TestPluginTaskComputeEnvironment
+          State: ENABLED
+          Priority: 1
+          JobQueueName: '#{AWS::StackName}-test-plugin-task-jq'

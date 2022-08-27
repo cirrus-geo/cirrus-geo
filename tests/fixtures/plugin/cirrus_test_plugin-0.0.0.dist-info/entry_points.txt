@@ -1,0 +1,6 @@
+
+        [cirrus.plugins]
+        cirrus-test-plugin=test_resources
+        [cirrus.resources]
+        cirrus-test-plugin=test_resources
+

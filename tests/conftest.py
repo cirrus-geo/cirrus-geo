@@ -1,19 +1,16 @@
 import os
 import shutil
-import tempfile
 
 import pytest
 
-from pathlib import Path
-
 from cirrus.core.project import Project
 
+from . import plugin_testing
 
-@pytest.fixture(scope='module')
-def fixture_data(pytestconfig):
-    fdir = pytestconfig.rootpath.joinpath('tests', 'fixture_data')
-    fdir.mkdir(exist_ok=True)
-    return fdir
+
+@pytest.fixture(scope='session')
+def fixtures(pytestconfig):
+    return  pytestconfig.rootpath.joinpath('tests', 'fixtures')
 
 
 @pytest.fixture(scope='module')
@@ -31,3 +28,11 @@ def project_testdir(pytestconfig):
 @pytest.fixture
 def project():
     return Project.resolve(strict=True)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def test_plugin(fixtures):
+    dist = fixtures.joinpath('plugin', 'cirrus_test_plugin-0.0.0.dist-info')
+    plugin_testing.add_plugin_finder(dist)
+    yield
+    plugin_testing.remove_plugin_finder(dist)

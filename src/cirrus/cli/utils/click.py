@@ -3,9 +3,8 @@ import click_plugins
 import sys
 import logging
 
-from pkg_resources import iter_entry_points
-
 from cirrus.core.project import Project
+from cirrus.core.utils import plugins
 
 
 logger = logging.getLogger(__name__)
@@ -131,5 +130,7 @@ class AliasedShortMatchGroup(click.Group):
 
 def plugin_entrypoint(entrypoint_name: str):
     def decorator(group):
-        return click_plugins.with_plugins(iter_entry_points(entrypoint_name))(group)
+        return click_plugins.with_plugins(
+            plugins.iter_entry_points(entrypoint_name)
+        )(group)
     return decorator
