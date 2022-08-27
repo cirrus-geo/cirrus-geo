@@ -6,6 +6,7 @@ from typing import Type, TypeVar
 from pathlib import Path
 
 from ..files import ComponentFile, BaseDefinition
+from cirrus.core.constants import BUILT_IN
 from cirrus.core.exceptions import ComponentError
 from cirrus.core.utils.yaml import NamedYamlable
 from cirrus.core.utils import misc
@@ -15,8 +16,6 @@ from cirrus.core.group_meta import GroupMeta
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T', bound='Component')
-
-BUILT_IN = 'built-in'
 
 
 class ComponentMeta(GroupMeta):
@@ -67,9 +66,6 @@ class ComponentMeta(GroupMeta):
                 continue
 
     def _find(self, name: str=None) -> Type[T]:
-        if self.core_dir.is_dir():
-            yield from self.from_dir(self.core_dir, name=name, source='built-in')
-
         for plugin_name, plugin_dir in self.plugins.items():
             yield from self.from_dir(plugin_dir, name=name, source=plugin_name)
 

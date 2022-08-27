@@ -14,3 +14,5 @@ SERVERLESS_PLUGINS = {
     'serverless-step-functions': '~3.7.0',
     'serverless-iam-roles-per-function': '~3.2.0',
   }
+
+BUILT_IN = 'built-in'

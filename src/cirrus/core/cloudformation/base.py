@@ -168,9 +168,6 @@ class CFObjectMeta(GroupMeta):
                         misc.relative_to_cwd(yml),
                     )
 
-        if self.core_dir.is_dir():
-            yield from search_dir(self.core_dir, source=BUILT_IN)
-
         for plugin_name, plugin_dir in self.plugins.items():
             yield from search_dir(plugin_dir, source=plugin_name)
 

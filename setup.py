@@ -89,5 +89,7 @@ setup(
     entry_points='''
         [console_scripts]
         cirrus=cirrus.cli.__main__:main
+        [cirrus.resources]
+        built-in=cirrus.builtins
     ''',
 )
