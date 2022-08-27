@@ -3,9 +3,10 @@ import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import MutableMapping
 from pathlib import Path
-from pkg_resources import iter_entry_points
 
 import cirrus.builtins
+
+from cirrus.core.utils.plugins import iter_resources
 
 
 logger = logging.getLogger(__name__)
@@ -13,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 def resource_plugins(resource_type):
     plugins = {}
-    for entrypoint in iter_entry_points('cirrus.resources'):
-        plugin_path = Path(entrypoint.resolve().__file__).parent.joinpath(resource_type)
+    for entrypoint in iter_resources():
+        plugin_path = Path(entrypoint.load().__path__[0]).joinpath(resource_type)
 
         if not plugin_path.is_dir():
             continue
@@ -49,12 +50,7 @@ class GroupMeta(MutableMapping, ABCMeta):
             attrs['group_name']
         )
 
-        attrs['resource_plugins'] = (
-            resource_plugins(attrs['group_name'])
-            if attrs['user_extendable']
-            else {}
-        )
-
+        attrs['_plugins'] = None
         attrs['_elements'] = None
         attrs['project'] = None
         attrs['parent'] = None
@@ -71,6 +67,16 @@ class GroupMeta(MutableMapping, ABCMeta):
 
     def __hash__(self):
         return hash(self.group_name)
+
+    @property
+    def plugins(self):
+        if self._plugins is None:
+            self._plugins = (
+                resource_plugins(self.group_name)
+                if self.user_extendable
+                else {}
+            )
+        return self._plugins
 
     @property
     def elements(self):

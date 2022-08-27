@@ -1122,6 +1122,102 @@ resources:
           Fn::Sub: com.amazonaws.${AWS::Region}.dynamodb
         VpcId:
           Ref: pubPrivateVPC
+    TestPluginTaskAsBatchJob:
+      Type: AWS::Batch::JobDefinition
+      Properties:
+        JobDefinitionName:
+          Fn::Sub: ${AWS::StackName}-test-plugin-task-as-batch
+        Type: Container
+        Parameters:
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - test-plugin-task
+            - Ref::url
+          Memory: 12000
+          Vcpus: 1
+          Image: cirrusgeo/run-geolambda:0.2.1
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: DEBUG
+            - Name: CIRRUS_DATA_BUCKET
+              Value:
+                Ref: Data
+            - Name: CIRRUS_PAYLOAD_BUCKET
+              Value:
+                Ref: Payloads
+            - Name: CIRRUS_STATE_DB
+              Value:
+                Ref: StateTable
+            - Name: CIRRUS_STACK
+              Value:
+                Fn::Sub: ${AWS::StackName}
+            - Name: CIRRUS_PROCESS_TOPIC_ARN
+              Value:
+                Ref: ProcessTopic
+            - Name: CIRRUS_PUBLISH_TOPIC_ARN
+              Value:
+                Ref: PublishTopic
+            - Name: CIRRUS_FAILED_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: CIRRUS_INVALID_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: GDAL_DATA
+              Value: /opt/share/gdal
+            - Name: PROJ_LIB
+              Value: /opt/share/proj
+            - Name: AWS_DEFAULT_REGION
+              Value:
+                Fn::Sub: ${AWS::Region}
+            - Name: AWS_REGION
+              Value:
+                Fn::Sub: ${AWS::Region}
+        RetryStrategy:
+          Attempts: 1
+    TestPluginTaskComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeResources:
+          MaxvCpus: 1000
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: SPOT
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          SpotIamFleetRole:
+            Fn::GetAtt:
+              - EC2SpotRole
+              - Arn
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name:
+              Fn::Sub: Batch Instance - ${AWS::StackName}
+          DesiredvCpus: 0
+        State: ENABLED
+    TestPluginTaskJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: TestPluginTaskComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName:
+          Fn::Sub: ${AWS::StackName}-test-plugin-task-jq
   Outputs:
     CirrusQueueSnsArn:
       Value:

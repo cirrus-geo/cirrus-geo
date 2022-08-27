@@ -62,8 +62,8 @@ def build_dir(project_testdir):
 
 
 @pytest.fixture
-def reference_build(fixture_data, build_dir):
-    reference = fixture_data.joinpath('build')
+def reference_build(fixtures, build_dir):
+    reference = fixtures.joinpath('build')
     has_ref = reference.is_dir()
     # pass ref dir to test if we have one
     yield reference if has_ref else None
@@ -165,12 +165,17 @@ def test_create(createable, project_testdir, invoke, project):
 @pytest.mark.parametrize('group', [c.group_name for c in groups])
 def test_show_list(group, invoke):
     result = invoke(f'show {group}')
+    print(result.stdout)
+    print(result.stderr)
     assert result.exit_code == 0
     assert len(result.stdout) > 0
 
 
 def test_show_plugins(invoke):
     result = invoke(f'show plugins')
+    print(result.stdout)
+    print(result.stderr)
+    assert('cirrus-test-plugin' in result.stdout)
     assert result.exit_code == 0
 
 

@@ -171,8 +171,8 @@ class CFObjectMeta(GroupMeta):
         if self.core_dir.is_dir():
             yield from search_dir(self.core_dir, source=BUILT_IN)
 
-        for source, _dir in self.resource_plugins.items():
-            yield from search_dir(_dir, source=source)
+        for plugin_name, plugin_dir in self.plugins.items():
+            yield from search_dir(plugin_dir, source=plugin_name)
 
         if self.user_dir and self.user_dir.is_dir():
             yield from search_dir(self.user_dir)
