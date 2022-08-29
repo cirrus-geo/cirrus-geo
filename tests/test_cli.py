@@ -142,6 +142,27 @@ def test_build(invoke, project, reference_build, build_dir):
         assert not (missing or added or changed)
 
 
+def test_build_duplicated_requirements(invoke, project, project_testdir):
+    task_name = 'task-duplicate-reqs'
+    task_dir = project_testdir.joinpath('tasks', task_name)
+    task_dir.mkdir()
+    defn = task_dir.joinpath('definition.yml').write_text('''description: test task
+lambda:
+  handler: lambda_function.lambda_handler
+  pythonRequirements:
+    include:
+      - some-package==1.0.0
+      - some-package==2.0.0
+''')
+    task_dir.joinpath('lambda_function.py').touch()
+    result = invoke('build')
+    print(result.stdout)
+    print(result.stderr)
+    print(result.exc_info)
+    assert result.exit_code == 1
+    assert(result.stderr.startswith('ERROR: Duplicated requirement'))
+
+
 def test_clean(invoke, project, build_dir):
     assert len(list(build_dir.iterdir())) > 0
     result = invoke('clean')
