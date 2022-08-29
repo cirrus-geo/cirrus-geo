@@ -54,6 +54,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     create a unique role per batch task based on the `BatchJobRole`.
   - When using `BatchJobRole` or a custom role per batch task, ensure it is specified
     on the job definition as the `ContainerProperties` `JobRoleArn`.
+- The cli command to create new tasks now uses `-t`/`--type` to specify the task type,
+  instead of `--has-batch`/`--no-batch` and `--has-lambda`/`--no-lambda`. `-t`/`--type`
+  has no default value and is required. It can be specified multiple times in the case
+  of a task that uses both batch and lambda. ([#123])
 
 ### Added
 
@@ -76,6 +80,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - cirrus.yml default template now has missing provider vpc configuration ([#132])
 - `sls`/`serverless` command returns non-0 on errors ([#134])
 - `update-state` lambda supports payload URLs ([#135])
+- omit lambda block from batch-only task `definition.yml` on create ([#123])
 
 ### Removed
 
@@ -446,6 +451,7 @@ Initial release
 [#111]: https://github.com/cirrus-geo/cirrus-geo/issues/111
 [#114]: https://github.com/cirrus-geo/cirrus-geo/issues/114
 [#116]: https://github.com/cirrus-geo/cirrus-geo/issues/116
+[#123]: https://github.com/cirrus-geo/cirrus-geo/issues/123
 [#131]: https://github.com/cirrus-geo/cirrus-geo/issues/131
 [#132]: https://github.com/cirrus-geo/cirrus-geo/issues/132
 [#135]: https://github.com/cirrus-geo/cirrus-geo/issues/135

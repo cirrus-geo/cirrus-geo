@@ -173,12 +173,36 @@ def test_clean(invoke, project, build_dir):
 @pytest.mark.parametrize(
     'createable',
     [c.type for c in groups.extendable_groups
-     if hasattr(c, 'add_create_command')],
+     if hasattr(c, 'add_create_command') and c.type != 'task'],
 )
 def test_create(createable, project_testdir, invoke, project):
-    result = invoke(f'create {createable} test_{createable} description')
+    result = invoke(f'create {createable} test-{createable} description')
     assert result.exit_code == 0
-    result = invoke(f'show {createable} test_{createable}')
+    result = invoke(f'show {createable} test-{createable}')
+    assert result.exit_code == 0
+    assert len(result.stdout) > 0
+
+
+def test_create_task_lambda(project_testdir, invoke, project):
+    result = invoke(f'create task -t lambda test-lambda description')
+    assert result.exit_code == 0
+    result = invoke(f'show task test-lambda')
+    assert result.exit_code == 0
+    assert len(result.stdout) > 0
+
+
+def test_create_task_batch(project_testdir, invoke, project):
+    result = invoke(f'create task --type batch test-batch description')
+    assert result.exit_code == 0
+    result = invoke(f'show task test-batch')
+    assert result.exit_code == 0
+    assert len(result.stdout) > 0
+
+
+def test_create_task_batch_lambda(project_testdir, invoke, project):
+    result = invoke(f'create task -t lambda -t batch test-batch-lambda description')
+    assert result.exit_code == 0
+    result = invoke(f'show task test-batch-lambda')
     assert result.exit_code == 0
     assert len(result.stdout) > 0
 
