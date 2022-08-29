@@ -4,9 +4,11 @@ import textwrap
 import copy
 
 from pathlib import Path
+from pkg_resources import Requirement
 
-from .. import files
-from .component import Component
+from cirrus.core.exceptions import DuplicateRequirement
+from cirrus.core.components import files
+from cirrus.core.components.base import Component
 from cirrus.core.utils.yaml import NamedYamlable
 
 
@@ -53,9 +55,8 @@ class Lambda(Component):
 
         if not hasattr(self.lambda_config, 'pythonRequirements'):
             self.lambda_config.pythonRequirements = {}
-        # note the set to deduplicate requirements
-        # TODO: multiple versions of the same requirement
-        # will not be deduplicated
+        # note the set to deduplicate requirements but that different
+        # versions/pinning for the same package will not be deduplicated
         self.lambda_config.pythonRequirements['include'] = sorted(list({
             req for req in
             # list of all requirements specified in lambda config
@@ -120,12 +121,27 @@ class Lambda(Component):
             else:
                 shutil.copyfile(_file, outdir.joinpath(_file.name))
 
-        outdir.joinpath('requirements.txt').write_text(
-            ''.join(
-                [f'{req}\n' for req in
-                 self.lambda_config.pythonRequirements.get('include', [])],
-            ),
-        )
+        requirements = self.lambda_config.pythonRequirements.get('include', [])
+        requirements_str = '\n'.join(requirements)
+
+        # if we have multiple versions specified for the same requirement
+        # we want to throw a meaningful error, so we parse them all here
+        # and check for dups
+        req_names = set()
+        for req in requirements:
+            req = Requirement.parse(req)
+            if req.name in req_names:
+                raise DuplicateRequirement(
+                    f"ERROR: Duplicated requirement for {self.type} '{self.name}', package '{req.name}'.\n\n"
+                    'At this time cirrus does not support verison conflict resolution.\n'
+                    'Please review the requirements keeping in mind those for cirrus-lib.\n'
+                    'See https://github.com/cirrus-geo/cirrus-geo/issues/106 for context.\n\n'
+                    f'Full requirements list:\n{requirements_str}'
+                )
+            else:
+                req_names.add(req.name)
+
+        outdir.joinpath('requirements.txt').write_text(requirements_str + '\n')
 
     def clean_outdir(self, outdir: Path):
         import shutil

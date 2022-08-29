@@ -26,7 +26,7 @@ def project_testdir(pytestconfig):
 
 
 @pytest.fixture
-def project():
+def project(project_testdir):
     return Project.resolve(strict=True)
 
 

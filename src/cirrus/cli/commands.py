@@ -10,6 +10,7 @@ from cirrus.cli.utils import (
 )
 
 from cirrus.cli import constants
+from cirrus.core import exceptions
 from cirrus.core.project import Project
 from cirrus.core.utils import plugins as plugin_utils
 
@@ -86,7 +87,11 @@ def build(project):
     '''
     Build the cirrus configuration into a serverless.yml.
     '''
-    project.build()
+    try:
+        project.build()
+    except exceptions.NoTraceBack as e:
+        logger.error(e)
+        sys.exit(1)
 
 
 @cli.command()
