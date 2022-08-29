@@ -128,7 +128,7 @@ mirror-with-preview (built-in): Mirror items with selected assets
 publish-only (built-in): Simple example that just published input Collections and items
 
 # To create a new task, for example, we can do this
-❯ cirrus create task a_task "A task that doesn't do much yet"
+❯ cirrus create task -t lambda a_task "A task that doesn't do much yet"
 task a_task created
 
 ❯ cirrus show tasks

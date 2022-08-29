@@ -55,17 +55,20 @@ class Task(Lambda):
     @classmethod
     def extra_create_args(cls):
         def wrapper(func):
-            return click.option('--has-batch/--no-batch', default=False)(
-                click.option('--has-lambda/--no-lambda', default=True)(
-                    func,
-                ),
-            )
+            return click.option(
+                '-t',
+                '--type',
+                'task_types',
+                type=click.Choice(['batch', 'lambda']),
+                multiple=True,
+                required=True,
+            )(func)
         return wrapper
 
     @classmethod
-    def create(cls, name: str, description: str, has_batch: bool, has_lambda: bool):
+    def create(cls, name: str, description: str, task_types):
         new = cls._create_init(name, description)
-        new.lambda_enabled = has_lambda
-        new.batch_enabled = has_batch
+        new.batch_enabled = 'batch' in task_types
+        new.lambda_enabled = 'lambda' in task_types
         new._create_do()
         return new
