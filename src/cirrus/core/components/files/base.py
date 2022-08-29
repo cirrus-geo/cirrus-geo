@@ -1,3 +1,4 @@
+import sys
 import copy
 import logging
 
@@ -86,4 +87,7 @@ class ComponentFile:
         path.write_text(self.content_fn(parent_component))
 
     def show(self):
-        self.console.print_escaped(self.content)
+        if sys.stdout.isatty():
+            self.console.print_escaped(self.content)
+        else:
+            print(self.content)
