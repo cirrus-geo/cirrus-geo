@@ -126,6 +126,9 @@ class GroupMeta(MutableMapping, ABCMeta):
     def values(self):
         return self.elements.values()
 
+    def get(self, *args, **kwargs):
+        return self.elements.get(*args, **kwargs)
+
     def __iter__(self):
         return iter(self.elements.values())
 

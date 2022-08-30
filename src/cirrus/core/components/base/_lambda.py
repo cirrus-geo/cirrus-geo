@@ -175,3 +175,16 @@ class Lambda(Component):
                 shutil.rmtree(_file)
             else:
                 _file.unlink()
+
+    def import_handler(self):
+        from cirrus.core.utils.misc import import_path
+
+        if not hasattr(self.lambda_config, 'handler'):
+            raise Exception(f"{self.type} '{self.name}' does not have 'handler' defined")
+
+        handler_parts = self.lambda_config.handler.split('.')
+        name = '.'.join(handler_parts[:-1])
+        path = self.path.joinpath(*handler_parts[:-1]).with_suffix('.py')
+
+        module = import_path(name, path)
+        return getattr(module, handler_parts[-1])
