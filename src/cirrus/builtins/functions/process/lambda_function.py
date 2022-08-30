@@ -1,65 +1,80 @@
 import json
-import os
 
+from cirrus.lib.errors import NoUrlError
 from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
-from cirrus.lib.utils import dict_merge
-from cirrus.lib.logging import get_task_logger
+from cirrus.lib import utils
+from cirrus.lib.logging import get_task_logger, defer
 
-logger = get_task_logger('lambda_function.process', payload=tuple())
 
-# Default PROCESSES
-# TODO: put this configuration into the cirrus.yml
-with open(os.path.join(os.path.dirname(__file__), 'processes.json')) as f:
-    PROCESSES = json.loads(f.read())
+logger = get_task_logger('function.process', payload=tuple())
 
 
 def lambda_handler(event, context):
     logger.debug(json.dumps(event))
 
-    # Read SQS event
-    if 'Records' not in event:
-        raise ValueError("Input not from SQS")
-
-    # TODO: a large number of input collections will cause a timeout
-    # find a way to process each input message, deleting it from the queue
-    # any not processed before timeout will be retried on the next execution
     payloads = []
-    for record in [json.loads(r['body']) for r in event['Records']]:
-        payload = json.loads(record['Message'])
-        logger.debug('payload: %s', json.dumps(payload))
-        # expand payload_ids to full payloads
-        if 'payload_ids' in payload:
-            _payloads = ProcessPayloads.from_payload_ids(payload['payload_ids'])
-            if 'process_update' in payload:
-                logger.debug(
-                    "Process update: %s",
-                    json.dumps(payload['process_update']),
-                )
-                for c in _payloads:
-                    c['process'] = dict_merge(
-                        c['process'],
-                        payload['process_update'],
-                    )
-            ProcessPayloads(_payloads).process(replace=True)
-        elif payload.get('type', '') == 'Feature':
-            # If Item, create ProcessPayload and
-            # use default process for that collection
-            if payload['collection'] not in PROCESSES.keys():
-                raise ValueError(
-                    "Default process not provided for "
-                    f"collection {payload['collection']}",
-                )
-            payload_json = {
-                'type': 'FeatureCollection',
-                'features': [payload],
-                'process': PROCESSES[payload['collection']]
-            }
-            payloads.append(ProcessPayload(payload_json, update=True))
-        else:
-            payloads.append(ProcessPayload(payload, update=True))
+    failures = []
+    messages = {}
+    for message in utils.normalize_event(event):
+        is_sqs_message = (
+            True
+            if 'eventSource' in message and message['eventSource'] == 'aws:sqs'
+            else False
+        )
+
+        try:
+            payload = utils.extract_record(message)
+        except Exception as e:
+            logger.exception('Failed to extract record: %s', json.dumps(message))
+            if is_sqs_message:
+                failures.append(message)
+
+        # if the payload has a URL in it then we'll fetch it from S3
+        try:
+            payload = utils.payload_from_s3(payload)
+        except NoUrlError:
+            pass
+
+        logger.debug('payload: %s', defer(json.dumps, payload))
+
+        try:
+            payloads.append(ProcessPayload(payload))
+        except Exception:
+            logger.exception('Failed to convert to ProcessPayload: %s', json.dumps(payload))
+            if is_sqs_message:
+                failures.append(payload)
+
+        if is_sqs_message:
+            try:
+                messages[payload['id']].append(message)
+            except KeyError:
+                messages[payload['id']] = [message]
 
     if len(payloads) > 0:
-        _payloads = ProcessPayloads(payloads)
-        _payloads.process()
+        processed_ids = ProcessPayloads(payloads).process()
 
-    return len(payloads)
+    successful = [
+        message
+        for _id in processed_ids
+        for message in messages.pop(_id)
+    ]
+    failures += list(messages.values())
+
+    if failures:
+        # If we have partial failure, then we want to delete all
+        # successfully processed messages from the queue, so they
+        # won't be reprocessed again. We don't need to do this if
+        # we have no failures, as SQS will delete the messages for
+        # us if we exit successfully.
+        for message in successful:
+            try:
+                utils.delete_from_queue(message)
+            except Exception:
+                logger.exception(
+                    'Failed to delete message from queue: %s',
+                    json.dumps(message),
+                )
+
+        raise Exception('One or more payloads failed to process')
+
+    return len(processed_ids)
