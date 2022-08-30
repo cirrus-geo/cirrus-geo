@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Serverless versions through 3.x now supported. Minimum serverless of 2.3.0 is now
   required per pseudo parameters now being parsed within cirrus, rather than via the
-  `serverless-pseudo-parameters` plugin. ({#139])
+  `serverless-pseudo-parameters` plugin. ([#139])
 - All lambda component definitions need the `handler` populated if not already.
   Previously cirrus was defaulting `handler` to `lambda_function.lambda_handler`
   if it were omitted. Now the default lambda `definition.yml` includes
@@ -43,6 +43,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
               Prefix: payloads/
               Status: Enabled
   ```
+
+  Note that if a bucket _not part your existing cirrus project_ already exists with
+  the same name specified here, cloudformation will fail. Ensure you are only using
+  these default bucket names if your project was previously relying on these
+  built-in resources.
+
 - Batch IAM role best practices have changed, and some builtin roles have changed
   or been removed. See [#149] for additional context. In summary:
   - Do not specify the service role on batch compute environments. The builtin
@@ -61,10 +67,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- support for lambdas using container images ([#139])
+- experimental support for lambdas using container images ([#139])
 - `init` creates a minimal .gitignore in the project root ([#140])
 - `init` will now create cloudformation templates for the minimum set of resources
   not provided by builtins ([#147])
+- explicit error message when lambda package requirements have duplicates ([#106])
+- support for cirrus plugins providing components or cloudformation via the
+  `cirrus.resources` entry point ([#104])
 
 ### Changed
 
@@ -81,6 +90,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `sls`/`serverless` command returns non-0 on errors ([#134])
 - `update-state` lambda supports payload URLs ([#135])
 - omit lambda block from batch-only task `definition.yml` on create ([#123])
+- test payloads output to non-terminal FDs will not have lines broken by terminal width ([#145])
 
 ### Removed
 
@@ -446,6 +456,7 @@ Initial release
 [#99]: https://github.com/cirrus-geo/cirrus-geo/issues/99
 [#102]: https://github.com/cirrus-geo/cirrus-geo/issues/102
 [#105]: https://github.com/cirrus-geo/cirrus-geo/issues/105
+[#106]: https://github.com/cirrus-geo/cirrus-geo/issues/106
 [#107]: https://github.com/cirrus-geo/cirrus-geo/issues/107
 [#108]: https://github.com/cirrus-geo/cirrus-geo/issues/108
 [#111]: https://github.com/cirrus-geo/cirrus-geo/issues/111
@@ -458,6 +469,7 @@ Initial release
 [#134]: https://github.com/cirrus-geo/cirrus-geo/issues/134
 [#139]: https://github.com/cirrus-geo/cirrus-geo/issues/139
 [#140]: https://github.com/cirrus-geo/cirrus-geo/issues/140
+[#145]: https://github.com/cirrus-geo/cirrus-geo/issues/145
 [#147]: https://github.com/cirrus-geo/cirrus-geo/issues/147
 [#149]: https://github.com/cirrus-geo/cirrus-geo/issues/149
 
