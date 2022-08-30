@@ -10,7 +10,17 @@ RESOURCES_GROUP = 'cirrus.resources'
 
 
 def iter_entry_points(group_name):
-    yield from entry_points().get(group_name, [])
+    def sorter(ep):
+        # we want to ensure built-ins
+        # are always loaded first
+        if ep.name == 'built-in':
+            # null is the "lowest" char
+            return '\0'
+        return ep.name
+
+    eps = list(entry_points().get(group_name, []))
+    eps.sort(key=sorter)
+    yield from eps
 
 
 def iter_plugins():
