@@ -9,6 +9,14 @@ from cirrus.lib.logging import get_task_logger, defer
 logger = get_task_logger('function.process', payload=tuple())
 
 
+def is_sqs_message(message):
+    return (
+        True
+        if 'eventSource' in message and message['eventSource'] == 'aws:sqs'
+        else False
+    )
+
+
 def lambda_handler(event, context):
     logger.debug(json.dumps(event))
 
@@ -16,18 +24,12 @@ def lambda_handler(event, context):
     failures = []
     messages = {}
     for message in utils.normalize_event(event):
-        is_sqs_message = (
-            True
-            if 'eventSource' in message and message['eventSource'] == 'aws:sqs'
-            else False
-        )
 
         try:
             payload = utils.extract_record(message)
         except Exception as e:
             logger.exception('Failed to extract record: %s', json.dumps(message))
-            if is_sqs_message:
-                failures.append(message)
+            failures.append(message)
 
         # if the payload has a URL in it then we'll fetch it from S3
         try:
@@ -41,15 +43,15 @@ def lambda_handler(event, context):
             payloads.append(ProcessPayload(payload))
         except Exception:
             logger.exception('Failed to convert to ProcessPayload: %s', json.dumps(payload))
-            if is_sqs_message:
-                failures.append(payload)
+            failures.append(payload)
 
-        if is_sqs_message:
+        if is_sqs_message(message):
             try:
                 messages[payload['id']].append(message)
             except KeyError:
                 messages[payload['id']] = [message]
 
+    processed_ids = []
     if len(payloads) > 0:
         processed_ids = ProcessPayloads(payloads).process()
 
