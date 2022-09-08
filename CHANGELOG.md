@@ -65,6 +65,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   has no default value and is required. It can be specified multiple times in the case
   of a task that uses both batch and lambda. ([#123])
 
+### ⚠️ Deprecations
+
+- `ProcessPayload.process['output_options']` has been renamed to `'upload_options'` ([#128])`
+
 ### Added
 
 - experimental support for lambdas using container images ([#139])
@@ -463,6 +467,7 @@ Initial release
 [#114]: https://github.com/cirrus-geo/cirrus-geo/issues/114
 [#116]: https://github.com/cirrus-geo/cirrus-geo/issues/116
 [#123]: https://github.com/cirrus-geo/cirrus-geo/issues/123
+[#128]: https://github.com/cirrus-geo/cirrus-geo/issues/128
 [#131]: https://github.com/cirrus-geo/cirrus-geo/issues/131
 [#132]: https://github.com/cirrus-geo/cirrus-geo/issues/132
 [#135]: https://github.com/cirrus-geo/cirrus-geo/issues/135

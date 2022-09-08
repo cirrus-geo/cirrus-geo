@@ -11,9 +11,9 @@ Configuration parameters are passed in `payload['process']['tasks']['publish']`:
 | public    | bool     | Set ACL of STAC Item on s3 to `public-read` (Default: False) |
 | sns       | [string] | Additional SNS topic ARNs to publish to (Default: [])  |
 
-### Output Options
+### Upload Options
 
-The `publish` task also uses the following parameters supplied in `payload['process']['output_options']`:
+The `publish` task also uses the following parameters supplied in `payload['process']['upload_options']`:
 
 | Field         | Type     | Description |
 | ------------- | -------- | ----------- |

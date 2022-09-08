@@ -422,7 +422,7 @@
     "process": {
         "workflow": "publish-only",
         "replace": true,
-        "output_options": {
+        "upload_options": {
             "path_template": "${collection}/${year}/${month}/${id}",
             "collections": {
                 "test-collection": ".*"

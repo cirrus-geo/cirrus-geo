@@ -7,7 +7,7 @@ Process definition
 Workflow
 ^^^^^^^^
 
-output_options
+upload_options
 ^^^^^^^^^^^^^^
 
 Output collections
