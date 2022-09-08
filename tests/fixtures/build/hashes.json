@@ -36,7 +36,7 @@
         "size": 79
     },
     "lambdas/publish/README.md": {
-        "shasum": "df46c55ffe39c090c2790c4e47ff8bd6bea814c796cf4f6479e97afa25b4f0e7",
+        "shasum": "1f36411f2362f799081703a8f4f87adff1ceab0cfba232f985f1c17d24768e9a",
         "size": 826
     },
     "lambdas/publish/lambda_function.py": {

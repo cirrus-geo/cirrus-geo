@@ -129,7 +129,7 @@ Process Definition
    * - input_collections
      - string
      - An identifier representing the set of collections the input items belong to
-   * - output_options
+   * - upload_options
      - :ref:`payload-outputopts`
      - Parameters affecting the upload of item assets
    * - tasks
@@ -245,7 +245,7 @@ will be published. The first matching collection will be used.
 
 .. code-block:: json
 
-    "output_options": {
+    "upload_options": {
         "collections": {
             "sat-a-l1": "sa.*"
             "sat-b-l1": "sb.*"
