@@ -65,11 +65,23 @@ class Lambda(Component):
             + project_reqs
         }))
 
-        # if this is a non-container lambda that needs to be packaged
-        # by serverless, then we need to ensure the module points to the
-        # place in the build dir where we'll copy all the code
         if hasattr(self.lambda_config, 'handler'):
+            # this is a non-container lambda that needs to be packaged
+            # by serverless, then we need to ensure the module points to the
+            # place in the build dir where we'll copy all the code
             self.lambda_config.module = f'lambdas/{self.name}'
+        elif not hasattr(self.lambda_config, 'image'):
+            # this is also not a container lambda, which means it is likely
+            # a lambda that has not been updated to have an explicit handler
+            raise ValueError(
+                'Missing module parameter in lambda definiton.yml. '
+                'The handler parameter, which sets the module, is no longer defaulted. '
+                'You likely need to set it to be like:\n\n'
+                '    lambda:\n      handler: lambda_function.lambda_handler\n\n'
+                f'Offending {self.type}: {self.name}\n\n'
+                'See https://github.com/cirrus-geo/cirrus-geo/issues/139 for additional context.'
+            ) from None
+
 
     @property
     def enabled(self):
@@ -95,7 +107,9 @@ class Lambda(Component):
         return lc
 
     def get_outdir(self, project_build_dir: Path) -> Path:
-        return project_build_dir.joinpath(self.lambda_config.module) if self.lambda_enabled else None
+        if not self.lambda_enabled or not hasattr(self.lambda_config, 'module'):
+            return None
+        return project_build_dir.joinpath(self.lambda_config.module)
 
     def copy_to_outdir(self, outdir: Path) -> None:
         import shutil
