@@ -22,10 +22,34 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   ```
 
   Note that upgrading to serverless v3 changes the type of EventBridge Rules
-  resources. In testing we found that the existing `update-state` rule required
-  manual deletion to allow CloudFormation to apply the new stack with the new
-  resource of the same name.  That rule is named like
-  `<stackname>-update-state-rule-1`.
+  resources. In testing we found that the existing `update-state` rule needed
+  to be deleted by CloudFormation before adding the new rule. Manually
+  deleteing the existing rule before deployment was not sufficient, as
+  CloudFormation ended up removing the new rule after it was created.
+
+  In short, the simplest thing to do after upgrading serverless is to deploy
+  twice, once with `update-state` disabled and again with it re-enabled.
+
+  To disable it, it is easiest to run this from your project root:
+
+  ```
+  mkdir functions/update-state
+  echo "description: temporaily disabled" > functions/update-state/definition.yml
+  ```
+
+  Then, run the deploy as normal. Once that is complete, remove the
+  `update-state` override:
+
+  ```
+  rm -r functions/update-state
+  ```
+
+  Deploy again and `update-state` and its event should be re-created
+  successfully.
+
+  Note that state tracking/workflow chaining _will be broken_ between the first
+  deploy and the second. It is _strongly_ recommended to do this only when your
+  pipelines are not processing workflows.
 
 - All lambda component definitions need the `handler` populated if not already.
   Previously cirrus was defaulting `handler` to `lambda_function.lambda_handler`
