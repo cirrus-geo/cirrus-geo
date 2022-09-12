@@ -23,13 +23,6 @@ class ClickFormatter(logging.Formatter):
         if level in self.colors:
             msg = click.style('{}'.format(msg), **self.colors[level])
         return msg
-        if not record.exc_info:
-            level = record.levelname.lower()
-            msg = record.getMessage()
-            if level in self.colors:
-                msg = click.style('{}'.format(msg), **self.colors[level])
-            return msg
-        return super().format(self, record)
 
 
 class ClickHandler(logging.Handler):
