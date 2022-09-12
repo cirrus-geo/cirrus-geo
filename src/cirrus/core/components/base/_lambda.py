@@ -6,7 +6,7 @@ import copy
 from pathlib import Path
 from pkg_resources import Requirement
 
-from cirrus.core.exceptions import DuplicateRequirement
+from cirrus.core.exceptions import DuplicateRequirement, MissingHandler
 from cirrus.core.components import files
 from cirrus.core.components.base import Component
 from cirrus.core.utils.yaml import NamedYamlable
@@ -73,7 +73,7 @@ class Lambda(Component):
         elif not hasattr(self.lambda_config, 'image'):
             # this is also not a container lambda, which means it is likely
             # a lambda that has not been updated to have an explicit handler
-            raise ValueError(
+            raise MissingHandler(
                 'Missing module parameter in lambda definiton.yml. '
                 'The handler parameter, which sets the module, is no longer defaulted. '
                 'You likely need to set it to be like:\n\n'
