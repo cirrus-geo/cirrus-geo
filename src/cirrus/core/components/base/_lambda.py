@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class Lambda(Component):
-    handler = files.PythonHandler()
+    handler = files.PythonHandler(optional=True)
     definition = files.LambdaDefinition()
     # TODO: Readme should be required once we have one per task
     readme = files.Readme(optional=True)
@@ -31,7 +31,11 @@ class Lambda(Component):
         self.environment = self.config.get('environment', NamedYamlable())
 
         self.lambda_config = self.config.get('lambda', NamedYamlable())
-        self.lambda_enabled = self.lambda_config.pop('enabled', True) and self._enabled and bool(self.lambda_config)
+        self.lambda_enabled = (
+            bool(self.lambda_config)
+            and self.lambda_config.pop('enabled', True)
+            and self._enabled
+        )
         self.lambda_config.description = self.description
 
         project_reqs = []
@@ -70,7 +74,9 @@ class Lambda(Component):
             # by serverless, then we need to ensure the module points to the
             # place in the build dir where we'll copy all the code
             self.lambda_config.module = f'lambdas/{self.name}'
-        elif not hasattr(self.lambda_config, 'image'):
+            self.handler.path = Path(self.lambda_config.handler).with_suffix('.py')
+            self.handler.validate(required=self.lambda_enabled)
+        elif not hasattr(self.lambda_config, 'image') and self.enabled:
             # this is also not a container lambda, which means it is likely
             # a lambda that has not been updated to have an explicit handler
             raise MissingHandler(
