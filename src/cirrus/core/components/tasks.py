@@ -7,15 +7,8 @@ from cirrus.core.cloudformation import CFObject
 
 
 class Task(Lambda):
-    # handler is special on tasks, as it is not required if lambda is disabled
-    # we do a bit of extra validation for this in the load_config method
-    handler = files.PythonHandler(optional=True)
-
     def load_config(self):
         super().load_config()
-
-        if self.lambda_enabled:
-            self.handler.validate(required=True)
 
         batch = self.config.get('batch', {})
         self.batch_enabled = batch.get('enabled', True) and self._enabled and bool(batch)
