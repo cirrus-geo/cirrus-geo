@@ -18,11 +18,27 @@ from cirrus.core.utils import plugins as plugin_utils
 logger = logging.getLogger(__name__)
 
 
+class MainGroup(utils_click.AliasedShortMatchGroup):
+    def main(self, *args, **kwargs):
+        try:
+            super().main(*args, **kwargs)
+        except exceptions.CirrusError as e:
+            logger.error(
+                e,
+                exc_info=(
+                    e
+                    if logger.getEffectiveLevel() < logging.logging.INFO
+                    else False
+                ),
+            )
+            sys.exit(e.exit_code)
+
+
 @utils_click.plugin_entrypoint(plugin_utils.COMMANDS_GROUP)
 @click.group(
     name=constants.PROG,
     help=constants.DESC,
-    cls=utils_click.AliasedShortMatchGroup,
+    cls=MainGroup,
 )
 @click.option(
     '--cirrus-dir',
@@ -87,11 +103,7 @@ def build(project):
     '''
     Build the cirrus configuration into a serverless.yml.
     '''
-    try:
-        project.build()
-    except exceptions.NoTraceBack as e:
-        logger.error(e)
-        sys.exit(1)
+    project.build()
 
 
 @cli.command()

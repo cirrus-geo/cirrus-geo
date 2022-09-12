@@ -1,9 +1,7 @@
 class CirrusError(Exception):
-    pass
-
-
-class NoTraceBack(Exception):
-    pass
+    def __init__(self, message: str, exit_code: int=1) -> None:
+        super().__init__(message)
+        self.exit_code = exit_code
 
 
 class ConfigError(CirrusError):
@@ -22,5 +20,9 @@ class CloudFormationSkipped(CloudFormationError):
     pass
 
 
-class DuplicateRequirement(ComponentError, NoTraceBack):
+class DuplicateRequirement(ComponentError):
+    pass
+
+
+class MissingHandler(CirrusError):
     pass
