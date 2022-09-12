@@ -2,6 +2,7 @@ import sys
 import copy
 import logging
 
+from pathlib import Path
 from typing import Type, TypeVar, Callable
 
 from cirrus.core.exceptions import ComponentError
@@ -21,11 +22,18 @@ class ComponentFile:
         self,
         name: str,
         optional: bool=False,
+        path: Path=None,
         content_fn: Callable[[Type[Component]], str]=None,
     ) -> None:
         self.name = name
         self.required = not optional
         self._content = None
+        self.parent = None
+
+        if not path:
+            path = Path(self.name)
+
+        self.base_path = path
 
         if content_fn or not hasattr(self, 'content_fn'):
             self.content_fn = content_fn
@@ -69,9 +77,20 @@ class ComponentFile:
                 f"Cannot load {self.__class__.__name__} from '{self.relative_path()}': not a file"
             )
 
+    @property
+    def path(self) -> Path:
+        if self.parent:
+            return self.parent.path.joinpath(self.base_path)
+        return self.base_path
+
+    @path.setter
+    def path(self, path: Path) -> None:
+        if path.is_absolute():
+            raise ValueError(f'Path cannot be absolute: {path}')
+        self.base_path = path
+
     def _copy_to_component(self, parent_component: Type[Component]) -> T:
         self = copy.copy(self)
-        self.path = parent_component.path.joinpath(self.name)
         self.parent = parent_component
         return self
 
@@ -83,7 +102,7 @@ class ComponentFile:
     def init(self, parent_component: Type[Component]) -> None:
         if self.content_fn is None:
             return
-        path = parent_component.path.joinpath(self.name)
+        path = parent_component.path.joinpath(self.path)
         path.write_text(self.content_fn(parent_component))
 
     def show(self):
