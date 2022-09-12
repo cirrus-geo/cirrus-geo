@@ -114,6 +114,9 @@ class CFObjectMeta(GroupMeta):
         source: str=None,
         parent_component=None,
     ):
+        if top_level_key in self.skipped_cf_types:
+            return
+
         project = parent_component.project if parent_component else self.project
         for name, definition in objects.items():
             try:
