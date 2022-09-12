@@ -11,11 +11,28 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Serverless versions through 3.x now supported. Minimum serverless of 2.3.0 is now
   required per pseudo parameters now being parsed within cirrus, rather than via the
   `serverless-pseudo-parameters` plugin. ([#139])
+
+  Tested `package.json` dependency versions:
+
+  ```
+    "serverless": "~3.18.0",
+    "serverless-python-requirements": "~5.4.0",
+    "serverless-step-functions": "~3.7.0",
+    "serverless-iam-roles-per-function": "~3.2.0"
+  ```
+
+  Note that upgrading to serverless v3 changes the type of EventBridge Rules
+  resources. In testing we found that the existing `update-state` rule required
+  manual deletion to allow CloudFormation to apply the new stack with the new
+  resource of the same name.  That rule is named like
+  `<stackname>-update-state-rule-1`.
+
 - All lambda component definitions need the `handler` populated if not already.
   Previously cirrus was defaulting `handler` to `lambda_function.lambda_handler`
   if it were omitted. Now the default lambda `definition.yml` includes
   `handler: lambda_function.lambda_handler`, allowing users to remove it if not
   compatible with their needs (i.e., specifying a container `image`). ([#139])
+
 - S3 buckets `Data` and `Payload` are no longer defined as builtins. Projects that
   do not otherwise define their required S3 buckets should ensure they have both
   of these buckets defined in their cloudformation resource templates. The
@@ -60,6 +77,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     create a unique role per batch task based on the `BatchJobRole`.
   - When using `BatchJobRole` or a custom role per batch task, ensure it is specified
     on the job definition as the `ContainerProperties` `JobRoleArn`.
+
 - The cli command to create new tasks now uses `-t`/`--type` to specify the task type,
   instead of `--has-batch`/`--no-batch` and `--has-lambda`/`--no-lambda`. `-t`/`--type`
   has no default value and is required. It can be specified multiple times in the case
