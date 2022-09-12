@@ -158,7 +158,9 @@ class Project:
         # setup all required lambda dirs
         fn_dirs = set()
         for fn in self.groups.lambdas:
-            if not fn.lambda_enabled:
+            outdir = fn.get_outdir(bd)
+
+            if not outdir:
                 continue
 
             outdir = fn.get_outdir(bd).resolve()
