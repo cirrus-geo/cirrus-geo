@@ -248,7 +248,7 @@ of actual STAC Items.</p>
 <td><p>string</p></td>
 <td><p>An identifier representing the set of collections the input items belong to</p></td>
 </tr>
-<tr class="row-odd"><td><p>output_options</p></td>
+<tr class="row-odd"><td><p>upload_options</p></td>
 <td><p><a class="reference internal" href="#payload-outputopts"><span class="std std-ref">Output Options</span></a></p></td>
 <td><p>Parameters affecting the upload of item assets</p></td>
 </tr>
@@ -379,7 +379,7 @@ then the data will be uploaded to the provided bucket.</p>
 are ultimately assigned to. Each dictionary key is the name of a collection, and it’s
 value is a regex expression that is used to match against each STAC Item ID that
 will be published. The first matching collection will be used.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;output_options&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;upload_options&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="nt">&quot;collections&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">        </span><span class="nt">&quot;sat-a-l1&quot;</span><span class="p">:</span><span class="w"> </span><span class="nt">&quot;sa.*&quot;</span><span class="w"></span>
 <span class="w">        </span><span class="nt">&quot;sat-b-l1&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sb.*&quot;</span><span class="w"></span>
