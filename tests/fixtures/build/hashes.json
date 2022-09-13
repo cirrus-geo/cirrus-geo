@@ -104,11 +104,11 @@
         "size": 173
     },
     "cirrus/lib/statedb.py": {
-        "shasum": "d3025be14d1d00198aed86a622a56e360546c32d1861fadd7570d3774b27a365",
-        "size": 19165
+        "shasum": "b97493e3d9772458f07cde9a8eb9a0bef64cbb2b0d46822fc8d5fe8c0d955e66",
+        "size": 19200
     },
     "cirrus/lib/process_payload.py": {
-        "shasum": "f77d150284f22be59778e3a6a788bffe170739bdd0cd7866ada0ef933c2f8689",
-        "size": 18342
+        "shasum": "8465f4256acdac71048b4289e2e104c2d3778a1d445b918c18579542a1fc09b6",
+        "size": 20107
     }
 }
