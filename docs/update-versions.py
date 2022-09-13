@@ -30,11 +30,12 @@ def main(gh_pages_dir):
             version = parse(_file.name)
             if not isinstance(version, Version):
                 continue
-            all_versions.add(str(version))
+            version.name = _file.name
+            all_versions.add(version.name)
             if not version.is_prerelease and version > stable_version:
                 stable_version = version
 
-    stable_version = str(stable_version)
+    stable_version = stable_version.name
 
     # create 'stable' redirect to most-recent non-prerelease version
     stable = gh_pages_dir.joinpath(STABLE_LINK_NAME)
