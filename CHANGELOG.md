@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+
+## [v0.7.0] - 2022-09-12
+
 ### ⚠️ Breaking changes
 
 - Serverless versions through 3.x now supported. Minimum serverless of 2.3.0 is now
@@ -119,7 +122,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   not provided by builtins ([#147])
 - explicit error message when lambda package requirements have duplicates ([#106])
 - support for cirrus plugins providing components or cloudformation via the
-  `cirrus.resources` entry point ([#104])
+  `cirrus.resources` entrypoint ([#104])
+- support for cli plugins via the `cirrus.plugins` entrypoint ([#138])
+- documentation within the package for projects to build into their docs ([#138])
+- `update-state` now supports `ABORTED` and `TIMED_OUT` step function events ([#85])
 
 ### Changed
 
@@ -137,6 +143,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `update-state` lambda supports payload URLs ([#135])
 - omit lambda block from batch-only task `definition.yml` on create ([#123])
 - test payloads output to non-terminal FDs will not have lines broken by terminal width ([#145])
+- component README templates missing space in header ([#138])
 
 ### Removed
 
@@ -153,6 +160,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - builtin S3 bucket resources ([#147])
 - builtin `BatchServiceRole` resource ([#149])
 - dependency on `servereles-pseudo-parameters` ([#139])
+- old docs ([#138])
 
 
 ## [v0.6.0] - 2022-02-18
@@ -160,22 +168,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - `cirrus build` will now rmtree for build dirs on rebulids ([#105])
-
-### Added
-
-- Support for cli plugins ([#138])
-- Documentation within the package for projects to build into their docs ([#138])
-- `update-state` now supports `ABORTED` and `TIMED_OUT` step function events ([#85])
-
-
-### Fixed
-
-- Component README template missing space in header ([#138])
-
-
-### Removed
-
-- Cleaned up old docs ([#138])
 
 
 ## [v0.5.4] - 2022-02-10
@@ -464,7 +456,8 @@ Initial release
 
 
 
-[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.6.0...main
+[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.7.0...main
+[v0.7.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.6.0...v0.7.0
 [v0.6.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.4...v0.6.0
 [v0.5.4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.3...v0.5.4
 [v0.5.3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.2...v0.5.3
