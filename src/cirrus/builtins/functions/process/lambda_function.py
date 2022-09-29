@@ -56,7 +56,7 @@ def lambda_handler(event, context):
             }
             payloads.append(ProcessPayload(payload_json, update=True))
         else:
-            payloads.append(ProcessPayload(payload, update=True))
+            payloads.append(ProcessPayload.from_event(payload, update=True))
 
     if len(payloads) > 0:
         _payloads = ProcessPayloads(payloads)
