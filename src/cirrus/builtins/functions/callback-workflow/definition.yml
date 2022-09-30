@@ -1,0 +1,47 @@
+description: function to callback waiting workflows
+iamRoleStatements:
+  - Effect: Allow
+    Action:
+      - dynamodb:ListStreams
+      - dynamodb:DescribeStream
+      - dynamodb:GetRecords
+      - dynamodb:GetShardIterator
+    Resource:
+      - !Join
+          - ''
+          - - !GetAtt WorkflowCallbacksTable.Arn
+            - /stream/*
+  - Effect: Allow
+    Action:
+      - dynamodb:UpdateItem
+      - dynamodb:DescribeTable
+    Resource:
+      - !GetAtt WorkflowCallbacksTable.Arn
+  - Effect: Allow
+    Action:
+      - states:SendTaskFailure
+      - states:SendTaskSuccess
+    Resource:
+      - arn:aws:states:*:#{AWS::AccountId}:activity:*
+environment: {}
+
+lambda:
+  memorySize: 128
+  timeout: 60
+  pythonRequirements:
+    include: []
+  events:
+    - stream:
+        type: dynamodb
+        arn: !GetAtt WorkflowCallbacksTable.StreamArn
+        batchSize: 100
+        filterPatterns:
+          # filterPatterns require serverless >= 2.68.0 to function
+          # lambda written to assume it receives all states, not just these
+          - Keys:
+              workflow_state:
+                S:
+                  - COMPLETED
+                  - INVALID
+                  - FAILED
+                  - ABORTED

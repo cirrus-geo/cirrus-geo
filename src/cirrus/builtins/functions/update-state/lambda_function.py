@@ -46,6 +46,7 @@ def workflow_completed(input_payload, output_payload, error):
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
     statedb.set_completed(input_payload['id'])
+    input_payload.set_callbacks_final_state('COMPLETED')
     if not output_payload:
         return
     for next_payload in output_payload.next_payloads():
@@ -54,6 +55,7 @@ def workflow_completed(input_payload, output_payload, error):
 
 def workflow_aborted(input_payload, output_payload, error):
     statedb.set_aborted(input_payload['id'])
+    input_payload.set_callbacks_final_state('ABORTED')
 
 
 def workflow_failed(input_payload, output_payload, error):
@@ -75,9 +77,11 @@ def workflow_failed(input_payload, output_payload, error):
     try:
         if error_type == "InvalidInput":
             statedb.set_invalid(input_payload['id'], error)
+            input_payload.set_callbacks_final_state('INVALID')
             notification_topic_arn = INVALID_TOPIC_ARN
         else:
             statedb.set_failed(input_payload['id'], error)
+            input_payload.set_callbacks_final_state('FAILED')
             notification_topic_arn = FAILED_TOPIC_ARN
     except Exception as err:
         msg = f"Failed marking as failed: {err}"

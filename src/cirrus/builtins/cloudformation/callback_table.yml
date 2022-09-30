@@ -1,0 +1,34 @@
+Resources:
+  WorkflowCallbacksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: '#{AWS::StackName}-workflow-callbacks'
+      AttributeDefinitions:
+        - AttributeName: workflow_collections256_itemids256
+          AttributeType: S
+        - AttributeName: callback_token
+          AttributeType: S
+        # S: workflows_state
+        # N: expiration_time
+        # [S]: collections_items
+      KeySchema:
+        - AttributeName: callback_token
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: by_payload
+          KeySchema:
+            - AttributeName: workflow_collections256_itemids256
+              KeyType: HASH
+            - AttributeName: callback_token
+              KeyType: RANGE
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes:
+              - workflow_state
+              - expiration_time
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+         StreamViewType: NEW_IMAGE
+      TimeToLiveSpecification:
+        AttributeName: expiration_time
+        Enabled: true
