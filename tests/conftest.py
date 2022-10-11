@@ -91,14 +91,15 @@ def payloads(s3):
 
 @pytest.fixture
 def queue(sqs):
-    return sqs.create_queue(QueueName='test-queue')
+    q = sqs.create_queue(QueueName='test-queue')
+    q['Arn'] = 'arn:aws:sqs:us-east-1:123456789012:test-queue'
+    return q
 
 
 @pytest.fixture
 def statedb(dynamo, fixtures):
     schema = json.loads(fixtures.joinpath('statedb-schema.json').read_text())
     table = dynamo.create_table(**schema)
-    #dynamo.meta.client.get_waiter('table_exists').wait(TableName=schema['TableName'])
     return schema['TableName']
 
 
@@ -108,8 +109,7 @@ def workflow(stepfunctions, iam):
         'StartAt': 'FirstState',
         'States': {
             'FirstState': {
-                'Type': 'Task',
-                'Resource': 'arn:aws:lambda:us-east-1:123456789012:function:FUNCTION_NAME',
+                'Type': 'Pass',
                 'End': True,
             },
         },
@@ -129,16 +129,7 @@ def workflow(stepfunctions, iam):
         AssumeRolePolicyDocument=json.dumps(role_policy),
     )['Role']
     return stepfunctions.create_state_machine(
-        name='test-step-function',
+        name='test-workflow1',
         definition=json.dumps(defn),
         roleArn=role['Arn'],
     )
-
-
-@pytest.fixture
-def process_env(queue, statedb, workflow, payloads):
-    workflow_prefix = workflow['stateMachineArn'].rsplit(':', 1)[0]
-    os.environ['CIRRUS_PROCESS_QUEUE'] = queue['QueueUrl']
-    os.environ['CIRRUS_STATE_DB'] = statedb
-    os.environ['CIRRUS_BASE_WORKFLOW_ARN'] = workflow_prefix
-    os.environ['CIRRUS_PAYLOAD_BUCKET'] = payloads['Bucket']
