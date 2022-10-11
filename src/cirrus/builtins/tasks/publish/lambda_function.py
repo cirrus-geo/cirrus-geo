@@ -172,4 +172,4 @@ def lambda_handler(event, context):
         logger.error(msg, exc_info=True)
         raise Exception(msg) from err
 
-    return payload
+    return payload.get_payload()
