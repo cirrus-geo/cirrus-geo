@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from cirrus.core.components import Feeder
 from cirrus.core.components import Function
 from cirrus.core.components import Task
@@ -13,12 +15,12 @@ def get_lambda_handler(Component, name):
 
 
 def run_feeder(name, event):
-    return get_lambda_handler(Feeder, name)(event, {})
+    return get_lambda_handler(Feeder, name)(deepcopy(event), {})
 
 
 def run_function(name, event):
-    return get_lambda_handler(Function, name)(event, {})
+    return get_lambda_handler(Function, name)(deepcopy(event), {})
 
 
 def run_task(name, event):
-    return get_lambda_handler(Task, name)(event, {})
+    return get_lambda_handler(Task, name)(deepcopy(event), {})

@@ -40,7 +40,7 @@ def lambda_handler(event, context):
         logger.debug('payload: %s', defer(json.dumps, payload))
 
         try:
-            payloads.append(ProcessPayload(payload))
+            payloads.append(ProcessPayload(payload, update=True))
         except Exception:
             logger.exception('Failed to convert to ProcessPayload: %s', json.dumps(payload))
             failures.append(payload)
@@ -51,16 +51,22 @@ def lambda_handler(event, context):
             except KeyError:
                 messages[payload['id']] = [message]
 
-    processed_ids = []
+    processed_ids = set()
     if len(payloads) > 0:
-        processed_ids = ProcessPayloads(payloads).process()
+        processed = ProcessPayloads(payloads).process()
+        logger.error(processed)
+        processed_ids = set(pid for state in processed.keys() for pid in processed[state])
 
-    successful = [
+    logger.error(messages)
+    successful_sqs_messages = [
         message
         for _id in processed_ids
-        for message in messages.pop(_id)
+        for message in messages.pop(_id, [])
     ]
     failures += list(messages.values())
+
+    logger.error(successful_sqs_messages)
+    logger.error(failures)
 
     if failures:
         # If we have partial failure, then we want to delete all
@@ -68,7 +74,7 @@ def lambda_handler(event, context):
         # won't be reprocessed again. We don't need to do this if
         # we have no failures, as SQS will delete the messages for
         # us if we exit successfully.
-        for message in successful:
+        for message in successful_sqs_messages:
             try:
                 utils.delete_from_queue(message)
             except Exception:
@@ -79,4 +85,4 @@ def lambda_handler(event, context):
 
         raise Exception('One or more payloads failed to process')
 
-    return len(processed_ids)
+    return len(processed['started'])
