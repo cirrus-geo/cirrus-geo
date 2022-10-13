@@ -134,7 +134,7 @@ functions:
     module: lambdas/api
   process:
     memorySize: 128
-    timeout: 900
+    timeout: 18
     handler: lambda_function.lambda_handler
     events:
       - sqs:
@@ -759,7 +759,7 @@ resources:
       Properties:
         QueueName:
           Fn::Sub: ${AWS::StackName}-process
-        VisibilityTimeout: 1000
+        VisibilityTimeout: 20
         RedrivePolicy:
           deadLetterTargetArn:
             Fn::GetAtt:
