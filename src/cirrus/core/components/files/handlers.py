@@ -16,7 +16,7 @@ LAMBDA_TYPE = '{component_type}'
 def lambda_handler(event, context={{}}):
     payload = ProcessPayload.from_event(event)
     logger = get_task_logger(f'{{LAMBDA_TYPE}}.{name}', payload=payload)
-    return payload
+    return payload.get_payload()
 """.format
 
 
