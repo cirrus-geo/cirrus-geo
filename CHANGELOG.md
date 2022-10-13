@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Avoid `States.DataLimitExceeded` error when `publish` or `post-batch` return
+  large payloads by returning `payload.get_payload()`.
+
+### Added
+
+- `process` lambda now supports s3 URL payloads from feeders.
+
 ## [v0.7.0] - 2022-09-12
 
 ### ⚠️ Breaking changes
