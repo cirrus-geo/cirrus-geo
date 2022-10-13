@@ -37,7 +37,7 @@
                     "AttributeName": "collections_workflow",
                     "KeyType": "HASH"
                 },
-                {
+                {   
                     "AttributeName": "state_updated",
                     "KeyType": "RANGE"
                 }
@@ -53,7 +53,7 @@
                     "AttributeName": "collections_workflow",
                     "KeyType": "HASH"
                 },
-                {
+                {   
                     "AttributeName": "updated",
                     "KeyType": "RANGE"
                 }

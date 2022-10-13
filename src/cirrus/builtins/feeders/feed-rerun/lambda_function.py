@@ -4,8 +4,8 @@ import json
 import logging
 import sys
 
-from cirrus.lib.statedb import StateDB
-from cirrus.lib.utils import submit_batch_job
+from cirrus.lib2.statedb import StateDB
+from cirrus.lib2.utils import submit_batch_job
 from os import getenv
 
 

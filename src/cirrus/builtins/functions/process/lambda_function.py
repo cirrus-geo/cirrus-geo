@@ -1,9 +1,9 @@
 import json
 
-from cirrus.lib.errors import NoUrlError
-from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
-from cirrus.lib import utils
-from cirrus.lib.logging import get_task_logger, defer
+from cirrus.lib2.errors import NoUrlError
+from cirrus.lib2.process_payload import ProcessPayload, ProcessPayloads
+from cirrus.lib2 import utils
+from cirrus.lib2.logging import get_task_logger, defer
 
 
 logger = get_task_logger('function.process', payload=tuple())

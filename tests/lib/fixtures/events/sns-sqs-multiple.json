@@ -1,0 +1,10 @@
+{
+  "Records": [
+    {
+      "body": "{\"Message\" : \"{\\\"id\\\": \\\"some-collection/some-workflow/an-item-id1\\\"}\"}"
+    },
+    {
+      "body": "{\"Message\" : \"{\\\"id\\\": \\\"some-collection/some-workflow/an-item-id2\\\"}\"}"
+    }
+  ]
+}
