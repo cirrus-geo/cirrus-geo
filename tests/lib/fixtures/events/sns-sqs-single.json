@@ -1,0 +1,20 @@
+{
+  "Records": [
+    {
+      "messageId": "359f0e6d-2db5-4e93-ac0e-1d0a87483eb5",
+      "receiptHandle": "AQEBDVrnthwte0hw9eth99et9h9789ethw96th8we9t6h98we6t8h76w89et6h89whkqgo9qp5IZu8zCtWsmiqwhYgrUoUsZZ/RT2N+8cJzsC5f4cwHSQmXiuZh4PBXlfoO/UYKCGrQOJ01q4gYEwXEh9R76wHlJTfA8C/RMeLNm11YnurDgdUe2S+W8imCIhxZmzIN1JGfmujrUmtW6W93JioGZaX+NLx1Kj7z1zCyKmGUt/hRk9kke4zX5LPJMjGYwaPU/DbVvjYIM/ABGjBu0/MOhKW/aeyCPfUJP4f6SyFpup/9as2XR+Ch7h+Lvnotnli/7omz8dL7eugfifM0tEesVSpVzhLpHXTqc99n93PIDtYnM/6a/SDN0lkUA2OwJM3bydN/AG2TLiEUu5mKRaw==",
+      "body": "{\n  \"Type\" : \"Notification\",\n  \"MessageId\" : \"3bea32f2-7a2f-5232-9bdb-6974ae20fc82\",\n  \"TopicArn\" : \"arn:aws:sns:us-west-2:123456789012:cirrus-test-process\",\n  \"Message\" : \"{\\\"id\\\": \\\"some-collection/some-workflow/an-item-id\\\"}\",\n  \"Timestamp\" : \"2022-08-29T14:48:47.956Z\",\n  \"SignatureVersion\" : \"1\",\n  \"Signature\" : \"Ggiq8/wrNkFxxrP5G+M1+7Hh/Xbf807AyVCgooEcQZhzKqGmKjr4IZiigyJKQ13TOntPtmodvfiPbWHbqjPfbxBstr82B4hrVds9GDRpH0DGj/d89CKmqTGcvCSQFPJdLei9tQ7zoR3h4sh6yNg9K9NeVp9GlHfnl/C4662+9sRJ+WS6tiUBN1icc9z+H4UwQGZBISxkrhPOJxEG/66Ndd5Eg0GxPeGfKp7g3nNkKD7We7zfpllWlPnPfZjtvkobCbvEtUTjVTc96omuZA5vxepMgaXZnWD0P/dVTXcWRHThq5h2q5hq45hQ4ehwqhwEHWerZlb0lylyYOrcQkhK3g==\",\n  \"SigningCertURL\" : \"https://sns.us-west-2.amazonaws.com/SimpleNotificationService-56e67fcb41f6fec09b12222222222224.pem\",\n  \"UnsubscribeURL\" : \"https://sns.us-west-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-west-2:123456789012:cirrus-test-process:f42c462c-9fdc-45b0-bd6e-123456789012\"\n}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1661784528067",
+        "SenderId": "AIDAIYLAVTDLUXBIEIX46",
+        "ApproximateFirstReceiveTimestamp": "1661784528072"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "76df8224ff7b6c41d7ef609d43f2ba52",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:us-west-2:123456789012:cirrus-test-process",
+      "awsRegion": "us-west-2"
+    }
+  ]
+}

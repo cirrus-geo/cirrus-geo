@@ -1,6 +1,6 @@
 import sys
 
-from cirrus.lib import utils
+from cirrus.lib2 import utils
 
 
 def parse_args(args=None):

@@ -1,42 +1,9 @@
 import logging
+import logging.config
 import click
 
 
-# Inspired from https://github.com/click-contrib/click-log
-
-
 DEFAULT_LEVEL = logging.WARNING
-
-
-class ClickFormatter(logging.Formatter):
-    colors = {
-        'error': {'fg': 'red'},
-        'exception': {'fg': 'red'},
-        'critical': {'fg': 'red'},
-        'debug': {'fg': 'blue'},
-        'warning': {'fg': 'yellow'},
-    }
-
-    def format(self, record):
-        msg = super().format(record)
-        level = record.levelname.lower()
-        if level in self.colors:
-            msg = click.style('{}'.format(msg), **self.colors[level])
-        return msg
-
-
-class ClickHandler(logging.Handler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.formatter = ClickFormatter()
-
-    def emit(self, record):
-        try:
-            msg = self.format(record)
-            record.levelname.lower()
-            click.echo(msg, err=True)
-        except Exception:
-            self.handleError(record)
 
 
 def verbosity(**kwargs):
@@ -57,10 +24,33 @@ def verbosity(**kwargs):
     return wrapper
 
 
+def make_logging_config(level):
+    return {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'click': {
+                'class': 'cirrus.cli.utils.logging_classes.ClickFormatter',
+            },
+        },
+        'handlers': {
+            'cli': {
+                'class': 'cirrus.cli.utils.logging_classes.ClickHandler',
+                'formatter': 'click',
+            },
+        },
+        'loggers': {
+            'cirrus.cli': {
+                'handlers': ['cli'],
+                'propagate': False,
+            },
+        },
+    }
+
+
 def configure(level=DEFAULT_LEVEL):
-    logging.basicConfig(handlers=_handlers, level=level)
+    #logging.basicConfig(handlers=_handlers, level=level)
+    logging.config.dictConfig(make_logging_config(level))
 
-
-_handlers = [ClickHandler()]
 configure()
 getLogger = logging.getLogger
