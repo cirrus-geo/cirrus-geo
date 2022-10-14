@@ -161,6 +161,11 @@ class ProcessPayload(dict):
         if 'id' in self:
             return
 
+        if not self.features:
+            raise ValueError(
+                'ProcessPayload has no `id` specified and one cannot be constructed without `features`.'
+            )
+
         if 'collections' in self.process:
             # allow overriding of collections name
             collections_str = self.process['collections']
