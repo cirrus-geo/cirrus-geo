@@ -65,14 +65,14 @@ def lambda_handler(event, context):
         # won't be reprocessed again. We don't need to do this if
         # we have no failures, as SQS will delete the messages for
         # us if we exit successfully.
-        for message in successful_sqs_messages:
-            try:
-                utils.delete_from_queue(message)
-            except Exception:
-                logger.exception(
-                    'Failed to delete message from queue: %s',
-                    json.dumps(message),
-                )
+        with utils.batch_handler(
+            utils.delete_from_queue_batch,
+            {},
+            'messages',
+            batch_size=10,
+        ) as handler:
+            for message in successful_sqs_messages:
+                handler.add(message)
 
         raise Exception('One or more payloads failed to process')
 
