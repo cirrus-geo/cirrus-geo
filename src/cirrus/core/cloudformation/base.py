@@ -164,7 +164,7 @@ class CFObjectMeta(GroupMeta):
             for yml in sorted(path.glob('*.yml')):
                 try:
                     yield from self.from_file(yml, source=source)
-                except ValueError as e:
+                except ValueError:
                     logger.warning (
                         "Unable to load cloudformation file '%s': "
                         'appears malformatted',

@@ -27,7 +27,7 @@ def lambda_handler(event, context):
 
         try:
             payload = utils.extract_record(message)
-        except Exception as e:
+        except Exception:
             logger.exception('Failed to extract record: %s', json.dumps(message))
             failures.append(message)
 
@@ -54,19 +54,14 @@ def lambda_handler(event, context):
     processed_ids = set()
     if len(payloads) > 0:
         processed = ProcessPayloads(payloads).process()
-        logger.error(processed)
         processed_ids = set(pid for state in processed.keys() for pid in processed[state])
 
-    logger.error(messages)
     successful_sqs_messages = [
         message
         for _id in processed_ids
         for message in messages.pop(_id, [])
     ]
     failures += list(messages.values())
-
-    logger.error(successful_sqs_messages)
-    logger.error(failures)
 
     if failures:
         # If we have partial failure, then we want to delete all

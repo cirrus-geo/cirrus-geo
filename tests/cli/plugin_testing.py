@@ -1,7 +1,6 @@
 import sys
 import importlib
 
-from pathlib import Path
 
 try:
     from importlib import metadata

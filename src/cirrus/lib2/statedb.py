@@ -1,12 +1,11 @@
 import boto3
-import json
 import logging
 import os
 
-from boto3utils import s3
 from boto3.dynamodb.conditions import Attr, Key
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, List
+
 
 # envvars
 PAYLOAD_BUCKET = os.getenv('CIRRUS_PAYLOAD_BUCKET')
@@ -91,8 +90,8 @@ class StateDB:
                 items.append(r)
             logger.debug(f"Fetched {len(items)} items")
             return items
-        except Exception as err:
-            msg = f"Error fetching items"
+        except Exception:
+            msg = "Error fetching items"
             logger.error(msg, exc_info=True)
             raise Exception(msg)
 

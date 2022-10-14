@@ -4,8 +4,6 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import MutableMapping
 from pathlib import Path
 
-import cirrus.builtins
-
 from cirrus.core.utils.plugins import iter_resources
 
 

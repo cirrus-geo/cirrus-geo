@@ -2,7 +2,6 @@ import pytest
 import json
 
 from pathlib import Path
-from boto3utils import s3
 
 from cirrus.lib2 import utils
 
@@ -105,7 +104,7 @@ def test_get_queue_url_bad(sqs):
     arn = 'arn:aws:sqs:us-east-1:123456789012:test-queue-bad'
     msg = {'eventSourceARN': arn}
     with pytest.raises(Exception):
-        url = utils.get_queue_url(msg)
+        utils.get_queue_url(msg)
 
 
 def test_delete_from_queue(sqs, queue):
