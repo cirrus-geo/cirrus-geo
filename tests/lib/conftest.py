@@ -19,7 +19,7 @@ def sqs():
 
 @pytest.fixture
 def dynamo():
-    with moto.mock_dynamodb2():
+    with moto.mock_dynamodb():
         yield boto3.client('dynamodb', region_name='us-east-1')
 
 
