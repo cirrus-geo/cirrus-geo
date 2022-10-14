@@ -9,7 +9,7 @@ def get_lambda_handler(Component, name):
     try:
         component = Component[name]
     except KeyError:
-        raise Exception(f"Unknown {component.type} '{function_name}")
+        raise Exception(f"Unknown {component.type} '{name}'")
 
     return component.import_handler()
 

@@ -1,16 +1,11 @@
 import boto3
 import json
 import logging
-import requests
 import uuid
 import re
 
 from boto3utils import s3
-from dateutil.parser import parse as dateparse
 from os import getenv
-from string import Formatter, Template
-from typing import Dict, Optional, List
-from collections.abc import Mapping
 
 from cirrus.lib2.errors import NoUrlError
 

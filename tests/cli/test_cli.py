@@ -146,7 +146,7 @@ def test_build_duplicated_requirements(invoke, project, project_testdir):
     task_name = 'task-duplicate-reqs'
     task_dir = project_testdir.joinpath('tasks', task_name)
     task_dir.mkdir()
-    defn = task_dir.joinpath('definition.yml').write_text('''description: test task
+    task_dir.joinpath('definition.yml').write_text('''description: test task
 lambda:
   handler: lambda_function.lambda_handler
   pythonRequirements:
@@ -184,25 +184,25 @@ def test_create(createable, project_testdir, invoke, project):
 
 
 def test_create_task_lambda(project_testdir, invoke, project):
-    result = invoke(f'create task -t lambda test-lambda description')
+    result = invoke('create task -t lambda test-lambda description')
     assert result.exit_code == 0
-    result = invoke(f'show task test-lambda')
+    result = invoke('show task test-lambda')
     assert result.exit_code == 0
     assert len(result.stdout) > 0
 
 
 def test_create_task_batch(project_testdir, invoke, project):
-    result = invoke(f'create task --type batch test-batch description')
+    result = invoke('create task --type batch test-batch description')
     assert result.exit_code == 0
-    result = invoke(f'show task test-batch')
+    result = invoke('show task test-batch')
     assert result.exit_code == 0
     assert len(result.stdout) > 0
 
 
 def test_create_task_batch_lambda(project_testdir, invoke, project):
-    result = invoke(f'create task -t lambda -t batch test-batch-lambda description')
+    result = invoke('create task -t lambda -t batch test-batch-lambda description')
     assert result.exit_code == 0
-    result = invoke(f'show task test-batch-lambda')
+    result = invoke('show task test-batch-lambda')
     assert result.exit_code == 0
     assert len(result.stdout) > 0
 
@@ -217,7 +217,7 @@ def test_show_list(group, invoke):
 
 
 def test_show_plugins(invoke):
-    result = invoke(f'show plugins')
+    result = invoke('show plugins')
     print(result.stdout)
     print(result.stderr)
     assert('cirrus-test-plugin' in result.stdout)

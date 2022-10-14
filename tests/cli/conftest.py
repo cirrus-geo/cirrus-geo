@@ -1,6 +1,5 @@
 import os
 import shutil
-import logging.config
 
 import pytest
 
@@ -9,11 +8,6 @@ from pathlib import Path
 from cirrus.core.project import Project
 
 from . import plugin_testing
-
-
-#@pytest.fixture(scope='session', autouse=True)
-#def default_logging():
-#    logging.config.dictConfig({"version": 1})
 
 
 @pytest.fixture(scope='session')

@@ -2,7 +2,6 @@ import textwrap
 import click
 
 from .base import Lambda
-from . import files
 from cirrus.core.cloudformation import CFObject
 
 

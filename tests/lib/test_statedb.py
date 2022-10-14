@@ -1,10 +1,8 @@
 import os
-import json
 import pytest
 
 from copy import deepcopy
 from datetime import datetime
-from decimal import Decimal
 
 from cirrus.lib2.statedb import StateDB, STATES
 
@@ -311,8 +309,8 @@ def test_set_processing(state_table):
 
 def test_second_execution(state_table):
     # check that processing adds new execution to list
-    resp = state_table.set_processing(test_item['id'], execution='arn::test1')
-    resp = state_table.set_processing(test_item['id'], execution='arn::test2')
+    state_table.set_processing(test_item['id'], execution='arn::test1')
+    state_table.set_processing(test_item['id'], execution='arn::test2')
     dbitem = state_table.get_dbitem(test_item['id'])
     assert(len(dbitem['executions']) == 2)
     assert(dbitem['executions'][-1] == 'arn::test2')
