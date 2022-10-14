@@ -36,7 +36,7 @@ def lambda_handler(event, context):
         logger.debug('payload: %s', defer(json.dumps, payload))
 
         try:
-            payloads.append(ProcessPayload(payload, update=True))
+            payloads.append(ProcessPayload(payload, set_id_if_missing=True))
         except Exception:
             logger.exception('Failed to convert to ProcessPayload: %s', json.dumps(payload))
             failures.append(payload)

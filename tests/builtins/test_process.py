@@ -296,7 +296,7 @@ def test_single_payload_sqs_url(payload, process_env, sqs, queue, payloads,
 
 def test_single_payload_sqs_bad_format(payload, process_env, sqs, queue,
                                        stepfunctions, workflow, cirrus_statedb):
-    del payload['features']
+    del payload['process']
     sqs.send_message(
         QueueUrl=queue['QueueUrl'],
         MessageBody=json.dumps(payload),
@@ -494,7 +494,7 @@ def test_double_payload_sqs_with_bad_format(payload, process_env, sqs, queue,
         MessageBody=json.dumps(payload),
     )
     second_id = payload['id'] = payload['id'][:-1] + '2'
-    del payload['features']
+    del payload['process']
     sqs.send_message(
         QueueUrl=queue['QueueUrl'],
         MessageBody=json.dumps(payload),
