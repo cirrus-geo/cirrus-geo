@@ -80,13 +80,13 @@ def test_open_payload_output_options(base_payload):
 def test_update_payload(base_payload):
     del base_payload['id']
     del base_payload['features'][0]['links']
-    payload = ProcessPayload(**base_payload, update=True)
+    payload = ProcessPayload(**base_payload, set_id_if_missing=True)
     assert payload['id'] == \
         "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
 
 
 def test_from_event(sqs_event):
-    payload = ProcessPayload.from_event(sqs_event, update=True)
+    payload = ProcessPayload.from_event(sqs_event, set_id_if_missing=True)
     assert len(payload['features']) == 1
     assert payload['id'] == \
         'sentinel-s2-l2a-aws/workflow-publish-sentinel/tiles-17-H-QD-2020-11-3-0'
@@ -159,7 +159,7 @@ def test_next_payloads_list_of_four_fork(base_payload):
 
 def test_next_payloads_chain_filter(chain_payload, chain_filter_payload):
     payloads = list(
-        ProcessPayload(chain_payload, update=True).next_payloads()
+        ProcessPayload(chain_payload, set_id_if_missing=True).next_payloads()
     )
     assert len(payloads) == 1
     assert not recursive_compare(payloads[0], chain_payload)

@@ -47,7 +47,7 @@ class TerminalFailure(Exception):
 
 class ProcessPayload(dict):
 
-    def __init__(self, *args, update=False, state_item=None, **kwargs):
+    def __init__(self, *args, set_id_if_missing=False, state_item=None, **kwargs):
         """Initialize a ProcessPayload, verify required fields, and assign an ID
 
         Args:
@@ -56,9 +56,6 @@ class ProcessPayload(dict):
         super().__init__(*args, **kwargs)
 
         self.logger = get_task_logger(__name__, payload=self)
-
-        if self['type'] != 'FeatureCollection':
-            raise ValueError('ProcessPayload must be of type FeatureCollection')
 
         if 'process' not in self:
             raise ValueError('ProcessPayload must have a `process` definintion')
@@ -69,8 +66,10 @@ class ProcessPayload(dict):
             else self['process']
         )
 
-        if update:
-            self.update()
+        self.features = self.get('features', [])
+
+        if 'id' not in self and set_id_if_missing:
+            self.set_id()
 
         if 'output_options' in self.process and not 'upload_options' in self.process:
             self.process['upload_options'] = self.process['output_options']
@@ -105,16 +104,7 @@ class ProcessPayload(dict):
         if 'workflow-' not in self['id']:
             raise ValueError(f'Invalid payload id: {self["id"]}')
 
-        # TODO - validate with a JSON schema
-        #if schema:
-        #    pass
-        # For now, just make check that there is at least one item
-        if len(self['features']) < 1:
-            raise ValueError(
-                'ProcessPayload.features is empty; must have at least one feature'
-            )
-
-        for item in self['features']:
+        for item in self.features:
             if 'links' not in item:
                 item['links'] = []
 
@@ -167,19 +157,21 @@ class ProcessPayload(dict):
                 ]
             yield new
 
-    def update(self):
+    def set_id(self):
+        if 'id' in self:
+            return
+
         if 'collections' in self.process:
             # allow overriding of collections name
             collections_str = self.process['collections']
         else:
             # otherwise, get from items
-            cols = sorted(list(set([i['collection'] for i in self['features'] if 'collection' in i])))
+            cols = sorted(list(set([i['collection'] for i in self.features if 'collection' in i])))
             input_collections = cols if len(cols) != 0 else 'none'
             collections_str = '/'.join(input_collections)
 
-        items_str = '/'.join(sorted(list([i['id'] for i in self['features']])))
-        if 'id' not in self:
-            self['id'] = f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
+        items_str = '/'.join(sorted(list([i['id'] for i in self.features])))
+        self['id'] = f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
 
     # assign collections to Items given a mapping of Col ID: ID regex
     def assign_collections(self):
@@ -188,7 +180,7 @@ class ProcessPayload(dict):
         """
         collections = self.process['upload_options'].get('collections', {})
         # loop through all Items in ProcessPayload
-        for item in self['features']:
+        for item in self.features:
             # loop through all provided output collections regexs
             for col in collections:
                 regex = re.compile(collections[col])
