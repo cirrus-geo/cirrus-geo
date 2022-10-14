@@ -469,10 +469,14 @@ def test_double_payload_sqs_with_bad_workflow(payload, process_env, sqs, queue,
     )['executions'])
     assert exec_count == 1
 
-    items = cirrus_statedb.get_dbitems(payload_ids=[first_id, second_id])
+    items = [
+        cirrus_statedb.dbitem_to_item(db_item)
+        for db_item in cirrus_statedb.get_dbitems(payload_ids=[first_id, second_id])
+    ]
     assert len(items) == 2
-    assert items[0]['state_updated'].startswith('PROCESSING')
-    assert items[1]['state_updated'].startswith('FAILED')
+    items = sorted(items, key=lambda i: i['payload_id'])
+    assert items[0]['state'] == 'PROCESSING'
+    assert items[1]['state'] == 'FAILED'
 
     messages = sqs.receive_message(
         QueueUrl=queue['QueueUrl'],
