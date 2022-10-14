@@ -10,11 +10,7 @@ logger = get_task_logger('function.process', payload=tuple())
 
 
 def is_sqs_message(message):
-    return (
-        True
-        if 'eventSource' in message and message['eventSource'] == 'aws:sqs'
-        else False
-    )
+    return  message.get('eventSource') == 'aws:sqs'
 
 
 def lambda_handler(event, context):
