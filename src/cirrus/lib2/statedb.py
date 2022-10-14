@@ -495,7 +495,6 @@ class StateDB:
         if self.limit and (not 'Limit' in kwargs or self.limit < kwargs['Limit']):
             kwargs['Limit'] = self.limit
 
-        print(kwargs)
         resp = self.table.query(**kwargs)
 
         return resp
@@ -532,8 +531,13 @@ class StateDB:
         return f"{parts[0]}/workflow-{parts[1]}/{key['itemids']}"
 
     @classmethod
-    def get_input_payload_url(self, dbitem):
-        payload_id = self.key_to_payload_id(dbitem)
+    def get_input_payload_url(cls, dbitem):
+        payload_id = cls.key_to_payload_id(dbitem)
+        return cls.get_payload_url(payload_id)
+
+    @staticmethod
+    def get_payload_url(payload_id):
+        # TODO: util fn to get env vars or throw exception
         payload_bucket = os.getenv('CIRRUS_PAYLOAD_BUCKET')
 
         if not payload_bucket:

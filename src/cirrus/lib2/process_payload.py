@@ -30,7 +30,6 @@ _stepfunctions = None
 def get_statedb():
     global _statedb
     if _statedb is None:
-        print(os.environ['AWS_ACCESS_KEY_ID'])
         _statedb = StateDB()
     return _statedb
 

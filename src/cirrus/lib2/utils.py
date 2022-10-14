@@ -6,6 +6,7 @@ import re
 
 from boto3utils import s3
 from os import getenv
+from contextlib import contextmanager
 
 from cirrus.lib2.errors import NoUrlError
 
@@ -185,3 +186,92 @@ def delete_from_queue(message):
         QueueUrl=get_queue_url(message),
         ReceiptHandle=receipt_handle,
     )
+
+
+def delete_from_queue_batch(messages):
+    queue_url = None
+    _messages = []
+    bad_messages = []
+
+    for message in messages:
+        _queue_url = get_queue_url(message)
+
+        if queue_url is None:
+            queue_url = _queue_url
+        elif _queue_url != queue_url:
+            raise ValueError(
+                f'Not all messages from same queue: {queue_url} != {_queue_url}'
+            )
+
+        receipt_handle = None
+        message_id = None
+        for rh_key, mid_key in (('receiptHandle', 'messageId'), ('ReceiptHandle', 'MessageId')):
+            receipt_handle = message.get(rh_key)
+            message_id = message.get(mid_key)
+            if receipt_handle is not None and message_id is not None:
+                _messages.append({
+                    'Id': message_id,
+                    'ReceiptHandle': receipt_handle,
+                })
+                break
+        else:
+            bad_messages.append({
+                'Id': 'unknown',
+                'SenderFault': True,
+                'Code': 'BadMessageFormat',
+                'Message': json.dumps(message),
+            })
+
+    resp = get_sqs_client().delete_message_batch(
+        QueueUrl=queue_url,
+        Entries=_messages,
+    )
+
+    try:
+        resp['Failed'].extend(bad_messages)
+    except KeyError:
+        resp['Failed'] = bad_messages
+
+    for success in resp['Successful']:
+        logger.debug('Deleted message from queue %s: %s', queue_url, success)
+
+    for failure in resp['Failed']:
+        logger.error('Failed to delete message from queue %s: %s', queue_url, failure)
+
+    return resp
+
+
+class BatchHandler:
+    def __init__(self, fn, params, batch_param_name, batch_size=10):
+        self.fn = fn
+        self.params = params
+        self.batch_param_name = batch_param_name
+        self.batch_size = batch_size
+        self._batch = []
+
+    def add(self, element):
+        self._batch.append(element)
+
+        if len(self._batch) >= self.batch_size:
+            self.execute()
+
+    def execute(self):
+        if not self._batch:
+            return
+
+        params = self.params.copy()
+        params[self.batch_param_name] = self._batch
+
+        try:
+            self.fn(**params)
+        finally:
+            self._batch = []
+
+
+@contextmanager
+def batch_handler(*args, **kwargs):
+    handler = BatchHandler(*args, **kwargs)
+    try:
+        yield handler
+    finally:
+        handler.execute()

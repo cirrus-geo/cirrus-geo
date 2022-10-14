@@ -5,7 +5,7 @@ import logging
 import sys
 
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import submit_batch_job
+from cirrus.lib2.utils import submit_batch_job, batch_handler
 from os import getenv
 
 
@@ -22,13 +22,14 @@ statedb = StateDB()
 logger = logging.getLogger("feeder.rerun")
 
 
-def submit(ids, process_update=None):
-    payload = {
-        "payload_ids": ids
-    }
-    if process_update is not None:
-        payload['process_update'] = process_update
-    SNS_CLIENT.publish(TopicArn=SNS_TOPIC, Message=json.dumps(payload))
+def submit(payload_ids):
+    with batch_handler(
+        SNS_CLIENT.publish_batch,
+        {'TopicArn': SNS_TOPIC},
+        'PublishBatchRequestEntries',
+    ) as handler:
+        for payload_id in payload_ids:
+            handler.add({'url': StateDB.get_payload_url(payload_id)})
 
 
 def lambda_handler(payload, context={}):
@@ -41,8 +42,6 @@ def lambda_handler(payload, context={}):
     limit = payload.get('limit', None)
     batch = payload.get('batch', False)
     error_begins_with = payload.get('error_begins_with', None)
-    process_update = payload.get('process_update', None)
-    payload_id_batch = 5
 
     # if this is a lambda and batch is set
     if batch and hasattr(context, "invoked_function_arn"):
@@ -60,16 +59,7 @@ def lambda_handler(payload, context={}):
     nitems = len(items)
     logger.debug(f"Rerunning {nitems} payloads")
 
-    payload_ids = []
-    for i, item in enumerate(items):
-        payload_ids.append(item['payload_id'])
-        if (i % payload_id_batch) == 0:
-            submit(payload_ids, process_update=process_update)
-            payload_ids = []
-        if (i % 1000) == 0:
-            logger.debug(f"Queued {i} payloads")
-    if len(payload_ids) > 0:
-        submit(payload_ids, process_update=process_update)
+    submit((item['payload_id'] for item in items))
 
     return {
         "found": nitems

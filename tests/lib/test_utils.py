@@ -147,3 +147,55 @@ def test_delete_from_queue_bad_message(sqs, queue):
     msg['eventSourceARN'] = arn
     with pytest.raises(ValueError):
         utils.delete_from_queue(msg)
+
+
+@pytest.fixture
+def batch_tester():
+    class BatchTester:
+        def __init__(self):
+            self.calls = []
+            self.items = []
+
+        def __call__(self, **kwargs):
+            self.calls.append(kwargs)
+            batch = kwargs.get('batch', [])
+            self.items.extend(batch)
+            return all(map(lambda x: isinstance(x, int), batch))
+
+    return BatchTester()
+
+
+def test_batch_handler(batch_tester):
+    handler = utils.BatchHandler(batch_tester, {}, 'batch')
+    handler.add(1)
+    handler.execute()
+    assert len(batch_tester.calls) == 1
+    assert batch_tester.calls[0] == {'batch': [1]}
+    assert len(batch_tester.items) == 1
+    assert batch_tester.items[0] == 1
+
+
+def test_batch_handler_extra_args(batch_tester):
+    handler = utils.BatchHandler(batch_tester, {'arg': 'value'}, 'batch')
+    handler.add(1)
+    handler.execute()
+    assert len(batch_tester.calls) == 1
+    assert batch_tester.calls[0] == {'arg': 'value', 'batch': [1]}
+    assert len(batch_tester.items) == 1
+
+
+def test_batch_handler_no_items(batch_tester):
+    handler = utils.BatchHandler(batch_tester, {}, 'batch')
+    handler.execute()
+    assert len(batch_tester.calls) == 0
+    assert len(batch_tester.items) == 0
+
+
+def test_batch_handler_batch(batch_tester):
+    items = list(range(10))
+    with utils.batch_handler(batch_tester, {}, 'batch', batch_size=3) as handler:
+        for item in items:
+            handler.add(item)
+
+    assert len(batch_tester.calls) == 4
+    assert batch_tester.items == items
