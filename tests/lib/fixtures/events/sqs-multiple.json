@@ -1,0 +1,10 @@
+{
+  "Records": [
+    {
+      "body": "{\"id\": \"some-collection/some-workflow/an-item-id1\"}"
+    },
+    {
+      "body": "{\"id\": \"some-collection/some-workflow/an-item-id2\"}"
+    }
+  ]
+}
