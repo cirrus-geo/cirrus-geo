@@ -116,6 +116,7 @@ class Project:
 
         import shutil
         import cirrus.lib
+        import cirrus.lib2
         from cirrus.core.utils import misc
 
         # make build dir or clean it up
@@ -151,6 +152,32 @@ class Project:
         lib_dir = bd.joinpath('cirrus', 'lib')
         shutil.copytree(
             cirrus.lib.__path__[0],
+            lib_dir,
+            ignore=shutil.ignore_patterns('*.pyc', '__pycache__'),
+        )
+
+        # copy built-in lib2 to build dir for packaging
+        # this is temporary until we can come up with a better
+        # mechanism that:
+        #
+        #   1) removes the strict cirrus-geo dependency on cirrus-lib
+        #   2) converts all built-ins to using the built-in lib functions
+        #   3) provides a way for project lambda to get the desired cirrus-lib
+        #
+        # I think the solution for #3 is to use the python requirements
+        # plugin with cirrus-lib as a requirement, where a dependency.
+        # Built-ins using the built-in lib would still need the dependency
+        # injection used here for lib2, but I'm imagining a special-case
+        # way to handle this used internally only should be possible.
+        #
+        # Note that one motivation to having a single cirrus-lib version
+        # initially was the ability to update project dependencies without
+        # having to touch every single lambda. I believe this need is mitigated
+        # by the fact that projects now maintain fewer lambdas than prior to
+        # the project structure/cirrus cli revamp.
+        lib_dir = bd.joinpath('cirrus', 'lib2')
+        shutil.copytree(
+            cirrus.lib2.__path__[0],
             lib_dir,
             ignore=shutil.ignore_patterns('*.pyc', '__pycache__'),
         )
