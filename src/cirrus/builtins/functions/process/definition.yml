@@ -4,7 +4,7 @@ environment:
   CIRRUS_PROCESS_QUEUE: !Ref ProcessQueue
 lambda:
   memorySize: 128
-  timeout: 18
+  timeout: 10
   handler: lambda_function.lambda_handler
   events:
     - sqs:

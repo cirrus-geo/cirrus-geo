@@ -19,7 +19,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: "#{AWS::StackName}-process"
-      VisibilityTimeout: 20
+      VisibilityTimeout: 60
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
         maxReceiveCount: 5
