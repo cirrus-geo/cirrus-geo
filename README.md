@@ -25,7 +25,7 @@ input through the pipeline.
 ![](docs/images/highlevel.png)
 
 As shown in this high-level overview of Cirrus, users input data to Cirrus
-through the use of *feeders*. Feeders are simply programs that get/generate
+through the use of _feeders_. Feeders are simply programs that get/generate
 some type of STAC metadata, combine it with processing parameters, and pass it
 into Cirrus as a CPP.
 
@@ -35,6 +35,9 @@ of one workflow becomes the input to another workflow, createing multiple levels
 of products all with published STAC metadata and clear links showing data
 provenance.
 
+## Cirrus Development
+
+If developing new code for cirrus-geo, checkout the [Contributing Guide](CONTRIBUTING.md).
 
 ## Cirrus Quickstart
 
@@ -162,21 +165,19 @@ lambdas/  serverless.yml
 ❯ cirrus serverless deploy
 ```
 
-
 ## Cirrus Project Structure
 
 A Cirrus project, most basically, is a directory containing a cirrus.yml
 configuration file. However, several subfolders are used to organize
 additional object definitions for custom implementations.
 
-| Folder         | Purpose |
-|:---------------|---------|
-| cloudformation | Raw cloudformation templates to include in the project
-| feeders        | Feeder Lambda functions used to add data to Cirrus |
-| functions      | Misc Lambda functions required by a project |
-| tasks          | Task Lambda function used within workflows |
+| Folder         | Purpose                                                            |
+| :------------- | ------------------------------------------------------------------ |
+| cloudformation | Raw cloudformation templates to include in the project             |
+| feeders        | Feeder Lambda functions used to add data to Cirrus                 |
+| functions      | Misc Lambda functions required by a project                        |
+| tasks          | Task Lambda function used within workflows                         |
 | workflows      | AWS Step Function definitions describing data processing workflows |
-
 
 ## Cirrus Repositories
 
@@ -184,17 +185,16 @@ Cirrus is divided up into several repositories, all under the
 [cirrus-geo](https://github.com/cirrus-geo) organization on GitHub,
 with this repository (`cirrus-geo`) the main one of interest to users.
 
-| Repository         | Purpose |
-|:------------------ |---------|
-| cirrus-geo         | Main Cirrus repo implementing the `cirrus` cli tool for managing Cirrus projects. Also provides the base set of lambda functions and workflows.
-| [cirrus-lib](https://github.com/cirrus-geo/cirrus-lib) | A Python library of convenience functions to interact with Cirrus. Lambda functions are kept lightweight |
-| [cirrus-task-images](https://github.com/cirrus-geo/cirrus-task-images)  | Dockerfiles and code for publishing Cirrus Docker images to Docker Hub that are used in Cirrus Batch tasks |
+| Repository                                                             | Purpose                                                                                                                                         |
+| :--------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| cirrus-geo                                                             | Main Cirrus repo implementing the `cirrus` cli tool for managing Cirrus projects. Also provides the base set of lambda functions and workflows. |
+| [cirrus-lib](https://github.com/cirrus-geo/cirrus-lib)                 | A Python library of convenience functions to interact with Cirrus. Lambda functions are kept lightweight                                        |
+| [cirrus-task-images](https://github.com/cirrus-geo/cirrus-task-images) | Dockerfiles and code for publishing Cirrus Docker images to Docker Hub that are used in Cirrus Batch tasks                                      |
 
 The `cirrus` cli utilitiy is what is used to create, manage, and deploy
 Cirrus projects, and is pip-installable. The pip-installable python
 library `cirrus-lib` is used from all Cirrus Lambdas and tasks and is
 available to developers for writing their own tasks.
-
 
 ## Documentation
 
@@ -209,11 +209,11 @@ within the [docs](docs/) directory:
   and compute environments
 
 ## About
+
 Cirrus is an Open-Source pipeline for processing geospatial data in AWS.
 Cirrus was developed by [Element 84](https://element84.com/) originally
 under a [NASA ACCESS project](https://earthdata.nasa.gov/esds/competitive-programs/access)
 called [Community Tools for Analysis of NASA Earth Observation System Data in the Cloud](https://earthdata.nasa.gov/esds/competitive-programs/access/eos-data-cloud).
-
 
 [build-status-image]: https://github.com/cirrus-geo/cirrus-geo/actions/workflows/python-test.yml/badge.svg
 [build-status]: https://github.com/cirrus-geo/cirrus-geo/actions/workflows/python-test.yml
