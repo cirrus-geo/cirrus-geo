@@ -1,0 +1,10 @@
+[flake8]
+select = B,B9,C,DAR,E,F,N,RST,S,W
+# remove after D202 eventually
+ignore = E203,E501,RST201,RST203,RST301,W503,D202,B950,C901
+max-line-length = 80
+max-complexity = 10
+docstring-convention = google
+per-file-ignores = tests/*:S101
+rst-roles = class,const,func,meth,mod,ref
+rst-directives = deprecated
