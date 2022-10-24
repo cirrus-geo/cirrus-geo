@@ -1,23 +1,22 @@
 import os
 import shutil
+from pathlib import Path
 
 import pytest
-
-from pathlib import Path
 
 from cirrus.core.project import Project
 
 from . import plugin_testing
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def fixtures():
-    return Path(__file__).parent.joinpath('fixtures')
+    return Path(__file__).parent.joinpath("fixtures")
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def project_testdir():
-    pdir = Path(__file__).parent.joinpath('output')
+    pdir = Path(__file__).parent.joinpath("output")
     if pdir.is_dir():
         shutil.rmtree(pdir)
     pdir.mkdir()
@@ -32,9 +31,9 @@ def project(project_testdir):
     return Project.resolve(strict=True)
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def test_plugin(fixtures):
-    dist = fixtures.joinpath('plugin', 'cirrus_test_plugin-0.0.0.dist-info')
+    dist = fixtures.joinpath("plugin", "cirrus_test_plugin-0.0.0.dist-info")
     plugin_testing.add_plugin_finder(dist)
     yield
     plugin_testing.remove_plugin_finder(dist)

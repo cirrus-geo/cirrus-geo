@@ -29,7 +29,7 @@ lambda:
         - dynamodb:DescribeTable
       Resource:
         - !GetAtt StateTable.Arn
-        - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
+        - !Join ["", [!GetAtt StateTable.Arn, "/index/*"]]
     - Effect: Allow
       Action:
         - states:GetExecutionHistory
@@ -44,7 +44,7 @@ lambda:
         - s3:GetObject
       Resource:
         - !Join
-          - ''
-          - - 'arn:aws:s3:::'
+          - ""
+          - - "arn:aws:s3:::"
             - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-            - '*'
+            - "*"

@@ -1,6 +1,5 @@
-import sys
 import importlib
-
+import sys
 
 try:
     from importlib import metadata
@@ -24,14 +23,14 @@ class TestPluginFinder(metadata.DistributionFinder):
 
     def __eq__(self, other):
         return (
-            hasattr(other, 'plugin_dist_path')
+            hasattr(other, "plugin_dist_path")
             and self.plugin_dist_path == other.plugin_dist_path
         )
 
 
 def add_plugin_finder(plugin_dist_path):
     tpf = TestPluginFinder(plugin_dist_path)
-    if not tpf in sys.meta_path:
+    if tpf not in sys.meta_path:
         sys.meta_path.append(tpf)
 
 

@@ -1,22 +1,18 @@
 import logging
-import click
 import textwrap
-
-from pathlib import Path
 from itertools import chain
+from pathlib import Path
 
-from cirrus.core.exceptions import (
-    CloudFormationError,
-    CloudFormationSkipped,
-)
-from cirrus.core.utils.yaml import NamedYamlable
-from cirrus.core.utils import misc
+import click
+
+from cirrus.core.exceptions import CloudFormationError, CloudFormationSkipped
 from cirrus.core.group_meta import GroupMeta
-
+from cirrus.core.utils import misc
+from cirrus.core.utils.yaml import NamedYamlable
 
 logger = logging.getLogger(__name__)
 
-BUILT_IN = 'built-in'
+BUILT_IN = "built-in"
 
 
 class CFObjectMeta(GroupMeta):
@@ -31,11 +27,11 @@ class CFObjectMeta(GroupMeta):
     # Skipped types are those we don't care to copy
     # over into the output cf template. Generally,
     # these are things that cannot be unique across
-    #templates, i.e., only one value in the output
+    # templates, i.e., only one value in the output
     # template is acceptable.
     skipped_cf_types = [
-        'AWSTemplateFormatVersion',
-        'Description',
+        "AWSTemplateFormatVersion",
+        "Description",
     ]
 
     ####
@@ -51,9 +47,7 @@ class CFObjectMeta(GroupMeta):
     # We override the following `GroupMeta` methods as a consequence.
     def __iter__(self):
         yield from (
-            cf_obj
-            for cf_type in self.elements.values()
-            for cf_obj in cf_type.values()
+            cf_obj for cf_type in self.elements.values() for cf_obj in cf_type.values()
         )
 
     def __len__(self):
@@ -61,23 +55,26 @@ class CFObjectMeta(GroupMeta):
 
     def __setitem__(self, key, val):
         self.elements[val.top_level_key][key] = val
+
     ####
 
     def __new__(cls, name, bases, attrs, **kwargs):
-        if 'user_extendable' not in attrs:
-            attrs['user_extendable'] = False
+        if "user_extendable" not in attrs:
+            attrs["user_extendable"] = False
 
-        abstract = attrs.get('abstract', False)
+        abstract = attrs.get("abstract", False)
 
         # top_level_key is like `Resources` or `Outputs`
         # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html
-        top_level_key = attrs.get('top_level_key', None)
+        top_level_key = attrs.get("top_level_key", None)
         if not (
             top_level_key
             or abstract
-            or [base for base in bases if hasattr(base, 'top_level_key')]
+            or [base for base in bases if hasattr(base, "top_level_key")]
         ):
-            raise NotImplementedError(f"Must define the 'top_level_key' attr on '{name}'")
+            raise NotImplementedError(
+                f"Must define the 'top_level_key' attr on '{name}'"
+            )
 
         self = super().__new__(cls, name, bases, attrs, **kwargs)
 
@@ -86,7 +83,7 @@ class CFObjectMeta(GroupMeta):
                 raise ValueError(
                     f"Cannot declare class '{name}' with top_level_key '{top_level_key}': already in use",
                 )
-            cls.cf_types[attrs['top_level_key']] = self
+            cls.cf_types[attrs["top_level_key"]] = self
 
         return self
 
@@ -111,7 +108,7 @@ class CFObjectMeta(GroupMeta):
         path,
         top_level_key,
         objects,
-        source: str=None,
+        source: str = None,
         parent_component=None,
     ):
         if top_level_key in self.skipped_cf_types:
@@ -138,13 +135,13 @@ class CFObjectMeta(GroupMeta):
                     e,
                 )
 
-    def from_file(self, path: Path, source: str=None):
+    def from_file(self, path: Path, source: str = None):
         # only process files
         if not path.is_file():
             return
 
         # ignore files starting with '.'
-        if path.name.startswith('.'):
+        if path.name.startswith("."):
             return
 
         # parse a yml cf file
@@ -161,13 +158,13 @@ class CFObjectMeta(GroupMeta):
 
     def _find(self):
         def search_dir(path, source=None):
-            for yml in sorted(path.glob('*.yml')):
+            for yml in sorted(path.glob("*.yml")):
                 try:
                     yield from self.from_file(yml, source=source)
                 except ValueError:
-                    logger.warning (
+                    logger.warning(
                         "Unable to load cloudformation file '%s': "
-                        'appears malformatted',
+                        "appears malformatted",
                         misc.relative_to_cwd(yml),
                     )
 
@@ -184,13 +181,17 @@ class CFObjectMeta(GroupMeta):
             # order here matters, later takes precedence
             # so we prefer objects defined on tasks
             yield from self._find()
-            yield from chain.from_iterable(filter(bool, map(
-                lambda task:
-                    task.batch_cloudformation
-                    if task.batch_enabled
-                    else None,
-                self.parent.tasks,
-            )))
+            yield from chain.from_iterable(
+                filter(
+                    bool,
+                    map(
+                        lambda task: task.batch_cloudformation
+                        if task.batch_enabled
+                        else None,
+                        self.parent.tasks,
+                    ),
+                )
+            )
 
         # cf_finder yields cf object instances, so here
         # we iterate through all cf objects it finds
@@ -205,7 +206,9 @@ class CFObjectMeta(GroupMeta):
 
     def create_user_dir(self):
         import shutil
+
         from . import templates
+
         super().create_user_dir()
         for template in templates:
             dest = self.user_dir.joinpath(template.name)
@@ -219,16 +222,16 @@ class CFObjectMeta(GroupMeta):
             aliases=self.cmd_aliases,
         )
         @click.argument(
-            'name',
-            metavar='name',
+            "name",
+            metavar="name",
             required=False,
-            default='',
+            default="",
             callback=lambda ctx, param, val: val.lower(),
         )
         @click.option(
-            '-t',
-            '--type',
-            'filter_types',
+            "-t",
+            "--type",
+            "filter_types",
             multiple=True,
             type=click.Choice(
                 self.cf_types.keys(),
@@ -281,13 +284,13 @@ class CFObjectMeta(GroupMeta):
                     if first_line:
                         first_line = False
                     else:
-                        click.echo('')
-                    click.secho(f'[{tlk}]', fg='green')
+                        click.echo("")
+                    click.secho(f"[{tlk}]", fg="green")
                     for element in els:
                         element.list_display()
             elif not name:
                 logger.error(
-                    'Cannot show %s: none found',
+                    "Cannot show %s: none found",
                     self.group_display_name,
                 )
             else:
@@ -299,33 +302,34 @@ class CFObjectMeta(GroupMeta):
 
 
 class BaseCFObject(metaclass=CFObjectMeta):
-    '''Base class for all cloudformation types.'''
+    """Base class for all cloudformation types."""
+
     abstract = True
 
     def __init__(
         self,
         name,
         definition,
-        path: Path=None,
+        path: Path = None,
         project=None,
         parent_component=None,
-        source: str=None,
+        source: str = None,
     ) -> None:
         self.name = name
         self.definition = definition
         self.path = path
-        self.resource_type = definition.get('Type', None)
+        self.resource_type = definition.get("Type", None)
         self.project = project
         self.parent_component = parent_component
 
         self.source = source
         if self.parent_component:
             parent_source = (
-                f' [{self.parent_component.source}]'
+                f" [{self.parent_component.source}]"
                 if self.parent_component.source
-                else ''
+                else ""
             )
-            self.source = f'task {self.parent_component.name}{parent_source}'
+            self.source = f"task {self.parent_component.name}{parent_source}"
 
         self.is_builtin = self.source == BUILT_IN
 
@@ -335,9 +339,9 @@ class BaseCFObject(metaclass=CFObjectMeta):
 
     def make_display_name(self, show_type=True):
         show_type = show_type and self.resource_type
-        return '{}{} ({})'.format(
+        return "{}{} ({})".format(
             self.name,
-            f' [{self.resource_type}]' if show_type else '',
+            f" [{self.resource_type}]" if show_type else "",
             self.display_source,
         )
 
@@ -346,23 +350,26 @@ class BaseCFObject(metaclass=CFObjectMeta):
         return self.make_display_name()
 
     def list_display(self, show_type=True):
-        click.secho(self.make_display_name(show_type=show_type), fg='blue')
+        click.secho(self.make_display_name(show_type=show_type), fg="blue")
 
     def detail_display(self):
         self.list_display(show_type=False)
-        click.echo(f'{self.top_level_key}:')
-        click.echo(f'  {self.name}:')
-        click.echo(textwrap.indent(
-            self.definition.to_yaml(),
-            '    ',
-        ))
+        click.echo(f"{self.top_level_key}:")
+        click.echo(f"  {self.name}:")
+        click.echo(
+            textwrap.indent(
+                self.definition.to_yaml(),
+                "    ",
+            )
+        )
 
 
 class CFObject(BaseCFObject):
-    '''Used as a class to instantiate all other CF object classes
+    """Used as a class to instantiate all other CF object classes
     via class resolution to find the relevant CF object type from
     the provided top_level_key.
-    '''
+    """
+
     abstract = True
 
     def __new__(cls, top_level_key, *args, **kwargs):
@@ -371,11 +378,12 @@ class CFObject(BaseCFObject):
 
 
 class CloudFormation(metaclass=CFObjectMeta):
-    '''Used as the group added to Groups.
+    """Used as the group added to Groups.
     Tracks all cloudformation objects of other types.
-    '''
+    """
+
     abstract = True
-    group_name = 'cloudformation'
-    group_display_name = 'CloudFormation'
-    cmd_aliases = ['cf']
+    group_name = "cloudformation"
+    group_display_name = "CloudFormation"
+    cmd_aliases = ["cf"]
     user_extendable = True

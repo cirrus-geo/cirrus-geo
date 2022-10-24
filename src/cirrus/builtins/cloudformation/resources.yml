@@ -1,17 +1,17 @@
 Resources:
   # SNS Topic for adding input data to Cirrus
   ProcessTopic:
-    Type: 'AWS::SNS::Topic'
+    Type: "AWS::SNS::Topic"
     Properties:
       TopicName: "#{AWS::StackName}-process"
   # SNS Topic for adding input data to Cirrus
   PublishTopic:
-    Type: 'AWS::SNS::Topic'
+    Type: "AWS::SNS::Topic"
     Properties:
       TopicName: "#{AWS::StackName}-publish"
   # SNS Topic for failed workflows
   FailedTopic:
-    Type: 'AWS::SNS::Topic'
+    Type: "AWS::SNS::Topic"
     Properties:
       TopicName: "#{AWS::StackName}-failed"
   # Process Queue
@@ -92,39 +92,39 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
-          - Effect: 'Allow'
+          - Effect: "Allow"
             Principal:
               Service:
-                - 'ecs-tasks.amazonaws.com'
+                - "ecs-tasks.amazonaws.com"
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
             Condition:
               ArnLike:
                 aws:SourceArn: "arn:aws:ecs:#{AWS::Region}:#{AWS::AccountId}:*"
               StringEquals:
                 aws:SourceAccount: "#{AWS::AccountId}"
-      Path: '/'
+      Path: "/"
       Policies:
-        - PolicyName: 'Cirrus'
+        - PolicyName: "Cirrus"
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: "Allow"
                 Action:
                   - "s3:PutObject"
                 Resource:
                   - !Join
-                    - ''
-                    - - 'arn:aws:s3:::'
+                    - ""
+                    - - "arn:aws:s3:::"
                       - ${self:provider.environment.CIRRUS_DATA_BUCKET}
-                      - '*'
+                      - "*"
                   - !Join
-                    - ''
-                    - - 'arn:aws:s3:::'
+                    - ""
+                    - - "arn:aws:s3:::"
                       - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-                      - '*'
+                      - "*"
               - Effect: "Allow"
                 Action:
                   - "s3:ListBucket"
@@ -143,36 +143,36 @@ Resources:
   BatchInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      Path: '/'
+      Path: "/"
       Roles:
         - Ref: BatchInstanceRole
   BatchInstanceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
-          - Effect: 'Allow'
+          - Effect: "Allow"
             Principal:
               Service:
-                - 'ec2.amazonaws.com'
+                - "ec2.amazonaws.com"
             Action:
-              - 'sts:AssumeRole'
-      Path: '/'
+              - "sts:AssumeRole"
+      Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
   EC2SpotRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
-          - Effect: 'Allow'
+          - Effect: "Allow"
             Principal:
               Service:
-                - 'spotfleet.amazonaws.com'
+                - "spotfleet.amazonaws.com"
             Action:
-              - 'sts:AssumeRole'
-      Path: '/'
+              - "sts:AssumeRole"
+      Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole

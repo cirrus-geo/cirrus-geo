@@ -1,16 +1,15 @@
-import boto3
 import logging
 import os
-
-from boto3.dynamodb.conditions import Attr, Key
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
 
+import boto3
+from boto3.dynamodb.conditions import Attr, Key
 
 # envvars
-PAYLOAD_BUCKET = os.getenv('CIRRUS_PAYLOAD_BUCKET')
+PAYLOAD_BUCKET = os.getenv("CIRRUS_PAYLOAD_BUCKET")
 
-STATES = ['PROCESSING', 'COMPLETED', 'FAILED', 'INVALID', 'ABORTED']
+STATES = ["PROCESSING", "COMPLETED", "FAILED", "INVALID", "ABORTED"]
 
 # logging
 logger = logging.getLogger(__name__)
@@ -19,19 +18,19 @@ logger = logging.getLogger(__name__)
 class StateDB:
     limit = None
 
-    def __init__(self, table_name: str=None):
+    def __init__(self, table_name: str = None):
         """Initialize a StateDB instance using the Cirrus State DB table
 
         Args:
             table_name (str, optional): The Cirrus StateDB Table name. Defaults to os.getenv('CIRRUS_STATE_DB', None).
         """
-        table_name = table_name if table_name else os.getenv('CIRRUS_STATE_DB')
+        table_name = table_name if table_name else os.getenv("CIRRUS_STATE_DB")
 
         if not table_name:
-            raise ValueError('env var CIRRUS_STATE_DB must be defined')
+            raise ValueError("env var CIRRUS_STATE_DB must be defined")
 
         # initialize client
-        self.db = boto3.resource('dynamodb')
+        self.db = boto3.resource("dynamodb")
         self.table_name = table_name
         self.table = self.db.Table(table_name)
 
@@ -58,13 +57,13 @@ class StateDB:
         Returns:
             Dict: DynamoDB Item
         """
-        key=self.payload_id_to_key(payload_id)
+        key = self.payload_id_to_key(payload_id)
         try:
             response = self.table.get_item(Key=key)
-            return response.get('Item', None)
+            return response.get("Item", None)
         except Exception as err:
             msg = "Error fetching item"
-            logger.error(msg, extra=key.update({'error': err}), exc_info=True)
+            logger.error(msg, extra=key.update({"error": err}), exc_info=True)
             raise Exception(msg)
 
     def get_dbitems(self, payload_ids: List[str]) -> List[Dict]:
@@ -80,13 +79,15 @@ class StateDB:
             List[Dict]: A list of DynamoDB Items
         """
         try:
-            resp = self.db.meta.client.batch_get_item(RequestItems={
-                self.table_name: {
-                    'Keys': [self.payload_id_to_key(id) for id in set(payload_ids)]
+            resp = self.db.meta.client.batch_get_item(
+                RequestItems={
+                    self.table_name: {
+                        "Keys": [self.payload_id_to_key(id) for id in set(payload_ids)]
+                    }
                 }
-            })
+            )
             items = []
-            for r in resp['Responses'][self.table_name]:
+            for r in resp["Responses"][self.table_name]:
                 items.append(r)
             logger.debug(f"Fetched {len(items)} items")
             return items
@@ -95,7 +96,9 @@ class StateDB:
             logger.error(msg, exc_info=True)
             raise Exception(msg)
 
-    def get_counts(self, collections_workflow: str, limit: int=None, **query_kwargs) -> Dict:
+    def get_counts(
+        self, collections_workflow: str, limit: int = None, **query_kwargs
+    ) -> Dict:
         """Get counts by query
 
         Args:
@@ -109,17 +112,17 @@ class StateDB:
         Returns:
             Dict: JSON containing counts key with counts for each state requested.
         """
-        query_kwargs['collections_workflow'] = collections_workflow
-        query_kwargs['select'] = 'COUNT'
+        query_kwargs["collections_workflow"] = collections_workflow
+        query_kwargs["select"] = "COUNT"
 
         counts = 0
         resp = self.query(**query_kwargs)
-        counts = resp['Count']
+        counts = resp["Count"]
 
-        while 'LastEvaluatedKey' in resp and (not limit or counts <= limit):
-            query_kwargs['ExclusiveStartKey'] = resp['LastEvaluatedKey']
+        while "LastEvaluatedKey" in resp and (not limit or counts <= limit):
+            query_kwargs["ExclusiveStartKey"] = resp["LastEvaluatedKey"]
             resp = self.query(**query_kwargs)
-            counts += resp['Count']
+            counts += resp["Count"]
 
         if limit and counts > limit:
             counts = f"{limit}+"
@@ -130,7 +133,7 @@ class StateDB:
         self,
         collections_workflow: str,
         limit=100,
-        nextkey: str=None,
+        nextkey: str = None,
         **kwargs,
     ) -> List[Dict]:
         """Get Items by query
@@ -145,29 +148,34 @@ class StateDB:
         Returns:
             Dict: List of Items
         """
-        items = {
-            'items': []
-        }
-        kwargs.update({
-            'collections_workflow': collections_workflow,
-            'Limit': limit,
-        })
+        items = {"items": []}
+        kwargs.update(
+            {
+                "collections_workflow": collections_workflow,
+                "Limit": limit,
+            }
+        )
 
         if nextkey:
             dbitem = self.get_dbitem(nextkey)
             startkey = {
                 key: dbitem[key]
-                for key in ['collections_workflow', 'itemids', 'state_updated', 'updated']
+                for key in [
+                    "collections_workflow",
+                    "itemids",
+                    "state_updated",
+                    "updated",
+                ]
             }
-            kwargs['ExclusiveStartKey'] = startkey
+            kwargs["ExclusiveStartKey"] = startkey
 
         resp = self.query(**kwargs)
 
-        for i in resp['Items']:
-            items['items'].append(self.dbitem_to_item(i))
+        for i in resp["Items"]:
+            items["items"].append(self.dbitem_to_item(i))
 
-        if 'LastEvaluatedKey' in resp:
-            items['nextkey'] = self.key_to_payload_id(resp['LastEvaluatedKey'])
+        if "LastEvaluatedKey" in resp:
+            items["nextkey"] = self.key_to_payload_id(resp["LastEvaluatedKey"])
 
         return items
 
@@ -181,10 +189,10 @@ class StateDB:
             Dict: StateDB Items
         """
         resp = self.get_items_page(*args, **kwargs)
-        items = resp['items']
-        while 'nextkey' in resp and (limit is None or len(items) < limit):
-            resp = self.get_items_page(*args, nextkey=resp['nextkey'], **kwargs)
-            items += resp['items']
+        items = resp["items"]
+        while "nextkey" in resp and (limit is None or len(items) < limit):
+            resp = self.get_items_page(*args, nextkey=resp["nextkey"], **kwargs)
+            items += resp["items"]
         if limit is None or len(items) < limit:
             return items
         return items[:limit]
@@ -199,8 +207,8 @@ class StateDB:
             str: Current state: PROCESSING, COMPLETED, FAILED, INVALID, ABORTED
         """
         response = self.table.get_item(Key=self.payload_id_to_key(payload_id))
-        if 'Item' in response:
-            return response['Item']['state_updated'].split('_')[0]
+        if "Item" in response:
+            return response["Item"]["state_updated"].split("_")[0]
         else:
             # assuming no such item in database
             return ""
@@ -217,56 +225,56 @@ class StateDB:
         states = {}
         for dbitem in self.get_dbitems(payload_ids):
             item = self.dbitem_to_item(dbitem)
-            states[item['payload_id']] = item['state']
+            states[item["payload_id"]] = item["state"]
         return states
 
     def claim_processing(self, payload_id):
-        """ Sets payload_id to PROCESSING to claim it (preventing other runs) """
+        """Sets payload_id to PROCESSING to claim it (preventing other runs)"""
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
-            'SET '
-            'created = if_not_exists(created, :created), '
-            'state_updated=:state_updated, updated=:updated'
+            "SET "
+            "created = if_not_exists(created, :created), "
+            "state_updated=:state_updated, updated=:updated"
         )
         response = self.table.update_item(
             Key=key,
             UpdateExpression=expr,
-            ConditionExpression='NOT begins_with(state_updated, :proc)',
+            ConditionExpression="NOT begins_with(state_updated, :proc)",
             ExpressionAttributeValues={
-                ':created': now,
-                ':state_updated': f"PROCESSING_{now}",
-                ':updated': now,
-                ':proc': "PROCESSING"
-            }
+                ":created": now,
+                ":state_updated": f"PROCESSING_{now}",
+                ":updated": now,
+                ":proc": "PROCESSING",
+            },
         )
         logger.debug("Claimed processing", extra=key)
         return response
 
     def set_processing(self, payload_id, execution):
-        """ Adds execution to existing item or creates new """
+        """Adds execution to existing item or creates new"""
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
-            'SET '
-            'created = if_not_exists(created, :created), '
-            'state_updated=:state_updated, updated=:updated, '
-            'executions = list_append(if_not_exists(executions, :empty_list), :exes)'
+            "SET "
+            "created = if_not_exists(created, :created), "
+            "state_updated=:state_updated, updated=:updated, "
+            "executions = list_append(if_not_exists(executions, :empty_list), :exes)"
         )
         response = self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues={
-                ':created': now,
-                ':state_updated': f"PROCESSING_{now}",
-                ':updated': now,
-                ':empty_list': [],
-                ':exes': [execution]
-            }
+                ":created": now,
+                ":state_updated": f"PROCESSING_{now}",
+                ":updated": now,
+                ":empty_list": [],
+                ":exes": [execution],
+            },
         )
-        logger.debug("Add execution", extra=key.update({'execution': execution}))
+        logger.debug("Add execution", extra=key.update({"execution": execution}))
         return response
 
     def set_outputs(self, payload_id: str, outputs: List[str]) -> str:
@@ -283,24 +291,26 @@ class StateDB:
         key = self.payload_id_to_key(payload_id)
 
         expr = (
-            'SET '
-            'created = if_not_exists(created, :created), '
-            'updated=:updated, '
-            'outputs=:outputs'
+            "SET "
+            "created = if_not_exists(created, :created), "
+            "updated=:updated, "
+            "outputs=:outputs"
         )
         response = self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues={
-                ':created': now,
-                ':updated': now,
-                ':outputs': outputs
-            }
+                ":created": now,
+                ":updated": now,
+                ":outputs": outputs,
+            },
         )
-        logger.debug("set outputs", extra=key.update({'outputs': outputs}))
+        logger.debug("set outputs", extra=key.update({"outputs": outputs}))
         return response
 
-    def set_completed(self, payload_id: str, outputs: Optional[List[str]]=None) -> str:
+    def set_completed(
+        self, payload_id: str, outputs: Optional[List[str]] = None
+    ) -> str:
         """Set this item as COMPLETED
 
         Args:
@@ -314,51 +324,51 @@ class StateDB:
         key = self.payload_id_to_key(payload_id)
 
         expr = (
-            'SET '
-            'created = if_not_exists(created, :created), '
-            'state_updated=:state_updated, updated=:updated'
+            "SET "
+            "created = if_not_exists(created, :created), "
+            "state_updated=:state_updated, updated=:updated"
         )
         expr_attrs = {
-            ':created': now,
-            ':state_updated': f"COMPLETED_{now}",
-            ':updated': now,
+            ":created": now,
+            ":state_updated": f"COMPLETED_{now}",
+            ":updated": now,
         }
 
         if outputs is not None:
-            expr += ', outputs=:outputs'
-            expr_attrs[':outputs'] = outputs
+            expr += ", outputs=:outputs"
+            expr_attrs[":outputs"] = outputs
 
         response = self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues=expr_attrs,
         )
-        logger.debug("set outputs", extra=key.update({'outputs': outputs}))
+        logger.debug("set outputs", extra=key.update({"outputs": outputs}))
         return response
 
     def set_failed(self, payload_id, msg):
-        """ Adds new item as failed """
+        """Adds new item as failed"""
         """ Adds new item with state function execution """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
-            'SET '
-            'created = if_not_exists(created, :created), '
-            'state_updated=:state_updated, updated=:updated, '
-            'last_error=:last_error'
+            "SET "
+            "created = if_not_exists(created, :created), "
+            "state_updated=:state_updated, updated=:updated, "
+            "last_error=:last_error"
         )
         response = self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues={
-                ':created': now,
-                ':state_updated': f"FAILED_{now}",
-                ':updated': now,
-                ':last_error': msg
-            }
+                ":created": now,
+                ":state_updated": f"FAILED_{now}",
+                ":updated": now,
+                ":last_error": msg,
+            },
         )
-        logger.debug("set failed", extra=key.update({'last_error': msg}))
+        logger.debug("set failed", extra=key.update({"last_error": msg}))
         return response
 
     def set_invalid(self, payload_id: str, msg: str) -> str:
@@ -375,22 +385,22 @@ class StateDB:
         key = self.payload_id_to_key(payload_id)
 
         expr = (
-            'SET '
-            'created = if_not_exists(created, :created), '
-            'state_updated=:state_updated, updated=:updated, '
-            'last_error=:last_error'
+            "SET "
+            "created = if_not_exists(created, :created), "
+            "state_updated=:state_updated, updated=:updated, "
+            "last_error=:last_error"
         )
         response = self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues={
-                ':created': now,
-                ':state_updated': f"INVALID_{now}",
-                ':updated': now,
-                ':last_error': msg
-            }
+                ":created": now,
+                ":state_updated": f"INVALID_{now}",
+                ":updated": now,
+                ":last_error": msg,
+            },
         )
-        logger.debug("set invalid", extra=key.update({'last_error': msg}))
+        logger.debug("set invalid", extra=key.update({"last_error": msg}))
         return response
 
     def set_aborted(self, payload_id: str) -> str:
@@ -406,18 +416,18 @@ class StateDB:
         key = self.payload_id_to_key(payload_id)
 
         expr = (
-            'SET '
-            'created = if_not_exists(created, :created), '
-            'state_updated=:state_updated, updated=:updated'
+            "SET "
+            "created = if_not_exists(created, :created), "
+            "state_updated=:state_updated, updated=:updated"
         )
         response = self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues={
-                ':created': now,
-                ':state_updated': f"ABORTED_{now}",
-                ':updated': now,
-            }
+                ":created": now,
+                ":state_updated": f"ABORTED_{now}",
+                ":updated": now,
+            },
         )
         logger.debug("set aborted")
         return response
@@ -425,12 +435,12 @@ class StateDB:
     def query(
         self,
         collections_workflow: str,
-        state: str=None,
-        since: str=None,
-        select: str='ALL_ATTRIBUTES',
-        sort_ascending: bool=False,
-        sort_index: str='updated',
-        error_begins_with: str=None,
+        state: str = None,
+        since: str = None,
+        select: str = "ALL_ATTRIBUTES",
+        sort_ascending: bool = False,
+        sort_index: str = "updated",
+        error_begins_with: str = None,
         **kwargs,
     ) -> Dict:
         """Perform a single Query on a DynamoDB index
@@ -455,45 +465,51 @@ class StateDB:
         Returns:
             Dict: DynamoDB response
         """
-        index = None if sort_index == 'default' else sort_index
+        index = None if sort_index == "default" else sort_index
 
         if error_begins_with:
-            kwargs['FilterExpression']  = Attr("last_error").begins_with(error_begins_with)
+            kwargs["FilterExpression"] = Attr("last_error").begins_with(
+                error_begins_with
+            )
 
         # always use the hash of the table which is same in all Global Secondary Indices
-        expr = Key('collections_workflow').eq(collections_workflow)
+        expr = Key("collections_workflow").eq(collections_workflow)
         if since:
             start = datetime.now(timezone.utc) - self.since_to_timedelta(since)
             begin = f"{start.isoformat()}"
             end = f"{datetime.now(timezone.utc).isoformat()}"
 
             if state:
-                index = 'state_updated'
+                index = "state_updated"
                 expr = expr & Key(index).between(f"{state}_{begin}", f"{state}_{end}")
             else:
-                index = 'updated'
+                index = "updated"
                 expr = expr & Key(index).between(begin, end)
 
         elif state:
-            index = 'state_updated'
+            index = "state_updated"
             expr = expr & Key(index).begins_with(state)
 
-        keys = ['collections_workflow', 'itemids']
+        keys = ["collections_workflow", "itemids"]
 
         if index:
-            kwargs['IndexName'] = index
+            kwargs["IndexName"] = index
 
-        if 'ExclusiveStartKey' in kwargs:
-            kwargs['ExclusiveStartKey'] = {k: kwargs['ExclusiveStartKey'][k] for k in keys}
+        if "ExclusiveStartKey" in kwargs:
+            kwargs["ExclusiveStartKey"] = {
+                k: kwargs["ExclusiveStartKey"][k] for k in keys
+            }
 
-        kwargs.update({
-            'KeyConditionExpression': expr,
-            'Select': select,
-            'ScanIndexForward': sort_ascending
-        })
+        kwargs.update(
+            {
+                "KeyConditionExpression": expr,
+                "Select": select,
+                "ScanIndexForward": sort_ascending,
+            }
+        )
 
-        if self.limit and (not 'Limit' in kwargs or self.limit < kwargs['Limit']):
-            kwargs['Limit'] = self.limit
+        if self.limit and ("Limit" not in kwargs or self.limit < kwargs["Limit"]):
+            kwargs["Limit"] = self.limit
 
         resp = self.table.query(**kwargs)
 
@@ -509,11 +525,11 @@ class StateDB:
         Returns:
             Dict: Dictionary containing the DynamoDB Key
         """
-        parts1 = payload_id.split('/workflow-')
-        parts2 = parts1[1].split('/', maxsplit=1)
+        parts1 = payload_id.split("/workflow-")
+        parts2 = parts1[1].split("/", maxsplit=1)
         key = {
-            'collections_workflow': parts1[0] + f"_{parts2[0]}",
-            'itemids': '' if len(parts2) == 1 else parts2[1]
+            "collections_workflow": parts1[0] + f"_{parts2[0]}",
+            "itemids": "" if len(parts2) == 1 else parts2[1],
         }
         return key
 
@@ -527,7 +543,7 @@ class StateDB:
         Returns:
             str: Payload ID
         """
-        parts = key['collections_workflow'].rsplit('_', maxsplit=1)
+        parts = key["collections_workflow"].rsplit("_", maxsplit=1)
         return f"{parts[0]}/workflow-{parts[1]}/{key['itemids']}"
 
     @classmethod
@@ -538,34 +554,36 @@ class StateDB:
     @staticmethod
     def get_payload_url(payload_id):
         # TODO: util fn to get env vars or throw exception
-        payload_bucket = os.getenv('CIRRUS_PAYLOAD_BUCKET')
+        payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET")
 
         if not payload_bucket:
-            raise ValueError('env var CIRRUS_PAYLOAD_BUCKET must be defined')
+            raise ValueError("env var CIRRUS_PAYLOAD_BUCKET must be defined")
 
         return f"s3://{PAYLOAD_BUCKET}/{payload_id}/input.json"
 
     @classmethod
-    def dbitem_to_item(cls, dbitem: Dict, region: str=os.getenv('AWS_REGION', 'us-west-2')) -> Dict:
-        state, updated = dbitem['state_updated'].split('_')
-        collections, workflow = dbitem['collections_workflow'].rsplit('_', maxsplit=1)
+    def dbitem_to_item(
+        cls, dbitem: Dict, region: str = os.getenv("AWS_REGION", "us-west-2")
+    ) -> Dict:
+        state, updated = dbitem["state_updated"].split("_")
+        collections, workflow = dbitem["collections_workflow"].rsplit("_", maxsplit=1)
         item = {
             "payload_id": cls.key_to_payload_id(dbitem),
             "collections": collections,
             "workflow": workflow,
-            "items": dbitem['itemids'],
+            "items": dbitem["itemids"],
             "state": state,
-            "created": dbitem['created'],
-            "updated": dbitem['updated'],
-            "payload": cls.get_input_payload_url(dbitem)
+            "created": dbitem["created"],
+            "updated": dbitem["updated"],
+            "payload": cls.get_input_payload_url(dbitem),
         }
-        if 'executions' in dbitem:
+        if "executions" in dbitem:
             base_url = f"https://{region}.console.aws.amazon.com/states/home?region={region}#/executions/details/"
-            item['executions'] = [base_url + f"{e}" for e in dbitem['executions']]
-        if 'outputs' in dbitem:
-            item['outputs'] = dbitem['outputs']
-        if 'last_error' in dbitem:
-            item['last_error'] = dbitem['last_error']
+            item["executions"] = [base_url + f"{e}" for e in dbitem["executions"]]
+        if "outputs" in dbitem:
+            item["outputs"] = dbitem["outputs"]
+        if "last_error" in dbitem:
+            item["last_error"] = dbitem["last_error"]
         return item
 
     @classmethod
@@ -580,8 +598,8 @@ class StateDB:
         """
         unit = since[-1]
         # days, hours, or minutes
-        assert(unit in ['d', 'h', 'm'])
-        days = int(since[0:-1]) if unit == 'd' else 0
-        hours = int(since[0:-1]) if unit == 'h' else 0
-        minutes = int(since[0:-1]) if unit == 'm' else 0
+        assert unit in ["d", "h", "m"]
+        days = int(since[0:-1]) if unit == "d" else 0
+        hours = int(since[0:-1]) if unit == "h" else 0
+        minutes = int(since[0:-1]) if unit == "m" else 0
         return timedelta(days=days, hours=hours, minutes=minutes)

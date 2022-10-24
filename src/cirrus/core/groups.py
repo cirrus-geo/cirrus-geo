@@ -1,17 +1,15 @@
 import logging
-
 from collections.abc import Sequence
 
+from cirrus.core.cloudformation import CloudFormation
 from cirrus.core.components import (
+    Feeder,
+    Function,
     Lambda,
     StepFunction,
-    Function,
-    Feeder,
     Task,
     Workflow,
 )
-from cirrus.core.cloudformation import CloudFormation
-
 
 logger = logging.getLogger(__name__)
 

@@ -9,10 +9,10 @@ lambda:
         - "s3:PutObject"
       Resource:
         - !Join
-          - ''
-          - - 'arn:aws:s3:::'
+          - ""
+          - - "arn:aws:s3:::"
             - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-            - '*'
+            - "*"
     - Effect: "Allow"
       Action:
         - "s3:ListBucket"

@@ -2,30 +2,29 @@ from copy import deepcopy
 
 from .base import BaseCFObject
 
-
-JOB_DEFINITION_TYPE = 'AWS::Batch::JobDefinition'
+JOB_DEFINITION_TYPE = "AWS::Batch::JobDefinition"
 
 
 def convert_env_to_batch_env(env):
     if not env:
         return []
     for name, val in env.items():
-        yield {'Name': name, 'Value': val}
+        yield {"Name": name, "Value": val}
 
 
 def convert_batch_env_to_env(env):
     _env = {}
-    for item in (env or []):
-        _env[item['Name']] = item['Value']
+    for item in env or []:
+        _env[item["Name"]] = item["Value"]
     return _env
 
 
 class Resource(BaseCFObject):
-    top_level_key = 'Resources'
-    task_batch_resource_attr = 'batch_resources'
+    top_level_key = "Resources"
+    task_batch_resource_attr = "batch_resources"
 
     def __new__(cls, name, definition, *args, **kwargs):
-        resource_type = definition.get('Type')
+        resource_type = definition.get("Type")
 
         if resource_type == JOB_DEFINITION_TYPE:
             cls = JobDefinition
@@ -38,8 +37,8 @@ class Resource(BaseCFObject):
 
 class JobDefinition(Resource):
     default_batch_env = {
-        'AWS_DEFAULT_REGION': '#{AWS::Region}',
-        'AWS_REGION': '#{AWS::Region}',
+        "AWS_DEFAULT_REGION": "#{AWS::Region}",
+        "AWS_REGION": "#{AWS::Region}",
     }
 
     def __init__(self, *args, **kwargs):
@@ -65,12 +64,12 @@ class JobDefinition(Resource):
 
         # default job defn keys above Environment, if needed
         item = self.definition
-        keys = ['Properties', 'ContainerProperties']
+        keys = ["Properties", "ContainerProperties"]
         for key in keys:
             if key not in item:
                 item[key] = {}
             item = item[key]
 
-        _env = item.get('Environment', {})
+        _env = item.get("Environment", {})
         update_env.update(convert_batch_env_to_env(_env))
-        item['Environment'] = list(convert_env_to_batch_env(update_env))
+        item["Environment"] = list(convert_env_to_batch_env(update_env))

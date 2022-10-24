@@ -2,7 +2,7 @@ Resources:
   GeoLambdaAsBatchJob:
     Type: "AWS::Batch::JobDefinition"
     Properties:
-      JobDefinitionName: '#{AWS::StackName}-geolambda-as-batch'
+      JobDefinitionName: "#{AWS::StackName}-geolambda-as-batch"
       Type: Container
       Parameters:
         lambda_function: ""
@@ -19,13 +19,13 @@ Resources:
             Value: /usr/local/share/proj
         Memory: ${self:custom.batch.GeoLambdaAsBatchJob.Memory}
         Vcpus: ${self:custom.batch.GeoLambdaAsBatchJob.Vcpus}
-        Image: 'cirrusgeo/run-geolambda:0.2.1'
+        Image: "cirrusgeo/run-geolambda:0.2.1"
       RetryStrategy:
         Attempts: 1
   LambdaAsBatchJob:
     Type: "AWS::Batch::JobDefinition"
     Properties:
-      JobDefinitionName: '#{AWS::StackName}-lambda-as-batch'
+      JobDefinitionName: "#{AWS::StackName}-lambda-as-batch"
       Type: Container
       Parameters:
         lambda_function: ""
@@ -38,6 +38,6 @@ Resources:
         Environment:
         Memory: ${self:custom.batch.LambdaAsBatchJob.Memory}
         Vcpus: ${self:custom.batch.LambdaAsBatchJob.Vcpus}
-        Image: 'cirrusgeo/run-lambda:0.2.1'
+        Image: "cirrusgeo/run-lambda:0.2.1"
       RetryStrategy:
         Attempts: 1

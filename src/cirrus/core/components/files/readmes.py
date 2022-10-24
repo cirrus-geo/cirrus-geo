@@ -4,11 +4,10 @@ from rich.markdown import Markdown
 
 from .base import ComponentFile
 
-
 logger = logging.getLogger(__name__)
 
 
-default_readme = '''# {name}
+default_readme = """# {name}
 
 Fill in this README with details for this {type}
 
@@ -70,11 +69,11 @@ supplied in `payload['process']['item-queries']`:
   }}
 }}
 ```
-'''.format
+""".format
 
 
 class Readme(ComponentFile):
-    def __init__(self, *args, name='README.md', **kwargs):
+    def __init__(self, *args, name="README.md", **kwargs):
         super().__init__(*args, name=name, **kwargs)
 
     @staticmethod
@@ -89,7 +88,7 @@ class Readme(ComponentFile):
             logger.error(
                 "%s '%s' has no README.",
                 self.parent.type.capitalize(),
-                self.parent.name
+                self.parent.name,
             )
             return
         self.console.print(Markdown(self.content))

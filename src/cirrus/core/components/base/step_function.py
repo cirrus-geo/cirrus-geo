@@ -3,7 +3,6 @@ import logging
 from .. import files
 from .component import Component
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -1,10 +1,10 @@
-import yaml
 import copy
-
-from pathlib import Path
 from collections.abc import MutableMapping, MutableSequence
-from cfn_tools import odict, yaml_loader
+from pathlib import Path
+
+import yaml
 from cfn_flip import yaml_dumper
+from cfn_tools import odict, yaml_loader
 
 from . import pseudo_parameters
 
@@ -67,7 +67,7 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
 
     # FUTURE: once not supporting py versions <3.8,
     # use the '/' version of this signature
-    #def __init__(self, dict=None, /, **kwargs):
+    # def __init__(self, dict=None, /, **kwargs):
     def __init__(self, dict=None, **kwargs):
         self._dict = type(self)._dict_type()
         if dict is not None:
@@ -82,12 +82,14 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
 
     @classmethod
     def from_file(cls, f: Path):
-        return cls.from_yaml(f.read_text(encoding='utf-8'))
+        return cls.from_yaml(f.read_text(encoding="utf-8"))
 
     def validate(self) -> None:
         pass
 
-    def _dump(self, *args, clean_up: bool=True, long_form: bool=True, **kwargs) -> str:
+    def _dump(
+        self, *args, clean_up: bool = True, long_form: bool = True, **kwargs
+    ) -> str:
         return yaml.dump(
             self._dict,
             *args,
@@ -99,7 +101,7 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
         return self._dump()
 
     def to_file(self, f: Path) -> None:
-        with f.open('w') as f:
+        with f.open("w") as f:
             self._dump(stream=f)
 
     def copy(self):
@@ -108,7 +110,7 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
     # make this work like a namespace for keys that
     # are in a format compatible with python identifiers
     def __setattr__(self, name, val):
-        if name == '_dict':
+        if name == "_dict":
             return super().__setattr__(name, val)
         if isinstance(val, dict):
             self._dict[name] = NamedYamlable(val)
@@ -121,7 +123,7 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
             )
 
     def __getattr__(self, name):
-        if name == '_dict':
+        if name == "_dict":
             return super().__getattr__(name)
         try:
             return self._dict[name]
@@ -149,7 +151,7 @@ class NamedYamlable(MutableMapping, metaclass=NamedYamlableMeta):
         return iter(self._dict)
 
     def __repr__(self):
-        return f'{type(self).__qualname__}({repr(self._dict)})'
+        return f"{type(self).__qualname__}({repr(self._dict)})"
 
     def __or__(self, other):
         new = self.copy()
@@ -174,11 +176,15 @@ def _construct_yamlable(loader, node, deep=False):
 
 
 def _construct_yamlablelist(loader, node, deep=False):
-    return YamlableList(*[loader.construct_object(val, deep=deep) for val in node.value])
+    return YamlableList(
+        *[loader.construct_object(val, deep=deep) for val in node.value]
+    )
 
 
 def _yamlablelist_representer(dumper, data):
-    return dumper.represent_sequence(yaml.resolver.BaseResolver.DEFAULT_SEQUENCE_TAG, data)
+    return dumper.represent_sequence(
+        yaml.resolver.BaseResolver.DEFAULT_SEQUENCE_TAG, data
+    )
 
 
 yaml_dumper.CfnYamlDumper.add_representer(YamlableList, _yamlablelist_representer)

@@ -2,11 +2,10 @@ import logging
 
 from .base import ComponentFile
 
-
 logger = logging.getLogger(__name__)
 
 
-default_handler = '''#!/usr/bin/env python
+default_handler = """#!/usr/bin/env python
 from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.logging import get_task_logger
 
@@ -18,11 +17,11 @@ def lambda_handler(event, context={{}}):
     payload = ProcessPayload.from_event(event)
     logger = get_task_logger(f'{{LAMBDA_TYPE}}.{name}', payload=payload)
     return payload
-'''.format
+""".format
 
 
 class PythonHandler(ComponentFile):
-    def __init__(self, *args, name='lambda_function.py', **kwargs):
+    def __init__(self, *args, name="lambda_function.py", **kwargs):
         super().__init__(*args, name=name, **kwargs)
 
     @staticmethod

@@ -1,29 +1,27 @@
-import sys
 import copy
 import logging
-
+import sys
 from pathlib import Path
-from typing import Type, TypeVar, Callable
+from typing import Callable, Type, TypeVar
 
 from cirrus.core.exceptions import ComponentError
-from cirrus.core.utils.console import console
 from cirrus.core.utils import misc
-
+from cirrus.core.utils.console import console
 
 logger = logging.getLogger(__name__)
 
 
-T = TypeVar('T', bound='ComponentFile')
-Component = TypeVar('Component', bound='Component')
+T = TypeVar("T", bound="ComponentFile")
+Component = TypeVar("Component", bound="Component")
 
 
 class ComponentFile:
     def __init__(
         self,
         name: str,
-        optional: bool=False,
-        path: Path=None,
-        content_fn: Callable[[Type[Component]], str]=None,
+        optional: bool = False,
+        path: Path = None,
+        content_fn: Callable[[Type[Component]], str] = None,
     ) -> None:
         self.name = name
         self.required = not optional
@@ -35,7 +33,7 @@ class ComponentFile:
 
         self.base_path = path
 
-        if content_fn or not hasattr(self, 'content_fn'):
+        if content_fn or not hasattr(self, "content_fn"):
             self.content_fn = content_fn
 
         # store a reference to the console to
@@ -43,7 +41,7 @@ class ComponentFile:
         self.console = console
 
         if self.required and not self.content_fn:
-            raise ValueError('Required files must have a content_fn defined.')
+            raise ValueError("Required files must have a content_fn defined.")
 
     @property
     def content(self):
@@ -59,7 +57,7 @@ class ComponentFile:
                     logging.debug(
                         f"{self.__class__.__name__} at '{self.relative_path()}': unable to open for read, defaulting to empty",
                     )
-                    self._content = ''
+                    self._content = ""
         return self._content
 
     def relative_path(self):
@@ -86,7 +84,7 @@ class ComponentFile:
     @path.setter
     def path(self, path: Path) -> None:
         if path.is_absolute():
-            raise ValueError(f'Path cannot be absolute: {path}')
+            raise ValueError(f"Path cannot be absolute: {path}")
         self.base_path = path
 
     def _copy_to_component(self, parent_component: Type[Component]) -> T:

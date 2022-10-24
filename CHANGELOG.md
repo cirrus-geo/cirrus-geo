@@ -1,11 +1,11 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
 
 ## [v0.7.0] - 2022-09-12
 
@@ -95,6 +95,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Batch IAM role best practices have changed, and some builtin roles have changed
   or been removed. See [#149] for additional context. In summary:
+
   - Do not specify the service role on batch compute environments. The builtin
     `BatchServiceRole` has been removed from cirrus. The default role automatically
     provided by `AWS` automatically is sufficient.
@@ -164,13 +165,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - dependency on `servereles-pseudo-parameters` ([#139])
 - old docs ([#138])
 
-
 ## [v0.6.0] - 2022-02-18
 
 ### Fixed
 
 - `cirrus build` will now rmtree for build dirs on rebulids ([#105])
-
 
 ## [v0.5.4] - 2022-02-10
 
@@ -178,20 +177,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - `process` bug due to variable name reuse ([#116])
 
-
 ## [v0.5.3] - 2022-02-10
 
 ### Fixed
 
 - API `items` endpoint fixed ([#114])
 
-
 ## [v0.5.2] - 2022-02-09
 
 ### Fixed
 
 - `update-state` needs to use step function output for workflow chaining ([#111])
-
 
 ## [v0.5.1] - 2022-01-28
 
@@ -200,7 +196,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `post-batch` returns process payload when no batch error, not batch output ([#107])
 - `publish` publishes items to `PUBLISH_SNS` topics again ([#108])
 - node package pinning in default package.json using correct semantics ([#102])
-
 
 ## [v0.5.0] - 2022-01-12
 
@@ -223,6 +218,7 @@ additional details about the changes included in this release.
       include:
         - 'a_package==1.2.3'
   ```
+
 - now using `cirrus-lib>=0.6.0`; see the
   [breaking changes in the 0.6.0 release][cl0.6.0]
   and update lambda handlers accordingly
@@ -287,14 +283,12 @@ and then replace all custom `cirrus.yml` content that is still required.
 - `test` directory and contents ([#51])
 - `publish-test` function
 
-
 ## [v0.5.0a5] - 2022-01-07
 
 ### Changed
 
 - `cirrus-lib` dependency pinned strictly to v0.5.1 to prevent pulling in
   incompatiable newer release ([9f56981])
-
 
 ## [v0.5.0a4] - 2021-11-19
 
@@ -304,7 +298,6 @@ and then replace all custom `cirrus.yml` content that is still required.
 - Add `__subclass__` hook to `CollectionMeta` to fix tests ([1b89611])
 - Fix `enabled` support for workflows ([#82])
 
-
 ## [v0.5.0a3] - 2021-11-19
 
 ### Fixes
@@ -312,7 +305,6 @@ and then replace all custom `cirrus.yml` content that is still required.
 - ensure `enabled` is popped off component definitions ([85464f5])
 - `update-state` premissions now allow getting step function execution
   history ([#73])
-
 
 ## [v0.5.0a2] - 2021-10-06
 
@@ -326,14 +318,12 @@ and then replace all custom `cirrus.yml` content that is still required.
 
 - builtin component linting/fixes ([#71])
 
-
 ## [v0.5.0a1] - 2021-10-05
 
 ### Changed
 
 - Separate lambda packages only contain code/files specific to each respective
   lambda
-
 
 ## [v0.5.0a0] - 2021-10-05
 
@@ -347,7 +337,6 @@ cleanup steps.
 
 - bumped rasterio version to 1.2.8 where applicable
 
-
 ## [v0.4.2] - 2021-01-12
 
 ### Added
@@ -355,12 +344,14 @@ cleanup steps.
 - Query parameters that allow for results sorting.
 
 ### Fixed
+
 - stac-api feeder (broken when providing STAC API URL)
 - publish-test Lambda correctly logs
 
 ## [v0.4.1] - 2020-11-19
 
 ### Fixed
+
 - Error when trying to parse non standardized logging error output
 - Fixed `updated` index to allow for time filtering
 - Rerunning of catalogs in process task
@@ -369,11 +360,13 @@ cleanup steps.
 ## [v0.4.0] - 2020-11-13
 
 ### Added
+
 - API root now returns child links to summaries if configured in the Cirrus root catalog
 - `status` field added to attributes of published SNS messages, `created` if new STAC Item (not in Cirrus catalog), or `updated` if it already exists
 - `created` and `updated` properties added to STAC Items when adding to Cirrus static catalog on s3
 
 ### Changed
+
 - feeder.test Lambda moved to core/publish-test Lambda and defaults to being subscribed to the Cirrus Publish SNS. The Lambda only logs the payload
 - API changes: get single catalog is now `/<catid>`, collection names now include collections + workflow, Item response updated as detailed in cirrus-lib 0.4
 - State Schema changes, see `cirrus-lib`
@@ -383,6 +376,7 @@ cleanup steps.
 ## [v0.3.0] - 2020-10-26
 
 ### Added
+
 - Structured logging, providing additional context to logs
 - `add-collections` Lambda function for adding Collections to the Cirrus static STAC catalog
 - `process` Lambda updated to accept `catids` as an argument which it will replace with that Catalog's original input file
@@ -392,6 +386,7 @@ cleanup steps.
 - Link relation type `via-cirrus` added to output items where title is the Catalog ID and the href links to that catalog ID in the Cirrus API
 
 ### Changed
+
 - Update `cirrus-lib` to 0.3.3
 - Lambda code files renamed from lambda_function.py to feeder.py for feeders and task.py for tasks, allowing better logging
 - Lambda handler functions renamed from `lambda_handler` to `handler` since they could be Batch rather than lambdas
@@ -402,32 +397,39 @@ cleanup steps.
 - Logging refactored to do structured (JSON) logging
 
 ### Fixed
+
 - Errors from batch now correctly reported to StateDB
 
 ### Removed
-- `catids` no longer valid argument `rerun`  payload - publish array of `catids` directly to Cirrus queue instead
+
+- `catids` no longer valid argument `rerun` payload - publish array of `catids` directly to Cirrus queue instead
 
 ## [v0.2.1] - 2020-09-10
 
 ### Added
+
 - Failed workflows publish state db info to new SNS topic: cirrus-<stage>-failed
 - STAC Lambda added for adding collections to the Cirrus root catalog. This is not currently required, but is good practice
 - s3 inventory feeder: added support for s3 orc inventory files
 
 ### Removed
+
 - assigning of collections in the `copy-assets` and `publish` Lambdas - this is done in cirrus-lib when parsing for a payload so this was redundant
 
 ### Changed
+
 - cirrus-lib version updated to 0.3.1
 - VisibilityTimeout and maxReceiveCount fields changed on Cirrus process lambda
 
 ### Fixed
+
 - Updated version of batch jobs `geolambda-as-batch` and `lambda-as-batch`
 - bug in s3 inventory feeder when using regex to extract date from filename
 
 ## [v0.2.0] - 2020-09-08
 
 ### Added
+
 - `process` Lambda that consumes from ProcessQueue that both validates the payload and starts the workflow.
 - `stac` Lambda added for adding Collections to the Cirrus Catalog
 - `s2-inventory` for creating partial STAC Items (i.e., JSON with assets) from s3 inventory files
@@ -436,6 +438,7 @@ cleanup steps.
 - Added back "post-batch" steps to all workflows
 
 ### Changed
+
 - Update cirrus-lib to 0.3.0
 - IAM configuration (previously batch/iam.yml) combined into Core resources (core.yml)
 - `pre-batch` and `post-batch` Lambda functions moved from `core` to `tasks` (since they are tasks that can be used in a workflow)
@@ -443,22 +446,21 @@ cleanup steps.
 - Batch processes now write output payload back to a new file rather than overwriting the input payload.
 
 ### Removed
+
 - `validation` and `start-workflow` Lambdas (replace with new `process` Lambda)
 - ValidationQueue (SQS), now only 1 queue (ProcessQueue)
 
 ### Fixed
+
 - `feed-stac-api` Lambda fixed to split requests by hours, not days. Fixes issue where there are more scenes in 1 day than the per request limit
 - `lambda-as-batch` and `geolambda-as-batch` Batch tasks fixed to properly return newly returned STAC Catalog rather than the original one (which may have been modified as it is passed by reference to handler)
 - `convert-to-cog` now properly populates `derived_from` link in newly created STAC Item
-
 
 ## [v0.1.0] - 2020-08-07
 
 Initial release
 
-
-
-[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.7.0...main
+[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.7.0...main
 [v0.7.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.6.0...v0.7.0
 [v0.6.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.4...v0.6.0
 [v0.5.4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.3...v0.5.4
@@ -479,7 +481,6 @@ Initial release
 [v0.2.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/cirrus-geo/cirrus-geo/cirrus/tree/legacy
-
 [#47]: https://github.com/cirrus-geo/cirrus-geo/issues/47
 [#51]: https://github.com/cirrus-geo/cirrus-geo/issues/51
 [#53]: https://github.com/cirrus-geo/cirrus-geo/issues/53
@@ -514,7 +515,6 @@ Initial release
 [#145]: https://github.com/cirrus-geo/cirrus-geo/issues/145
 [#147]: https://github.com/cirrus-geo/cirrus-geo/issues/147
 [#149]: https://github.com/cirrus-geo/cirrus-geo/issues/149
-
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73
@@ -524,7 +524,6 @@ Initial release
 [#90]: https://github.com/cirrus-geo/cirrus-geo/pull/90
 [#138]: https://github.com/cirrus-geo/cirrus-geo/pull/138
 [#143]: https://github.com/cirrus-geo/cirrus-geo/pull/143
-
 [f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
@@ -532,5 +531,4 @@ Initial release
 [9f56981]: https://github.com/cirrus-geo/cirrus-geo/commit/9f569819d1c4a59fc71f15642b3ea0b30058c885
 [44bebc5]: https://github.com/cirrus-geo/cirrus-geo/commit/44bebc5d1e2d802fc0e596be381fb3e1e1042170
 [ba3e04b]: https://github.com/cirrus-geo/cirrus-geo/commit/ba3e04ba2c2ae554fecf9b80e22c71690a9eb518
-
 [cl0.6.0]: https://github.com/cirrus-geo/cirrus-lib/releases/tag/v0.6.0

@@ -14,10 +14,10 @@ lambda:
         - "s3:GetBucketLocation"
       Resource:
         - !Join
-          - ''
-          - - 'arn:aws:s3:::'
+          - ""
+          - - "arn:aws:s3:::"
             - ${self:provider.environment.CIRRUS_DATA_BUCKET}
-            - '*'
+            - "*"
     - Effect: "Allow"
       Action: secretsmanager:GetSecretValue
       Resource:
@@ -31,4 +31,4 @@ lambda:
         - dynamodb:DescribeTable
       Resource:
         - !GetAtt StateTable.Arn
-        - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
+        - !Join ["", [!GetAtt StateTable.Arn, "/index/*"]]

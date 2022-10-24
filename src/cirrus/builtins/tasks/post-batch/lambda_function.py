@@ -1,27 +1,26 @@
-import re
 import json
+import re
 
 import boto3
 
-from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.logging import get_task_logger
+from cirrus.lib.process_payload import ProcessPayload
 
+logger = get_task_logger("lambda_function.update-state", payload=tuple())
 
-logger = get_task_logger('lambda_function.update-state', payload=tuple())
-
-BATCH_LOG_GROUP = '/aws/batch/job'
-LOG_CLIENT = boto3.client('logs')
-DEFAULT_ERROR = 'UnknownError'
-ERROR_REGEX = re.compile(r'^(?:cirrus\.?lib\.errors\.)?(?:([\.\w]+):)?\s*(.*)')
+BATCH_LOG_GROUP = "/aws/batch/job"
+LOG_CLIENT = boto3.client("logs")
+DEFAULT_ERROR = "UnknownError"
+ERROR_REGEX = re.compile(r"^(?:cirrus\.?lib\.errors\.)?(?:([\.\w]+):)?\s*(.*)")
 
 
 def lambda_handler(event, context):
-    if 'error' not in event:
+    if "error" not in event:
         return ProcessPayload.from_event(event)
 
-    error = event.get('error', {})
-    cause = json.loads(error['Cause'])
-    logname = cause['Attempts'][-1]['Container']['LogStreamName']
+    error = event.get("error", {})
+    cause = json.loads(error["Cause"])
+    logname = cause["Attempts"][-1]["Container"]["LogStreamName"]
 
     try:
         error_type, error_msg = get_error_from_batch(logname)
@@ -36,11 +35,11 @@ def lambda_handler(event, context):
 
 
 def get_error_from_batch(logname):
-    logger.info('Getting error from %s/%s', BATCH_LOG_GROUP, logname)
+    logger.info("Getting error from %s/%s", BATCH_LOG_GROUP, logname)
     logs = LOG_CLIENT.get_log_events(
         logGroupName=BATCH_LOG_GROUP,
         logStreamName=logname,
     )
-    msg = logs['events'][-1]['message']
+    msg = logs["events"][-1]["message"]
     error_type, msg = ERROR_REGEX.match(msg).groups()
     return error_type or DEFAULT_ERROR, msg

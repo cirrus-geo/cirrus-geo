@@ -1,11 +1,9 @@
 import logging
-
 from abc import ABCMeta, abstractmethod
 from collections.abc import MutableMapping
 from pathlib import Path
 
 from cirrus.core.utils.plugins import iter_resources
-
 
 logger = logging.getLogger(__name__)
 
@@ -25,122 +23,120 @@ def resource_plugins(resource_type):
 
 class GroupMeta(MutableMapping, ABCMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
-        if 'group_name' not in attrs:
-            attrs['group_name'] = f'{name.lower()}s'
+        if "group_name" not in attrs:
+            attrs["group_name"] = f"{name.lower()}s"
 
-        if 'group_display_name' not in attrs:
-            attrs['group_display_name'] = attrs['group_name'].capitalize()
+        if "group_display_name" not in attrs:
+            attrs["group_display_name"] = attrs["group_name"].capitalize()
 
-        if 'enable_cli' not in attrs:
-            attrs['enable_cli'] = True
+        if "enable_cli" not in attrs:
+            attrs["enable_cli"] = True
 
-        if 'cmd_aliases' not in attrs:
-            attrs['cmd_aliases'] = []
+        if "cmd_aliases" not in attrs:
+            attrs["cmd_aliases"] = []
 
-        attrs['user_extendable'] = attrs.get('user_extendable', False)
+        attrs["user_extendable"] = attrs.get("user_extendable", False)
 
-        if not attrs['user_extendable']:
-            attrs['user_dir_name'] = None
-        elif 'user_dir_name' not in attrs or attrs['user_dir_name'] is None:
-            attrs['user_dir_name'] = attrs['group_name']
+        if not attrs["user_extendable"]:
+            attrs["user_dir_name"] = None
+        elif "user_dir_name" not in attrs or attrs["user_dir_name"] is None:
+            attrs["user_dir_name"] = attrs["group_name"]
 
-        attrs['_plugins'] = None
-        attrs['_elements'] = None
-        attrs['project'] = None
-        attrs['parent'] = None
+        attrs["_plugins"] = None
+        attrs["_elements"] = None
+        attrs["project"] = None
+        attrs["parent"] = None
 
         return super().__new__(cls, name, bases, attrs, **kwargs)
 
     @classmethod
-    def __subclasshook__(cls, C):
+    def __subclasshook__(cls, c):
         if cls is GroupMeta:
-            if any("elements" in B.__dict__ for B in C.__mro__):
+            if any("elements" in b.__dict__ for b in c.__mro__):
                 return True
             return False
         return NotImplemented
 
-    def __hash__(self):
-        return hash(self.group_name)
+    def __hash__(cls):
+        return hash(cls.group_name)
 
     @property
-    def plugins(self):
-        if self._plugins is None:
-            self._plugins = (
-                resource_plugins(self.group_name)
-                if self.user_extendable
-                else {}
+    def plugins(cls):
+        if cls._plugins is None:
+            cls._plugins = (
+                resource_plugins(cls.group_name) if cls.user_extendable else {}
             )
-        return self._plugins
+        return cls._plugins
 
     @property
-    def elements(self):
-        if self._elements is None:
-            self.find()
-        return self._elements
+    def elements(cls):
+        if cls._elements is None:
+            cls.find()
+        return cls._elements
 
     @property
-    def user_dir(self):
-        if self.user_dir_name is None:
+    def user_dir(cls):
+        if cls.user_dir_name is None:
             return None
-        if self.project is None or self.project.path is None:
+        if cls.project is None or cls.project.path is None:
             logger.warning(
-                f'No cirrus project specified; limited to {self.group_display_name} built-in and from plugins.',
+                f"No cirrus project specified; limited to {cls.group_display_name} built-in and from plugins.",
             )
             return None
-        return self.project.path.joinpath(self.user_dir_name)
+        return cls.project.path.joinpath(cls.user_dir_name)
 
     @abstractmethod
-    def find(self):
+    def find(cls):
         pass
 
-    def reset_elements(self):
-        self._elements = None
+    def reset_elements(cls):
+        cls._elements = None
 
-    def register_parent(self, parent):
-        self.parent = parent
+    def register_parent(cls, parent):
+        cls.parent = parent
 
-    def register_project(self, project):
-        self.project = project
-        self.reset_elements()
+    def register_project(cls, project):
+        cls.project = project
+        cls.reset_elements()
 
-    def create_user_dir(self):
-        '''Used on project init to create any default files.
+    def create_user_dir(cls):
+        """Used on project init to create any default files.
         Useful for things that most projects require but shouldn't
         be managed by default by cirrus, e.g., cloudformation templates
-        for S3 buckets.'''
-        self.user_dir.mkdir(exist_ok=True)
+        for S3 buckets."""
+        cls.user_dir.mkdir(exist_ok=True)
 
-    def ensure_created(self):
-        if not (self.user_extendable and self.user_dir):
+    def ensure_created(cls):
+        if not (cls.user_extendable and cls.user_dir):
             return False
-        self.create_user_dir()
+        cls.create_user_dir()
 
-    def items(self):
-        return self.elements.items()
+    def items(cls):
+        return cls.elements.items()
 
-    def keys(self):
-        return self.elements.keys()
+    def keys(cls):
+        return cls.elements.keys()
 
-    def values(self):
-        return self.elements.values()
+    def values(cls):
+        return cls.elements.values()
 
-    def get(self, *args, **kwargs):
-        return self.elements.get(*args, **kwargs)
+    def get(cls, *args, **kwargs):
+        return cls.elements.get(*args, **kwargs)
 
-    def __iter__(self):
-        return iter(self.elements.values())
+    def __iter__(cls):
+        return iter(cls.elements.values())
 
-    def __len__(self):
-        return len(self.elements)
+    def __len__(cls):
+        return len(cls.elements)
 
-    def __getitem__(self, key):
-        return self.elements[key]
+    def __getitem__(cls, key):
+        return cls.elements[key]
 
-    def __setitem__(self, key, val):
-        self.elements[key] = val
+    def __setitem__(cls, key, val):
+        cls.elements[key] = val
 
-    def __delitem__(self, key):
-        del self.elements[key]
+    def __delitem__(cls, key):
+        del cls.elements[key]
 
-    def __repr__(self):
-        return f'{type(self).__qualname__}({repr(self.elements)})'
+    def __repr__(cls):
+        return f"{type(cls).__qualname__}({repr(cls.elements)})"
