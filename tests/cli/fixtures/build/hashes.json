@@ -64,8 +64,8 @@
     "size": 1568
   },
   "lambdas/feed-rerun/lambda_function.py": {
-    "shasum": "f2b2133de1812f65772f4d44f70779c40ca58fff6b2fab551d41cd9e669a51cb",
-    "size": 1980
+    "shasum": "73526ce091ee772f86b4b6c0358f12646e81d825673255b651ad029145fa2cd3",
+    "size": 2263
   },
   "lambdas/process/requirements.txt": {
     "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
