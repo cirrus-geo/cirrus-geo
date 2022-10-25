@@ -1,19 +1,23 @@
 import textwrap
+
 import click
 
-from .base import Lambda
 from cirrus.core.cloudformation import CFObject
+
+from .base import Lambda
 
 
 class Task(Lambda):
     def load_config(self):
         super().load_config()
 
-        batch = self.config.get('batch', {})
-        self.batch_enabled = batch.get('enabled', True) and self._enabled and bool(batch)
+        batch = self.config.get("batch", {})
+        self.batch_enabled = (
+            batch.get("enabled", True) and self._enabled and bool(batch)
+        )
         self.batch_cloudformation = [
             cf_object
-            for top_level_key, cf_items in batch.get('resources', {}).items()
+            for top_level_key, cf_items in batch.get("resources", {}).items()
             for cf_object in CFObject.create_cf_objects(
                 self.definition.path,
                 top_level_key,
@@ -25,42 +29,45 @@ class Task(Lambda):
     def display_attrs(self):
         yield from super().display_attrs()
         if self.lambda_enabled:
-            yield 'lambda'
+            yield "lambda"
         if self.batch_enabled:
-            yield 'batch'
+            yield "batch"
 
     def detail_display(self):
         super().detail_display()
-        click.echo(f'Batch enabled: {self.batch_enabled}')
+        click.echo(f"Batch enabled: {self.batch_enabled}")
         if not self.batch_cloudformation:
             return
-        click.echo('Batch resources:')
+        click.echo("Batch resources:")
         for resource in self.batch_cloudformation:
-            click.echo("  {}:\n{}".format(
-                click.style(resource.name, fg='yellow'),
-                textwrap.indent(
-                    resource.definition.to_yaml(),
-                    '    ',
-                ),
-            ))
+            click.echo(
+                "  {}:\n{}".format(
+                    click.style(resource.name, fg="yellow"),
+                    textwrap.indent(
+                        resource.definition.to_yaml(),
+                        "    ",
+                    ),
+                )
+            )
 
     @classmethod
     def extra_create_args(cls):
         def wrapper(func):
             return click.option(
-                '-t',
-                '--type',
-                'task_types',
-                type=click.Choice(['batch', 'lambda']),
+                "-t",
+                "--type",
+                "task_types",
+                type=click.Choice(["batch", "lambda"]),
                 multiple=True,
                 required=True,
             )(func)
+
         return wrapper
 
     @classmethod
     def create(cls, name: str, description: str, task_types):
         new = cls._create_init(name, description)
-        new.batch_enabled = 'batch' in task_types
-        new.lambda_enabled = 'lambda' in task_types
+        new.batch_enabled = "batch" in task_types
+        new.lambda_enabled = "lambda" in task_types
         new._create_do()
         return new

@@ -25,7 +25,7 @@ lambda:
         - dynamodb:DescribeTable
       Resource:
         - !GetAtt StateTable.Arn
-        - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
+        - !Join ["", [!GetAtt StateTable.Arn, "/index/*"]]
     - Effect: "Allow"
       Action:
         - sqs:GetQueueUrl
@@ -44,10 +44,10 @@ lambda:
         - "s3:PutObject"
       Resource:
         - !Join
-          - ''
-          - - 'arn:aws:s3:::'
+          - ""
+          - - "arn:aws:s3:::"
             - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-            - '*'
+            - "*"
     - Effect: "Allow"
       Action: secretsmanager:GetSecretValue
       Resource:

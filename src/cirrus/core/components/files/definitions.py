@@ -2,11 +2,10 @@ import logging
 
 from .base import ComponentFile
 
-
 logger = logging.getLogger(__name__)
 
 
-lambda_base = '''description: {description}
+lambda_base = """description: {description}
 iamRoleStatements:
   - Effect: "Allow"
     Action:
@@ -28,17 +27,17 @@ iamRoleStatements:
     Resource:
       - arn:aws:secretsmanager:#{{AWS::Region}}:#{{AWS::AccountId}}:secret:cirrus*
 environment: {{}}
-'''.format
+""".format
 
-lambda_lambda = '''lambda:
+lambda_lambda = """lambda:
   memorySize: 128
   timeout: 60
   handler: lambda_function.lambda_handler
   pythonRequirements:
     include: []
-'''.format
+""".format
 
-lambda_batch = '''batch:
+lambda_batch = """batch:
   resources:
       Resources:
         {name}ComputeEnvironment:
@@ -140,10 +139,10 @@ lambda_batch = '''batch:
               JobRoleArn: !Fn::GetAtt {name}JobRole.Arn
             RetryStrategy:
               Attempts: 1
-'''.format
+""".format
 
 
-default_workflow = '''name: ${{self:service}}-${{self:provider.stage}}-{name}
+default_workflow = """name: ${{self:service}}-${{self:provider.stage}}-{name}
 definition:
   Comment: {description}
   StartAt: publish
@@ -164,26 +163,26 @@ definition:
           Next: failure
     failure:
       Type: Fail
-'''.format
+""".format
 
 
 class BaseDefinition(ComponentFile):
-    def __init__(self, *args, name='definition.yml', **kwargs):
+    def __init__(self, *args, name="definition.yml", **kwargs):
         super().__init__(*args, name=name, **kwargs)
 
     @staticmethod
     def content_fn(component) -> str:
-        return ''
+        return ""
 
 
 class LambdaDefinition(BaseDefinition):
     @staticmethod
     def content_fn(component) -> str:
         content = lambda_base(description=component.description)
-        if getattr(component, 'lambda_enabled', True):
-            content += '\n' + lambda_lambda()
-        if getattr(component, 'batch_enabled', False):
-            content += '\n' + lambda_batch(name=component.name)
+        if getattr(component, "lambda_enabled", True):
+            content += "\n" + lambda_lambda()
+        if getattr(component, "batch_enabled", False):
+            content += "\n" + lambda_batch(name=component.name)
         return content
 
 

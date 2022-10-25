@@ -1,6 +1,5 @@
-import os
 import json
-
+import os
 from pathlib import Path
 
 # TODO: it's clear with this import that this whole
@@ -9,25 +8,23 @@ from pathlib import Path
 # should stand on it's own and cli should make use of
 # core to implement the cli.
 from cirrus.cli.utils import logging
-
+from cirrus.core.config import DEFAULT_CONFIG_PATH, Config
 from cirrus.core.constants import (
     DEFAULT_BUILD_DIR_NAME,
     DEFAULT_CONFIG_FILENAME,
-    DEFAULT_SERVERLESS_FILENAME,
     DEFAULT_GIT_IGNORE,
+    DEFAULT_SERVERLESS_FILENAME,
     SERVERLESS,
     SERVERLESS_PLUGINS,
 )
-from cirrus.core.config import Config, DEFAULT_CONFIG_PATH
 from cirrus.core.exceptions import CirrusError
 from cirrus.core.groups import make_groups
-
 
 logger = logging.getLogger(__name__)
 
 
 class Project:
-    def __init__(self, path: Path, config: Config=None) -> None:
+    def __init__(self, path: Path, config: Config = None) -> None:
         if path is not None and not self.dir_is_project(path):
             raise CirrusError(
                 f"Cannot set project path, does not appear to be vaild project: '{path}'",
@@ -37,12 +34,12 @@ class Project:
         self.groups = make_groups(project=self)
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}: {self.path}>'
+        return f"<{self.__class__.__name__}: {self.path}>"
 
     def load_config(self) -> Config:
         if self.path is None:
             logger.debug(
-                'Project path unset, cannot load configuration',
+                "Project path unset, cannot load configuration",
             )
             return None
         return Config.from_project(self)
@@ -54,7 +51,7 @@ class Project:
         return self.path.joinpath(DEFAULT_BUILD_DIR_NAME)
 
     @classmethod
-    def resolve(cls, path: Path=None, strict=False):
+    def resolve(cls, path: Path = None, strict=False):
         if path is None:
             path = Path(os.getcwd())
         else:
@@ -72,7 +69,9 @@ class Project:
                 break
 
         if strict and project_path is None:
-            raise CirrusError("Unable to resolve project path and 'strict' resolution specified")
+            raise CirrusError(
+                "Unable to resolve project path and 'strict' resolution specified"
+            )
 
         return cls(project_path)
 
@@ -86,7 +85,7 @@ class Project:
         def maybe_write_file(name, content):
             f = path.joinpath(name)
             if f.exists():
-                logger.info(f'{name} already exists, skipping')
+                logger.info(f"{name} already exists, skipping")
             else:
                 f.write_text(content)
 
@@ -94,16 +93,19 @@ class Project:
         deps.update(SERVERLESS_PLUGINS)
 
         maybe_write_file(DEFAULT_CONFIG_FILENAME, DEFAULT_CONFIG_PATH.read_text())
-        maybe_write_file('package.json', json.dumps(
-            {
-                'name': 'cirrus',
-                'version': '0.0.0',
-                'description': '',
-                'devDependencies': deps,
-            },
-            indent=2,
-        ))
-        maybe_write_file('.gitignore', DEFAULT_GIT_IGNORE)
+        maybe_write_file(
+            "package.json",
+            json.dumps(
+                {
+                    "name": "cirrus",
+                    "version": "0.0.0",
+                    "description": "",
+                    "devDependencies": deps,
+                },
+                indent=2,
+            ),
+        )
+        maybe_write_file(".gitignore", DEFAULT_GIT_IGNORE)
 
         self = cls(path)
         self.groups.ensure_created()
@@ -112,9 +114,10 @@ class Project:
 
     def build(self) -> None:
         if self.path is None:
-            raise CirrusError('Cannot build a project without the path set')
+            raise CirrusError("Cannot build a project without the path set")
 
         import shutil
+
         import cirrus.lib
         import cirrus.lib2
         from cirrus.core.utils import misc
@@ -127,7 +130,7 @@ class Project:
             pass
 
         try:
-            shutil.rmtree(bd.joinpath('cirrus'))
+            shutil.rmtree(bd.joinpath("cirrus"))
         except FileNotFoundError:
             pass
 
@@ -136,7 +139,7 @@ class Project:
         for f in bd.iterdir():
             if not f.is_dir():
                 continue
-            if f.name in ['.serverless']:
+            if f.name in [".serverless"]:
                 continue
             for d in f.iterdir():
                 if d.is_symlink() or not d.is_dir():
@@ -149,11 +152,11 @@ class Project:
         )
 
         # copy cirrus-lib to build dir for packaging
-        lib_dir = bd.joinpath('cirrus', 'lib')
+        lib_dir = bd.joinpath("cirrus", "lib")
         shutil.copytree(
             cirrus.lib.__path__[0],
             lib_dir,
-            ignore=shutil.ignore_patterns('*.pyc', '__pycache__'),
+            ignore=shutil.ignore_patterns("*.pyc", "__pycache__"),
         )
 
         # copy built-in lib2 to build dir for packaging
@@ -175,11 +178,11 @@ class Project:
         # having to touch every single lambda. I believe this need is mitigated
         # by the fact that projects now maintain fewer lambdas than prior to
         # the project structure/cirrus cli revamp.
-        lib_dir = bd.joinpath('cirrus', 'lib2')
+        lib_dir = bd.joinpath("cirrus", "lib2")
         shutil.copytree(
             cirrus.lib2.__path__[0],
             lib_dir,
-            ignore=shutil.ignore_patterns('*.pyc', '__pycache__'),
+            ignore=shutil.ignore_patterns("*.pyc", "__pycache__"),
         )
 
         # setup all required lambda dirs
@@ -202,7 +205,7 @@ class Project:
             # copy contents
             fn.copy_to_outdir(outdir)
             # link in cirrus-lib
-            outdir.joinpath('cirrus').symlink_to(
+            outdir.joinpath("cirrus").symlink_to(
                 misc.relative_to(outdir, lib_dir.parent),
             )
 
@@ -212,9 +215,10 @@ class Project:
 
     def clean(self) -> None:
         if self.path is None:
-            raise CirrusError('Cannot clean a project without the path set')
+            raise CirrusError("Cannot clean a project without the path set")
 
         from cirrus.core.utils.misc import clean_dir
+
         if not self.build_dir.is_dir():
             return
         clean_dir(self.build_dir)

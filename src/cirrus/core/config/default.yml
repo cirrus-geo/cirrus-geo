@@ -42,21 +42,21 @@ custom:
     slim: true
     slimPatternsAppendDefaults: false
     slimPatterns:
-      - 'botocore/**'
-      - 'botocore-*/**'
-      - 'boto3/**'
-      - 'boto3-*/**'
-      - 'bin/**'
-      - 'dateutils*'
-      - 'docutils/**'
-      - 'docutils-*/**'
-      - 'numpy/**'
-      - 'numpy-*/**'
-      - 'rasterio/**'
-      - 'rasterio-*/**'
-      - 'six.py'
-      - 'six-*/**'
-      - 'urllib3/**'
-      - 'urllib3-*/**'
-      - 'jmespath/**'
-      - 'jmespath-*/**'
+      - "botocore/**"
+      - "botocore-*/**"
+      - "boto3/**"
+      - "boto3-*/**"
+      - "bin/**"
+      - "dateutils*"
+      - "docutils/**"
+      - "docutils-*/**"
+      - "numpy/**"
+      - "numpy-*/**"
+      - "rasterio/**"
+      - "rasterio-*/**"
+      - "six.py"
+      - "six-*/**"
+      - "urllib3/**"
+      - "urllib3-*/**"
+      - "jmespath/**"
+      - "jmespath-*/**"

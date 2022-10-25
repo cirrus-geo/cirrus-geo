@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 import sys
-
 from pathlib import Path
-from packaging.version import parse, Version
 
+from packaging.version import Version, parse
 
-REDIRECT = '''<!DOCTYPE html>
+REDIRECT = """<!DOCTYPE html>
 <html>
   <head>
     <title>Redirecting to latest stable version docs</title>
     <meta charset="utf-8">
     <meta http-equiv="refresh" content="0; url=./{}/index.html">
   </head>
-</html>'''.format
+</html>""".format
 
-INDEX = 'index.html'
-STABLE_LINK_NAME = 'stable'
-LATEST_LINK_NAME = 'dev'
-LATEST_TARGET = 'main'
+INDEX = "index.html"
+STABLE_LINK_NAME = "stable"
+LATEST_LINK_NAME = "dev"
+LATEST_TARGET = "main"
 
 
 def main(gh_pages_dir):
     gh_pages_dir = Path(gh_pages_dir)
 
     all_versions = set()
-    stable_version = parse('')
+    stable_version = parse("")
     for _file in gh_pages_dir.iterdir():
         if _file.is_dir():
             version = parse(_file.name)
@@ -51,12 +50,12 @@ def main(gh_pages_dir):
     all_versions.add(LATEST_LINK_NAME)
 
     # write list of versions to versions file
-    gh_pages_dir.joinpath('versions.txt').write_text('\n'.join(all_versions))
+    gh_pages_dir.joinpath("versions.txt").write_text("\n".join(all_versions))
 
     # create index.html redirect
     index_version = stable_version if stable_version else LATEST_LINK_NAME
     gh_pages_dir.joinpath(INDEX).write_text(REDIRECT(index_version))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1])

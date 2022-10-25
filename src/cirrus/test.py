@@ -1,13 +1,11 @@
 from copy import deepcopy
 
-from cirrus.core.components import Feeder
-from cirrus.core.components import Function
-from cirrus.core.components import Task
+from cirrus.core.components import Feeder, Function, Task
 
 
-def get_lambda_handler(Component, name):
+def get_lambda_handler(component_class, name):
     try:
-        component = Component[name]
+        component = component_class[name]
     except KeyError:
         raise Exception(f"Unknown {component.type} '{name}'")
 

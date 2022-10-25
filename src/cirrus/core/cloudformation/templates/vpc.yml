@@ -12,45 +12,45 @@ Resources:
       VpcId: !Ref pubPrivateVPC
       AvailabilityZone:
         Fn::Select:
-         - 0
-         - Fn::GetAZs: ""
+          - 0
+          - Fn::GetAZs: ""
       CidrBlock: 172.31.0.0/24
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref "AWS::StackName","public-subnet"]]
+          Value: !Join ["-", [!Ref "AWS::StackName", "public-subnet"]]
   privateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref pubPrivateVPC
       AvailabilityZone:
         Fn::Select:
-         - 0
-         - Fn::GetAZs: ""
+          - 0
+          - Fn::GetAZs: ""
       CidrBlock: 172.31.3.0/24
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref "AWS::StackName","private-subnet-a"]]
+          Value: !Join ["-", [!Ref "AWS::StackName", "private-subnet-a"]]
   privateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref pubPrivateVPC
       AvailabilityZone:
         Fn::Select:
-         - 1
-         - Fn::GetAZs: ""
+          - 1
+          - Fn::GetAZs: ""
       CidrBlock: 172.31.2.0/24
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref "AWS::StackName","private-subnet-b"]]
+          Value: !Join ["-", [!Ref "AWS::StackName", "private-subnet-b"]]
   internetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Join ["-", [!Ref "AWS::StackName","gateway"]]
+          Value: !Join ["-", [!Ref "AWS::StackName", "gateway"]]
   gatewayToInternet:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -107,7 +107,7 @@ Resources:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal: "*"
@@ -123,7 +123,7 @@ Resources:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal: "*"
@@ -140,24 +140,24 @@ Outputs:
     Description: VPC ID
     Value: !Ref pubPrivateVPC
     Export:
-      Name: !Join ["-", [!Ref "AWS::StackName","vpc"]]
+      Name: !Join ["-", [!Ref "AWS::StackName", "vpc"]]
   publicSubnet1ID:
     Description: Public Subnet A ID
     Value: !Ref publicSubnet1
     Export:
-      Name: !Join ["-", [!Ref "AWS::StackName","public-subnet-a"]]
+      Name: !Join ["-", [!Ref "AWS::StackName", "public-subnet-a"]]
   privateSubnet1ID:
     Description: Private Subnet A ID
     Value: !Ref privateSubnet1
     Export:
-      Name: !Join ["-", [!Ref "AWS::StackName","private-subnet-a"]]
+      Name: !Join ["-", [!Ref "AWS::StackName", "private-subnet-a"]]
   privateSubnet2ID:
     Description: Private Subnet B ID
     Value: !Ref privateSubnet2
     Export:
-      Name: !Join ["-", [!Ref "AWS::StackName","private-subnet-b"]]
+      Name: !Join ["-", [!Ref "AWS::StackName", "private-subnet-b"]]
   privateVPCSecurityGroup:
     Description: Default security for Lambda VPC
     Value: !GetAtt pubPrivateVPC.DefaultSecurityGroup
     Export:
-      Name: !Join ["-", [!Ref "AWS::StackName","vpc-sg"]]
+      Name: !Join ["-", [!Ref "AWS::StackName", "vpc-sg"]]

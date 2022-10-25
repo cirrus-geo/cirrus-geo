@@ -1,11 +1,11 @@
+import logging
+import sys
+
 import click
 import click_plugins
-import sys
-import logging
 
 from cirrus.core.project import Project
 from cirrus.core.utils import plugins
-
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +20,10 @@ def requires_project(func):
     @wraps(func)
     def wrapper(project, *args, **kwargs):
         if project.path is None:
-            logger.error('Fatal: no cirrus project detected/specified.')
+            logger.error("Fatal: no cirrus project detected/specified.")
             sys.exit(1)
         return func(project, *args, **kwargs)
+
     return wrapper
 
 
@@ -33,13 +34,13 @@ class AliasedShortMatchGroup(click.Group):
         self._cmd2aliases = {}
 
     def command(self, *args, **kwargs):
-        return self._register('command', *args, **kwargs)
+        return self._register("command", *args, **kwargs)
 
     def group(self, *args, **kwargs):
-        return self._register('group', *args, **kwargs)
+        return self._register("group", *args, **kwargs)
 
     def _register(self, _type, *args, **kwargs):
-        aliases = kwargs.pop('aliases', [])
+        aliases = kwargs.pop("aliases", [])
         decorator = getattr(super(), _type)(*args, **kwargs)
         if not aliases:
             return decorator
@@ -70,11 +71,13 @@ class AliasedShortMatchGroup(click.Group):
 
         # if that fails, let's look for any partial matches
         # allows user to shorten commands to shortest unique string
-        matches = list({
-            self.resolve_alias(cmd)
-            for cmd in self.list_commands(ctx) + list(self._alias2cmd.keys())
-            if cmd.startswith(cmd_name)
-        })
+        matches = list(
+            {
+                self.resolve_alias(cmd)
+                for cmd in self.list_commands(ctx) + list(self._alias2cmd.keys())
+                if cmd.startswith(cmd_name)
+            }
+        )
 
         # no matches no command
         if not matches:
@@ -109,17 +112,17 @@ class AliasedShortMatchGroup(click.Group):
 
         for sub, cmd in cmds:
             try:
-                aliases = ','.join(sorted(self._cmd2aliases[sub]))
+                aliases = ",".join(sorted(self._cmd2aliases[sub]))
             except KeyError:
                 pass
             else:
-                sub = f'{sub} ({aliases})'
+                sub = f"{sub} ({aliases})"
 
             cmd_help = cmd.get_short_help_str(limit)
             rows.append((sub, cmd_help))
 
         if rows:
-            with formatter.section('Commands'):
+            with formatter.section("Commands"):
                 formatter.write_dl(rows)
 
     def resolve_command(self, ctx, args):
@@ -130,7 +133,8 @@ class AliasedShortMatchGroup(click.Group):
 
 def plugin_entrypoint(entrypoint_name: str):
     def decorator(group):
-        return click_plugins.with_plugins(
-            plugins.iter_entry_points(entrypoint_name)
-        )(group)
+        return click_plugins.with_plugins(plugins.iter_entry_points(entrypoint_name))(
+            group
+        )
+
     return decorator

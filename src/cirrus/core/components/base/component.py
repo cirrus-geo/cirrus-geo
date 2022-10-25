@@ -1,25 +1,25 @@
 import logging
+from pathlib import Path
+from typing import Type, TypeVar
+
 import click
 
-from typing import Type, TypeVar
-from pathlib import Path
-
-from ..files import ComponentFile, BaseDefinition
 from cirrus.core.constants import BUILT_IN
 from cirrus.core.exceptions import ComponentError
-from cirrus.core.utils.yaml import NamedYamlable
-from cirrus.core.utils import misc
 from cirrus.core.group_meta import GroupMeta
+from cirrus.core.utils import misc
+from cirrus.core.utils.yaml import NamedYamlable
 
+from ..files import BaseDefinition, ComponentFile
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T', bound='Component')
+T = TypeVar("T", bound="Component")
 
 
 class ComponentMeta(GroupMeta):
     def __new__(cls, name, bases, attrs, **kwargs):
-        files = attrs.get('files', {})
+        files = attrs.get("files", {})
 
         # copy file attrs to files
         for attr_name, attr in attrs.items():
@@ -29,16 +29,16 @@ class ComponentMeta(GroupMeta):
         # copy parent class files to child,
         # if not overridden on child
         for base in bases:
-            if hasattr(base, 'files'):
+            if hasattr(base, "files"):
                 for fname, f in base.files.items():
                     if fname not in attrs:
                         attrs[fname] = f
                         files[fname] = f
 
-        attrs['files'] = files
+        attrs["files"] = files
 
-        if 'user_extendable' not in attrs:
-            attrs['user_extendable'] = True
+        if "user_extendable" not in attrs:
+            attrs["user_extendable"] = True
 
         return super().__new__(cls, name, bases, attrs, **kwargs)
 
@@ -46,12 +46,12 @@ class ComponentMeta(GroupMeta):
         super().__init__(*args, **kwargs)
         self.type = self.__name__.lower()
 
-    def from_dir(self, d: Path, name: str=None, source: str=None) -> Type[T]:
+    def from_dir(self, d: Path, name: str = None, source: str = None) -> Type[T]:
         if not d.is_dir():
             return
 
         for component_dir in sorted(d.resolve().iterdir()):
-            if component_dir.name.startswith('.'):
+            if component_dir.name.startswith("."):
                 # skip dirs starting with .
                 continue
             if name and component_dir.name != name:
@@ -64,7 +64,7 @@ class ComponentMeta(GroupMeta):
                 )
                 continue
 
-    def _find(self, name: str=None) -> Type[T]:
+    def _find(self, name: str = None) -> Type[T]:
         for plugin_name, plugin_dir in self.plugins.items():
             yield from self.from_dir(plugin_dir, name=name, source=plugin_name)
 
@@ -85,22 +85,21 @@ class ComponentMeta(GroupMeta):
     def extra_create_args(self):
         def wrapper(func):
             return func
+
         return wrapper
 
     def add_create_command(self, create_cmd):
         if not (self.enable_cli and self.user_extendable):
             return
 
-        @create_cmd.command(
-            name=self.type
+        @create_cmd.command(name=self.type)
+        @click.argument(
+            "name",
+            metavar="name",
         )
         @click.argument(
-            'name',
-            metavar='name',
-        )
-        @click.argument(
-            'description',
-            metavar='description',
+            "description",
+            metavar="description",
         )
         @self.extra_create_args()
         def _create(name, description, **kwargs):
@@ -114,27 +113,24 @@ class ComponentMeta(GroupMeta):
             else:
                 # TODO: logging level for "success" on par with warning?
                 click.secho(
-                    f'{self.type} {name} created',
+                    f"{self.type} {name} created",
                     err=True,
-                    fg='green',
+                    fg="green",
                 )
 
     def add_show_command(self, show_cmd):
         if not self.enable_cli:
             return
 
-        @show_cmd.command(
-            name=self.group_name,
-            aliases=self.cmd_aliases
-        )
+        @show_cmd.command(name=self.group_name, aliases=self.cmd_aliases)
         @click.argument(
-            'name',
-            metavar='name',
+            "name",
+            metavar="name",
             required=False,
         )
         @click.argument(
-            'filename',
-            metavar='filename',
+            "filename",
+            metavar="filename",
             required=False,
         )
         def _show(name=None, filename=None):
@@ -162,7 +158,9 @@ class ComponentMeta(GroupMeta):
 class Component(metaclass=ComponentMeta):
     definition = BaseDefinition()
 
-    def __init__(self, path: Path, description: str='', load: bool=True, source: str=None) -> None:
+    def __init__(
+        self, path: Path, description: str = "", load: bool = True, source: str = None
+    ) -> None:
         self.path = path
         self.name = path.name
         self.config = None
@@ -187,16 +185,16 @@ class Component(metaclass=ComponentMeta):
 
     def display_attrs(self):
         if not self.enabled:
-            yield 'DISABLED'
+            yield "DISABLED"
         if self.source:
             yield self.source
 
     @property
     def display_name(self):
         attrs = list(self.display_attrs())
-        return '{}{}'.format(
+        return "{}{}".format(
             self.name,
-            ' ({})'.format(', '.join(attrs)) if attrs else '',
+            " ({})".format(", ".join(attrs)) if attrs else "",
         )
 
     def _load(self, init_files=False):
@@ -217,11 +215,11 @@ class Component(metaclass=ComponentMeta):
 
     def load_config(self):
         self.config = NamedYamlable.from_yaml(self.definition.content)
-        self._enabled = self.config.pop('enabled', True)
+        self._enabled = self.config.pop("enabled", True)
 
     def _create_do(self):
         if self._loaded:
-            raise ComponentError(f'Cannot create a loaded {self.__class__.__name__}.')
+            raise ComponentError(f"Cannot create a loaded {self.__class__.__name__}.")
 
         self.path.parent.mkdir(exist_ok=True)
 
@@ -238,6 +236,7 @@ class Component(metaclass=ComponentMeta):
             # want to clean up anything
             # we created if we failed
             import shutil
+
             try:
                 shutil.rmtree(self.path)
             except FileNotFoundError:
@@ -247,9 +246,7 @@ class Component(metaclass=ComponentMeta):
     @classmethod
     def _create_init(cls, name: str, description: str) -> Type[T]:
         if not cls.user_extendable:
-            raise ComponentError(
-                f"Component {cls.type} does not support creation"
-            )
+            raise ComponentError(f"Component {cls.type} does not support creation")
         path = cls.user_dir.joinpath(name)
         return cls(path, description, load=False)
 
@@ -260,23 +257,27 @@ class Component(metaclass=ComponentMeta):
         return new
 
     def list_display(self):
-        color = 'blue' if self.enabled else 'red'
-        click.echo('{}{}'.format(
-            click.style(
-                f'{self.display_name}:',
-                fg=color,
-            ),
-            f' {self.description}' if self.description else '',
-        ))
+        color = "blue" if self.enabled else "red"
+        click.echo(
+            "{}{}".format(
+                click.style(
+                    f"{self.display_name}:",
+                    fg=color,
+                ),
+                f" {self.description}" if self.description else "",
+            )
+        )
 
     def detail_display(self):
-        color = 'blue' if self.enabled else 'red'
+        color = "blue" if self.enabled else "red"
         click.secho(self.display_name, fg=color)
         if self.description:
             click.echo(self.description)
         click.echo("\nFiles:")
         for name, f in self.files.items():
-            click.echo("  {}: {}".format(
-                click.style(name, fg='yellow'),
-                f.name,
-            ))
+            click.echo(
+                "  {}: {}".format(
+                    click.style(name, fg="yellow"),
+                    f.name,
+                )
+            )

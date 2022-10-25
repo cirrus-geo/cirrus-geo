@@ -1,20 +1,15 @@
 import logging
-
 from pathlib import Path
 
-from cirrus.core.constants import (
-    DEFAULT_CONFIG_FILENAME,
-    SERVERLESS_PLUGINS,
-)
+from cirrus.core.constants import DEFAULT_CONFIG_FILENAME, SERVERLESS_PLUGINS
 from cirrus.core.exceptions import ConfigError
-from cirrus.core.utils.yaml import NamedYamlable
 from cirrus.core.utils import misc
-
+from cirrus.core.utils.yaml import NamedYamlable
 
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_CONFIG_PATH = Path(__file__).parent.joinpath('default.yml')
+DEFAULT_CONFIG_PATH = Path(__file__).parent.joinpath("default.yml")
 
 
 class Config(NamedYamlable):
@@ -33,7 +28,7 @@ class Config(NamedYamlable):
         self.functions = {}
         self.stepFunctions = dict(validate=True, stateMachines={})
         self.resources = dict(
-            Description='Cirrus STAC Processing Framework',
+            Description="Cirrus STAC Processing Framework",
             Resources={},
             Outputs={},
         )
@@ -41,14 +36,14 @@ class Config(NamedYamlable):
         self.package = {}
         self.package.individually = True
         self.package.exclude = []
-        self.package.exclude.append('**/*')
+        self.package.exclude.append("**/*")
 
         # add cirrus-lib dependencies as global
-        if not 'custom' in self:
+        if "custom" not in self:
             self.custom = {}
-        if not 'pythonRequirements' in self.custom:
+        if "pythonRequirements" not in self.custom:
             self.custom.pythonRequirements = {}
-        if not 'include' in self.custom.pythonRequirements:
+        if "include" not in self.custom.pythonRequirements:
             self.custom.pythonRequirements.include = []
         self.custom.pythonRequirements.include.extend(
             misc.get_cirrus_lib_requirements(),
@@ -68,12 +63,13 @@ class Config(NamedYamlable):
         copy = self.copy()
         for group in groups:
             copy.register(group)
-        copy.custom.pythonRequirements.pop('include')
+        copy.custom.pythonRequirements.pop("include")
         return copy
 
     def register(self, group) -> None:
-        from cirrus.core.components.base import Lambda, StepFunction
         from cirrus.core.cloudformation import CloudFormation
+        from cirrus.core.components.base import Lambda, StepFunction
+
         if issubclass(group, Lambda):
             self.register_lambda_group(group)
         elif issubclass(group, StepFunction):
@@ -117,7 +113,10 @@ class Config(NamedYamlable):
                 sf_component.display_name,
             )
             return
-        if sf_component.name in self.stepFunctions.stateMachines and not sf_component.is_builtin:
+        if (
+            sf_component.name in self.stepFunctions.stateMachines
+            and not sf_component.is_builtin
+        ):
             logging.warning(
                 f"Duplicate step function declaration '{sf_component.display_name}', skipping",
             )
@@ -128,5 +127,6 @@ class Config(NamedYamlable):
         for top_level_key, cf_objects in cf_group.items():
             if not cf_objects:
                 continue
-            self.resources[top_level_key] = \
-                {cf.name: cf.definition for cf in cf_objects.values()}
+            self.resources[top_level_key] = {
+                cf.name: cf.definition for cf in cf_objects.values()
+            }

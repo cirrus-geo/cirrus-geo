@@ -1,14 +1,13 @@
 import copy
 import json
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 from cirrus.lib2.process_payload import ProcessPayload
 from cirrus.lib2.utils import recursive_compare
 
-
-fixtures = Path(__file__).parent.joinpath('fixtures')
+fixtures = Path(__file__).parent.joinpath("fixtures")
 
 
 def read_json_fixture(filename):
@@ -18,36 +17,37 @@ def read_json_fixture(filename):
 
 @pytest.fixture()
 def base_payload():
-    return read_json_fixture('test-payload.json')
+    return read_json_fixture("test-payload.json")
 
 
 @pytest.fixture()
 def capella_payload():
-    return read_json_fixture('capella-fixture-2.json')
+    return read_json_fixture("capella-fixture-2.json")
 
 
 @pytest.fixture()
 def sqs_event():
-    return read_json_fixture('sqs-event.json')
+    return read_json_fixture("sqs-event.json")
 
 
 @pytest.fixture()
 def chain_payload(base_payload):
     # need to convert process and add filter
-    base_payload['process'] = [base_payload['process']] * 2
-    base_payload['process'][1]['chain_filter'] = \
-        "@.id =~ 'fake*' & @.properties.gsd <= 0"
+    base_payload["process"] = [base_payload["process"]] * 2
+    base_payload["process"][1][
+        "chain_filter"
+    ] = "@.id =~ 'fake*' & @.properties.gsd <= 0"
 
     # then add "fake" items
     new_item_count = 3
-    features = base_payload['features']
-    features[0]['properties']['gsd'] = new_item_count
-    for index in range(1, new_item_count+1):
+    features = base_payload["features"]
+    features[0]["properties"]["gsd"] = new_item_count
+    for index in range(1, new_item_count + 1):
         feature = copy.deepcopy(features[0])
-        feature['id'] = f'fake_id{index}'
+        feature["id"] = f"fake_id{index}"
         # we decrement the gsd value so our search will
         # return only the last feature per the a gsd of 0
-        feature['properties']['gsd'] = new_item_count - index
+        feature["properties"]["gsd"] = new_item_count - index
         features.append(feature)
 
     return base_payload
@@ -57,46 +57,53 @@ def chain_payload(base_payload):
 def chain_filter_payload(chain_payload):
     # should only have the last feature and second process def
     chain_filter_result = copy.deepcopy(chain_payload)
-    chain_filter_result['features'] = [chain_payload['features'][-1]]
-    chain_filter_result['process'].pop(0)
-    del chain_filter_result['id']
+    chain_filter_result["features"] = [chain_payload["features"][-1]]
+    chain_filter_result["process"].pop(0)
+    del chain_filter_result["id"]
     return chain_filter_result
 
 
 def test_open_payload(base_payload):
     payload = ProcessPayload(**base_payload)
-    assert payload['id'] == \
-        "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
+    assert (
+        payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
+    )
 
 
 def test_open_payload_output_options(base_payload):
-    base_payload['process']['output_options'] = base_payload['process'].pop('upload_options')
+    base_payload["process"]["output_options"] = base_payload["process"].pop(
+        "upload_options"
+    )
     payload = ProcessPayload(**base_payload)
-    assert payload['id'] == \
-        "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
-    assert payload.process['upload_options']
+    assert (
+        payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
+    )
+    assert payload.process["upload_options"]
 
 
 def test_update_payload(base_payload):
-    del base_payload['id']
-    del base_payload['features'][0]['links']
+    del base_payload["id"]
+    del base_payload["features"][0]["links"]
     payload = ProcessPayload(**base_payload, set_id_if_missing=True)
-    assert payload['id'] == \
-        "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
+    assert (
+        payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
+    )
 
 
 def test_from_event(sqs_event):
     payload = ProcessPayload.from_event(sqs_event, set_id_if_missing=True)
-    assert len(payload['features']) == 1
-    assert payload['id'] == \
-        'sentinel-s2-l2a-aws/workflow-publish-sentinel/tiles-17-H-QD-2020-11-3-0'
+    assert len(payload["features"]) == 1
+    assert (
+        payload["id"]
+        == "sentinel-s2-l2a-aws/workflow-publish-sentinel/tiles-17-H-QD-2020-11-3-0"
+    )
 
 
 def test_assign_collections(base_payload):
     payload = ProcessPayload(base_payload)
-    payload['process']['upload_options']['collections'] = {'test': '.*'}
+    payload["process"]["upload_options"]["collections"] = {"test": ".*"}
     payload.assign_collections()
-    assert payload['features'][0]['collection'] == 'test'
+    assert payload["features"][0]["collection"] == "test"
 
 
 def test_next_payloads_no_list(base_payload):
@@ -105,7 +112,7 @@ def test_next_payloads_no_list(base_payload):
 
 
 def test_next_payloads_list_of_one(base_payload):
-    base_payload['process'] = [base_payload['process']]
+    base_payload["process"] = [base_payload["process"]]
     payloads = list(ProcessPayload.from_event(base_payload).next_payloads())
     assert len(payloads) == 0
 
@@ -113,7 +120,7 @@ def test_next_payloads_list_of_one(base_payload):
 def test_next_payloads_list_of_four(base_payload):
     length = 4
     list_payload = copy.deepcopy(base_payload)
-    list_payload['process'] = [base_payload['process']] * length
+    list_payload["process"] = [base_payload["process"]] * length
 
     # We should now have something like this:
     #
@@ -129,14 +136,14 @@ def test_next_payloads_list_of_four(base_payload):
     # with two to follow. So the length of the list returned should be
     # one, a process payload with a process array of length 3.
     assert len(payloads) == 1
-    assert payloads[0]['process'] == [base_payload['process']] * (length-1)
+    assert payloads[0]["process"] == [base_payload["process"]] * (length - 1)
 
 
 def test_next_payloads_list_of_four_fork(base_payload):
     length = 3
     list_payload = copy.deepcopy(base_payload)
-    list_payload['process'] = [base_payload['process']] * length
-    list_payload['process'][1] = [base_payload['process']] * 2
+    list_payload["process"] = [base_payload["process"]] * length
+    list_payload["process"][1] = [base_payload["process"]] * 2
 
     # We should now have something like this:
     #
@@ -153,8 +160,8 @@ def test_next_payloads_list_of_four_fork(base_payload):
     # the list returned should be two, each a process payload
     # with a process array of length 3.
     assert len(payloads) == 2
-    assert payloads[0]['process'] == [base_payload['process']] * (length-1)
-    assert payloads[1]['process'] == [base_payload['process']] * (length-1)
+    assert payloads[0]["process"] == [base_payload["process"]] * (length - 1)
+    assert payloads[1]["process"] == [base_payload["process"]] * (length - 1)
 
 
 def test_next_payloads_chain_filter(chain_payload, chain_filter_payload):

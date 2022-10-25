@@ -5,12 +5,13 @@ from copy import deepcopy
 from urllib.parse import urljoin
 
 from boto3utils import s3
-from cirrus.lib.statedb import StateDB, STATES
+
+from cirrus.lib.statedb import STATES, StateDB
 
 logger = logging.getLogger(__name__)
 
 # envvars
-DATA_BUCKET = os.getenv('CIRRUS_DATA_BUCKET', None)
+DATA_BUCKET = os.getenv("CIRRUS_DATA_BUCKET", None)
 
 # Cirrus state database
 statedb = StateDB()
@@ -19,24 +20,14 @@ statedb = StateDB()
 def response(body, status_code=200, headers={}):
     _headers = deepcopy(headers)
     # cors
-    _headers.update({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': True
-    })
-    return {
-        "statusCode": status_code,
-        "headers": _headers,
-        "body": json.dumps(body)
-    }
+    _headers.update(
+        {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Credentials": True}
+    )
+    return {"statusCode": status_code, "headers": _headers, "body": json.dumps(body)}
 
 
-def create_link(url, title, rel, media_type='application/json'):
-    return {
-        "title": title,
-        "rel": rel,
-        "type": media_type,
-        "href": url
-    }
+def create_link(url, title, rel, media_type="application/json"):
+    return {"title": title, "rel": rel, "type": media_type, "href": url}
 
 
 def get_root(root_url):
@@ -45,7 +36,7 @@ def get_root(root_url):
     cat = s3().read_json(cat_url)
 
     links = []
-    workflows = cat.get('cirrus', {}).get('workflows', {})
+    workflows = cat.get("cirrus", {}).get("workflows", {})
     for col in workflows:
         for wf in workflows[col]:
             name = f"{col} - {wf}"
@@ -55,7 +46,7 @@ def get_root(root_url):
                     f"{col}/workflow-{wf}",
                 ),
                 name,
-                'child',
+                "child",
             )
             links.append(link)
 
@@ -65,14 +56,14 @@ def get_root(root_url):
     root = {
         "id": f"{cat['id']}-state-api",
         "description": f"{cat['description']} State API",
-        "links": links
+        "links": links,
     }
 
     return root
 
 
 def summary(collections_workflow, since, limit):
-    parts = collections_workflow.rsplit('_', maxsplit=1)
+    parts = collections_workflow.rsplit("_", maxsplit=1)
     logger.debug("Getting summary for %s", collections_workflow)
     counts = {}
     for s in STATES:
@@ -82,81 +73,81 @@ def summary(collections_workflow, since, limit):
             since=since,
             limit=limit,
         )
-    return {
-        "collections": parts[0],
-        "workflow": parts[1],
-        "counts": counts
-    }
+    return {"collections": parts[0], "workflow": parts[1], "counts": counts}
 
 
 def lambda_handler(event, context):
-    logger.debug('Event: %s', json.dumps(event))
+    logger.debug("Event: %s", json.dumps(event))
 
     # get request URL
-    domain = event.get('requestContext', {}).get('domainName', '')
-    if domain != '':
-        path = event.get('requestContext', {}).get('path', '')
+    domain = event.get("requestContext", {}).get("domainName", "")
+    if domain != "":
+        path = event.get("requestContext", {}).get("path", "")
         root_url = f"https://{domain}{path}/"
     else:
         root_url = None
 
     # get path parameters
-    stage = event.get('requestContext', {}).get('stage', '')
+    stage = event.get("requestContext", {}).get("stage", "")
 
-    parts = [p for p in event.get('path', '').split('/') if p != '']
+    parts = [p for p in event.get("path", "").split("/") if p != ""]
     if len(parts) > 0 and parts[0] == stage:
         parts = parts[1:]
-    payload_id = '/'.join(parts)
+    payload_id = "/".join(parts)
 
     legacy = False
-    if payload_id.startswith('item'):
+    if payload_id.startswith("item"):
         legacy = True
-        payload_id = payload_id.replace('item/', '', 1)
-    if payload_id.startswith('collections'):
+        payload_id = payload_id.replace("item/", "", 1)
+    if payload_id.startswith("collections"):
         legacy = True
-        payload_id = payload_id.replace('collections/', '', 1)
+        payload_id = payload_id.replace("collections/", "", 1)
     logger.info("Path parameters: %s", payload_id)
 
     transform = to_legacy if legacy else to_current
 
     # get query parameters
-    qparams = event['queryStringParameters'] if event.get('queryStringParameters') else {}
+    qparams = (
+        event["queryStringParameters"] if event.get("queryStringParameters") else {}
+    )
     logger.info("Query Parameters: %s", qparams)
-    state = qparams.get('state', None)
-    since = qparams.get('since', None)
-    nextkey = qparams.get('nextkey', None)
-    limit = int(qparams.get('limit', 100000))
-    sort_ascending = bool(int(qparams.get('sort_ascending', 0)))
-    sort_index = qparams.get('sort_index', 'updated')
-    #count_limit = int(qparams.get('count_limit', 100000))
-    #legacy = qparams.get('legacy', False)
+    state = qparams.get("state", None)
+    since = qparams.get("since", None)
+    nextkey = qparams.get("nextkey", None)
+    limit = int(qparams.get("limit", 100000))
+    sort_ascending = bool(int(qparams.get("sort_ascending", 0)))
+    sort_index = qparams.get("sort_index", "updated")
+    # count_limit = int(qparams.get('count_limit', 100000))
+    # legacy = qparams.get('legacy', False)
 
     # root endpoint
-    if payload_id == '':
+    if payload_id == "":
         return response(get_root(root_url))
 
-    if '/workflow-' not in payload_id:
+    if "/workflow-" not in payload_id:
         return response(f"{path} not found", status_code=400)
 
     key = statedb.payload_id_to_key(payload_id)
 
-    if key['itemids'] == '':
+    if key["itemids"] == "":
         # get summary of collection
-        return response(summary(
-            key['collections_workflow'],
-            since=since,
-            limit=limit,
-        ))
-    elif key['itemids'] == 'items':
+        return response(
+            summary(
+                key["collections_workflow"],
+                since=since,
+                limit=limit,
+            )
+        )
+    elif key["itemids"] == "items":
         # get items
         logger.debug(
             "Getting items for %s, state=%s, since=%s",
-            key['collections_workflow'],
+            key["collections_workflow"],
             state,
             since,
         )
         items = statedb.get_items_page(
-            key['collections_workflow'],
+            key["collections_workflow"],
             state=state,
             since=since,
             limit=limit,
@@ -164,7 +155,7 @@ def lambda_handler(event, context):
             sort_ascending=sort_ascending,
             sort_index=sort_index,
         )
-        return response({'items': [transform(item) for item in items['items']]})
+        return response({"items": [transform(item) for item in items["items"]]})
     else:
         # get individual item
         item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
@@ -172,26 +163,26 @@ def lambda_handler(event, context):
 
 
 def to_current(item):
-    item['catid'] = item['payload_id']
-    item['catalog'] = item['payload']
+    item["catid"] = item["payload_id"]
+    item["catalog"] = item["payload"]
     return item
 
 
 def to_legacy(item):
     _item = {
-        'id': item['payload_id'],
-        'catid': item['payload_id'],
-        'input_collections': item['collections'],
-        'current_state': f"{item['state']}_{item['updated']}",
-        'state': item['state'],
-        'created_at': item['created'],
-        'updated_at': item['updated'],
-        'input_catalog': item['payload']
+        "id": item["payload_id"],
+        "catid": item["payload_id"],
+        "input_collections": item["collections"],
+        "current_state": f"{item['state']}_{item['updated']}",
+        "state": item["state"],
+        "created_at": item["created"],
+        "updated_at": item["updated"],
+        "input_catalog": item["payload"],
     }
-    if 'executions' in item:
-        _item['execution'] = item['executions'][-1]
-    if 'outputs' in item:
-        _item['items'] = item['outputs']
-    if 'last_error' in item:
-        _item['error_message'] = item['last_error']
+    if "executions" in item:
+        _item["execution"] = item["executions"][-1]
+    if "outputs" in item:
+        _item["items"] = item["outputs"]
+    if "last_error" in item:
+        _item["error_message"] = item["last_error"]
     return _item

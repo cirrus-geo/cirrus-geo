@@ -1,16 +1,15 @@
 import json
 
-from cirrus.lib2.errors import NoUrlError
-from cirrus.lib2.process_payload import ProcessPayload, ProcessPayloads
 from cirrus.lib2 import utils
-from cirrus.lib2.logging import get_task_logger, defer
+from cirrus.lib2.errors import NoUrlError
+from cirrus.lib2.logging import defer, get_task_logger
+from cirrus.lib2.process_payload import ProcessPayload, ProcessPayloads
 
-
-logger = get_task_logger('function.process', payload=tuple())
+logger = get_task_logger("function.process", payload=tuple())
 
 
 def is_sqs_message(message):
-    return  message.get('eventSource') == 'aws:sqs'
+    return message.get("eventSource") == "aws:sqs"
 
 
 def lambda_handler(event, context):
@@ -24,7 +23,7 @@ def lambda_handler(event, context):
         try:
             payload = utils.extract_record(message)
         except Exception:
-            logger.exception('Failed to extract record: %s', json.dumps(message))
+            logger.exception("Failed to extract record: %s", json.dumps(message))
             failures.append(message)
 
         # if the payload has a URL in it then we'll fetch it from S3
@@ -33,29 +32,29 @@ def lambda_handler(event, context):
         except NoUrlError:
             pass
 
-        logger.debug('payload: %s', defer(json.dumps, payload))
+        logger.debug("payload: %s", defer(json.dumps, payload))
 
         try:
             payloads.append(ProcessPayload(payload, set_id_if_missing=True))
         except Exception:
-            logger.exception('Failed to convert to ProcessPayload: %s', json.dumps(payload))
+            logger.exception(
+                "Failed to convert to ProcessPayload: %s", json.dumps(payload)
+            )
             failures.append(payload)
 
         if is_sqs_message(message):
             try:
-                messages[payload['id']].append(message)
+                messages[payload["id"]].append(message)
             except KeyError:
-                messages[payload['id']] = [message]
+                messages[payload["id"]] = [message]
 
     processed_ids = set()
     if len(payloads) > 0:
         processed = ProcessPayloads(payloads).process()
-        processed_ids = set(pid for state in processed.keys() for pid in processed[state])
+        processed_ids = {pid for state in processed.keys() for pid in processed[state]}
 
     successful_sqs_messages = [
-        message
-        for _id in processed_ids
-        for message in messages.pop(_id, [])
+        message for _id in processed_ids for message in messages.pop(_id, [])
     ]
     failures += list(messages.values())
 
@@ -68,12 +67,12 @@ def lambda_handler(event, context):
         with utils.batch_handler(
             utils.delete_from_queue_batch,
             {},
-            'messages',
+            "messages",
             batch_size=10,
         ) as handler:
             for message in successful_sqs_messages:
                 handler.add(message)
 
-        raise Exception('One or more payloads failed to process')
+        raise Exception("One or more payloads failed to process")
 
-    return len(processed['started'])
+    return len(processed["started"])

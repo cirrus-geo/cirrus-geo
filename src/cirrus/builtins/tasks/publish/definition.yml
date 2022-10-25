@@ -14,16 +14,16 @@ lambda:
         - dynamodb:UpdateItem
       Resource:
         - !GetAtt StateTable.Arn
-        - !Join ['', [!GetAtt StateTable.Arn, '/index/*']]
+        - !Join ["", [!GetAtt StateTable.Arn, "/index/*"]]
     - Effect: "Allow"
       Action:
         - "s3:PutObject"
       Resource:
         - !Join
-          - ''
-          - - 'arn:aws:s3:::'
+          - ""
+          - - "arn:aws:s3:::"
             - ${self:provider.environment.CIRRUS_DATA_BUCKET}
-            - '*'
+            - "*"
     - Effect: "Allow"
       Action:
         - "s3:ListBucket"

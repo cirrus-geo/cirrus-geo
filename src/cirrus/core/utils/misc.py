@@ -1,28 +1,27 @@
 import os
 import os.path
-
-from typing import List
 from pathlib import Path
+from typing import List
 
 
 def get_cirrus_lib_requirements() -> List[str]:
-    '''
+    """
     Get the cirrus-lib dependencies.
-    '''
+    """
     try:
         from importlib import metadata
     except ImportError:
         import importlib_metadata as metadata
 
     return [
-        req.split(';')[0].translate(str.maketrans('','',' ()'))
-        for req in metadata.requires('cirrus-lib')
+        req.split(";")[0].translate(str.maketrans("", "", " ()"))
+        for req in metadata.requires("cirrus-lib")
     ]
 
 
 def relative_to(path1: Path, path2: Path) -> Path:
     common_path = path1
-    relative = ''
+    relative = ""
     path = path2.resolve()
     result = path
 
@@ -31,10 +30,10 @@ def relative_to(path1: Path, path2: Path) -> Path:
             result = path.relative_to(common_path)
         except ValueError:
             _common_path = common_path.parent
-            relative += '../'
+            relative += "../"
         else:
             if not relative:
-                relative = './'
+                relative = "./"
             return Path(relative + str(result))
 
         if _common_path == common_path:
@@ -46,7 +45,7 @@ def relative_to(path1: Path, path2: Path) -> Path:
 
 
 def relative_to_cwd(path: Path) -> Path:
-    return '.{}{}'.format(
+    return ".{}{}".format(
         os.path.sep,
         relative_to(Path(os.getcwd()), path),
     )
@@ -67,6 +66,7 @@ def clean_dir(directory: Path) -> None:
 
 def import_path(name, path):
     import importlib.util
+
     spec = importlib.util.spec_from_file_location(name, path)
     spec.loader = importlib.util.LazyLoader(spec.loader)
     module = importlib.util.module_from_spec(spec)

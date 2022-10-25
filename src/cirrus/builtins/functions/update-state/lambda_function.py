@@ -1,24 +1,23 @@
 #!/usr/bin/env python
 import json
-import boto3
-
 from os import getenv
 
+import boto3
+
+from cirrus.lib.logging import get_task_logger
 from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.statedb import StateDB
-from cirrus.lib.logging import get_task_logger
 
-
-logger = get_task_logger('lambda_function.update-state', payload=tuple())
+logger = get_task_logger("lambda_function.update-state", payload=tuple())
 
 # envvars
-PROCESS_SNS_TOPIC = getenv('CIRRUS_PROCESS_TOPIC_ARN', None)
-FAILED_TOPIC_ARN = getenv('CIRRUS_FAILED_TOPIC_ARN', None)
-INVALID_TOPIC_ARN = getenv('CIRRUS_INVALID_TOPIC_ARN', None)
+PROCESS_SNS_TOPIC = getenv("CIRRUS_PROCESS_TOPIC_ARN", None)
+FAILED_TOPIC_ARN = getenv("CIRRUS_FAILED_TOPIC_ARN", None)
+INVALID_TOPIC_ARN = getenv("CIRRUS_INVALID_TOPIC_ARN", None)
 
 # boto3 clients
-SNS_CLIENT = boto3.client('sns')
-SFN_CLIENT = boto3.client('stepfunctions')
+SNS_CLIENT = boto3.client("sns")
+SFN_CLIENT = boto3.client("stepfunctions")
 
 # Cirrus state database
 statedb = StateDB()
@@ -27,16 +26,16 @@ statedb = StateDB()
 # for an error cause in a FAILED state
 MAX_EXECUTION_EVENTS = 10
 
-SUCCEEDED = 'SUCCEEDED'
-FAILED = 'FAILED'
-ABORTED = 'ABORTED'
-TIMED_OUT = 'TIMED_OUT'
+SUCCEEDED = "SUCCEEDED"
+FAILED = "FAILED"
+ABORTED = "ABORTED"
+TIMED_OUT = "TIMED_OUT"
 
 
 def mk_error(error, cause):
     return {
-        'Error': error,
-        'Cause': cause,
+        "Error": error,
+        "Cause": cause,
     }
 
 
@@ -45,7 +44,7 @@ def workflow_completed(input_payload, output_payload, error):
     # trying the sns publish, but I could see it the other
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
-    statedb.set_completed(input_payload['id'])
+    statedb.set_completed(input_payload["id"])
     if not output_payload:
         return
     for next_payload in output_payload.next_payloads():
@@ -53,31 +52,31 @@ def workflow_completed(input_payload, output_payload, error):
 
 
 def workflow_aborted(input_payload, output_payload, error):
-    statedb.set_aborted(input_payload['id'])
+    statedb.set_aborted(input_payload["id"])
 
 
 def workflow_failed(input_payload, output_payload, error):
     # error type
-    error_type = error.get('Error', "unknown")
+    error_type = error.get("Error", "unknown")
 
     # check if cause is JSON
     try:
-        cause = json.loads(error['Cause'])
-        error_msg = 'unknown'
-        if 'errorMessage' in cause:
-            error_msg = cause.get('errorMessage', 'unknown')
+        cause = json.loads(error["Cause"])
+        error_msg = "unknown"
+        if "errorMessage" in cause:
+            error_msg = cause.get("errorMessage", "unknown")
     except Exception:
-        error_msg = error['Cause']
+        error_msg = error["Cause"]
 
     error = f"{error_type}: {error_msg}"
     logger.info(error)
 
     try:
         if error_type == "InvalidInput":
-            statedb.set_invalid(input_payload['id'], error)
+            statedb.set_invalid(input_payload["id"], error)
             notification_topic_arn = INVALID_TOPIC_ARN
         else:
-            statedb.set_failed(input_payload['id'], error)
+            statedb.set_failed(input_payload["id"], error)
             notification_topic_arn = FAILED_TOPIC_ARN
     except Exception as err:
         msg = f"Failed marking as failed: {err}"
@@ -86,20 +85,14 @@ def workflow_failed(input_payload, output_payload, error):
 
     if notification_topic_arn is not None:
         try:
-            item = statedb.dbitem_to_item(statedb.get_dbitem(input_payload['id']))
+            item = statedb.dbitem_to_item(statedb.get_dbitem(input_payload["id"]))
             attrs = {
-                'collections': {
-                    'DataType': 'String',
-                    'StringValue': item['collections']
+                "collections": {
+                    "DataType": "String",
+                    "StringValue": item["collections"],
                 },
-                'workflow': {
-                    'DataType': 'String',
-                    'StringValue': item['workflow']
-                },
-                'error': {
-                    'DataType': 'String',
-                    'StringValue': error
-                }
+                "workflow": {"DataType": "String", "StringValue": item["workflow"]},
+                "error": {"DataType": "String", "StringValue": error},
             }
             logger.debug(f"Publishing item to {notification_topic_arn}")
             SNS_CLIENT.publish(
@@ -122,14 +115,14 @@ def get_execution_error(arn):
             maxResults=MAX_EXECUTION_EVENTS,
             reverseOrder=True,
         )
-        for event in history['events']:
+        for event in history["events"]:
             try:
-                if 'stateEnteredEventDetails' in event:
-                    details = event['stateEnteredEventDetails']
-                    error = json.loads(details['input'])['error']
+                if "stateEnteredEventDetails" in event:
+                    details = event["stateEnteredEventDetails"]
+                    error = json.loads(details["input"])["error"]
                     break
-                elif 'lambdaFunctionFailedEventDetails' in event:
-                    error = event['lambdaFunctionFailedEventDetails']
+                elif "lambdaFunctionFailedEventDetails" in event:
+                    error = event["lambdaFunctionFailedEventDetails"]
                     # for some dumb reason these errors have lowercase key names
                     error = {key.capitalize(): val for key, val in error.items()}
                     break
@@ -137,7 +130,7 @@ def get_execution_error(arn):
                 pass
         else:
             logger.warning(
-                'Could not find execution error in last %s events',
+                "Could not find execution error in last %s events",
                 MAX_EXECUTION_EVENTS,
             )
     except Exception as e:
@@ -147,11 +140,10 @@ def get_execution_error(arn):
         logger.debug("Error found: '%s'", error)
     else:
         error = mk_error(
-            'Unknown',
-            'update-state failed to find a specific error condition.',
+            "Unknown",
+            "update-state failed to find a specific error condition.",
         )
     return error
-
 
 
 # TODO: in cirrus.lib make a factory class that returns classes
@@ -164,41 +156,44 @@ def parse_event(event):
     #   - status string
     #   - error object
     try:
-        if 'error' in event:
-            logger.debug('looks like a payload with an error message, i.e., workflow-failed')
+        if "error" in event:
+            logger.debug(
+                "looks like a payload with an error message, i.e., workflow-failed"
+            )
             return (
                 ProcessPayload.from_event(event),
                 None,
                 FAILED,
-                event.get('error', {}),
+                event.get("error", {}),
             )
-        elif event.get('source', '') == "aws.states":
-            status = event['detail']['status']
+        elif event.get("source", "") == "aws.states":
+            status = event["detail"]["status"]
             error = None
             if status == SUCCEEDED:
                 pass
             elif status == FAILED:
-                error = get_execution_error(event['detail']['executionArn'])
+                error = get_execution_error(event["detail"]["executionArn"])
             elif status == ABORTED:
                 pass
             elif status == TIMED_OUT:
                 error = mk_error(
-                    'TimedOutError',
-                    'The step function execution timed out.',
+                    "TimedOutError",
+                    "The step function execution timed out.",
                 )
             else:
-                logger.warning('Unknown status: %s', status)
+                logger.warning("Unknown status: %s", status)
             return (
-                ProcessPayload.from_event(json.loads(event['detail']['input'])),
-                ProcessPayload.from_event(json.loads(event['detail']['output']))
-                    if event['detail'].get('output', None) else None,
+                ProcessPayload.from_event(json.loads(event["detail"]["input"])),
+                ProcessPayload.from_event(json.loads(event["detail"]["output"]))
+                if event["detail"].get("output", None)
+                else None,
                 status,
                 error,
             )
         else:
             raise Exception()
     except Exception:
-        logger.exception('Unknown event: %s', json.dumps(event))
+        logger.exception("Unknown event: %s", json.dumps(event))
         return None, None, None, None
 
 
@@ -214,7 +209,7 @@ def lambda_handler(event, context={}):
     }
 
     if status not in status_update_map:
-        logger.info('Status does not support updates: %s', status)
+        logger.info("Status does not support updates: %s", status)
         return
 
     status_update_map[status](input_payload, output_payload, error)

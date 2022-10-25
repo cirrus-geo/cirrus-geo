@@ -1,5 +1,5 @@
 class CirrusError(Exception):
-    def __init__(self, message: str, exit_code: int=1) -> None:
+    def __init__(self, message: str, exit_code: int = 1) -> None:
         super().__init__(message)
         self.exit_code = exit_code
 
@@ -16,13 +16,13 @@ class CloudFormationError(CirrusError):
     pass
 
 
-class CloudFormationSkipped(CloudFormationError):
+class CloudFormationSkipped(CloudFormationError):  # noqa: N818
     pass
 
 
-class DuplicateRequirement(ComponentError):
+class DuplicateRequirement(ComponentError):  # noqa: N818
     pass
 
 
-class MissingHandler(CirrusError):
+class MissingHandler(CirrusError):  # noqa: N818
     pass

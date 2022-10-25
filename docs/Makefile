@@ -56,4 +56,4 @@ build: stage
 
 .PHONY: serve
 serve: gh-pages
-	python -m http.server $(HTTP_PORT) -d gh-pages 
+	python -m http.server $(HTTP_PORT) -d gh-pages
