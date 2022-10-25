@@ -490,14 +490,15 @@ class StateDB:
             index = "state_updated"
             expr = expr & Key(index).begins_with(state)
 
-        keys = ["collections_workflow", "itemids"]
+        exclusive_start_key_filters = ["collections_workflow", "itemids"]
 
         if index:
             kwargs["IndexName"] = index
+            exclusive_start_key_filters.append(index)
 
         if "ExclusiveStartKey" in kwargs:
             kwargs["ExclusiveStartKey"] = {
-                k: kwargs["ExclusiveStartKey"][k] for k in keys
+                k: kwargs["ExclusiveStartKey"][k] for k in exclusive_start_key_filters
             }
 
         kwargs.update(
@@ -511,6 +512,7 @@ class StateDB:
         if self.limit and ("Limit" not in kwargs or self.limit < kwargs["Limit"]):
             kwargs["Limit"] = self.limit
 
+        logger.debug(kwargs)
         resp = self.table.query(**kwargs)
 
         return resp
