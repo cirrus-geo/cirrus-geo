@@ -92,7 +92,7 @@ Resources:
     Type: AWS::Timestream::Database
     Properties:
       DatabaseName: "#{AWS::StackName}-state-events"
-      # KmsKeyId: String todo: assuming this just uses the default one
+      # KmsKeyId: String -- use default one
   StateEventTimestreamTable:
     Type: AWS::Timestream::Table
     DependsOn: StateEventTimestreamDatabase
