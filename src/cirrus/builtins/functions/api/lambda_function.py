@@ -93,15 +93,16 @@ def _results_transform(
     for row in results["Rows"]:
         ts = timestamp_function(row["Data"][0]["ScalarValue"])
         state = row["Data"][1]["ScalarValue"]
-        count = row["Data"][2]["ScalarValue"]
-        intervals[ts].append((state, count))
+        unique_count = row["Data"][2]["ScalarValue"]
+        total_count = row["Data"][3]["ScalarValue"]
+        intervals[ts].append((state, unique_count, total_count))
 
     return [
         {
             "period": ts,
             "interval": interval,
             "states": [
-                {"state": x[0], "count": x[1], "unique_count": x[1]} for x in states
+                {"state": x[0], "unique_count": x[1], "count": x[2]} for x in states
             ],
         }
         for ts, states in intervals.items()

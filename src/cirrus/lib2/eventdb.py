@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime
 from enum import Enum, unique
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import boto3
 from dateutil.parser import isoparse
@@ -88,24 +88,24 @@ class EventDB:
         except Exception as err:
             logger.error(f"For {key} Error: {err}")
 
-    def _mk_query_by_bin_and_duration(self, bin_size: str, duration: str):
+    def _mk_query_by_bin_and_duration(self, bin_size: str, duration: str) -> str:
         """bin_size is like '1d' '1h'
         duration is like '356d' '60d'
         """
         return f"""
             WITH data AS (
-                SELECT BIN(time, {bin_size}) as t, state, item_ids
+                SELECT BIN(time, {bin_size}) as t, state, item_ids, count(*) as count
                 FROM "{self.event_db_name}"."{self.event_table_name}"
                 WHERE time BETWEEN ago({duration}) AND now()
                 GROUP BY BIN(time, {bin_size}), state, item_ids
                 )
-            SELECT t, state, count(*) as c
+            SELECT t, state, count(*) as unique_count, sum(count) as count
             FROM data
             GROUP BY t, state
             ORDER BY t, state
         """
 
-    def _mk_hour_query(self, start: int, end: int):
+    def _mk_hour_query(self, start: int, end: int) -> str:
         return f"""
             WITH data AS (
                 SELECT state, item_ids
@@ -119,7 +119,7 @@ class EventDB:
             ORDER BY state
         """
 
-    def _query(self, q: str):
+    def _query(self, q: str) -> Dict[str, Any]:
         return self.tsq_client.query(
             QueryString=q,
             # MaxRows=123

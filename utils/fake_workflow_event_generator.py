@@ -5,6 +5,8 @@ pip install -r requirements.txt
 python fake_workflow_event_generator.py my-cirrus-dev-state-events my-cirrus-dev-state-events-table
 
 First arg is the Timestream DB, second arg is the Timestream table.
+
+Write to Magnetic store must be enabled manually for this to work.
 """
 import logging
 import random
