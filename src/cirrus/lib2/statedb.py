@@ -1,10 +1,12 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import boto3
 from boto3.dynamodb.conditions import Attr, Key
+
+from .eventdb import EventDB, StateEnum
 
 # envvars
 PAYLOAD_BUCKET = os.getenv("CIRRUS_PAYLOAD_BUCKET")
@@ -18,7 +20,9 @@ logger = logging.getLogger(__name__)
 class StateDB:
     limit = None
 
-    def __init__(self, table_name: str = None):
+    def __init__(
+        self, table_name: Optional[str] = None, eventdb: Optional[EventDB] = None
+    ):
         """Initialize a StateDB instance using the Cirrus State DB table
 
         Args:
@@ -33,6 +37,11 @@ class StateDB:
         self.db = boto3.resource("dynamodb")
         self.table_name = table_name
         self.table = self.db.Table(table_name)
+
+        if eventdb:
+            self.eventdb = eventdb
+        else:
+            self.eventdb = EventDB()
 
     def delete_item(self, payload_id: str):
         key = self.payload_id_to_key(payload_id)
@@ -206,12 +215,36 @@ class StateDB:
         Returns:
             str: Current state: PROCESSING, COMPLETED, FAILED, INVALID, ABORTED
         """
-        response = self.table.get_item(Key=self.payload_id_to_key(payload_id))
+        state, _ = self.get_state_updated(payload_id)
+        return state
+
+    def get_state_updated(self, payload_id: str) -> Tuple[str, str]:
+        """Get last state update timestamp of Item
+
+        Args:
+            payload_id (str): The Payload ID
+
+        Returns:
+            Tuple[str, str]: last state and last state update timestamp
+        """
+        return self.get_state_updated_with_key(self.payload_id_to_key(payload_id))
+
+    def get_state_updated_with_key(self, key: Dict) -> Tuple[str, str]:
+        """Get last state update timestamp of Item
+
+        Args:
+            key (str): The key
+
+        Returns:
+            Tuple[str, str]: last state and last state update timestamp
+        """
+        response = self.table.get_item(Key=key)
         if "Item" in response:
-            return response["Item"]["state_updated"].split("_")[0]
+            return response["Item"]["state_updated"].split("_")
+
         else:
             # assuming no such item in database
-            return ""
+            return "", ""
 
     def get_states(self, payload_ids: List[str]) -> Dict[str, str]:
         """Get current state of items
@@ -257,6 +290,8 @@ class StateDB:
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
+        _, last_update_ts_str = self.get_state_updated_with_key(key)
+
         expr = (
             "SET "
             "created = if_not_exists(created, :created), "
@@ -275,6 +310,9 @@ class StateDB:
             },
         )
         logger.debug("Add execution", extra=key.update({"execution": execution}))
+
+        self.write_timeseries_record(key, StateEnum.PROCESSING, now, last_update_ts_str)
+
         return response
 
     def set_outputs(self, payload_id: str, outputs: List[str]) -> str:
@@ -323,6 +361,8 @@ class StateDB:
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
+        _, last_update_ts_str = self.get_state_updated_with_key(key)
+
         expr = (
             "SET "
             "created = if_not_exists(created, :created), "
@@ -343,7 +383,10 @@ class StateDB:
             UpdateExpression=expr,
             ExpressionAttributeValues=expr_attrs,
         )
-        logger.debug("set outputs", extra=key.update({"outputs": outputs}))
+        logger.debug("set completed", extra=key.update({"outputs": outputs}))
+
+        self.write_timeseries_record(key, StateEnum.COMPLETED, now, last_update_ts_str)
+
         return response
 
     def set_failed(self, payload_id, msg):
@@ -351,6 +394,8 @@ class StateDB:
         """ Adds new item with state function execution """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
+
+        _, last_update_ts_str = self.get_state_updated_with_key(key)
 
         expr = (
             "SET "
@@ -369,6 +414,9 @@ class StateDB:
             },
         )
         logger.debug("set failed", extra=key.update({"last_error": msg}))
+
+        self.write_timeseries_record(key, StateEnum.FAILED, now, last_update_ts_str)
+
         return response
 
     def set_invalid(self, payload_id: str, msg: str) -> str:
@@ -383,6 +431,8 @@ class StateDB:
         """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
+
+        _, last_update_ts_str = self.get_state_updated_with_key(key)
 
         expr = (
             "SET "
@@ -401,6 +451,9 @@ class StateDB:
             },
         )
         logger.debug("set invalid", extra=key.update({"last_error": msg}))
+
+        self.write_timeseries_record(key, StateEnum.INVALID, now, last_update_ts_str)
+
         return response
 
     def set_aborted(self, payload_id: str) -> str:
@@ -414,6 +467,8 @@ class StateDB:
         """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
+
+        _, last_update_ts_str = self.get_state_updated_with_key(key)
 
         expr = (
             "SET "
@@ -429,7 +484,11 @@ class StateDB:
                 ":updated": now,
             },
         )
+
         logger.debug("set aborted")
+
+        self.write_timeseries_record(key, StateEnum.ABORTED, now, last_update_ts_str)
+
         return response
 
     def query(
@@ -603,3 +662,15 @@ class StateDB:
         hours = int(since[0:-1]) if unit == "h" else 0
         minutes = int(since[0:-1]) if unit == "m" else 0
         return timedelta(days=days, hours=hours, minutes=minutes)
+
+    def write_timeseries_record(
+        self,
+        key: Dict[str, str],
+        state: StateEnum,
+        event_time: str,
+        last_update_ts_str: str,
+    ) -> None:
+        if self.eventdb:
+            self.eventdb.write_timeseries_record(
+                key, state, event_time, last_update_ts_str
+            )

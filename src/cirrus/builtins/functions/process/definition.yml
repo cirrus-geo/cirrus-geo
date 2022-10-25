@@ -28,6 +28,16 @@ lambda:
         - !Join ["", [!GetAtt StateTable.Arn, "/index/*"]]
     - Effect: "Allow"
       Action:
+        - timestream:DescribeEndpoints
+      Resource:
+        - "*"
+    - Effect: "Allow"
+      Action:
+        - timestream:WriteRecords
+      Resource:
+        - !GetAtt StateEventTimestreamTable.Arn
+    - Effect: "Allow"
+      Action:
         - sqs:GetQueueUrl
         - sqs:ReceiveMessage
         - sqs:DeleteMessage

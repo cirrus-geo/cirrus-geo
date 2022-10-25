@@ -30,6 +30,16 @@ lambda:
       Resource:
         - !GetAtt StateTable.Arn
         - !Join ["", [!GetAtt StateTable.Arn, "/index/*"]]
+    - Effect: "Allow"
+      Action:
+        - timestream:DescribeEndpoints
+      Resource:
+        - "*"
+    - Effect: "Allow"
+      Action:
+        - timestream:WriteRecords
+      Resource:
+        - !GetAtt StateEventTimestreamTable.Arn
     - Effect: Allow
       Action:
         - states:GetExecutionHistory

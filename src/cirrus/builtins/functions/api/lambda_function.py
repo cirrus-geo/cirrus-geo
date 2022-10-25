@@ -1,11 +1,14 @@
 import json
 import logging
 import os
+from collections import defaultdict
 from copy import deepcopy
+from typing import Any, Callable, Dict, List
 from urllib.parse import urljoin
 
 from boto3utils import s3
 
+from cirrus.lib2.eventdb import EventDB
 from cirrus.lib.statedb import STATES, StateDB
 
 logger = logging.getLogger(__name__)
@@ -15,10 +18,15 @@ DATA_BUCKET = os.getenv("CIRRUS_DATA_BUCKET", None)
 
 # Cirrus state database
 statedb = StateDB()
+eventdb = EventDB()
 
 
-def response(body, status_code=200, headers={}):
-    _headers = deepcopy(headers)
+def response(body, status_code=200, headers=None):
+    if headers is None:
+        _headers = {}
+    else:
+        _headers = deepcopy(headers)
+
     # cors
     _headers.update(
         {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Credentials": True}
@@ -60,6 +68,54 @@ def get_root(root_url):
     }
 
     return root
+
+
+def get_stats() -> Dict[str, Any]:
+    logger.debug("Get stats")
+
+    return {
+        "state_transitions": {
+            "daily": daily(eventdb.query_by_bin_and_duration("1d", "60d")),
+            "hourly": hourly(eventdb.query_by_bin_and_duration("1h", "36h")),
+            # "hourly_rolling": [
+            #     eventdb.query_hour(1, 0),
+            #     eventdb.query_hour(2, 1),
+            # ]
+        }
+    }
+
+
+def _results_transform(
+    results: Dict[str, Any], timestamp_function: Callable[[str], str], interval: str
+) -> List[Dict[str, Any]]:
+    intervals = defaultdict(list)
+
+    for row in results["Rows"]:
+        ts = timestamp_function(row["Data"][0]["ScalarValue"])
+        state = row["Data"][1]["ScalarValue"]
+        count = row["Data"][2]["ScalarValue"]
+        intervals[ts].append((state, count))
+
+    return [
+        {
+            "period": ts,
+            "interval": interval,
+            "states": [
+                {"state": x[0], "count": x[1], "unique_count": x[1]} for x in states
+            ],
+        }
+        for ts, states in intervals.items()
+    ]
+
+
+def daily(results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return _results_transform(results, lambda x: x.split(" ")[0], "day")
+
+
+def hourly(results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return _results_transform(
+        results, lambda x: x.replace(" ", "T").split(".")[0] + "Z", "hour"
+    )
 
 
 def summary(collections_workflow, since, limit):
@@ -123,6 +179,9 @@ def lambda_handler(event, context):
     # root endpoint
     if payload_id == "":
         return response(get_root(root_url))
+
+    if payload_id == "stats":
+        return response(get_stats())
 
     if "/workflow-" not in payload_id:
         return response(f"{path} not found", status_code=400)
