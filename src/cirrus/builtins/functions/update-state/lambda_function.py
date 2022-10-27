@@ -4,9 +4,9 @@ from os import getenv
 
 import boto3
 
-from cirrus.lib.logging import get_task_logger
-from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.statedb import StateDB
+from cirrus.lib2.logging import get_task_logger
+from cirrus.lib2.process_payload import ProcessPayload
+from cirrus.lib2.statedb import StateDB
 
 logger = get_task_logger("lambda_function.update-state", payload=tuple())
 
@@ -48,7 +48,11 @@ def workflow_completed(input_payload, output_payload, error):
     if not output_payload:
         return
     for next_payload in output_payload.next_payloads():
-        next_payload.publish_to_sns(PROCESS_SNS_TOPIC)
+        SNS_CLIENT.publish(
+            TopicArn=PROCESS_SNS_TOPIC,
+            Message=json.dumps(next_payload),
+        )
+        logger.debug(f"Published payload to {PROCESS_SNS_TOPIC}")
 
 
 def workflow_aborted(input_payload, output_payload, error):
