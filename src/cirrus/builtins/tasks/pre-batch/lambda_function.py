@@ -3,8 +3,8 @@ from os import getenv
 
 from boto3utils import s3
 
-from cirrus.lib.logging import get_task_logger
-from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib2.logging import get_task_logger
+from cirrus.lib2.process_payload import ProcessPayload
 
 # envvars
 PAYLOAD_BUCKET = getenv("CIRRUS_PAYLOAD_BUCKET")
