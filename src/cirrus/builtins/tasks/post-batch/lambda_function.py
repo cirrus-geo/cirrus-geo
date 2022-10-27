@@ -3,10 +3,10 @@ import re
 
 import boto3
 
-from cirrus.lib.logging import get_task_logger
-from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib2.logging import get_task_logger
+from cirrus.lib2.process_payload import ProcessPayload
 
-logger = get_task_logger("lambda_function.update-state", payload=tuple())
+logger = get_task_logger("task.post-batch", payload=tuple())
 
 BATCH_LOG_GROUP = "/aws/batch/job"
 LOG_CLIENT = boto3.client("logs")
