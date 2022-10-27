@@ -1,18 +1,103 @@
 import json
 from os import getenv
 
-from cirrus.lib.logging import get_task_logger
-from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.statedb import StateDB
+import boto3
+
+from cirrus.lib2.logging import get_task_logger
+from cirrus.lib2.process_payload import ProcessPayload
+from cirrus.lib2.statedb import StateDB
 
 # envvars
 DATA_BUCKET = getenv("CIRRUS_DATA_BUCKET")
 API_URL = getenv("CIRRUS_API_URL", None)
+PUBLISH_TOPIC_ARN = getenv("CIRRUS_PUBLISH_TOPIC_ARN", None)
 # DEPRECATED - additional topics
 PUBLISH_TOPICS = getenv("CIRRUS_PUBLISH_SNS", None)
 
 # Cirrus state db
 statedb = StateDB()
+snsclient = boto3.client("sns")
+
+
+def sns_attributes(item) -> dict:
+    """Create attributes from Item for publishing to SNS
+
+    Args:
+        item (Dict): A STAC Item
+
+    Returns:
+        Dict: Attributes for SNS publishing
+    """
+    # note that sns -> sqs supports only 10 message attributes
+    # when not using raw mode, and we currently have 10 attrs
+    # possible
+    attr = {
+        "collection": {"DataType": "String", "StringValue": item["collection"]},
+        "bbox.ll_lon": {"DataType": "Number", "StringValue": str(item["bbox"][0])},
+        "bbox.ll_lat": {"DataType": "Number", "StringValue": str(item["bbox"][1])},
+        "bbox.ur_lon": {"DataType": "Number", "StringValue": str(item["bbox"][2])},
+        "bbox.ur_lat": {"DataType": "Number", "StringValue": str(item["bbox"][3])},
+    }
+
+    if "start_datetime" in item["properties"]:
+        attr["start_datetime"] = {
+            "DataType": "String",
+            "StringValue": item["properties"]["start_datetime"],
+        }
+    elif "datetime" in item["properties"]:
+        attr["start_datetime"] = {
+            "DataType": "String",
+            "StringValue": item["properties"]["datetime"],
+        }
+
+    if "end_datetime" in item["properties"]:
+        attr["end_datetime"] = {
+            "DataType": "String",
+            "StringValue": item["properties"]["end_datetime"],
+        }
+    elif "datetime" in item["properties"]:
+        attr["end_datetime"] = {
+            "DataType": "String",
+            "StringValue": item["properties"]["datetime"],
+        }
+
+    if "datetime" in item["properties"]:
+        attr["datetime"] = {
+            "DataType": "String",
+            "StringValue": item["properties"]["datetime"],
+        }
+
+    if "eo:cloud_cover" in item["properties"]:
+        attr["cloud_cover"] = {
+            "DataType": "Number",
+            "StringValue": str(item["properties"]["eo:cloud_cover"]),
+        }
+
+    if item["properties"]["created"] != item["properties"]["updated"]:
+        attr["status"] = {"DataType": "String", "StringValue": "updated"}
+    else:
+        attr["status"] = {"DataType": "String", "StringValue": "created"}
+
+    return attr
+
+
+def publish_items_to_sns(payload, topic_arn, logger):
+    """Publish this ProcessPayload's items to SNS
+
+    Args:
+        topic_arn (str, optional): ARN of SNS Topic. Defaults to PUBLISH_TOPIC_ARN.
+    """
+    responses = []
+    for item in payload["features"]:
+        responses.append(
+            snsclient.publish(
+                TopicArn=topic_arn,
+                Message=json.dumps(item),
+                MessageAttributes=sns_attributes(item),
+            )
+        )
+        logger.debug(f"Published item to {topic_arn}")
+    return responses
 
 
 def lambda_handler(event, context):
@@ -45,15 +130,15 @@ def lambda_handler(event, context):
         s3urls = payload.publish_items_to_s3(DATA_BUCKET, public=public)
 
         # publish to Cirrus SNS publish topic
-        payload.publish_items_to_sns()
+        publish_items_to_sns(payload, PUBLISH_TOPIC_ARN, logger)
 
         # Deprecated additional topics
         if PUBLISH_TOPICS:
             for topic in PUBLISH_TOPICS.split(","):
-                payload.publish_items_to_sns(topic)
+                publish_items_to_sns(payload, topic, logger)
 
         for topic in topics:
-            payload.publish_items_to_sns(topic)
+            publish_items_to_sns(payload, topic, logger)
     except Exception as err:
         msg = f"publish: failed publishing output items ({err})"
         logger.error(msg, exc_info=True)
