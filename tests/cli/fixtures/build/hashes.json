@@ -8,16 +8,16 @@
     "size": 79
   },
   "lambdas/pre-batch/lambda_function.py": {
-    "shasum": "1565d7d568f550335405a3d036c54765e293c50fd80fe8587eb7f6498526d464",
-    "size": 788
+    "shasum": "a25469732ad9b28f123a2d4e52cf95a09108555f472448ccb600445abdf600a0",
+    "size": 790
   },
   "lambdas/post-batch/requirements.txt": {
     "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
     "size": 79
   },
   "lambdas/post-batch/lambda_function.py": {
-    "shasum": "81d8a13c8db9541b79958ee6b19fe5b898052090526e9352215cb21655313f08",
-    "size": 1423
+    "shasum": "964f3d4f789fabee324d5ad491c0f1e836dc21d9a82d9ea04af7a60960c0100b",
+    "size": 1412
   },
   "lambdas/update-state/requirements.txt": {
     "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
@@ -28,8 +28,8 @@
     "size": 83
   },
   "lambdas/update-state/lambda_function.py": {
-    "shasum": "48637951816fb8f57d4d88caa9f205a23d0e5c86b76bcb519aad5038c39c77b9",
-    "size": 6952
+    "shasum": "c6d2723835ef9280b50f612c3c4944cbf622d3ccd2e0883943772f92bb8d6bc2",
+    "size": 7090
   },
   "lambdas/publish/requirements.txt": {
     "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
@@ -40,8 +40,8 @@
     "size": 1140
   },
   "lambdas/publish/lambda_function.py": {
-    "shasum": "189cb005d48690ce2ddcf1795d81fdf5ed7ee0b801e73e399a64ccb5654fba3c",
-    "size": 2126
+    "shasum": "b39d767bb4cfa3a7f4fae4ada273fead640612099bd96d58f553d6bcd16aabed",
+    "size": 4968
   },
   "lambdas/api/api.yaml": {
     "shasum": "b9f5b5e1b52d0402c0db986123335395114658489b5175dfccecde886e13e994",
