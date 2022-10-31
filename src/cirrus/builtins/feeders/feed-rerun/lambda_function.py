@@ -13,27 +13,23 @@ from cirrus.lib2.utils import batch_handler, submit_batch_job
 logger = get_task_logger("feeder.rerun", payload=tuple())
 
 # envvars
-SNS_TOPIC = getenv("CIRRUS_PROCESS_TOPIC_ARN")
+QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 
 # boto clients
-SNS_CLIENT = boto3.client("sns")
+SQS_CLIENT = boto3.resource("sqs")
+QUEUE = SQS_CLIENT.Queue(QUEUE_URL)
 
 # Cirrus state DB
 statedb = StateDB()
 
 
-def publish_batch(messages):
-    params = {
-        "TopicArn": SNS_TOPIC,
-        "PublishBatchRequestEntries": [
-            {"Id": str(idx), "Message": msg} for idx, msg in enumerate(messages)
-        ],
-    }
-    return SNS_CLIENT.publish_batch(**params)
+def send_batch(messages):
+    entries = [{"Id": str(idx), "MessageBody": msg} for idx, msg in enumerate(messages)]
+    return QUEUE.send_messages(Entries=entries)
 
 
 def submit(payload_ids):
-    with batch_handler(publish_batch, {}, "messages", batch_size=10) as handler:
+    with batch_handler(send_batch, {}, "messages", batch_size=10) as handler:
         for payload_id in payload_ids:
             handler.add(json.dumps({"url": StateDB.get_payload_url(payload_id)}))
 

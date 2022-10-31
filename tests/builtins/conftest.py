@@ -113,6 +113,6 @@ def workflow(stepfunctions, iam):
 
 @pytest.fixture(autouse=True)
 def env(queue, statedb, payloads):
-    os.environ["CIRRUS_PROCESS_QUEUE"] = queue["QueueUrl"]
+    os.environ["CIRRUS_PROCESS_QUEUE_URL"] = queue["QueueUrl"]
     os.environ["CIRRUS_STATE_DB"] = statedb
     os.environ["CIRRUS_PAYLOAD_BUCKET"] = payloads
