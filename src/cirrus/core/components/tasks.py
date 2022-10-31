@@ -71,3 +71,8 @@ class Task(Lambda):
         new.lambda_enabled = "lambda" in task_types
         new._create_do()
         return new
+
+    def _load(self, init_files=False):
+        if init_files and not self.lambda_enabled:
+            del self.files["handler"]
+        super()._load(init_files=init_files)

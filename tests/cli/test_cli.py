@@ -194,6 +194,9 @@ def test_create_task_lambda(project_testdir, invoke, project):
     result = invoke("show task test-lambda")
     assert result.exit_code == 0
     assert len(result.stdout) > 0
+    assert project_testdir.joinpath(
+        "tasks", "test-lambda", "lambda_function.py"
+    ).is_file()
 
 
 def test_create_task_batch(project_testdir, invoke, project):
@@ -202,6 +205,9 @@ def test_create_task_batch(project_testdir, invoke, project):
     result = invoke("show task test-batch")
     assert result.exit_code == 0
     assert len(result.stdout) > 0
+    assert not project_testdir.joinpath(
+        "tasks", "test-batch", "lambda_function.py"
+    ).is_file()
 
 
 def test_create_task_batch_lambda(project_testdir, invoke, project):
@@ -210,6 +216,9 @@ def test_create_task_batch_lambda(project_testdir, invoke, project):
     result = invoke("show task test-batch-lambda")
     assert result.exit_code == 0
     assert len(result.stdout) > 0
+    assert project_testdir.joinpath(
+        "tasks", "test-batch-lambda", "lambda_function.py"
+    ).is_file()
 
 
 @pytest.mark.parametrize("group", [c.group_name for c in groups])
