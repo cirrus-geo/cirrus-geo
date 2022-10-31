@@ -31,54 +31,74 @@ def sns_attributes(item) -> dict:
     # note that sns -> sqs supports only 10 message attributes
     # when not using raw mode, and we currently have 10 attrs
     # possible
-    attr = {
-        "collection": {"DataType": "String", "StringValue": item["collection"]},
-        "bbox.ll_lon": {"DataType": "Number", "StringValue": str(item["bbox"][0])},
-        "bbox.ll_lat": {"DataType": "Number", "StringValue": str(item["bbox"][1])},
-        "bbox.ur_lon": {"DataType": "Number", "StringValue": str(item["bbox"][2])},
-        "bbox.ur_lat": {"DataType": "Number", "StringValue": str(item["bbox"][3])},
-    }
+    attrs = {}
+
+    if "collection" in item:
+        attrs["collection"] = {"DataType": "String", "StringValue": item["collection"]}
+
+    if "bbox" in item:
+        attrs["bbox.ll_lon"] = {
+            "DataType": "Number",
+            "StringValue": str(item["bbox"][0]),
+        }
+        attrs["bbox.ll_lat"] = {
+            "DataType": "Number",
+            "StringValue": str(item["bbox"][1]),
+        }
+        attrs["bbox.ur_lon"] = {
+            "DataType": "Number",
+            "StringValue": str(item["bbox"][2]),
+        }
+        attrs["bbox.ur_lat"] = {
+            "DataType": "Number",
+            "StringValue": str(item["bbox"][3]),
+        }
+
+    if "properties" not in item:
+        return attrs
 
     if "start_datetime" in item["properties"]:
-        attr["start_datetime"] = {
+        attrs["start_datetime"] = {
             "DataType": "String",
             "StringValue": item["properties"]["start_datetime"],
         }
     elif "datetime" in item["properties"]:
-        attr["start_datetime"] = {
+        attrs["start_datetime"] = {
             "DataType": "String",
             "StringValue": item["properties"]["datetime"],
         }
 
     if "end_datetime" in item["properties"]:
-        attr["end_datetime"] = {
+        attrs["end_datetime"] = {
             "DataType": "String",
             "StringValue": item["properties"]["end_datetime"],
         }
     elif "datetime" in item["properties"]:
-        attr["end_datetime"] = {
+        attrs["end_datetime"] = {
             "DataType": "String",
             "StringValue": item["properties"]["datetime"],
         }
 
     if "datetime" in item["properties"]:
-        attr["datetime"] = {
+        attrs["datetime"] = {
             "DataType": "String",
             "StringValue": item["properties"]["datetime"],
         }
 
     if "eo:cloud_cover" in item["properties"]:
-        attr["cloud_cover"] = {
+        attrs["cloud_cover"] = {
             "DataType": "Number",
             "StringValue": str(item["properties"]["eo:cloud_cover"]),
         }
 
-    if item["properties"]["created"] != item["properties"]["updated"]:
-        attr["status"] = {"DataType": "String", "StringValue": "updated"}
+    if "created" not in item["properties"] or "updated" not in item["properties"]:
+        pass
+    elif item["properties"]["created"] != item["properties"]["updated"]:
+        attrs["status"] = {"DataType": "String", "StringValue": "updated"}
     else:
-        attr["status"] = {"DataType": "String", "StringValue": "created"}
+        attrs["status"] = {"DataType": "String", "StringValue": "created"}
 
-    return attr
+    return attrs
 
 
 def publish_items_to_sns(payload, topic_arn, logger):
