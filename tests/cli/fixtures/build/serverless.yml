@@ -21,8 +21,8 @@ provider:
       Ref: StateTable
     CIRRUS_STACK:
       Fn::Sub: ${AWS::StackName}
-    CIRRUS_PROCESS_TOPIC_ARN:
-      Ref: ProcessTopic
+    CIRRUS_PROCESS_QUEUE_URL:
+      Ref: ProcessQueue
     CIRRUS_PUBLISH_TOPIC_ARN:
       Ref: PublishTopic
     CIRRUS_FAILED_TOPIC_ARN:
@@ -120,8 +120,8 @@ functions:
         Ref: StateTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
-      CIRRUS_PROCESS_TOPIC_ARN:
-        Ref: ProcessTopic
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
       CIRRUS_PUBLISH_TOPIC_ARN:
         Ref: PublishTopic
       CIRRUS_FAILED_TOPIC_ARN:
@@ -206,8 +206,8 @@ functions:
         Ref: StateTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
-      CIRRUS_PROCESS_TOPIC_ARN:
-        Ref: ProcessTopic
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
       CIRRUS_PUBLISH_TOPIC_ARN:
         Ref: PublishTopic
       CIRRUS_FAILED_TOPIC_ARN:
@@ -291,8 +291,8 @@ functions:
         Ref: StateTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
-      CIRRUS_PROCESS_TOPIC_ARN:
-        Ref: ProcessTopic
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
       CIRRUS_PUBLISH_TOPIC_ARN:
         Ref: PublishTopic
       CIRRUS_FAILED_TOPIC_ARN:
@@ -355,8 +355,8 @@ functions:
         Ref: StateTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
-      CIRRUS_PROCESS_TOPIC_ARN:
-        Ref: ProcessTopic
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
       CIRRUS_PUBLISH_TOPIC_ARN:
         Ref: PublishTopic
       CIRRUS_FAILED_TOPIC_ARN:
@@ -407,8 +407,8 @@ functions:
         Ref: StateTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
-      CIRRUS_PROCESS_TOPIC_ARN:
-        Ref: ProcessTopic
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
       CIRRUS_PUBLISH_TOPIC_ARN:
         Ref: PublishTopic
       CIRRUS_FAILED_TOPIC_ARN:
@@ -454,8 +454,8 @@ functions:
         Ref: StateTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
-      CIRRUS_PROCESS_TOPIC_ARN:
-        Ref: ProcessTopic
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
       CIRRUS_PUBLISH_TOPIC_ARN:
         Ref: PublishTopic
       CIRRUS_FAILED_TOPIC_ARN:
@@ -514,8 +514,8 @@ functions:
         Ref: StateTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
-      CIRRUS_PROCESS_TOPIC_ARN:
-        Ref: ProcessTopic
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
       CIRRUS_PUBLISH_TOPIC_ARN:
         Ref: PublishTopic
       CIRRUS_FAILED_TOPIC_ARN:
@@ -662,9 +662,9 @@ resources:
             - Name: CIRRUS_STACK
               Value:
                 Fn::Sub: ${AWS::StackName}
-            - Name: CIRRUS_PROCESS_TOPIC_ARN
+            - Name: CIRRUS_PROCESS_QUEUE_URL
               Value:
-                Ref: ProcessTopic
+                Ref: ProcessQueue
             - Name: CIRRUS_PUBLISH_TOPIC_ARN
               Value:
                 Ref: PublishTopic
@@ -718,9 +718,9 @@ resources:
             - Name: CIRRUS_STACK
               Value:
                 Fn::Sub: ${AWS::StackName}
-            - Name: CIRRUS_PROCESS_TOPIC_ARN
+            - Name: CIRRUS_PROCESS_QUEUE_URL
               Value:
-                Ref: ProcessTopic
+                Ref: ProcessQueue
             - Name: CIRRUS_PUBLISH_TOPIC_ARN
               Value:
                 Ref: PublishTopic
@@ -741,11 +741,6 @@ resources:
           Image: cirrusgeo/run-lambda:0.2.1
         RetryStrategy:
           Attempts: 1
-    ProcessTopic:
-      Type: AWS::SNS::Topic
-      Properties:
-        TopicName:
-          Fn::Sub: ${AWS::StackName}-process
     PublishTopic:
       Type: AWS::SNS::Topic
       Properties:
@@ -773,39 +768,6 @@ resources:
       Properties:
         QueueName:
           Fn::Sub: ${AWS::StackName}-process-dead-letter
-    ProcessQueuePolicy:
-      Type: AWS::SQS::QueuePolicy
-      Properties:
-        Queues:
-          - Ref: ProcessQueue
-        PolicyDocument:
-          Statement:
-            - Sid: allow-sqs-sendmessage
-              Effect: Allow
-              Principal:
-                AWS: '*'
-              Action: SQS:SendMessage
-              Resource:
-                Fn::GetAtt:
-                  - ProcessQueue
-                  - Arn
-              Condition:
-                ArnEquals:
-                  aws:SourceArn:
-                    - Ref: ProcessTopic
-                    - Ref: PublishTopic
-    ProcessQueueSubsciption:
-      Type: AWS::SNS::Subscription
-      Properties:
-        Endpoint:
-          Fn::GetAtt:
-            - ProcessQueue
-            - Arn
-        Protocol: sqs
-        Region:
-          Fn::Sub: ${AWS::Region}
-        TopicArn:
-          Ref: ProcessTopic
     StateTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -1155,9 +1117,9 @@ resources:
             - Name: CIRRUS_STACK
               Value:
                 Fn::Sub: ${AWS::StackName}
-            - Name: CIRRUS_PROCESS_TOPIC_ARN
+            - Name: CIRRUS_PROCESS_QUEUE_URL
               Value:
-                Ref: ProcessTopic
+                Ref: ProcessQueue
             - Name: CIRRUS_PUBLISH_TOPIC_ARN
               Value:
                 Ref: PublishTopic

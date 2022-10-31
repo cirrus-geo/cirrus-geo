@@ -7,17 +7,20 @@ import boto3
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload
 from cirrus.lib2.statedb import StateDB
+from cirrus.lib2.utils import batch_handler
 
 logger = get_task_logger("lambda_function.update-state", payload=tuple())
 
 # envvars
-PROCESS_SNS_TOPIC = getenv("CIRRUS_PROCESS_TOPIC_ARN", None)
 FAILED_TOPIC_ARN = getenv("CIRRUS_FAILED_TOPIC_ARN", None)
 INVALID_TOPIC_ARN = getenv("CIRRUS_INVALID_TOPIC_ARN", None)
+PROCESS_QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 
 # boto3 clients
 SNS_CLIENT = boto3.client("sns")
 SFN_CLIENT = boto3.client("stepfunctions")
+SQS_CLIENT = boto3.resource("sqs")
+QUEUE = SQS_CLIENT.Queue(PROCESS_QUEUE_URL)
 
 # Cirrus state database
 statedb = StateDB()
@@ -44,6 +47,13 @@ def mk_error(error, cause):
     }
 
 
+def send_batch(messages):
+    entries = [{"Id": str(idx), "MessageBody": msg} for idx, msg in enumerate(messages)]
+    resp = QUEUE.send_messages(Entries=entries)
+    logger.debug(f"Published {len(messages)} payloads to {PROCESS_QUEUE_URL}")
+    return resp
+
+
 def workflow_completed(input_payload, output_payload, error):
     # I think changing the state should be done before
     # trying the sns publish, but I could see it the other
@@ -52,12 +62,9 @@ def workflow_completed(input_payload, output_payload, error):
     statedb.set_completed(input_payload["id"])
     if not output_payload:
         return
-    for next_payload in output_payload.next_payloads():
-        SNS_CLIENT.publish(
-            TopicArn=PROCESS_SNS_TOPIC,
-            Message=json.dumps(next_payload),
-        )
-        logger.debug(f"Published payload to {PROCESS_SNS_TOPIC}")
+    with batch_handler(send_batch, {}, "messages", batch_size=10) as handler:
+        for next_payload in output_payload.next_payloads():
+            handler.add(json.dumps(next_payload))
 
 
 def workflow_aborted(input_payload, output_payload, error):
