@@ -89,8 +89,12 @@ class GroupMeta(MutableMapping, ABCMeta):
     def find(cls):
         pass
 
+    def reset_plugins(cls):
+        cls._plugins = None
+
     def reset_elements(cls):
         cls._elements = None
+        cls.reset_plugins()
 
     def register_parent(cls, parent):
         cls.parent = parent
