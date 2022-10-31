@@ -492,27 +492,11 @@ functions:
                 - /index/*
       - Effect: Allow
         Action:
-          - s3:PutObject
-        Resource:
-          - Fn::Join:
-              - ''
-              - - 'arn:aws:s3:::'
-                - ${self:provider.environment.CIRRUS_DATA_BUCKET}
-                - '*'
-      - Effect: Allow
-        Action:
-          - s3:PutObject
-        Resource:
-          - Fn::Join:
-              - ''
-              - - 'arn:aws:s3:::'
-                - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-                - '*'
-      - Effect: Allow
-        Action:
           - s3:ListBucket
           - s3:GetObject
           - s3:GetBucketLocation
+          - s3:PutObject
+          - s3:PutObjectAcl
         Resource: '*'
       - Effect: Allow
         Action: secretsmanager:GetSecretValue
