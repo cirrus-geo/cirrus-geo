@@ -31,6 +31,11 @@ FAILED = "FAILED"
 ABORTED = "ABORTED"
 TIMED_OUT = "TIMED_OUT"
 
+INVALID_EXCEPTIONS = (
+    "InvalidInput",
+    "stactask.exceptions.InvalidInput",
+)
+
 
 def mk_error(error, cause):
     return {
@@ -76,7 +81,7 @@ def workflow_failed(input_payload, output_payload, error):
     logger.info(error)
 
     try:
-        if error_type == "InvalidInput":
+        if error_type in INVALID_EXCEPTIONS:
             statedb.set_invalid(input_payload["id"], error)
             notification_topic_arn = INVALID_TOPIC_ARN
         else:

@@ -40,8 +40,8 @@
     "size": 83
   },
   "lambdas/update-state/lambda_function.py": {
-    "shasum": "c6d2723835ef9280b50f612c3c4944cbf622d3ccd2e0883943772f92bb8d6bc2",
-    "size": 7090
+    "shasum": "4cae796f54b5192fbedc5ef0c9f5e9c7deb435175f5b9e2503f73919611b9205",
+    "size": 7180
   },
   "lambdas/publish/requirements.txt": {
     "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
