@@ -136,7 +136,7 @@ lambda_batch = """batch:
               Memory: 128
               Vcpus: 1
               Image: 'cirrusgeo/run-lambda:0.2.1'
-              JobRoleArn: !Fn::GetAtt {name}JobRole.Arn
+              JobRoleArn: !GetAtt {name}JobRole.Arn
             RetryStrategy:
               Attempts: 1
 """.format
