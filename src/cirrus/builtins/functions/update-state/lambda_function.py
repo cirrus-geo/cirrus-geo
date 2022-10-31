@@ -94,10 +94,9 @@ def workflow_failed(input_payload, output_payload, error):
         else:
             statedb.set_failed(input_payload["id"], error)
             notification_topic_arn = FAILED_TOPIC_ARN
-    except Exception as err:
-        msg = f"Failed marking as failed: {err}"
-        logger.error(msg, exc_info=True)
-        raise err
+    except Exception:
+        logger.exception("Unable to update state")
+        raise
 
     if notification_topic_arn is not None:
         try:
@@ -116,10 +115,9 @@ def workflow_failed(input_payload, output_payload, error):
                 Message=json.dumps(item),
                 MessageAttributes=attrs,
             )
-        except Exception as err:
-            msg = f"Failed publishing to {notification_topic_arn}: {err}"
-            logger.error(msg, exc_info=True)
-            raise err
+        except Exception:
+            logger.exception(f"Failed publishing to {notification_topic_arn}")
+            raise
 
 
 def get_execution_error(arn):
@@ -149,8 +147,8 @@ def get_execution_error(arn):
                 "Could not find execution error in last %s events",
                 MAX_EXECUTION_EVENTS,
             )
-    except Exception as e:
-        logger.exception(e)
+    except Exception:
+        logger.exception("Failed to get stepfunction execution history")
 
     if error:
         logger.debug("Error found: '%s'", error)
@@ -171,46 +169,42 @@ def parse_event(event):
     #   - workflow output ProcessPayload object or None (if not success)
     #   - status string
     #   - error object
-    try:
-        if "error" in event:
-            logger.debug(
-                "looks like a payload with an error message, i.e., workflow-failed"
-            )
-            return (
-                ProcessPayload.from_event(event),
-                None,
-                FAILED,
-                event.get("error", {}),
-            )
-        elif event.get("source", "") == "aws.states":
-            status = event["detail"]["status"]
-            error = None
-            if status == SUCCEEDED:
-                pass
-            elif status == FAILED:
-                error = get_execution_error(event["detail"]["executionArn"])
-            elif status == ABORTED:
-                pass
-            elif status == TIMED_OUT:
-                error = mk_error(
-                    "TimedOutError",
-                    "The step function execution timed out.",
-                )
-            else:
-                logger.warning("Unknown status: %s", status)
-            return (
-                ProcessPayload.from_event(json.loads(event["detail"]["input"])),
-                ProcessPayload.from_event(json.loads(event["detail"]["output"]))
-                if event["detail"].get("output", None)
-                else None,
-                status,
-                error,
+    if "error" in event:
+        logger.debug(
+            "looks like a payload with an error message, i.e., workflow-failed"
+        )
+        return (
+            ProcessPayload.from_event(event),
+            None,
+            FAILED,
+            event.get("error", {}),
+        )
+    elif event.get("source", "") == "aws.states":
+        status = event["detail"]["status"]
+        error = None
+        if status == SUCCEEDED:
+            pass
+        elif status == FAILED:
+            error = get_execution_error(event["detail"]["executionArn"])
+        elif status == ABORTED:
+            pass
+        elif status == TIMED_OUT:
+            error = mk_error(
+                "TimedOutError",
+                "The step function execution timed out.",
             )
         else:
-            raise Exception()
-    except Exception:
-        logger.exception("Unknown event: %s", json.dumps(event))
-        return None, None, None, None
+            logger.warning("Unknown status: %s", status)
+        return (
+            ProcessPayload.from_event(json.loads(event["detail"]["input"])),
+            ProcessPayload.from_event(json.loads(event["detail"]["output"]))
+            if event["detail"].get("output", None)
+            else None,
+            status,
+            error,
+        )
+    else:
+        raise Exception(f"Unknown event: {json.dumps(event)}")
 
 
 def lambda_handler(event, context={}):

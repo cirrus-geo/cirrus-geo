@@ -1,7 +1,7 @@
 {
   "serverless.yml": {
-    "shasum": "d1a08b61091d76f77c189061d7f02b419e8ad3e5eaa6afcd8c2714d810e4975a",
-    "size": 35019
+    "shasum": "0a09346f4c742c4421090dd94e087ff7fbc969719deb174c2b5b710865b831b6",
+    "size": 35328
   },
   "lambdas/pre-batch/requirements.txt": {
     "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
@@ -40,8 +40,8 @@
     "size": 83
   },
   "lambdas/update-state/lambda_function.py": {
-    "shasum": "9997cac09099ad95691abc3179e2d3c45684acf10db95b3a65b2c440309a0649",
-    "size": 7499
+    "shasum": "377777b56aa05fe18c67145dcdfe5b4fe76e79935494cd716c5871c0ea7bde0d",
+    "size": 7197
   },
   "lambdas/publish/requirements.txt": {
     "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",

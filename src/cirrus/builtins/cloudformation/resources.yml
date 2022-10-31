@@ -21,6 +21,10 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: "#{AWS::StackName}-process-dead-letter"
+  UpdateStateDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: "#{AWS::StackName}-update-state-dead-letter"
   StateTable:
     Type: AWS::DynamoDB::Table
     Properties:
