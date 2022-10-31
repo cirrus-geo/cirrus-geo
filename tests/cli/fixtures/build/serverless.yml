@@ -242,6 +242,12 @@ functions:
                 - FAILED
                 - ABORTED
                 - TIMED_OUT
+          deadLetterQueueArn:
+            Fn::GetAtt:
+              - UpdateStateDLQ
+              - Arn
+          retryPolicy:
+            maximumEventAge: 1800
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -768,6 +774,11 @@ resources:
       Properties:
         QueueName:
           Fn::Sub: ${AWS::StackName}-process-dead-letter
+    UpdateStateDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName:
+          Fn::Sub: ${AWS::StackName}-update-state-dead-letter
     StateTable:
       Type: AWS::DynamoDB::Table
       Properties:

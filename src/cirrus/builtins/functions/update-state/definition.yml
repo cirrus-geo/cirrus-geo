@@ -18,6 +18,9 @@ lambda:
               - FAILED
               - ABORTED
               - TIMED_OUT
+        deadLetterQueueArn: !GetAtt UpdateStateDLQ.Arn
+        retryPolicy:
+          maximumEventAge: 1800
   iamRoleStatements:
     - Effect: "Allow"
       Action:
