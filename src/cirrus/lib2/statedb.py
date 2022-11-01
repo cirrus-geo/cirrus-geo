@@ -206,6 +206,33 @@ class StateDB:
             return items
         return items[:limit]
 
+    def get_state(self, payload_id: str) -> str:
+        """Get current state of Item
+        Args:
+            payload_id (str): The Payload ID
+        Returns:
+            str: Current state: PROCESSING, COMPLETED, FAILED, INVALID, ABORTED
+        """
+        response = self.table.get_item(Key=self.payload_id_to_key(payload_id))
+        if "Item" in response:
+            return response["Item"]["state_updated"].split("_")[0]
+        else:
+            # assuming no such item in database
+            return ""
+
+    def get_states(self, payload_ids: List[str]) -> Dict[str, str]:
+        """Get current state of items
+        Args:
+            payload_ids (List[str]): List of Payload IDs
+        Returns:
+            Dict[str, str]: Dictionary of Payload IDs to state
+        """
+        states = {}
+        for dbitem in self.get_dbitems(payload_ids):
+            item = self.dbitem_to_item(dbitem)
+            states[item["payload_id"]] = item["state"]
+        return states
+
     def claim_processing(self, payload_id):
         """Sets payload_id to PROCESSING to claim it (preventing other runs)"""
         now = datetime.now(timezone.utc).isoformat()
