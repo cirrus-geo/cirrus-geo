@@ -5,7 +5,6 @@ from enum import Enum, unique
 from typing import Any, Dict, Optional
 
 import boto3
-from dateutil.parser import isoparse
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +27,8 @@ class EventDB:
     ):
         self.tsw_client = boto3.client("timestream-write")
         self.tsq_client = boto3.client("timestream-query")
+        if not event_db_and_table_names:
+            raise Exception("Event DB and table name not configured.")
         db_and_table_names_array = event_db_and_table_names.split("|")
         self.event_db_name = db_and_table_names_array[0]
         self.event_table_name = db_and_table_names_array[1]
@@ -39,31 +40,41 @@ class EventDB:
         event_time: str,
         last_update_ts_str: str,
     ) -> None:
-        collections_workflow = key.get("collections_workflow")
+        parts = key.get("collections_workflow", "").rsplit("_", 1)
+        if not len(parts) == 2:
+            logger.error(
+                f"Event could not be recorded, key value collections_workflow was not an underscore separated value: {key.get('collections_workflow')}"
+            )
+            return
+
+        collections = parts[0]
+        workflow = parts[1]
+
         itemids = key.get("itemids")
 
-        if not collections_workflow or not itemids:
+        if not workflow or not collections or not itemids:
             logger.error(
-                f"Event could not be recorded, key {key} missing 'collections_workflow' or 'itemids'"
+                f"Event could not be recorded, key {key} missing 'workflow', 'collections' or 'itemids'"
             )
             return
 
         event_time_dt = datetime.fromisoformat(event_time)
         event_time_ms = str(int(event_time_dt.timestamp() * 1000))
-        duration_ms = str(
-            int((isoparse(last_update_ts_str) - event_time_dt).microseconds / 1000)
-        )
+        # duration_ms = str(
+        #     int((isoparse(last_update_ts_str) - event_time_dt).microseconds / 1000)
+        # )
 
         record = {
             "Dimensions": [
-                {"Name": "collections_workflow", "Value": collections_workflow},
+                {"Name": "workflow", "Value": workflow},
+                {"Name": "collections", "Value": collections},
                 {"Name": "item_ids", "Value": itemids},
                 {"Name": "state", "Value": state.value},
             ],
-            "MeasureValueType": "BIGINT",
+            # "MeasureValueType": "BIGINT",
             "Time": event_time_ms,
-            "MeasureName": "duration_ms",
-            "MeasureValue": duration_ms,
+            # "MeasureName": "duration_ms",
+            # "MeasureValue": duration_ms,
         }
 
         try:
@@ -108,15 +119,15 @@ class EventDB:
     def _mk_hour_query(self, start: int, end: int) -> str:
         return f"""
             WITH data AS (
-                SELECT state, item_ids
+                SELECT ago({start}h) as t, state, item_ids, count(*) as count
                 FROM "{self.event_db_name}"."{self.event_table_name}"
                 WHERE time BETWEEN ago({start}h) AND ago({end}h)
                 GROUP BY state, item_ids
             )
-            SELECT state, count(*) as c
+            SELECT t, state, count(*) as unique_count, sum(count) as count
             FROM data
-            GROUP BY state
-            ORDER BY state
+            GROUP BY t, state
+            ORDER BY t, state
         """
 
     def _query(self, q: str) -> Dict[str, Any]:
@@ -125,8 +136,8 @@ class EventDB:
             # MaxRows=123
         )
 
-    def query_hour(self, start: int, end: int):
+    def query_hour(self, start: int, end: int) -> Dict[str, Any]:
         return self._query(self._mk_hour_query(start, end))
 
-    def query_by_bin_and_duration(self, bin_size: str, duration: str):
+    def query_by_bin_and_duration(self, bin_size: str, duration: str) -> Dict[str, Any]:
         return self._query(self._mk_query_by_bin_and_duration(bin_size, duration))

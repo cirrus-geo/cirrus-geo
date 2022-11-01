@@ -3,7 +3,7 @@ import logging
 import os
 from collections import defaultdict
 from copy import deepcopy
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Tuple
 from urllib.parse import urljoin
 
 from boto3utils import s3
@@ -77,10 +77,7 @@ def get_stats() -> Dict[str, Any]:
         "state_transitions": {
             "daily": daily(eventdb.query_by_bin_and_duration("1d", "60d")),
             "hourly": hourly(eventdb.query_by_bin_and_duration("1h", "36h")),
-            # "hourly_rolling": [
-            #     eventdb.query_hour(1, 0),
-            #     eventdb.query_hour(2, 1),
-            # ]
+            "hourly_rolling": hourly_rolling(),
         }
     }
 
@@ -88,21 +85,23 @@ def get_stats() -> Dict[str, Any]:
 def _results_transform(
     results: Dict[str, Any], timestamp_function: Callable[[str], str], interval: str
 ) -> List[Dict[str, Any]]:
-    intervals = defaultdict(list)
+    intervals: Dict[str, Dict[str, Tuple[int, int]]] = defaultdict(dict)
 
     for row in results["Rows"]:
         ts = timestamp_function(row["Data"][0]["ScalarValue"])
         state = row["Data"][1]["ScalarValue"]
-        unique_count = row["Data"][2]["ScalarValue"]
-        total_count = row["Data"][3]["ScalarValue"]
-        intervals[ts].append((state, unique_count, total_count))
+        unique_count = int(row["Data"][2]["ScalarValue"])
+        total_count = int(row["Data"][3]["ScalarValue"])
+        intervals[ts][state] = (unique_count, total_count)
 
     return [
         {
             "period": ts,
             "interval": interval,
             "states": [
-                {"state": x[0], "unique_count": x[1], "count": x[2]} for x in states
+                {"state": state, "unique_count": state_val[0], "count": state_val[1]}
+                for state in STATES
+                if (state_val := states.get(state, (0, 0)))
             ],
         }
         for ts, states in intervals.items()
@@ -117,6 +116,14 @@ def hourly(results: Dict[str, Any]) -> List[Dict[str, Any]]:
     return _results_transform(
         results, lambda x: x.replace(" ", "T").split(".")[0] + "Z", "hour"
     )
+
+
+def hourly_rolling() -> List[Dict[str, Any]]:
+    results = eventdb.query_hour(1, 0)
+    results2 = eventdb.query_hour(2, 1)
+
+    results["Rows"].extend(results2["Rows"])
+    return hourly(results)
 
 
 def summary(collections_workflow, since, limit):
