@@ -12,9 +12,10 @@ import boto3
 import jsonpath_ng.ext as jsonpath
 from boto3utils import s3
 
+from cirrus.lib2.errors import NoUrlError
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import extract_event_records
+from cirrus.lib2.utils import extract_event_records, payload_from_s3
 
 # logging
 logger = logging.getLogger(__name__)
@@ -127,7 +128,15 @@ class ProcessPayload(dict):
         elif len(records) > 1:
             raise ValueError("Multiple payloads are not supported")
 
-        return cls(records[0], **kwargs)
+        payload = records[0]
+
+        # if the payload has a URL in it then we'll fetch it from S3
+        try:
+            payload = payload_from_s3(payload)
+        except NoUrlError:
+            pass
+
+        return cls(payload, **kwargs)
 
     def get_task(self, task_name, *args, **kwargs):
         return self.tasks.get(task_name, *args, **kwargs)

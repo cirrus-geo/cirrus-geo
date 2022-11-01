@@ -128,8 +128,8 @@
     "size": 20067
   },
   "cirrus/lib2/process_payload.py": {
-    "shasum": "505c775c21b8345105ac083eab34496216ee5cc21d52a0bd92759203a6691f7a",
-    "size": 13776
+    "shasum": "b5347139d949ec8921a80d7a25ef941815503557f9cc6b7add96c1db7f421fa9",
+    "size": 14036
   },
   "cirrus/lib/logging.py": {
     "shasum": "f578f6385a2270dcee92c2b18d541f4d68dae5950e878193c253f7aa5fedeb0d",
