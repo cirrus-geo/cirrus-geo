@@ -273,6 +273,44 @@ def test_single_payload_sqs(
     assert len(messages["Messages"]) == 1
 
 
+def test_single_payload_no_id(
+    payload, sqs, queue, stepfunctions, workflow, cirrus_statedb
+):
+    payload_id = payload.pop("id")
+    sqs.send_message(
+        QueueUrl=queue["QueueUrl"],
+        MessageBody=json.dumps(payload),
+    )
+    _payload = sqs_to_event(
+        sqs.receive_message(
+            QueueUrl=queue["QueueUrl"],
+            VisibilityTimeout=0,
+            MaxNumberOfMessages=10,
+        ),
+        queue["Arn"],
+    )
+    result = run_function("process", _payload)
+    assert result == 1
+
+    exec_count = len(
+        stepfunctions.list_executions(
+            stateMachineArn=workflow["stateMachineArn"],
+        )["executions"]
+    )
+    assert exec_count == 1
+
+    items = cirrus_statedb.get_dbitems(payload_ids=[payload_id])
+    assert len(items) == 1
+    assert items[0]["state_updated"].startswith("PROCESSING")
+
+    messages = sqs.receive_message(
+        QueueUrl=queue["QueueUrl"],
+        VisibilityTimeout=0,
+        MaxNumberOfMessages=10,
+    )
+    assert len(messages["Messages"]) == 1
+
+
 def test_single_payload_sqs_url(
     payload,
     sqs,
