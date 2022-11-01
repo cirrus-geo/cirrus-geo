@@ -4,9 +4,11 @@ import re
 import uuid
 from contextlib import contextmanager
 from os import getenv
+from string import Formatter, Template
 
 import boto3
 from boto3utils import s3
+from dateutil.parser import parse as dateparse
 
 from cirrus.lib2.errors import NoUrlError
 
@@ -60,6 +62,38 @@ def submit_batch_job(
     logger.debug(f"Submitted batch job with payload {url}")
     response = get_batch_client().submit_job(**kwargs)
     logger.debug(f"Batch response: {response}")
+
+
+def get_path(item: dict, template: str = "${collection}/${id}") -> str:
+    """Get path name based on STAC Item and template string
+
+    Args:
+        item (Dict): A STAC Item.
+        template (str, optional): Path template using variables referencing Item fields. Defaults to'${collection}/${id}'.
+
+    Returns:
+        [str]: A path name
+    """
+    _template = template.replace(":", "__colon__")
+    subs = {}
+    for key in [
+        i[1] for i in Formatter().parse(_template.rstrip("/")) if i[1] is not None
+    ]:
+        # collection
+        if key == "collection":
+            subs[key] = item["collection"]
+        # ID
+        elif key == "id":
+            subs[key] = item["id"]
+        # derived from date
+        elif key in ["year", "month", "day"]:
+            dt = dateparse(item["properties"]["datetime"])
+            vals = {"year": dt.year, "month": dt.month, "day": dt.day}
+            subs[key] = vals[key]
+        # Item property
+        else:
+            subs[key] = item["properties"][key.replace("__colon__", ":")]
+    return Template(_template).substitute(**subs).replace("__colon__", ":")
 
 
 def recursive_compare(d1, d2, level="root", print=print):

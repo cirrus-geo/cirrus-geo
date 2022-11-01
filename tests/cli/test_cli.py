@@ -3,6 +3,7 @@ import json
 import os
 import os.path
 import shlex
+import shutil
 from pathlib import Path
 
 import pytest
@@ -67,14 +68,14 @@ def reference_build(fixtures, build_dir):
     # pass ref dir to test if we have one
     yield reference if has_ref else None
     # else we can copy test output to serve as reference
-    if not has_ref:
-        reference.mkdir()
-        reference.joinpath("hashes.json").write_text(
-            json.dumps(hash_tree(build_dir), indent=2) + "\n",
-        )
-        reference.joinpath("serverless.yml").write_bytes(
-            build_dir.joinpath("serverless.yml").read_bytes(),
-        )
+    shutil.rmtree(reference, ignore_errors=True)
+    reference.mkdir()
+    reference.joinpath("hashes.json").write_text(
+        json.dumps(hash_tree(build_dir), indent=2) + "\n",
+    )
+    reference.joinpath("serverless.yml").write_bytes(
+        build_dir.joinpath("serverless.yml").read_bytes(),
+    )
 
 
 def test_init(invoke, project_testdir):
