@@ -6,8 +6,8 @@ lambda:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
-        - SNS:Publish
-      Resource: !Ref ProcessTopic
+        - sqs:SendMessage
+      Resource: !Ref ProcessQueue
     - Effect: "Allow"
       Action:
         - batch:SubmitJob

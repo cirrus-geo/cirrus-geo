@@ -44,6 +44,10 @@ lambda:
       Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
     - Effect: "Allow"
       Action:
+        - sqs:SendMessage
+      Resource: !Ref ProcessQueue
+    - Effect: "Allow"
+      Action:
         - s3:GetObject
       Resource:
         - !Join

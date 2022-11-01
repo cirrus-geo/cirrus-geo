@@ -279,6 +279,11 @@ functions:
           Fn::Sub: arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*
       - Effect: Allow
         Action:
+          - sqs:SendMessage
+        Resource:
+          Ref: ProcessQueue
+      - Effect: Allow
+        Action:
           - s3:GetObject
         Resource:
           - Fn::Join:
@@ -316,9 +321,9 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
-          - SNS:Publish
+          - sqs:SendMessage
         Resource:
-          Ref: ProcessTopic
+          Ref: ProcessQueue
       - Effect: Allow
         Action:
           - batch:SubmitJob
@@ -1194,9 +1199,9 @@ resources:
         JobQueueName:
           Fn::Sub: ${AWS::StackName}-test-plugin-task-jq
   Outputs:
-    CirrusQueueSnsArn:
+    CirrusProcessQueue:
       Value:
-        Ref: ProcessTopic
+        Ref: ProcessQueue
     pubPrivateVPCID:
       Description: VPC ID
       Value:
