@@ -281,7 +281,9 @@ functions:
         Action:
           - sqs:SendMessage
         Resource:
-          Ref: ProcessQueue
+          Fn::GetAtt:
+            - ProcessQueue
+            - Arn
       - Effect: Allow
         Action:
           - s3:GetObject
@@ -323,7 +325,9 @@ functions:
         Action:
           - sqs:SendMessage
         Resource:
-          Ref: ProcessQueue
+          Fn::GetAtt:
+            - ProcessQueue
+            - Arn
       - Effect: Allow
         Action:
           - batch:SubmitJob
