@@ -35,18 +35,21 @@ def lambda_handler(event, context):
         logger.debug("payload: %s", defer(json.dumps, payload))
 
         try:
-            payloads.append(ProcessPayload(payload, set_id_if_missing=True))
+            payload = ProcessPayload(payload, set_id_if_missing=True)
         except Exception:
             logger.exception(
                 "Failed to convert to ProcessPayload: %s", json.dumps(payload)
             )
             failures.append(payload)
+        else:
+            payloads.append(payload)
 
         if is_sqs_message(message):
+            payload_id = payload.get("id", hash(json.dumps(payload)))
             try:
-                messages[payload["id"]].append(message)
+                messages[payload_id].append(message)
             except KeyError:
-                messages[payload["id"]] = [message]
+                messages[payload_id] = [message]
 
     processed_ids = set()
     if len(payloads) > 0:

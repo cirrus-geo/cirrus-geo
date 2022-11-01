@@ -104,8 +104,8 @@
     "size": 26
   },
   "lambdas/process/lambda_function.py": {
-    "shasum": "07269e39e68b812dc743aec8336add723dd513de0112ea53dcad6d1e78670746",
-    "size": 2493
+    "shasum": "9c5d728c98425d0ea2ed6e760695cac4d96873c169c5d12597b0dd00383fc858",
+    "size": 2601
   },
   "cirrus/lib2/logging.py": {
     "shasum": "755b3c26ba2e555e5bb4a6d184cded2f2c01586ec891453e62c7a941a79b40a6",
