@@ -1,13 +1,8 @@
 import json
+import logging
 import os
 from pathlib import Path
 
-# TODO: it's clear with this import that this whole
-# class need to be refactored to better separate the
-# "cli" concerns from the "core" concerns, i.e., core
-# should stand on it's own and cli should make use of
-# core to implement the cli.
-from cirrus.cli.utils import logging
 from cirrus.core.config import DEFAULT_CONFIG_PATH, Config
 from cirrus.core.constants import (
     DEFAULT_BUILD_DIR_NAME,
