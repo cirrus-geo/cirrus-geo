@@ -80,6 +80,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
         Protocol: sqs
         Region: "#{AWS::Region}"
         TopicArn: !Ref ProcessTopic
+
+  Outputs:
+    CirrusQueueSnsArn:
+      Value: !Ref ProcessTopic
   ```
 
 ### ⚠️ Deprecations
