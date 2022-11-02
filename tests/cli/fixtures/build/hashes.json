@@ -4,7 +4,7 @@
     "size": 35523
   },
   "lambdas/pre-batch/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
+    "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",
     "size": 79
   },
   "lambdas/pre-batch/__init__.py": {
@@ -16,7 +16,7 @@
     "size": 790
   },
   "lambdas/post-batch/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
+    "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",
     "size": 79
   },
   "lambdas/post-batch/__init__.py": {
@@ -28,7 +28,7 @@
     "size": 1426
   },
   "lambdas/update-state/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
+    "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",
     "size": 79
   },
   "lambdas/update-state/__init__.py": {
@@ -44,7 +44,7 @@
     "size": 7197
   },
   "lambdas/publish/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
+    "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",
     "size": 79
   },
   "lambdas/publish/__init__.py": {
@@ -64,7 +64,7 @@
     "size": 1403
   },
   "lambdas/api/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
+    "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",
     "size": 79
   },
   "lambdas/api/__init__.py": {
@@ -76,7 +76,7 @@
     "size": 5594
   },
   "lambdas/feed-rerun/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
+    "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",
     "size": 79
   },
   "lambdas/feed-rerun/__init__.py": {
@@ -92,7 +92,7 @@
     "size": 2202
   },
   "lambdas/process/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
+    "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",
     "size": 79
   },
   "lambdas/process/__init__.py": {
