@@ -11,13 +11,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### ⚠️ Breaking changes
 
-- Serverless version >=3 is now required per the additon of a DLQ for the
+- Serverless version >=3 is now required per the addition of a DLQ for the
   `update-state` events ([#182]).
 
   Note that upgrading to serverless v3 changes the type of EventBridge Rules
   resources. In testing we found that the existing `update-state` rule needed
   to be deleted by CloudFormation before adding the new rule. Manually
-  deleteing the existing rule before deployment was not sufficient, as
+  deleting the existing rule before deployment was not sufficient, as
   CloudFormation ended up removing the new rule after it was created.
 
   In short, the simplest thing to do after upgrading serverless is to deploy
@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
   ```
   mkdir functions/update-state
-  echo "description: temporaily disabled" > functions/update-state/definition.yml
+  echo "description: temporarily disabled" > functions/update-state/definition.yml
   ```
 
   Then, run the deploy as normal. Once that is complete, remove the
@@ -105,8 +105,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Builtins no longer using cirrus-lib, but library methods built in to
   cirrus-geo, removing their strict dependency on cirrus-lib ([#177]).
 - `feed-rerun` passes payloads one-by-one to `process` as URL payloads rather
-  than depending on undocumented `process` behaivor and increase the
-  efficiency/reliablilty of `process` ([#120]).
+  than depending on undocumented `process` behavior and increase the
+  efficiency/reliabililty of `process` ([#120]).
 - Payload validation has been loosed in all builtins as part of [#177],
   allowing cirrus uses previously unsupported by overly strict validation.
 - Test coverage now considers builtins ([#172]).
@@ -125,7 +125,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Removed
 
-- Undocumented behaivors in `process` lambda for things such as default
+- Undocumented behaviors in `process` lambda for things such as default
   processing configs, resolving payload IDs from the state database, and
   processing config updates ([#103]).
 - `process` SNS topic ([#169]).
@@ -150,7 +150,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Note that upgrading to serverless v3 changes the type of EventBridge Rules
   resources. In testing we found that the existing `update-state` rule needed
   to be deleted by CloudFormation before adding the new rule. Manually
-  deleteing the existing rule before deployment was not sufficient, as
+  deleting the existing rule before deployment was not sufficient, as
   CloudFormation ended up removing the new rule after it was created.
 
   In short, the simplest thing to do after upgrading serverless is to deploy
@@ -160,7 +160,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
   ```
   mkdir functions/update-state
-  echo "description: temporaily disabled" > functions/update-state/definition.yml
+  echo "description: temporarily disabled" > functions/update-state/definition.yml
   ```
 
   Then, run the deploy as normal. Once that is complete, remove the
