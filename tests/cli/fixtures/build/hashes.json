@@ -140,8 +140,8 @@
     "size": 0
   },
   "cirrus/lib/transfer.py": {
-    "shasum": "b1ea435e9a2691d1f99d61948568b57806d0da46e24640a064c86aeccc5076e5",
-    "size": 6401
+    "shasum": "913a5942e43d500e3c64e302827be85c62dfb17badda801446f92470480bb7e9",
+    "size": 6934
   },
   "cirrus/lib/utils.py": {
     "shasum": "7641e699e1abfdc52890a1c9d684b93eaa260e9234858747170f08559ed7a18d",
@@ -152,8 +152,8 @@
     "size": 173
   },
   "cirrus/lib/statedb.py": {
-    "shasum": "b97493e3d9772458f07cde9a8eb9a0bef64cbb2b0d46822fc8d5fe8c0d955e66",
-    "size": 19200
+    "shasum": "a4c602b3350fd71ffb70af7efe6aa717c8daa2e0253a56c25e229fe81fb2e117",
+    "size": 19361
   },
   "cirrus/lib/process_payload.py": {
     "shasum": "8465f4256acdac71048b4289e2e104c2d3778a1d445b918c18579542a1fc09b6",
