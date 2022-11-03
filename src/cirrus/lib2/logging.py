@@ -30,7 +30,7 @@ config = {
             "handlers": ["standard"],
             "level": getenv("CIRRUS_LOG_LEVEL", "DEBUG"),
         },
-        "cirrus.lib": {
+        "cirrus.lib2": {
             "handlers": ["standard"],
             "level": getenv("CIRRUS_LOG_LEVEL", "DEBUG"),
         },
@@ -38,8 +38,7 @@ config = {
 }
 
 
-def configure_logging():
-    logging.config.dictConfig(config)
+logging.config.dictConfig(config)
 
 
 class DynamicLoggerAdapter(logging.LoggerAdapter):

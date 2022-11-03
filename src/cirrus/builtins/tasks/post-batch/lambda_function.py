@@ -3,10 +3,10 @@ import re
 
 import boto3
 
-from cirrus.lib.logging import get_task_logger
-from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib2.logging import get_task_logger
+from cirrus.lib2.process_payload import ProcessPayload
 
-logger = get_task_logger("lambda_function.update-state", payload=tuple())
+logger = get_task_logger("task.post-batch", payload=tuple())
 
 BATCH_LOG_GROUP = "/aws/batch/job"
 LOG_CLIENT = boto3.client("logs")
@@ -16,7 +16,7 @@ ERROR_REGEX = re.compile(r"^(?:cirrus\.?lib\.errors\.)?(?:([\.\w]+):)?\s*(.*)")
 
 def lambda_handler(event, context):
     if "error" not in event:
-        return ProcessPayload.from_event(event)
+        return ProcessPayload.from_event(event).get_payload()
 
     error = event.get("error", {})
     cause = json.loads(error["Cause"])

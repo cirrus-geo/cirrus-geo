@@ -1,8 +1,30 @@
 import json
+import os
 
 import boto3
 import moto
 import pytest
+
+from cirrus.core.components import Feeder, Function, Task
+
+
+# we do these import shenannigans to ensure we pick up
+# all builting lambda_handler.py files for test coverage
+def import_builtin_lambdas(component_type):
+    component_type.find()
+    for component in component_type.values():
+        if component.is_builtin and component.lambda_enabled:
+            try:
+                component.import_handler()
+            except Exception:
+                # we expect the imports will fail but that's okay
+                # for what we are doing here
+                pass
+
+
+import_builtin_lambdas(Feeder)
+import_builtin_lambdas(Function)
+import_builtin_lambdas(Task)
 
 
 @pytest.fixture
@@ -87,3 +109,10 @@ def workflow(stepfunctions, iam):
         definition=json.dumps(defn),
         roleArn=role["Arn"],
     )
+
+
+@pytest.fixture(autouse=True)
+def env(queue, statedb, payloads):
+    os.environ["CIRRUS_PROCESS_QUEUE_URL"] = queue["QueueUrl"]
+    os.environ["CIRRUS_STATE_DB"] = statedb
+    os.environ["CIRRUS_PAYLOAD_BUCKET"] = payloads

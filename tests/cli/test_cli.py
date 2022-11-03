@@ -3,6 +3,7 @@ import json
 import os
 import os.path
 import shlex
+import shutil
 from pathlib import Path
 
 import pytest
@@ -67,14 +68,14 @@ def reference_build(fixtures, build_dir):
     # pass ref dir to test if we have one
     yield reference if has_ref else None
     # else we can copy test output to serve as reference
-    if not has_ref:
-        reference.mkdir()
-        reference.joinpath("hashes.json").write_text(
-            json.dumps(hash_tree(build_dir), indent=2) + "\n",
-        )
-        reference.joinpath("serverless.yml").write_bytes(
-            build_dir.joinpath("serverless.yml").read_bytes(),
-        )
+    shutil.rmtree(reference, ignore_errors=True)
+    reference.mkdir()
+    reference.joinpath("hashes.json").write_text(
+        json.dumps(hash_tree(build_dir), indent=2) + "\n",
+    )
+    reference.joinpath("serverless.yml").write_bytes(
+        build_dir.joinpath("serverless.yml").read_bytes(),
+    )
 
 
 def test_init(invoke, project_testdir):
@@ -194,6 +195,9 @@ def test_create_task_lambda(project_testdir, invoke, project):
     result = invoke("show task test-lambda")
     assert result.exit_code == 0
     assert len(result.stdout) > 0
+    assert project_testdir.joinpath(
+        "tasks", "test-lambda", "lambda_function.py"
+    ).is_file()
 
 
 def test_create_task_batch(project_testdir, invoke, project):
@@ -202,6 +206,9 @@ def test_create_task_batch(project_testdir, invoke, project):
     result = invoke("show task test-batch")
     assert result.exit_code == 0
     assert len(result.stdout) > 0
+    assert not project_testdir.joinpath(
+        "tasks", "test-batch", "lambda_function.py"
+    ).is_file()
 
 
 def test_create_task_batch_lambda(project_testdir, invoke, project):
@@ -210,6 +217,9 @@ def test_create_task_batch_lambda(project_testdir, invoke, project):
     result = invoke("show task test-batch-lambda")
     assert result.exit_code == 0
     assert len(result.stdout) > 0
+    assert project_testdir.joinpath(
+        "tasks", "test-batch-lambda", "lambda_function.py"
+    ).is_file()
 
 
 @pytest.mark.parametrize("group", [c.group_name for c in groups])

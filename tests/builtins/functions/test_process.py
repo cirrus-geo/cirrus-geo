@@ -26,14 +26,11 @@ def sqs_to_event(sqs_resp, sqs_arn):
     }
 
 
-@pytest.fixture
-def process_env(queue, statedb, workflow, payloads):
+@pytest.fixture(autouse=True)
+def process_env(workflow):
     workflow_prefix = workflow["stateMachineArn"].rsplit(":", 1)[0] + ":"
-    os.environ["CIRRUS_PROCESS_QUEUE"] = queue["QueueUrl"]
-    os.environ["CIRRUS_STATE_DB"] = statedb
     os.environ["CIRRUS_EVENT_DB_AND_TABLE"] = "event-db-1|event-table-1"
     os.environ["CIRRUS_BASE_WORKFLOW_ARN"] = workflow_prefix
-    os.environ["CIRRUS_PAYLOAD_BUCKET"] = payloads
 
 
 @pytest.fixture
@@ -65,18 +62,18 @@ def payload():
 
 
 @pytest.fixture
-def cirrus_statedb(process_env):
+def cirrus_statedb():
     from cirrus.lib.statedb import StateDB
 
     return StateDB()
 
 
-def test_empty_event(process_env):
+def test_empty_event():
     with pytest.raises(Exception):
         run_function("process", {})
 
 
-def test_single_payload(payload, process_env, stepfunctions, workflow, cirrus_statedb):
+def test_single_payload(payload, stepfunctions, workflow, cirrus_statedb):
     result = run_function("process", payload)
 
     # we processed one payload
@@ -98,7 +95,7 @@ def test_single_payload(payload, process_env, stepfunctions, workflow, cirrus_st
     assert items[0]["state_updated"].startswith("PROCESSING")
 
 
-def test_rerun_in_process(payload, process_env, stepfunctions, workflow):
+def test_rerun_in_process(payload, stepfunctions, workflow):
     result = run_function("process", payload)
     # the first time we should process the one payload
     assert result == 1
@@ -117,7 +114,7 @@ def test_rerun_in_process(payload, process_env, stepfunctions, workflow):
     assert exec_count == 1
 
 
-def test_rerun_completed(payload, process_env, stepfunctions, workflow, cirrus_statedb):
+def test_rerun_completed(payload, stepfunctions, workflow, cirrus_statedb):
     # create payload state record in COMPLETED state
     items = cirrus_statedb.set_completed(payload["id"])
 
@@ -139,9 +136,7 @@ def test_rerun_completed(payload, process_env, stepfunctions, workflow, cirrus_s
     assert items[0]["state_updated"].startswith("COMPLETED")
 
 
-def test_rerun_completed_replace(
-    payload, process_env, stepfunctions, workflow, cirrus_statedb
-):
+def test_rerun_completed_replace(payload, stepfunctions, workflow, cirrus_statedb):
     payload["process"]["replace"] = True
 
     # create payload state record in COMPLETED state
@@ -162,7 +157,7 @@ def test_rerun_completed_replace(
     assert items[0]["state_updated"].startswith("PROCESSING")
 
 
-def test_rerun_failed(payload, process_env, stepfunctions, workflow, cirrus_statedb):
+def test_rerun_failed(payload, stepfunctions, workflow, cirrus_statedb):
     # create payload state record in FAILED state
     items = cirrus_statedb.set_failed(payload["id"], "failure")
 
@@ -181,7 +176,7 @@ def test_rerun_failed(payload, process_env, stepfunctions, workflow, cirrus_stat
     assert items[0]["state_updated"].startswith("PROCESSING")
 
 
-def test_rerun_aborted(payload, process_env, stepfunctions, workflow, cirrus_statedb):
+def test_rerun_aborted(payload, stepfunctions, workflow, cirrus_statedb):
     # create payload state record in ABORTED state
     items = cirrus_statedb.set_aborted(payload["id"])
 
@@ -200,7 +195,7 @@ def test_rerun_aborted(payload, process_env, stepfunctions, workflow, cirrus_sta
     assert items[0]["state_updated"].startswith("PROCESSING")
 
 
-def test_rerun_invalid(payload, process_env, stepfunctions, workflow, cirrus_statedb):
+def test_rerun_invalid(payload, stepfunctions, workflow, cirrus_statedb):
     # create payload state record in INVALID state
     items = cirrus_statedb.set_invalid(payload["id"], "invalid")
 
@@ -219,9 +214,7 @@ def test_rerun_invalid(payload, process_env, stepfunctions, workflow, cirrus_sta
     assert items[0]["state_updated"].startswith("INVALID")
 
 
-def test_rerun_invalid_replace(
-    payload, process_env, stepfunctions, workflow, cirrus_statedb
-):
+def test_rerun_invalid_replace(payload, stepfunctions, workflow, cirrus_statedb):
     payload["process"]["replace"] = True
 
     # create payload state record in INVALID state
@@ -243,7 +236,7 @@ def test_rerun_invalid_replace(
 
 
 def test_single_payload_sqs(
-    payload, process_env, sqs, queue, stepfunctions, workflow, cirrus_statedb
+    payload, sqs, queue, stepfunctions, workflow, cirrus_statedb
 ):
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
@@ -281,9 +274,46 @@ def test_single_payload_sqs(
     assert len(messages["Messages"]) == 1
 
 
+def test_single_payload_no_id(
+    payload, sqs, queue, stepfunctions, workflow, cirrus_statedb
+):
+    payload_id = payload.pop("id")
+    sqs.send_message(
+        QueueUrl=queue["QueueUrl"],
+        MessageBody=json.dumps(payload),
+    )
+    _payload = sqs_to_event(
+        sqs.receive_message(
+            QueueUrl=queue["QueueUrl"],
+            VisibilityTimeout=0,
+            MaxNumberOfMessages=10,
+        ),
+        queue["Arn"],
+    )
+    result = run_function("process", _payload)
+    assert result == 1
+
+    exec_count = len(
+        stepfunctions.list_executions(
+            stateMachineArn=workflow["stateMachineArn"],
+        )["executions"]
+    )
+    assert exec_count == 1
+
+    items = cirrus_statedb.get_dbitems(payload_ids=[payload_id])
+    assert len(items) == 1
+    assert items[0]["state_updated"].startswith("PROCESSING")
+
+    messages = sqs.receive_message(
+        QueueUrl=queue["QueueUrl"],
+        VisibilityTimeout=0,
+        MaxNumberOfMessages=10,
+    )
+    assert len(messages["Messages"]) == 1
+
+
 def test_single_payload_sqs_url(
     payload,
-    process_env,
     sqs,
     queue,
     payloads,
@@ -330,7 +360,7 @@ def test_single_payload_sqs_url(
 
 
 def test_single_payload_sqs_bad_format(
-    payload, process_env, sqs, queue, stepfunctions, workflow, cirrus_statedb
+    payload, sqs, queue, stepfunctions, workflow, cirrus_statedb
 ):
     del payload["process"]
     sqs.send_message(
@@ -368,7 +398,7 @@ def test_single_payload_sqs_bad_format(
 
 
 def test_single_payload_sqs_bad_json(
-    process_env, sqs, queue, stepfunctions, workflow, cirrus_statedb
+    sqs, queue, stepfunctions, workflow, cirrus_statedb
 ):
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
@@ -401,7 +431,7 @@ def test_single_payload_sqs_bad_json(
 
 
 def test_double_payload_sqs(
-    payload, process_env, sqs, queue, stepfunctions, workflow, cirrus_statedb
+    payload, sqs, queue, stepfunctions, workflow, cirrus_statedb
 ):
     first_id = payload["id"]
     sqs.send_message(
@@ -446,7 +476,7 @@ def test_double_payload_sqs(
 
 
 def test_duplicated_payload_sqs(
-    payload, process_env, sqs, queue, stepfunctions, workflow, cirrus_statedb
+    payload, sqs, queue, stepfunctions, workflow, cirrus_statedb
 ):
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
@@ -487,7 +517,7 @@ def test_duplicated_payload_sqs(
 
 
 def test_double_payload_sqs_with_bad_workflow(
-    payload, process_env, sqs, queue, stepfunctions, workflow, cirrus_statedb
+    payload, sqs, queue, stepfunctions, workflow, cirrus_statedb
 ):
     bad_workflow = "unknown-workflow"
     first_id = payload["id"]
@@ -537,7 +567,7 @@ def test_double_payload_sqs_with_bad_workflow(
 
 
 def test_double_payload_sqs_with_bad_format(
-    payload, process_env, sqs, queue, stepfunctions, workflow, cirrus_statedb
+    payload, sqs, queue, stepfunctions, workflow, cirrus_statedb
 ):
     first_id = payload["id"]
     sqs.send_message(

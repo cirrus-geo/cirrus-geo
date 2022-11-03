@@ -7,6 +7,133 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.8.0] - 2022-11-02
+
+### ⚠️ Breaking changes
+
+- Serverless version >=3 is now required per the addition of a DLQ for the
+  `update-state` events ([#182]).
+
+  Note that upgrading to serverless v3 changes the type of EventBridge Rules
+  resources. In testing we found that the existing `update-state` rule needed
+  to be deleted by CloudFormation before adding the new rule. Manually
+  deleting the existing rule before deployment was not sufficient, as
+  CloudFormation ended up removing the new rule after it was created.
+
+  In short, the simplest thing to do after upgrading serverless is to deploy
+  twice, once with `update-state` disabled and again with it re-enabled.
+
+  To disable it, it is easiest to run this from your project root:
+
+  ```
+  mkdir functions/update-state
+  echo "description: temporarily disabled" > functions/update-state/definition.yml
+  ```
+
+  Then, run the deploy as normal. Once that is complete, remove the
+  `update-state` override:
+
+  ```
+  rm -r functions/update-state
+  ```
+
+  Deploy again and `update-state` and its event should be re-created
+  successfully.
+
+  Note that state tracking/workflow chaining _will be broken_ between the first
+  deploy and the second. It is _strongly_ recommended to do this only when your
+  pipelines are not processing workflows.
+
+- The `process` SNS topic has been removed ([#169]). All feeder/scripts/etc.
+  should use the `process` SQS queue directly. If project needs require the SNS
+  topic for migration or other use, the removed configuration can be
+  reintroduced by adding the following CloudFormation template to your project:
+
+  ```
+  # cloudformation/sns.yml
+  Resources:
+    ProcessTopic:
+      Type: "AWS::SNS::Topic"
+      Properties:
+        TopicName: "#{AWS::StackName}-process"
+    ProcessQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref ProcessQueue
+        PolicyDocument:
+          Statement:
+            - Sid: allow-sqs-sendmessage
+              Effect: Allow
+              Principal:
+                AWS: "*"
+              Action: SQS:SendMessage
+              Resource: !GetAtt ProcessQueue.Arn
+              Condition:
+                ArnEquals:
+                  aws:SourceArn:
+                    - !Ref ProcessTopic
+    ProcessQueueSubsciption:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: !GetAtt ProcessQueue.Arn
+        Protocol: sqs
+        Region: "#{AWS::Region}"
+        TopicArn: !Ref ProcessTopic
+
+  Outputs:
+    CirrusQueueSnsArn:
+      Value: !Ref ProcessTopic
+  ```
+
+### ⚠️ Deprecations
+
+- cirrus-lib dependency injection will be removed in the next major release.
+  Switch tasks now to the new `stac-task` class or be prepared to update task
+  requirements to explicitly include cirrus-lib with the next release (see
+  [#178 for context]).
+
+### Added
+
+- `process` lambda now supports s3 URL payloads from feeders and partial
+  success for message batches ([#103]).
+- Code formatting and linting as a pre-commit hook ([#158]).
+- `update-state` will match on `stactask.exceptions.InvalidInput` as an error
+  triggering the `INVALID` state ([#180]).
+- DLQ for `update-state` events ([#182]).
+
+### Changed
+
+- `process` lambda timeout reduced from 900s to 10s and the visibility timeout
+  on the `process` queue reduced from 1000s to 60s ([#103]).
+- Builtins no longer using cirrus-lib, but library methods built in to
+  cirrus-geo, removing their strict dependency on cirrus-lib ([#177]).
+- `feed-rerun` passes payloads one-by-one to `process` as URL payloads rather
+  than depending on undocumented `process` behavior and increase the
+  efficiency/reliabililty of `process` ([#120]).
+- Payload validation has been loosed in all builtins as part of [#177],
+  allowing cirrus uses previously unsupported by overly strict validation.
+- Test coverage now considers builtins ([#172]).
+- `publish` has permissions to write to and put object ACLs in all buckets
+  (assuming the buckets allow; [#174])
+- `update-state` and `feed-rerun` send messages directly to the `process` SQS
+  rather than the now-removed SNS topic ([#169]).
+
+### Fixed
+
+- Avoid `States.DataLimitExceeded` error when `publish` or `post-batch` return
+  large payloads by returning `payload.get_payload()` ([#160]).
+- Bug in default batch task definition ([#154]).
+- Batch-only tasks no longer template `lambda_function.py` on creation ([#155]).
+- State DB bug in cirrus-lib 0.8.0 resolved in new builtin lib code ([#173]).
+
+### Removed
+
+- Undocumented behaviors in `process` lambda for things such as default
+  processing configs, resolving payload IDs from the state database, and
+  processing config updates ([#103]).
+- `process` SNS topic ([#169]).
+
 ## [v0.7.0] - 2022-09-12
 
 ### ⚠️ Breaking changes
@@ -27,7 +154,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Note that upgrading to serverless v3 changes the type of EventBridge Rules
   resources. In testing we found that the existing `update-state` rule needed
   to be deleted by CloudFormation before adding the new rule. Manually
-  deleteing the existing rule before deployment was not sufficient, as
+  deleting the existing rule before deployment was not sufficient, as
   CloudFormation ended up removing the new rule after it was created.
 
   In short, the simplest thing to do after upgrading serverless is to deploy
@@ -37,7 +164,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
   ```
   mkdir functions/update-state
-  echo "description: temporaily disabled" > functions/update-state/definition.yml
+  echo "description: temporarily disabled" > functions/update-state/definition.yml
   ```
 
   Then, run the deploy as normal. Once that is complete, remove the
@@ -99,12 +226,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - Do not specify the service role on batch compute environments. The builtin
     `BatchServiceRole` has been removed from cirrus. The default role automatically
     provided by `AWS` automatically is sufficient.
-  - All non-standard permissions have been removed from the `BatchInstanceRole`.
-    If you have been overriding that role with custom permissions review the new
-    `BatchJobRole` and override with any further permissions instead. Better yet,
-    create a unique role per batch task based on the `BatchJobRole`.
-  - When using `BatchJobRole` or a custom role per batch task, ensure it is specified
-    on the job definition as the `ContainerProperties` `JobRoleArn`.
+
+    Note that existing compute environments have to be deleted and recreated
+    using the new service role, as CloudFormation seems to be unable to update
+    the service role and will instead leave all compute environments that have
+    simply had the service role removed in an invalid state.
+
+  - All non-standard permissions have been removed from the
+    `BatchInstanceRole`. If you have been overriding that role with custom
+    permissions review the new `BatchJobRole` and override with any further
+    permissions instead. Better yet, create a unique role per batch task based
+    on the `BatchJobRole`.
+  - When using `BatchJobRole` or a custom role per batch task, ensure it is
+    specified on the job definition as the `ContainerProperties` `JobRoleArn`.
 
 - The cli command to create new tasks now uses `-t`/`--type` to specify the task type,
   instead of `--has-batch`/`--no-batch` and `--has-lambda`/`--no-lambda`. `-t`/`--type`
@@ -460,7 +594,8 @@ cleanup steps.
 
 Initial release
 
-[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.7.0...main
+[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.8.0...main
+[v0.8.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.6.0...v0.7.0
 [v0.6.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.4...v0.6.0
 [v0.5.4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.3...v0.5.4
@@ -497,6 +632,7 @@ Initial release
 [#98]: https://github.com/cirrus-geo/cirrus-geo/issues/98
 [#99]: https://github.com/cirrus-geo/cirrus-geo/issues/99
 [#102]: https://github.com/cirrus-geo/cirrus-geo/issues/102
+[#103]: https://github.com/cirrus-geo/cirrus-geo/issues/103
 [#105]: https://github.com/cirrus-geo/cirrus-geo/issues/105
 [#106]: https://github.com/cirrus-geo/cirrus-geo/issues/106
 [#107]: https://github.com/cirrus-geo/cirrus-geo/issues/107
@@ -504,6 +640,7 @@ Initial release
 [#111]: https://github.com/cirrus-geo/cirrus-geo/issues/111
 [#114]: https://github.com/cirrus-geo/cirrus-geo/issues/114
 [#116]: https://github.com/cirrus-geo/cirrus-geo/issues/116
+[#120]: https://github.com/cirrus-geo/cirrus-geo/issues/120
 [#123]: https://github.com/cirrus-geo/cirrus-geo/issues/123
 [#128]: https://github.com/cirrus-geo/cirrus-geo/issues/128
 [#131]: https://github.com/cirrus-geo/cirrus-geo/issues/131
@@ -515,6 +652,17 @@ Initial release
 [#145]: https://github.com/cirrus-geo/cirrus-geo/issues/145
 [#147]: https://github.com/cirrus-geo/cirrus-geo/issues/147
 [#149]: https://github.com/cirrus-geo/cirrus-geo/issues/149
+[#154]: https://github.com/cirrus-geo/cirrus-geo/issues/154
+[#155]: https://github.com/cirrus-geo/cirrus-geo/issues/155
+[#158]: https://github.com/cirrus-geo/cirrus-geo/issues/158
+[#169]: https://github.com/cirrus-geo/cirrus-geo/issues/169
+[#172]: https://github.com/cirrus-geo/cirrus-geo/issues/172
+[#173]: https://github.com/cirrus-geo/cirrus-geo/issues/173
+[#174]: https://github.com/cirrus-geo/cirrus-geo/issues/174
+[#177]: https://github.com/cirrus-geo/cirrus-geo/issues/177
+[#178]: https://github.com/cirrus-geo/cirrus-geo/issues/178
+[#180]: https://github.com/cirrus-geo/cirrus-geo/issues/180
+[#182]: https://github.com/cirrus-geo/cirrus-geo/issues/182
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73
@@ -524,6 +672,7 @@ Initial release
 [#90]: https://github.com/cirrus-geo/cirrus-geo/pull/90
 [#138]: https://github.com/cirrus-geo/cirrus-geo/pull/138
 [#143]: https://github.com/cirrus-geo/cirrus-geo/pull/143
+[#160]: https://github.com/cirrus-geo/cirrus-geo/pull/160
 [f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c

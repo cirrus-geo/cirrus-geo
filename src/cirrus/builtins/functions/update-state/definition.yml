@@ -18,6 +18,9 @@ lambda:
               - FAILED
               - ABORTED
               - TIMED_OUT
+        deadLetterQueueArn: !GetAtt UpdateStateDLQ.Arn
+        retryPolicy:
+          maximumEventAge: 1800
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -49,6 +52,10 @@ lambda:
       Action:
         - SNS:Publish
       Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
+    - Effect: "Allow"
+      Action:
+        - sqs:SendMessage
+      Resource: !GetAtt ProcessQueue.Arn
     - Effect: "Allow"
       Action:
         - s3:GetObject

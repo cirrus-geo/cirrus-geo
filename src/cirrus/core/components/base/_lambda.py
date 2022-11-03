@@ -179,6 +179,8 @@ class Lambda(Component):
                 _file.unlink()
 
     def import_handler(self):
+        import importlib
+
         from cirrus.core.utils.misc import import_path
 
         if not hasattr(self.lambda_config, "handler"):
@@ -188,7 +190,22 @@ class Lambda(Component):
 
         handler_parts = self.lambda_config.handler.split(".")
         name = ".".join(handler_parts[:-1])
-        path = self.path.joinpath(*handler_parts[:-1]).with_suffix(".py")
 
-        module = import_path(name, path)
+        if self.is_builtin:
+            # TODO: this should support generic sources
+            #
+            # How to do this is uncertain, probably need to expect
+            # builtins and plugins to have fully-importable handlers
+            # in an installed package, but that likely requires rework
+            # of the plugin discovery/source property.
+            #
+            # Without such a change, component plugins will not be able
+            # to get test coverage for their handlers.
+            package_name = f"cirrus.builtins.{self.group_name}.{self.name}"
+            module_name = f".{name}"
+            module = importlib.import_module(module_name, package_name)
+        else:
+            path = self.path.joinpath(*handler_parts[:-1]).with_suffix(".py")
+            module = import_path(name, path)
+
         return getattr(module, handler_parts[-1])

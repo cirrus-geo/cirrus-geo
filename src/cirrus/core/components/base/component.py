@@ -52,7 +52,8 @@ class ComponentMeta(GroupMeta):
 
         for component_dir in sorted(d.resolve().iterdir()):
             if component_dir.name.startswith("."):
-                # skip dirs starting with .
+                continue
+            if component_dir.name in ("__init__.py", "__pycache__"):
                 continue
             if name and component_dir.name != name:
                 continue

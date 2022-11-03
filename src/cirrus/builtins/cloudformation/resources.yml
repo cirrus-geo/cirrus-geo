@@ -1,10 +1,4 @@
 Resources:
-  # SNS Topic for adding input data to Cirrus
-  ProcessTopic:
-    Type: "AWS::SNS::Topic"
-    Properties:
-      TopicName: "#{AWS::StackName}-process"
-  # SNS Topic for adding input data to Cirrus
   PublishTopic:
     Type: "AWS::SNS::Topic"
     Properties:
@@ -27,31 +21,10 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: "#{AWS::StackName}-process-dead-letter"
-  ProcessQueuePolicy:
-    Type: AWS::SQS::QueuePolicy
+  UpdateStateDLQ:
+    Type: AWS::SQS::Queue
     Properties:
-      Queues:
-        - !Ref ProcessQueue
-      PolicyDocument:
-        Statement:
-          - Sid: allow-sqs-sendmessage
-            Effect: Allow
-            Principal:
-              AWS: "*"
-            Action: SQS:SendMessage
-            Resource: !GetAtt ProcessQueue.Arn
-            Condition:
-              ArnEquals:
-                aws:SourceArn:
-                  - !Ref ProcessTopic
-                  - !Ref PublishTopic
-  ProcessQueueSubsciption:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt ProcessQueue.Arn
-      Protocol: sqs
-      Region: "#{AWS::Region}"
-      TopicArn: !Ref ProcessTopic
+      QueueName: "#{AWS::StackName}-update-state-dead-letter"
   StateTable:
     Type: AWS::DynamoDB::Table
     Properties:

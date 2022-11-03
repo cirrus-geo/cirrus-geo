@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 from collections import defaultdict
 from copy import deepcopy
@@ -9,9 +8,10 @@ from urllib.parse import urljoin
 from boto3utils import s3
 
 from cirrus.lib2.eventdb import EventDB
-from cirrus.lib.statedb import STATES, StateDB
+from cirrus.lib2.logging import get_task_logger
+from cirrus.lib2.statedb import STATES, StateDB
 
-logger = logging.getLogger(__name__)
+logger = get_task_logger("lambda_function.api", payload=tuple())
 
 # envvars
 DATA_BUCKET = os.getenv("CIRRUS_DATA_BUCKET", None)
