@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+from typing import Any, Dict
 
 import pytest
 
@@ -29,5 +30,5 @@ def fixtures():
 
 
 @pytest.fixture(scope="session")
-def statedb_schema(fixtures):
+def statedb_schema(fixtures) -> Dict[str, Any]:
     return json.loads(fixtures.joinpath("statedb-schema.json").read_text())

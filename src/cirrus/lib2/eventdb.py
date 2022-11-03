@@ -38,7 +38,7 @@ class EventDB:
         key: Dict[str, str],
         state: StateEnum,
         event_time: str,
-        last_update_ts_str: str,
+        execution_arn: Optional[str] = None,
     ) -> None:
         parts = key.get("collections_workflow", "").rsplit("_", 1)
         if not len(parts) == 2:
@@ -60,9 +60,6 @@ class EventDB:
 
         event_time_dt = datetime.fromisoformat(event_time)
         event_time_ms = str(int(event_time_dt.timestamp() * 1000))
-        # duration_ms = str(
-        #     int((isoparse(last_update_ts_str) - event_time_dt).microseconds / 1000)
-        # )
 
         record = {
             "Dimensions": [
@@ -71,11 +68,17 @@ class EventDB:
                 {"Name": "item_ids", "Value": itemids},
                 {"Name": "state", "Value": state.value},
             ],
-            # "MeasureValueType": "BIGINT",
             "Time": event_time_ms,
-            # "MeasureName": "duration_ms",
-            # "MeasureValue": duration_ms,
         }
+
+        if execution_arn:
+            record.update(
+                {
+                    "MeasureValueType": "VARCHAR",
+                    "MeasureName": "execution_arn",
+                    "MeasureValue": execution_arn,
+                }
+            )
 
         try:
             result = self.tsw_client.write_records(

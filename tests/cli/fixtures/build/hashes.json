@@ -1,27 +1,27 @@
 {
   "serverless.yml": {
-    "shasum": "f591dbdecddcb18b7c9f33c8a18b5823df334b0ef543681ae8162ad881128949",
-    "size": 35974
+    "shasum": "9f16682467a431c34aee598e11836a8eca758306b2a334d507a69a98de755502",
+    "size": 37412
   },
   "lambdas/pre-batch/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
-    "size": 79
+    "shasum": "1bb4109bce756ea39fa39d4239c3b156c10d450aa9eb3429b486d777594317da",
+    "size": 108
   },
   "lambdas/pre-batch/lambda_function.py": {
     "shasum": "1565d7d568f550335405a3d036c54765e293c50fd80fe8587eb7f6498526d464",
     "size": 788
   },
   "lambdas/post-batch/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
-    "size": 79
+    "shasum": "1bb4109bce756ea39fa39d4239c3b156c10d450aa9eb3429b486d777594317da",
+    "size": 108
   },
   "lambdas/post-batch/lambda_function.py": {
     "shasum": "81d8a13c8db9541b79958ee6b19fe5b898052090526e9352215cb21655313f08",
     "size": 1423
   },
   "lambdas/update-state/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
-    "size": 79
+    "shasum": "1bb4109bce756ea39fa39d4239c3b156c10d450aa9eb3429b486d777594317da",
+    "size": 108
   },
   "lambdas/update-state/README.md": {
     "shasum": "c747c571fc2fdef80b4520b8f85b7edd93b92f3b0fa292410f326fcbfbcc9d6a",
@@ -32,8 +32,8 @@
     "size": 6952
   },
   "lambdas/publish/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
-    "size": 79
+    "shasum": "1bb4109bce756ea39fa39d4239c3b156c10d450aa9eb3429b486d777594317da",
+    "size": 108
   },
   "lambdas/publish/README.md": {
     "shasum": "436952ae33bdcce706a2990253963c28eebaa8f7a5150cc4db3f6858be2ccf20",
@@ -48,16 +48,16 @@
     "size": 1403
   },
   "lambdas/api/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
-    "size": 79
+    "shasum": "1bb4109bce756ea39fa39d4239c3b156c10d450aa9eb3429b486d777594317da",
+    "size": 108
   },
   "lambdas/api/lambda_function.py": {
-    "shasum": "31ca4b818f166f0ec449d80ce4cf23938bf309fe39628b5856933b83effc3101",
-    "size": 5532
+    "shasum": "2c9ef91bdd36fe3e880b6a51cfe9c6904eff6dd4a2567d23a0064f0a5f2ef06f",
+    "size": 7543
   },
   "lambdas/feed-rerun/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
-    "size": 79
+    "shasum": "1bb4109bce756ea39fa39d4239c3b156c10d450aa9eb3429b486d777594317da",
+    "size": 108
   },
   "lambdas/feed-rerun/README.md": {
     "shasum": "58310e9eae7e650727125dd2cb82ca2a7a120057811a441e0b84039694200ad6",
@@ -68,8 +68,8 @@
     "size": 1980
   },
   "lambdas/process/requirements.txt": {
-    "shasum": "76941e32ac85dc575cd3ed7a73ac60e271a6d284634aba35cf7740bc009792ae",
-    "size": 79
+    "shasum": "1bb4109bce756ea39fa39d4239c3b156c10d450aa9eb3429b486d777594317da",
+    "size": 108
   },
   "lambdas/process/README.md": {
     "shasum": "a99c010da293b43200d9d5d33d59c123db19babb398cba3fce376f8bc84cb478",
@@ -87,6 +87,10 @@
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "size": 0
   },
+  "cirrus/lib2/eventdb.py": {
+    "shasum": "3c558f9604e67736200f356c493680986a769130cf380ecca830dde29193b45c",
+    "size": 5126
+  },
   "cirrus/lib2/utils.py": {
     "shasum": "b8b4d13b43692428dcefa26b03f8b427552c4c7459d24dde24f0803ae3338759",
     "size": 7288
@@ -96,8 +100,8 @@
     "size": 106
   },
   "cirrus/lib2/statedb.py": {
-    "shasum": "fb459bf7d2a8b3fbe6e4de7516a0773bfee225b483101852e6ff18447b53ac6f",
-    "size": 19938
+    "shasum": "7087e4de0df1c0a27db8998beb267243ffa8a870a8813600e0c16a0bc0f90a9d",
+    "size": 20832
   },
   "cirrus/lib2/process_payload.py": {
     "shasum": "505c775c21b8345105ac083eab34496216ee5cc21d52a0bd92759203a6691f7a",
@@ -124,8 +128,8 @@
     "size": 173
   },
   "cirrus/lib/statedb.py": {
-    "shasum": "b97493e3d9772458f07cde9a8eb9a0bef64cbb2b0d46822fc8d5fe8c0d955e66",
-    "size": 19200
+    "shasum": "4549a044b5fa7f43716081b98e2f1afdf3e290751b1183f53a3493d499dab3c0",
+    "size": 23964
   },
   "cirrus/lib/process_payload.py": {
     "shasum": "8465f4256acdac71048b4289e2e104c2d3778a1d445b918c18579542a1fc09b6",

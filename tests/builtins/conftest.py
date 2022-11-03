@@ -50,7 +50,7 @@ def queue(sqs):
 
 
 @pytest.fixture
-def statedb(dynamo, statedb_schema):
+def statedb(dynamo, statedb_schema) -> str:
     dynamo.create_table(**statedb_schema)
     return statedb_schema["TableName"]
 

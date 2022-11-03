@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import boto3
 from boto3.dynamodb.conditions import Attr, Key
@@ -257,7 +257,7 @@ class StateDB:
         logger.debug("Claimed processing", extra=key)
         return response
 
-    def set_processing(self, payload_id, execution):
+    def set_processing(self, payload_id: str, execution: str) -> Dict[str, Any]:
         """Adds execution to existing item or creates new"""
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
@@ -281,7 +281,7 @@ class StateDB:
         )
         logger.debug("Add execution", extra=key.update({"execution": execution}))
 
-        self.write_timeseries_record(key, StateEnum.PROCESSING, now)
+        self.write_timeseries_record(key, StateEnum.PROCESSING, now, execution)
 
         return response
 
@@ -630,6 +630,7 @@ class StateDB:
         key: Dict[str, str],
         state: StateEnum,
         event_time: str,
+        execution_arn: Optional[str] = None,
     ) -> None:
         if self.eventdb:
-            self.eventdb.write_timeseries_record(key, state, event_time)
+            self.eventdb.write_timeseries_record(key, state, event_time, execution_arn)

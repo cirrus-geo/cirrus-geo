@@ -109,6 +109,18 @@ functions:
                     - StateTable
                     - Arn
                 - /index/*
+      - Effect: Allow
+        Action:
+          - timestream:DescribeEndpoints
+        Resource:
+          - '*'
+      - Effect: Allow
+        Action:
+          - timestream:Select
+        Resource:
+          - Fn::GetAtt:
+              - StateEventTimestreamTable
+              - Arn
     description: Cirrus API
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
@@ -167,6 +179,18 @@ functions:
                     - StateTable
                     - Arn
                 - /index/*
+      - Effect: Allow
+        Action:
+          - timestream:DescribeEndpoints
+        Resource:
+          - '*'
+      - Effect: Allow
+        Action:
+          - timestream:WriteRecords
+        Resource:
+          - Fn::GetAtt:
+              - StateEventTimestreamTable
+              - Arn
       - Effect: Allow
         Action:
           - sqs:GetQueueUrl
@@ -261,6 +285,18 @@ functions:
                     - StateTable
                     - Arn
                 - /index/*
+      - Effect: Allow
+        Action:
+          - timestream:DescribeEndpoints
+        Resource:
+          - '*'
+      - Effect: Allow
+        Action:
+          - timestream:WriteRecords
+        Resource:
+          - Fn::GetAtt:
+              - StateEventTimestreamTable
+              - Arn
       - Effect: Allow
         Action:
           - states:GetExecutionHistory
@@ -841,6 +877,22 @@ resources:
         BillingMode: PAY_PER_REQUEST
         TableName:
           Fn::Sub: ${AWS::StackName}-state
+    StateEventTimestreamDatabase:
+      Type: AWS::Timestream::Database
+      Properties:
+        DatabaseName:
+          Fn::Sub: ${AWS::StackName}-state-events
+    StateEventTimestreamTable:
+      Type: AWS::Timestream::Table
+      DependsOn: StateEventTimestreamDatabase
+      Properties:
+        TableName:
+          Fn::Sub: ${AWS::StackName}-state-events-table
+        DatabaseName:
+          Fn::Sub: ${AWS::StackName}-state-events
+        RetentionProperties:
+          MemoryStoreRetentionPeriodInHours: '24'
+          MagneticStoreRetentionPeriodInDays: '3650'
     BatchJobRole:
       Type: AWS::IAM::Role
       Properties:
