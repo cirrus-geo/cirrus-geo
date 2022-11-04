@@ -116,8 +116,8 @@
     "size": 0
   },
   "cirrus/lib2/utils.py": {
-    "shasum": "51875e762abd92f34ec4154989308c1c8decb0f85837db6d5df8d0e06ed0f7b0",
-    "size": 8493
+    "shasum": "a4ff0ad560b09fab5686e8f0c6dca6f97d170103749e400dfb4eee376fbf97d5",
+    "size": 8984
   },
   "cirrus/lib2/errors.py": {
     "shasum": "2f6699dd2f40f4ac17fcf7438efe7b0716604752a76dbb19c100778c322dd129",
