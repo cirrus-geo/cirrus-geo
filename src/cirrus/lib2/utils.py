@@ -97,44 +97,64 @@ def get_path(item: dict, template: str = "${collection}/${id}") -> str:
 
 
 def recursive_compare(d1, d2, level="root", print=print):
+    import difflib
+
     same = True
     if isinstance(d1, dict) and isinstance(d2, dict):
         if d1.keys() != d2.keys():
             same = False
             s1 = set(d1.keys())
             s2 = set(d2.keys())
-            print(f"{level:<20} + {s1-s2} - {s2-s1}")
+            print(f"{level}:")
+            for key in s1 - s2:
+                print(f"\t- {key}")
+            for key in s2 - s1:
+                print(f"\t+ {key}")
+            print()
             common_keys = s1 & s2
         else:
             common_keys = set(d1.keys())
 
         for k in common_keys:
-            same = same and recursive_compare(
+            result = recursive_compare(
                 d1[k],
                 d2[k],
                 level=f"{level}.{k}",
             )
+            same = same and result
 
     elif isinstance(d1, list) and isinstance(d2, list):
         if len(d1) != len(d2):
             same = False
-            print(f"{level:<20} len1={len(d1)}; len2={len(d2)}")
         common_len = min(len(d1), len(d2))
 
         for i in range(common_len):
-            same = same and recursive_compare(
+            result = recursive_compare(
                 d1[i],
                 d2[i],
                 level=f"{level}[{i}]",
             )
+            same = same and result
 
-    elif d1 != d2:
-        print(f"{level:<20} {d1} != {d2}")
+    elif d1 == d2:
+        # base case
+        pass
+
+    elif (
+        isinstance(d1, str)
+        and isinstance(d2, str)
+        and (len(d1.splitlines()) > 1 or len(d2.splitlines()) > 1)
+    ):
+        print(f"{level}:")
+        diff = difflib.unified_diff(d1.splitlines(), d2.splitlines(), lineterm="")
+        for line in diff:
+            print(f"\t{line}")
+        print()
         same = False
 
     else:
-        # base case d1 == d2
-        pass
+        print(f"{level}:\n\t- {d1}\n\t+ {d2}\n")
+        same = False
 
     return same
 
