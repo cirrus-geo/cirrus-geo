@@ -19,14 +19,12 @@ class StateEnum(Enum):
 
 
 class EventDB:
-    def __init__(
-        self,
-        event_db_and_table_names: Optional[str] = os.getenv(
-            "CIRRUS_EVENT_DB_AND_TABLE", None
-        ),
-    ):
+    def __init__(self, event_db_and_table_names: Optional[str] = None):
         self.tsw_client = boto3.client("timestream-write")
         self.tsq_client = boto3.client("timestream-query")
+
+        if event_db_and_table_names is None:
+            event_db_and_table_names = os.getenv("CIRRUS_EVENT_DB_AND_TABLE")
         if not event_db_and_table_names:
             raise Exception("Event DB and table name not configured.")
         db_and_table_names_array = event_db_and_table_names.split("|")

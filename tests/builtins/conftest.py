@@ -115,4 +115,5 @@ def workflow(stepfunctions, iam):
 def env(queue, statedb, payloads):
     os.environ["CIRRUS_PROCESS_QUEUE_URL"] = queue["QueueUrl"]
     os.environ["CIRRUS_STATE_DB"] = statedb
+    os.environ["CIRRUS_EVENT_DB_AND_TABLE"] = "event-db-1|event-table-1"
     os.environ["CIRRUS_PAYLOAD_BUCKET"] = payloads
