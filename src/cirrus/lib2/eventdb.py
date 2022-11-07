@@ -56,7 +56,12 @@ class EventDB:
             )
             return
 
-        event_time_dt = datetime.fromisoformat(event_time)
+        try:
+            event_time_dt = datetime.fromisoformat(event_time)
+        except ValueError as err:
+            logger.error(f"datetime {event_time} is invalid: {err}")
+            return
+
         event_time_ms = str(int(event_time_dt.timestamp() * 1000))
 
         record = {
