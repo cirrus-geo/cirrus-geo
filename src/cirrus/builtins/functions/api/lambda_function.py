@@ -70,14 +70,16 @@ def get_root(root_url):
     return root
 
 
-def get_stats() -> Dict[str, Any]:
+def get_stats(eventdb: EventDB) -> Dict[str, Any]:
     logger.debug("Get stats")
 
     return {
         "state_transitions": {
             "daily": daily(eventdb.query_by_bin_and_duration("1d", "60d")),
             "hourly": hourly(eventdb.query_by_bin_and_duration("1h", "36h")),
-            "hourly_rolling": hourly_rolling(),
+            "hourly_rolling": hourly(
+                eventdb.query_hour(1, 0), eventdb.query_hour(2, 1)
+            ),
         }
     }
 
@@ -112,18 +114,13 @@ def daily(results: Dict[str, Any]) -> List[Dict[str, Any]]:
     return _results_transform(results, lambda x: x.split(" ")[0], "day")
 
 
-def hourly(results: Dict[str, Any]) -> List[Dict[str, Any]]:
+def hourly(r1: Dict[str, Any], *rs: Dict[str, Any]) -> List[Dict[str, Any]]:
+    combined_results = deepcopy(r1)
+    for result in rs:
+        combined_results["Rows"].extend(result.get("Rows", []))
     return _results_transform(
-        results, lambda x: x.replace(" ", "T").split(".")[0] + "Z", "hour"
+        combined_results, lambda x: x.replace(" ", "T").split(".")[0] + "Z", "hour"
     )
-
-
-def hourly_rolling() -> List[Dict[str, Any]]:
-    results = eventdb.query_hour(1, 0)
-    results2 = eventdb.query_hour(2, 1)
-
-    results["Rows"].extend(results2["Rows"])
-    return hourly(results)
 
 
 def summary(collections_workflow, since, limit):
@@ -140,11 +137,12 @@ def summary(collections_workflow, since, limit):
     return {"collections": parts[0], "workflow": parts[1], "counts": counts}
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
     logger.debug("Event: %s", json.dumps(event))
 
     # get request URL
     domain = event.get("requestContext", {}).get("domainName", "")
+    path = None
     if domain != "":
         path = event.get("requestContext", {}).get("path", "")
         root_url = f"https://{domain}{path}/"
@@ -189,7 +187,7 @@ def lambda_handler(event, context):
         return response(get_root(root_url))
 
     if payload_id == "stats":
-        return response(get_stats())
+        return response(get_stats(eventdb))
 
     if "/workflow-" not in payload_id:
         return response(f"{path} not found", status_code=400)

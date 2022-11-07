@@ -37,7 +37,7 @@ class EventDB:
         state: StateEnum,
         event_time: str,
         execution_arn: Optional[str] = None,
-    ) -> None:
+    ) -> Any:
         parts = key.get("collections_workflow", "").rsplit("_", 1)
         if not len(parts) == 2:
             logger.error(
@@ -67,16 +67,10 @@ class EventDB:
                 {"Name": "state", "Value": state.value},
             ],
             "Time": event_time_ms,
+            "MeasureValueType": "VARCHAR",
+            "MeasureName": "execution_arn",
+            "MeasureValue": execution_arn if execution_arn else "none",
         }
-
-        if execution_arn:
-            record.update(
-                {
-                    "MeasureValueType": "VARCHAR",
-                    "MeasureName": "execution_arn",
-                    "MeasureValue": execution_arn,
-                }
-            )
 
         try:
             result = self.tsw_client.write_records(
@@ -87,6 +81,7 @@ class EventDB:
             logger.info(
                 f"Timestream WriteRecords Status for first time: [{result['ResponseMetadata']['HTTPStatusCode']}]"
             )
+            return result
         except self.tsw_client.exceptions.RejectedRecordsException as err:
             logger.error(f"For {key} Timestream RejectedRecords: {err}")
             for rr in err.response["RejectedRecords"]:

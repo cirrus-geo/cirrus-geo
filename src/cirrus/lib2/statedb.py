@@ -124,9 +124,8 @@ class StateDB:
         query_kwargs["collections_workflow"] = collections_workflow
         query_kwargs["select"] = "COUNT"
 
-        counts = 0
         resp = self.query(**query_kwargs)
-        counts = resp["Count"]
+        counts = resp.get("Count", 0)
 
         while "LastEvaluatedKey" in resp and (not limit or counts <= limit):
             query_kwargs["ExclusiveStartKey"] = resp["LastEvaluatedKey"]
@@ -144,7 +143,7 @@ class StateDB:
         limit=100,
         nextkey: str = None,
         **kwargs,
-    ) -> List[Dict]:
+    ) -> Dict[str, Any]:
         """Get Items by query
 
         Args:
@@ -157,7 +156,7 @@ class StateDB:
         Returns:
             Dict: List of Items
         """
-        items = {"items": []}
+        items: Dict[str, Any] = {"items": []}
         kwargs.update(
             {
                 "collections_workflow": collections_workflow,
