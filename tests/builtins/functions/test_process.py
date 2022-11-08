@@ -29,7 +29,6 @@ def sqs_to_event(sqs_resp, sqs_arn):
 @pytest.fixture(autouse=True)
 def process_env(workflow):
     workflow_prefix = workflow["stateMachineArn"].rsplit(":", 1)[0] + ":"
-    os.environ["CIRRUS_EVENT_DB_AND_TABLE"] = "event-db-1|event-table-1"
     os.environ["CIRRUS_BASE_WORKFLOW_ARN"] = workflow_prefix
 
 

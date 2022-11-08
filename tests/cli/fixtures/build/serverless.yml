@@ -19,6 +19,8 @@ provider:
       Ref: Payloads
     CIRRUS_STATE_DB:
       Ref: StateTable
+    CIRRUS_EVENT_DB_AND_TABLE:
+      Ref: StateEventTimestreamTable
     CIRRUS_STACK:
       Fn::Sub: ${AWS::StackName}
     CIRRUS_PROCESS_QUEUE_URL:
@@ -130,6 +132,8 @@ functions:
         Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
       CIRRUS_PROCESS_QUEUE_URL:
@@ -228,6 +232,8 @@ functions:
         Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
       CIRRUS_PROCESS_QUEUE_URL:
@@ -338,6 +344,8 @@ functions:
         Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
       CIRRUS_PROCESS_QUEUE_URL:
@@ -404,6 +412,8 @@ functions:
         Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
       CIRRUS_PROCESS_QUEUE_URL:
@@ -456,6 +466,8 @@ functions:
         Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
       CIRRUS_PROCESS_QUEUE_URL:
@@ -503,6 +515,8 @@ functions:
         Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
       CIRRUS_PROCESS_QUEUE_URL:
@@ -563,6 +577,8 @@ functions:
         Ref: Payloads
       CIRRUS_STATE_DB:
         Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
       CIRRUS_STACK:
         Fn::Sub: ${AWS::StackName}
       CIRRUS_PROCESS_QUEUE_URL:
@@ -710,6 +726,9 @@ resources:
             - Name: CIRRUS_STATE_DB
               Value:
                 Ref: StateTable
+            - Name: CIRRUS_EVENT_DB_AND_TABLE
+              Value:
+                Ref: StateEventTimestreamTable
             - Name: CIRRUS_STACK
               Value:
                 Fn::Sub: ${AWS::StackName}
@@ -766,6 +785,9 @@ resources:
             - Name: CIRRUS_STATE_DB
               Value:
                 Ref: StateTable
+            - Name: CIRRUS_EVENT_DB_AND_TABLE
+              Value:
+                Ref: StateEventTimestreamTable
             - Name: CIRRUS_STACK
               Value:
                 Fn::Sub: ${AWS::StackName}
@@ -1186,6 +1208,9 @@ resources:
             - Name: CIRRUS_STATE_DB
               Value:
                 Ref: StateTable
+            - Name: CIRRUS_EVENT_DB_AND_TABLE
+              Value:
+                Ref: StateEventTimestreamTable
             - Name: CIRRUS_STACK
               Value:
                 Fn::Sub: ${AWS::StackName}
