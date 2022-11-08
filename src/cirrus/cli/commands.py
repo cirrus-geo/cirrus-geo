@@ -104,7 +104,7 @@ def clean(project):
     """
     Remove all files from the cirrus build directory.
     """
-    project.clean()
+    project.clean(project.build_dir)
 
 
 @cli.command(

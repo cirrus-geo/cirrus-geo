@@ -10,6 +10,7 @@ import pytest
 from click.testing import CliRunner
 
 from cirrus.cli.commands import cli
+from cirrus.core import constants
 from cirrus.core.groups import make_groups
 from cirrus.core.project import Project
 
@@ -58,7 +59,10 @@ def invoke(cli_runner):
 
 @pytest.fixture
 def build_dir(project_testdir):
-    return project_testdir.joinpath(".cirrus")
+    return project_testdir.joinpath(
+        constants.DEFAULT_DOT_DIR_NAME,
+        constants.DEFAULT_BUILD_DIR_NAME,
+    )
 
 
 @pytest.fixture

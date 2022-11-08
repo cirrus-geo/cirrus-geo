@@ -7,6 +7,7 @@ from cirrus.core.config import DEFAULT_CONFIG_PATH, Config
 from cirrus.core.constants import (
     DEFAULT_BUILD_DIR_NAME,
     DEFAULT_CONFIG_FILENAME,
+    DEFAULT_DOT_DIR_NAME,
     DEFAULT_GIT_IGNORE,
     DEFAULT_SERVERLESS_FILENAME,
     SERVERLESS,
@@ -27,6 +28,8 @@ class Project:
         self.path = path
         self.config = config or self.load_config()
         self.groups = make_groups(project=self)
+        self._dot_dir = None
+        self._build_dir = None
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.path}>"
@@ -40,10 +43,22 @@ class Project:
         return Config.from_project(self)
 
     @property
-    def build_dir(self) -> Path:
+    def dot_dir(self) -> Path:
         if self.path is None:
             return None
-        return self.path.joinpath(DEFAULT_BUILD_DIR_NAME)
+        if self._dot_dir is None:
+            self._dot_dir = self.path.joinpath(DEFAULT_DOT_DIR_NAME)
+            self._dot_dir.mkdir(exist_ok=True)
+        return self._dot_dir
+
+    @property
+    def build_dir(self) -> Path:
+        if self.dot_dir is None:
+            return None
+        if self._build_dir is None:
+            self._build_dir = self.dot_dir.joinpath(DEFAULT_BUILD_DIR_NAME)
+            self._build_dir.mkdir(exist_ok=True)
+        return self._build_dir
 
     @classmethod
     def resolve(cls, path: Path = None, strict=False):
@@ -208,12 +223,17 @@ class Project:
         for d in existing_dirs - fn_dirs:
             shutil.rmtree(d)
 
-    def clean(self) -> None:
+    def clean(self, directory) -> None:
         if self.path is None:
             raise CirrusError("Cannot clean a project without the path set")
 
+        try:
+            directory.relative_to(self.dot_dir)
+        except ValueError:
+            raise ValueError(
+                f"Directory must be child of cirrus dot dir: {directory}, {self.dot_dir}",
+            ) from None
+
         from cirrus.core.utils.misc import clean_dir
 
-        if not self.build_dir.is_dir():
-            return
-        clean_dir(self.build_dir)
+        clean_dir(directory)
