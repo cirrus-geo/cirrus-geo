@@ -130,3 +130,6 @@ class Config(NamedYamlable):
             self.resources[top_level_key] = {
                 cf.name: cf.definition for cf in cf_objects.values()
             }
+
+    def get_stackname(self, stage: str) -> str:
+        return f"{self.service}-{stage}"
