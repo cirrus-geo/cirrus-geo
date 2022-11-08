@@ -40,12 +40,6 @@ def sqs(aws_credentials):
 
 
 @pytest.fixture
-def dynamo(aws_credentials):
-    with moto.mock_dynamodb():
-        yield boto3.client("dynamodb", region_name="us-east-1")
-
-
-@pytest.fixture
 def stepfunctions(aws_credentials):
     with moto.mock_stepfunctions():
         yield boto3.client("stepfunctions", region_name="us-east-1")
@@ -69,12 +63,6 @@ def queue(sqs):
     q = sqs.create_queue(QueueName="test-queue")
     q["Arn"] = "arn:aws:sqs:us-east-1:123456789012:test-queue"
     return q
-
-
-@pytest.fixture
-def statedb(dynamo, statedb_schema) -> str:
-    dynamo.create_table(**statedb_schema)
-    return statedb_schema["TableName"]
 
 
 @pytest.fixture
@@ -112,8 +100,8 @@ def workflow(stepfunctions, iam):
 
 
 @pytest.fixture(autouse=True)
-def env(queue, statedb, payloads):
+def env(queue, statedb_table_name, payloads):
     os.environ["CIRRUS_PROCESS_QUEUE_URL"] = queue["QueueUrl"]
-    os.environ["CIRRUS_STATE_DB"] = statedb
+    os.environ["CIRRUS_STATE_DB"] = statedb_table_name
     os.environ["CIRRUS_EVENT_DB_AND_TABLE"] = "event-db-1|event-table-1"
     os.environ["CIRRUS_PAYLOAD_BUCKET"] = payloads

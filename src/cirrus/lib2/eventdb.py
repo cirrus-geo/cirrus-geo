@@ -37,13 +37,15 @@ class EventDB:
         state: StateEnum,
         event_time: str,
         execution_arn: Optional[str] = None,
-    ) -> Any:
+    ) -> Dict[str, Any]:
         parts = key.get("collections_workflow", "").rsplit("_", 1)
         if not len(parts) == 2:
             logger.error(
-                f"Event could not be recorded, key value collections_workflow was not an underscore separated value: {key.get('collections_workflow')}"
+                f"Event could not be recorded, key value collections_workflow was not an underscore-separated value: {key.get('collections_workflow')}"
             )
-            return
+            raise ValueError(
+                "In key dict, value for collections_workflow was not an underscore-separated string"
+            )
 
         collections = parts[0]
         workflow = parts[1]
@@ -52,15 +54,13 @@ class EventDB:
 
         if not workflow or not collections or not itemids:
             logger.error(
-                f"Event could not be recorded, key {key} missing 'workflow', 'collections' or 'itemids'"
+                f"Event could not be recorded, key {key} missing values to populate 'workflow', 'collections' or 'itemids'"
             )
-            return
+            raise ValueError(
+                "At least one of 'workflow', 'collections' or 'itemids' could not be determined from key"
+            )
 
-        try:
-            event_time_dt = datetime.fromisoformat(event_time)
-        except ValueError as err:
-            logger.error(f"datetime {event_time} is invalid: {err}")
-            return
+        event_time_dt = datetime.fromisoformat(event_time)
 
         event_time_ms = str(int(event_time_dt.timestamp() * 1000))
 
@@ -97,8 +97,10 @@ class EventDB:
                     logger.error(
                         f"For {key} Rejected record existing version: {rr['ExistingVersion']}"
                     )
+            raise err
         except Exception as err:
             logger.error(f"For {key} Error: {err}")
+            raise err
 
     def _mk_query_by_bin_and_duration(self, bin_size: str, duration: str) -> str:
         """bin_size is like '1d' '1h'

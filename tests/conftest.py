@@ -3,7 +3,11 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
+import boto3
+import moto
 import pytest
+
+from cirrus.lib2.eventdb import EventDB
 
 
 def set_fake_creds():
@@ -32,3 +36,30 @@ def fixtures():
 @pytest.fixture(scope="session")
 def statedb_schema(fixtures) -> Dict[str, Any]:
     return json.loads(fixtures.joinpath("statedb-schema.json").read_text())
+
+
+@pytest.fixture
+def dynamo(aws_credentials):
+    with moto.mock_dynamodb():
+        yield boto3.client("dynamodb", region_name="us-east-1")
+
+
+@pytest.fixture
+def statedb_table_name(dynamo, statedb_schema) -> str:
+    dynamo.create_table(**statedb_schema)
+    return statedb_schema["TableName"]
+
+
+@pytest.fixture
+def timestream_write_client():
+    with moto.mock_timestreamwrite():
+        yield boto3.client("timestream-write", region_name="us-east-1")
+
+
+@pytest.fixture
+def eventdb(timestream_write_client):
+    timestream_write_client.create_database(DatabaseName="event-db-1")
+    timestream_write_client.create_table(
+        DatabaseName="event-db-1", TableName="event-table-1"
+    )
+    return EventDB("event-db-1|event-table-1")

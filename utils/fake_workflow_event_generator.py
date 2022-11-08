@@ -2,9 +2,9 @@
 
 pip install -r requirements.txt
 
-python fake_workflow_event_generator.py my-cirrus-dev-state-events my-cirrus-dev-state-events-table
+python fake_workflow_event_generator.py my-cirrus-dev-state-events my-cirrus-dev-state-events-table -60d
 
-First arg is the Timestream DB, second arg is the Timestream table.
+First arg is the Timestream DB, second arg is the Timestream table, third is the time duration expression.
 
 Write to Magnetic store must be enabled manually for this to work.
 """
@@ -17,7 +17,6 @@ from enum import Enum, unique
 from typing import Optional
 
 import boto3
-from dateutil.parser import isoparse
 from faker import Faker
 
 logger = logging.getLogger(__name__)
@@ -44,21 +43,8 @@ def write_timeseries_record(
     itemids: str,
     state: StateEnum,
     event_time: str,
-    last_update_ts_str: Optional[str],
+    execution_arn: Optional[str],
 ):
-    event_time_dt = datetime.fromisoformat(event_time)
-    event_time_ms = str(int(event_time_dt.timestamp() * 1000))
-
-    duration_ms = (
-        str((event_time_dt - isoparse(last_update_ts_str)).seconds * 1000)
-        if last_update_ts_str
-        else "0"
-    )
-
-    print(last_update_ts_str)
-    print(event_time_dt)
-    print(duration_ms)
-
     record = {
         "Dimensions": [
             {"Name": "workflow", "Value": workflow},
@@ -66,10 +52,10 @@ def write_timeseries_record(
             {"Name": "item_ids", "Value": itemids},
             {"Name": "state", "Value": state.value},
         ],
-        # "MeasureValueType": "BIGINT",
-        "Time": event_time_ms,
-        # "MeasureName": "duration_ms",
-        # "MeasureValue": duration_ms,
+        "Time": str(int(datetime.fromisoformat(event_time).timestamp() * 1000)),
+        "MeasureValueType": "VARCHAR",
+        "MeasureName": "execution_arn",
+        "MeasureValue": execution_arn if execution_arn else "none",
     }
 
     try:
@@ -81,6 +67,14 @@ def write_timeseries_record(
         logger.info(
             f"Timestream WriteRecords Status for first time: [{result['ResponseMetadata']['HTTPStatusCode']}]"
         )
+    except tsw_client.exceptions.RejectedRecordsException as err:
+        logger.error(f"Timestream RejectedRecords: {err}")
+        for rr in err.response["RejectedRecords"]:
+            logger.error(f"Rejected Index {rr['RecordIndex']} : {rr['Reason']}")
+            if "ExistingVersion" in rr:
+                logger.error(
+                    f"Rejected record existing version: {rr['ExistingVersion']}"
+                )
     except Exception as err:
         logger.error(f"Error: {err}")
 
@@ -119,15 +113,14 @@ state_transitions = {
     ],
 }
 
-Faker.seed(0)
-
 fake = Faker()
 
 
-def generate_item_events():
+def generate_item_events(between_val: str):
     state = None
-    timestamp = fake.date_time_between("-3d")
-    last_update_ts = None
+    timestamp = fake.date_time_between(between_val)
+    execution_arn = f"arn:aws:states:us-west-2:1667831315:execution:pvarner-cirrus-dev-fake:{str(uuid.uuid4())}"
+
     while state not in [StateEnum.COMPLETED, StateEnum.INVALID, StateEnum.TERMINAL]:
         if state is None:
             state = StateEnum.PROCESSING
@@ -137,47 +130,25 @@ def generate_item_events():
         if state != StateEnum.TERMINAL:
             yield "workflow1", "sentinel-2-l2a", str(
                 uuid.uuid4()
-            ), state, timestamp.astimezone(
-                timezone.utc
-            ).isoformat(), last_update_ts.astimezone(
-                timezone.utc
-            ).isoformat() if last_update_ts else None
+            ), state, timestamp.astimezone(timezone.utc).isoformat(), execution_arn
 
-            last_update_ts = timestamp
             timestamp = fake.date_time_between(timestamp, "+2h")
             if timestamp > datetime.now():
                 timestamp = datetime.now()
 
 
-def generate_events():
+def generate_events(between_val: str):
     while True:
-        yield from generate_item_events()
+        yield from generate_item_events(between_val)
 
 
 def main():
     event_db_name = sys.argv[1]
     event_table_name = sys.argv[2]
-    for (
-        workflow,
-        collection,
-        itemids,
-        state,
-        timestamp,
-        last_update_ts,
-    ) in generate_events():
-        print(
-            f"{workflow}, {collection}, {itemids}, {state}, {timestamp}, {last_update_ts}"
-        )
-        write_timeseries_record(
-            event_db_name,
-            event_table_name,
-            workflow,
-            collection,
-            itemids,
-            state,
-            timestamp,
-            last_update_ts,
-        )
+    between_val = sys.argv[3]
+    for event in generate_events(between_val):
+        print(event)
+        write_timeseries_record(event_db_name, event_table_name, *event)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,6 @@ from datetime import datetime
 
 import pytest
 
-from cirrus.lib2.eventdb import EventDB
 from cirrus.lib2.statedb import STATES, StateDB
 
 os.environ["CIRRUS_PAYLOAD_BUCKET"] = "test"
@@ -69,9 +68,9 @@ def test_since_to_timedelta():
 
 
 @pytest.fixture
-def state_table(statedb):
-    _eventdb = EventDB("event-db-1|event-table-1")
-    _statedb = StateDB(statedb, _eventdb)
+def state_table(statedb_table_name, eventdb):
+
+    _statedb = StateDB(statedb_table_name, eventdb)
     _statedb.set_processing(
         f'{test_item["id"]}_processing',
         execution="arn::test",

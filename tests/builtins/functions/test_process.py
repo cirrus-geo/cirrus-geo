@@ -4,6 +4,7 @@ import os
 
 import pytest
 
+from cirrus.lib2.statedb import StateDB
 from cirrus.test import run_function
 
 
@@ -61,10 +62,8 @@ def payload():
 
 
 @pytest.fixture
-def cirrus_statedb():
-    from cirrus.lib.statedb import StateDB
-
-    return StateDB()
+def cirrus_statedb(eventdb):
+    return StateDB(None, eventdb)
 
 
 def test_empty_event():
@@ -94,7 +93,7 @@ def test_single_payload(payload, stepfunctions, workflow, cirrus_statedb):
     assert items[0]["state_updated"].startswith("PROCESSING")
 
 
-def test_rerun_in_process(payload, stepfunctions, workflow):
+def test_rerun_in_process(payload, stepfunctions, workflow, eventdb):
     result = run_function("process", payload)
     # the first time we should process the one payload
     assert result == 1
