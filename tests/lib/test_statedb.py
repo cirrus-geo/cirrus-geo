@@ -46,8 +46,8 @@ def test_key_to_payload_id():
     assert payload_id == test_item["id"]
 
 
-def test_get_input_payload_url():
-    url = StateDB.get_input_payload_url(TESTKEY)
+def test_payload_key_to_url():
+    url = StateDB.payload_key_to_url(TESTKEY)
     assert f"{test_item['id']}/input.json" in url
 
 

@@ -19,9 +19,16 @@ class StateEnum(Enum):
 
 
 class EventDB:
-    def __init__(self, event_db_and_table_names: Optional[str] = None):
-        self.tsw_client = boto3.client("timestream-write")
-        self.tsq_client = boto3.client("timestream-query")
+    def __init__(
+        self,
+        event_db_and_table_names: Optional[str] = None,
+        session: Optional[boto3.Session] = None,
+    ):
+        if not session:
+            session = boto3.Session()
+
+        self.tsw_client = session.client("timestream-write")
+        self.tsq_client = session.client("timestream-query")
 
         if event_db_and_table_names is None:
             event_db_and_table_names = os.getenv("CIRRUS_EVENT_DB_AND_TABLE")

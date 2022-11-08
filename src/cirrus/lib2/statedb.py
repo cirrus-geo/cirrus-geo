@@ -8,40 +8,51 @@ from boto3.dynamodb.conditions import Attr, Key
 
 from .eventdb import EventDB, StateEnum
 
-# envvars
-PAYLOAD_BUCKET = os.getenv("CIRRUS_PAYLOAD_BUCKET")
-
 STATES = ["PROCESSING", "COMPLETED", "FAILED", "INVALID", "ABORTED"]
 
 # logging
 logger = logging.getLogger(__name__)
 
 
+def get_payload_bucket():
+    return os.getenv("CIRRUS_PAYLOAD_BUCKET")
+
+
+def get_state_db():
+    return os.getenv("CIRRUS_STATE_DB")
+
+
 class StateDB:
     limit = None
 
     def __init__(
-        self, table_name: Optional[str] = None, eventdb: Optional[EventDB] = None
+        self,
+        table_name: Optional[str] = None,
+        eventdb: Optional[EventDB] = None,
+        session: Optional[boto3.Session] = None,
     ):
         """Initialize a StateDB instance using the Cirrus State DB table
 
         Args:
             table_name (str, optional): The Cirrus StateDB Table name. Defaults to os.getenv('CIRRUS_STATE_DB', None).
         """
-        table_name = table_name if table_name else os.getenv("CIRRUS_STATE_DB")
+        table_name = table_name if table_name else get_state_db()
 
         if not table_name:
             raise ValueError("env var CIRRUS_STATE_DB must be defined")
 
+        if not session:
+            session = boto3.Session()
+
         # initialize client
-        self.db = boto3.resource("dynamodb")
+        self.db = session.resource("dynamodb")
         self.table_name = table_name
         self.table = self.db.Table(table_name)
 
         if eventdb:
             self.eventdb = eventdb
         else:
-            self.eventdb = EventDB()
+            self.eventdb = EventDB(session=session)
 
     def delete_item(self, payload_id: str):
         key = self.payload_id_to_key(payload_id)
@@ -550,7 +561,32 @@ class StateDB:
         return resp
 
     @classmethod
-    def payload_id_to_key(cls, payload_id: str) -> Dict:
+    def dbitem_to_item(
+        cls, dbitem: Dict, region: str = os.getenv("AWS_REGION", "us-west-2")
+    ) -> Dict:
+        state, updated = dbitem["state_updated"].split("_")
+        collections, workflow = dbitem["collections_workflow"].rsplit("_", maxsplit=1)
+        item = {
+            "payload_id": cls.key_to_payload_id(dbitem),
+            "collections": collections,
+            "workflow": workflow,
+            "items": dbitem["itemids"],
+            "state": state,
+            "created": dbitem["created"],
+            "updated": dbitem["updated"],
+            "payload": cls.payload_id_to_url(cls.key_to_payload_id(dbitem)),
+        }
+        if "executions" in dbitem:
+            base_url = f"https://{region}.console.aws.amazon.com/states/home?region={region}#/executions/details/"
+            item["executions"] = [base_url + f"{e}" for e in dbitem["executions"]]
+        if "outputs" in dbitem:
+            item["outputs"] = dbitem["outputs"]
+        if "last_error" in dbitem:
+            item["last_error"] = dbitem["last_error"]
+        return item
+
+    @staticmethod
+    def payload_id_to_key(payload_id: str) -> Dict:
         """Create DynamoDB Key from Payload ID
 
         Args:
@@ -567,8 +603,8 @@ class StateDB:
         }
         return key
 
-    @classmethod
-    def key_to_payload_id(cls, key: Dict) -> str:
+    @staticmethod
+    def key_to_payload_id(key: Dict) -> str:
         """Get Payload ID given a DynamoDB Key
 
         Args:
@@ -580,48 +616,29 @@ class StateDB:
         parts = key["collections_workflow"].rsplit("_", maxsplit=1)
         return f"{parts[0]}/workflow-{parts[1]}/{key['itemids']}"
 
+    @staticmethod
+    def payload_id_to_bucket_key(payload_id, payload_bucket=None):
+        if not payload_bucket:
+            payload_bucket = get_payload_bucket()
+        return (payload_bucket, f"{payload_id}/input.json")
+
     @classmethod
-    def get_input_payload_url(cls, dbitem):
-        payload_id = cls.key_to_payload_id(dbitem)
-        return cls.get_payload_url(payload_id)
+    def payload_id_to_url(cls, payload_id, payload_bucket=None):
+        bucket, key = cls.payload_id_to_bucket_key(
+            payload_id,
+            payload_bucket=payload_bucket,
+        )
+        return f"s3://{bucket}/{key}"
+
+    @classmethod
+    def payload_key_to_url(cls, key, payload_bucket=None):
+        return cls.payload_id_to_url(
+            cls.key_to_payload_id(key),
+            payload_bucket=payload_bucket,
+        )
 
     @staticmethod
-    def get_payload_url(payload_id):
-        # TODO: util fn to get env vars or throw exception
-        payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET")
-
-        if not payload_bucket:
-            raise ValueError("env var CIRRUS_PAYLOAD_BUCKET must be defined")
-
-        return f"s3://{PAYLOAD_BUCKET}/{payload_id}/input.json"
-
-    @classmethod
-    def dbitem_to_item(
-        cls, dbitem: Dict, region: str = os.getenv("AWS_REGION", "us-west-2")
-    ) -> Dict:
-        state, updated = dbitem["state_updated"].split("_")
-        collections, workflow = dbitem["collections_workflow"].rsplit("_", maxsplit=1)
-        item = {
-            "payload_id": cls.key_to_payload_id(dbitem),
-            "collections": collections,
-            "workflow": workflow,
-            "items": dbitem["itemids"],
-            "state": state,
-            "created": dbitem["created"],
-            "updated": dbitem["updated"],
-            "payload": cls.get_input_payload_url(dbitem),
-        }
-        if "executions" in dbitem:
-            base_url = f"https://{region}.console.aws.amazon.com/states/home?region={region}#/executions/details/"
-            item["executions"] = [base_url + f"{e}" for e in dbitem["executions"]]
-        if "outputs" in dbitem:
-            item["outputs"] = dbitem["outputs"]
-        if "last_error" in dbitem:
-            item["last_error"] = dbitem["last_error"]
-        return item
-
-    @classmethod
-    def since_to_timedelta(cls, since: str) -> timedelta:
+    def since_to_timedelta(since: str) -> timedelta:
         """Convert a `since` field to a timedelta.
 
         Args:

@@ -1,0 +1,1343 @@
+service: cirrus
+provider:
+  name: aws
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-west-2'}
+  runtime: python3.9
+  vpc:
+    securityGroupIds:
+      - Fn::GetAtt:
+          - pubPrivateVPC
+          - DefaultSecurityGroup
+    subnetIds:
+      - Ref: privateSubnet1
+  environment:
+    CIRRUS_LOG_LEVEL: DEBUG
+    CIRRUS_DATA_BUCKET:
+      Ref: Data
+    CIRRUS_PAYLOAD_BUCKET:
+      Ref: Payloads
+    CIRRUS_STATE_DB:
+      Ref: StateTable
+    CIRRUS_EVENT_DB_AND_TABLE:
+      Ref: StateEventTimestreamTable
+    CIRRUS_STACK:
+      Fn::Sub: ${AWS::StackName}
+    CIRRUS_PROCESS_QUEUE_URL:
+      Ref: ProcessQueue
+    CIRRUS_PUBLISH_TOPIC_ARN:
+      Ref: PublishTopic
+    CIRRUS_FAILED_TOPIC_ARN:
+      Ref: FailedTopic
+    CIRRUS_INVALID_TOPIC_ARN:
+      Ref: FailedTopic
+custom:
+  batch:
+    SecurityGroupIds:
+      - Fn::GetAtt:
+          - pubPrivateVPC
+          - DefaultSecurityGroup
+    Subnets:
+      - Ref: privateSubnet2
+    BasicComputeEnvironments:
+      MaxvCpus: 128
+    LambdaAsBatchJob:
+      Memory: 2048
+      Vcpus: 1
+    GeoLambdaAsBatchJob:
+      Memory: 2048
+      Vcpus: 1
+  pythonRequirements:
+    useStaticCache: false
+    slim: true
+    slimPatternsAppendDefaults: false
+    slimPatterns:
+      - botocore/**
+      - botocore-*/**
+      - boto3/**
+      - boto3-*/**
+      - bin/**
+      - dateutils*
+      - docutils/**
+      - docutils-*/**
+      - numpy/**
+      - numpy-*/**
+      - rasterio/**
+      - rasterio-*/**
+      - six.py
+      - six-*/**
+      - urllib3/**
+      - urllib3-*/**
+      - jmespath/**
+      - jmespath-*/**
+functions:
+  api:
+    memorySize: 128
+    timeout: 10
+    handler: lambda_function.lambda_handler
+    events:
+      - http: GET /
+      - http: GET /{proxy+}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:cirrus*
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:BatchGetItem
+          - dynamodb:DescribeTable
+        Resource:
+          - Fn::GetAtt:
+              - StateTable
+              - Arn
+          - Fn::Join:
+              - ''
+              - - Fn::GetAtt:
+                    - StateTable
+                    - Arn
+                - /index/*
+      - Effect: Allow
+        Action:
+          - timestream:DescribeEndpoints
+        Resource:
+          - '*'
+      - Effect: Allow
+        Action:
+          - timestream:Select
+        Resource:
+          - Fn::GetAtt:
+              - StateEventTimestreamTable
+              - Arn
+    description: Cirrus API
+    environment:
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
+      CIRRUS_STACK:
+        Fn::Sub: ${AWS::StackName}
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
+    package:
+      include:
+        - ./lambdas/api/**
+    module: lambdas/api
+  process:
+    memorySize: 128
+    timeout: 10
+    handler: lambda_function.lambda_handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - ProcessQueue
+              - Arn
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - states:StartExecution
+        Resource:
+          Fn::Sub: arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-*
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:BatchGetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DescribeTable
+        Resource:
+          - Fn::GetAtt:
+              - StateTable
+              - Arn
+          - Fn::Join:
+              - ''
+              - - Fn::GetAtt:
+                    - StateTable
+                    - Arn
+                - /index/*
+      - Effect: Allow
+        Action:
+          - timestream:DescribeEndpoints
+        Resource:
+          - '*'
+      - Effect: Allow
+        Action:
+          - timestream:WriteRecords
+        Resource:
+          - Fn::GetAtt:
+              - StateEventTimestreamTable
+              - Arn
+      - Effect: Allow
+        Action:
+          - sqs:GetQueueUrl
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+        Resource:
+          - Fn::GetAtt:
+              - ProcessQueue
+              - Arn
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:cirrus-creds-*
+    description: Consumes Process Catalogs from queue and invokes workflow
+    environment:
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
+      CIRRUS_STACK:
+        Fn::Sub: ${AWS::StackName}
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_BASE_WORKFLOW_ARN:
+        Fn::Sub: arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-
+    package:
+      include:
+        - ./lambdas/process/**
+    module: lambdas/process
+  update-state:
+    memorySize: 128
+    timeout: 15
+    handler: lambda_function.lambda_handler
+    events:
+      - eventBridge:
+          pattern:
+            source:
+              - aws.states
+            detail-type:
+              - Step Functions Execution Status Change
+            detail:
+              stateMachineArn:
+                - prefix:
+                    Fn::Sub: arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-
+              status:
+                - SUCCEEDED
+                - FAILED
+                - ABORTED
+                - TIMED_OUT
+          deadLetterQueueArn:
+            Fn::GetAtt:
+              - UpdateStateDLQ
+              - Arn
+          retryPolicy:
+            maximumEventAge: 1800
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DescribeTable
+        Resource:
+          - Fn::GetAtt:
+              - StateTable
+              - Arn
+          - Fn::Join:
+              - ''
+              - - Fn::GetAtt:
+                    - StateTable
+                    - Arn
+                - /index/*
+      - Effect: Allow
+        Action:
+          - timestream:DescribeEndpoints
+        Resource:
+          - '*'
+      - Effect: Allow
+        Action:
+          - timestream:WriteRecords
+        Resource:
+          - Fn::GetAtt:
+              - StateEventTimestreamTable
+              - Arn
+      - Effect: Allow
+        Action:
+          - states:GetExecutionHistory
+        Resource:
+          - Fn::Sub: arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${AWS::StackName}-*
+      - Effect: Allow
+        Action:
+          - SNS:Publish
+        Resource:
+          Fn::Sub: arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*
+      - Effect: Allow
+        Action:
+          - sqs:SendMessage
+        Resource:
+          Fn::GetAtt:
+            - ProcessQueue
+            - Arn
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                - '*'
+    description: update the cirrus database with the execution state
+    environment:
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
+      CIRRUS_STACK:
+        Fn::Sub: ${AWS::StackName}
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
+    package:
+      include:
+        - ./lambdas/update-state/**
+    module: lambdas/update-state
+  feed-rerun:
+    memorySize: 128
+    timeout: 900
+    handler: lambda_function.lambda_handler
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - sqs:SendMessage
+        Resource:
+          Fn::GetAtt:
+            - ProcessQueue
+            - Arn
+      - Effect: Allow
+        Action:
+          - batch:SubmitJob
+        Resource:
+          - Ref: GeoLambdaAsBatchJob
+          - Ref: BasicOnDemandJobQueue
+      - Effect: Allow
+        Action:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+        Resource: '*'
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:BatchGetItem
+          - dynamodb:DescribeTable
+        Resource:
+          - Fn::GetAtt:
+              - StateTable
+              - Arn
+          - Fn::Join:
+              - ''
+              - - Fn::GetAtt:
+                    - StateTable
+                    - Arn
+                - /index/*
+    description: Rerun items in the database
+    environment:
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
+      CIRRUS_STACK:
+        Fn::Sub: ${AWS::StackName}
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
+    package:
+      include:
+        - ./lambdas/feed-rerun/**
+    module: lambdas/feed-rerun
+  post-batch:
+    memorySize: 128
+    timeout: 15
+    handler: lambda_function.lambda_handler
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action:
+          - logs:GetLogEvents
+        Resource:
+          - Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/batch/*
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:cirrus-creds-*
+    description: Post process batch job by copying input from S3
+    environment:
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
+      CIRRUS_STACK:
+        Fn::Sub: ${AWS::StackName}
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
+    package:
+      include:
+        - ./lambdas/post-batch/**
+    module: lambdas/post-batch
+  pre-batch:
+    memorySize: 128
+    timeout: 15
+    handler: lambda_function.lambda_handler
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                - '*'
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+        Resource: '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:cirrus-creds-*
+    description: Pre process batch job by copying input to S3
+    environment:
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
+      CIRRUS_STACK:
+        Fn::Sub: ${AWS::StackName}
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
+    package:
+      include:
+        - ./lambdas/pre-batch/**
+    module: lambdas/pre-batch
+  publish:
+    memorySize: 128
+    timeout: 30
+    handler: lambda_function.lambda_handler
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - SNS:Publish
+        Resource:
+          Fn::Sub: arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+        Resource:
+          - Fn::GetAtt:
+              - StateTable
+              - Arn
+          - Fn::Join:
+              - ''
+              - - Fn::GetAtt:
+                    - StateTable
+                    - Arn
+                - /index/*
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+          - s3:GetObject
+          - s3:GetBucketLocation
+          - s3:PutObject
+          - s3:PutObjectAcl
+        Resource: '*'
+      - Effect: Allow
+        Action: secretsmanager:GetSecretValue
+        Resource:
+          - Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:cirrus-creds-*
+    description: Publish resulting STAC Collections and Items to catalog, and optionally
+      SNS
+    environment:
+      CIRRUS_LOG_LEVEL: DEBUG
+      CIRRUS_DATA_BUCKET:
+        Ref: Data
+      CIRRUS_PAYLOAD_BUCKET:
+        Ref: Payloads
+      CIRRUS_STATE_DB:
+        Ref: StateTable
+      CIRRUS_EVENT_DB_AND_TABLE:
+        Ref: StateEventTimestreamTable
+      CIRRUS_STACK:
+        Fn::Sub: ${AWS::StackName}
+      CIRRUS_PROCESS_QUEUE_URL:
+        Ref: ProcessQueue
+      CIRRUS_PUBLISH_TOPIC_ARN:
+        Ref: PublishTopic
+      CIRRUS_FAILED_TOPIC_ARN:
+        Ref: FailedTopic
+      CIRRUS_INVALID_TOPIC_ARN:
+        Ref: FailedTopic
+    package:
+      include:
+        - ./lambdas/publish/**
+    module: lambdas/publish
+stepFunctions:
+  validate: true
+  stateMachines:
+    publish-only:
+      name: ${self:service}-${self:provider.stage}-publish-only
+      definition:
+        Comment: Simple example that just published input Collections and items
+        StartAt: publish
+        States:
+          publish:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - publish
+                - Arn
+            End: true
+            Retry:
+              - ErrorEquals:
+                  - Lambda.TooManyRequestsException
+                  - Lambda.Unknown
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 5
+            Catch:
+              - ErrorEquals:
+                  - States.ALL
+                ResultPath: $.error
+                Next: failure
+          failure:
+            Type: Fail
+resources:
+  Description: Cirrus STAC Processing Framework
+  Resources:
+    BasicOnDemandComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ComputeEnvironmentName:
+          Fn::Sub: ${AWS::StackName}-basic-ondemand
+        ComputeResources:
+          MaxvCpus: ${self:custom.batch.BasicComputeEnvironments.MaxvCpus}
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: EC2
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name:
+              Fn::Sub: Batch Instance - ${AWS::StackName}
+          DesiredvCpus: 0
+        State: ENABLED
+    BasicOnDemandJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: BasicOnDemandComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName:
+          Fn::Sub: ${AWS::StackName}-basic-ondemand
+    BasicSpotComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ComputeEnvironmentName:
+          Fn::Sub: ${AWS::StackName}-basic-spot
+        ComputeResources:
+          MaxvCpus: ${self:custom.batch.BasicComputeEnvironments.MaxvCpus}
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: SPOT
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          SpotIamFleetRole:
+            Fn::GetAtt:
+              - EC2SpotRole
+              - Arn
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name:
+              Fn::Sub: Batch Instance - ${AWS::StackName}
+          DesiredvCpus: 0
+        State: ENABLED
+    BasicSpotJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: BasicSpotComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName:
+          Fn::Sub: ${AWS::StackName}-basic-spot
+    GeoLambdaAsBatchJob:
+      Type: AWS::Batch::JobDefinition
+      Properties:
+        JobDefinitionName:
+          Fn::Sub: ${AWS::StackName}-geolambda-as-batch
+        Type: Container
+        Parameters:
+          lambda_function: ''
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - Ref::lambda_function
+            - Ref::url
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: DEBUG
+            - Name: CIRRUS_DATA_BUCKET
+              Value:
+                Ref: Data
+            - Name: CIRRUS_PAYLOAD_BUCKET
+              Value:
+                Ref: Payloads
+            - Name: CIRRUS_STATE_DB
+              Value:
+                Ref: StateTable
+            - Name: CIRRUS_EVENT_DB_AND_TABLE
+              Value:
+                Ref: StateEventTimestreamTable
+            - Name: CIRRUS_STACK
+              Value:
+                Fn::Sub: ${AWS::StackName}
+            - Name: CIRRUS_PROCESS_QUEUE_URL
+              Value:
+                Ref: ProcessQueue
+            - Name: CIRRUS_PUBLISH_TOPIC_ARN
+              Value:
+                Ref: PublishTopic
+            - Name: CIRRUS_FAILED_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: CIRRUS_INVALID_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: AWS_DEFAULT_REGION
+              Value:
+                Fn::Sub: ${AWS::Region}
+            - Name: AWS_REGION
+              Value:
+                Fn::Sub: ${AWS::Region}
+            - Name: GDAL_DATA
+              Value: /usr/local/share/gdal
+            - Name: PROJ_LIB
+              Value: /usr/local/share/proj
+          Memory: ${self:custom.batch.GeoLambdaAsBatchJob.Memory}
+          Vcpus: ${self:custom.batch.GeoLambdaAsBatchJob.Vcpus}
+          Image: cirrusgeo/run-geolambda:0.2.1
+        RetryStrategy:
+          Attempts: 1
+    LambdaAsBatchJob:
+      Type: AWS::Batch::JobDefinition
+      Properties:
+        JobDefinitionName:
+          Fn::Sub: ${AWS::StackName}-lambda-as-batch
+        Type: Container
+        Parameters:
+          lambda_function: ''
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - Ref::lambda_function
+            - Ref::url
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: DEBUG
+            - Name: CIRRUS_DATA_BUCKET
+              Value:
+                Ref: Data
+            - Name: CIRRUS_PAYLOAD_BUCKET
+              Value:
+                Ref: Payloads
+            - Name: CIRRUS_STATE_DB
+              Value:
+                Ref: StateTable
+            - Name: CIRRUS_EVENT_DB_AND_TABLE
+              Value:
+                Ref: StateEventTimestreamTable
+            - Name: CIRRUS_STACK
+              Value:
+                Fn::Sub: ${AWS::StackName}
+            - Name: CIRRUS_PROCESS_QUEUE_URL
+              Value:
+                Ref: ProcessQueue
+            - Name: CIRRUS_PUBLISH_TOPIC_ARN
+              Value:
+                Ref: PublishTopic
+            - Name: CIRRUS_FAILED_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: CIRRUS_INVALID_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: AWS_DEFAULT_REGION
+              Value:
+                Fn::Sub: ${AWS::Region}
+            - Name: AWS_REGION
+              Value:
+                Fn::Sub: ${AWS::Region}
+          Memory: ${self:custom.batch.LambdaAsBatchJob.Memory}
+          Vcpus: ${self:custom.batch.LambdaAsBatchJob.Vcpus}
+          Image: cirrusgeo/run-lambda:0.2.1
+        RetryStrategy:
+          Attempts: 1
+    PublishTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName:
+          Fn::Sub: ${AWS::StackName}-publish
+    FailedTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName:
+          Fn::Sub: ${AWS::StackName}-failed
+    ProcessQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName:
+          Fn::Sub: ${AWS::StackName}-process
+        VisibilityTimeout: 60
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt:
+              - ProcessDeadLetterQueue
+              - Arn
+          maxReceiveCount: 5
+    ProcessDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName:
+          Fn::Sub: ${AWS::StackName}-process-dead-letter
+    UpdateStateDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName:
+          Fn::Sub: ${AWS::StackName}-update-state-dead-letter
+    StateTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: collections_workflow
+            AttributeType: S
+          - AttributeName: itemids
+            AttributeType: S
+          - AttributeName: state_updated
+            AttributeType: S
+          - AttributeName: updated
+            AttributeType: S
+        KeySchema:
+          - AttributeName: collections_workflow
+            KeyType: HASH
+          - AttributeName: itemids
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: state_updated
+            KeySchema:
+              - AttributeName: collections_workflow
+                KeyType: HASH
+              - AttributeName: state_updated
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: updated
+            KeySchema:
+              - AttributeName: collections_workflow
+                KeyType: HASH
+              - AttributeName: updated
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        TableName:
+          Fn::Sub: ${AWS::StackName}-state
+    StateEventTimestreamDatabase:
+      Type: AWS::Timestream::Database
+      Properties:
+        DatabaseName:
+          Fn::Sub: ${AWS::StackName}-state-events
+    StateEventTimestreamTable:
+      Type: AWS::Timestream::Table
+      DependsOn: StateEventTimestreamDatabase
+      Properties:
+        TableName:
+          Fn::Sub: ${AWS::StackName}-state-events-table
+        DatabaseName:
+          Fn::Sub: ${AWS::StackName}-state-events
+        RetentionProperties:
+          MemoryStoreRetentionPeriodInHours: '24'
+          MagneticStoreRetentionPeriodInDays: '93'
+    BatchJobRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - ecs-tasks.amazonaws.com
+              Action:
+                - sts:AssumeRole
+              Condition:
+                ArnLike:
+                  aws:SourceArn:
+                    Fn::Sub: arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:*
+                StringEquals:
+                  aws:SourceAccount:
+                    Fn::Sub: ${AWS::AccountId}
+        Path: /
+        Policies:
+          - PolicyName: Cirrus
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - s3:PutObject
+                  Resource:
+                    - Fn::Join:
+                        - ''
+                        - - 'arn:aws:s3:::'
+                          - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+                          - '*'
+                    - Fn::Join:
+                        - ''
+                        - - 'arn:aws:s3:::'
+                          - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                          - '*'
+                - Effect: Allow
+                  Action:
+                    - s3:ListBucket
+                    - s3:GetObject
+                    - s3:GetBucketLocation
+                  Resource: '*'
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource:
+                    - Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:cirrus*
+                - Effect: Allow
+                  Action:
+                    - lambda:GetFunction
+                  Resource:
+                    - Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-*
+    BatchInstanceProfile:
+      Type: AWS::IAM::InstanceProfile
+      Properties:
+        Path: /
+        Roles:
+          - Ref: BatchInstanceRole
+    BatchInstanceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - ec2.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        Path: /
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+    EC2SpotRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - spotfleet.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        Path: /
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole
+    Data:
+      Type: AWS::S3::Bucket
+    Payloads:
+      Type: AWS::S3::Bucket
+      Properties:
+        LifecycleConfiguration:
+          Rules:
+            - ExpirationInDays: 10
+              Prefix: batch/
+              Status: Enabled
+            - ExpirationInDays: 10
+              Prefix: payloads/
+              Status: Enabled
+    pubPrivateVPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: 172.31.0.0/16
+        Tags:
+          - Key: Name
+            Value:
+              Ref: AWS::StackName
+    publicSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: pubPrivateVPC
+        AvailabilityZone:
+          Fn::Select:
+            - 0
+            - Fn::GetAZs: ''
+        CidrBlock: 172.31.0.0/24
+        MapPublicIpOnLaunch: true
+        Tags:
+          - Key: Name
+            Value:
+              Fn::Join:
+                - '-'
+                - - Ref: AWS::StackName
+                  - public-subnet
+    privateSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: pubPrivateVPC
+        AvailabilityZone:
+          Fn::Select:
+            - 0
+            - Fn::GetAZs: ''
+        CidrBlock: 172.31.3.0/24
+        MapPublicIpOnLaunch: false
+        Tags:
+          - Key: Name
+            Value:
+              Fn::Join:
+                - '-'
+                - - Ref: AWS::StackName
+                  - private-subnet-a
+    privateSubnet2:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: pubPrivateVPC
+        AvailabilityZone:
+          Fn::Select:
+            - 1
+            - Fn::GetAZs: ''
+        CidrBlock: 172.31.2.0/24
+        MapPublicIpOnLaunch: false
+        Tags:
+          - Key: Name
+            Value:
+              Fn::Join:
+                - '-'
+                - - Ref: AWS::StackName
+                  - private-subnet-b
+    internetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+        Tags:
+          - Key: Name
+            Value:
+              Fn::Join:
+                - '-'
+                - - Ref: AWS::StackName
+                  - gateway
+    gatewayToInternet:
+      Type: AWS::EC2::VPCGatewayAttachment
+      Properties:
+        VpcId:
+          Ref: pubPrivateVPC
+        InternetGatewayId:
+          Ref: internetGateway
+    publicRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          Ref: pubPrivateVPC
+    publicRoute:
+      Type: AWS::EC2::Route
+      DependsOn: gatewayToInternet
+      Properties:
+        RouteTableId:
+          Ref: publicRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId:
+          Ref: internetGateway
+    publicSubnet1RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: publicSubnet1
+        RouteTableId:
+          Ref: publicRouteTable
+    natGateway:
+      Type: AWS::EC2::NatGateway
+      DependsOn: natPublicIP
+      Properties:
+        AllocationId:
+          Fn::GetAtt:
+            - natPublicIP
+            - AllocationId
+        SubnetId:
+          Ref: publicSubnet1
+    natPublicIP:
+      Type: AWS::EC2::EIP
+      DependsOn: pubPrivateVPC
+      Properties:
+        Domain: vpc
+    privateRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          Ref: pubPrivateVPC
+    privateRoute:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId:
+          Ref: privateRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId:
+          Ref: natGateway
+    privateSubnet1RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: privateSubnet1
+        RouteTableId:
+          Ref: privateRouteTable
+    privateSubnet2RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: privateSubnet2
+        RouteTableId:
+          Ref: privateRouteTable
+    s3Endpoint:
+      Type: AWS::EC2::VPCEndpoint
+      Properties:
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action:
+                - s3:*
+              Resource:
+                - '*'
+        RouteTableIds:
+          - Ref: privateRouteTable
+        ServiceName:
+          Fn::Sub: com.amazonaws.${AWS::Region}.s3
+        VpcId:
+          Ref: pubPrivateVPC
+    dynamoDBEndpoint:
+      Type: AWS::EC2::VPCEndpoint
+      Properties:
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action:
+                - dynamodb:*
+              Resource:
+                - '*'
+        RouteTableIds:
+          - Ref: privateRouteTable
+        ServiceName:
+          Fn::Sub: com.amazonaws.${AWS::Region}.dynamodb
+        VpcId:
+          Ref: pubPrivateVPC
+    TestPluginTaskAsBatchJob:
+      Type: AWS::Batch::JobDefinition
+      Properties:
+        JobDefinitionName:
+          Fn::Sub: ${AWS::StackName}-test-plugin-task-as-batch
+        Type: Container
+        Parameters:
+          url: ''
+        ContainerProperties:
+          Command:
+            - run
+            - test-plugin-task
+            - Ref::url
+          Memory: 12000
+          Vcpus: 1
+          Image: cirrusgeo/run-geolambda:0.2.1
+          Environment:
+            - Name: CIRRUS_LOG_LEVEL
+              Value: DEBUG
+            - Name: CIRRUS_DATA_BUCKET
+              Value:
+                Ref: Data
+            - Name: CIRRUS_PAYLOAD_BUCKET
+              Value:
+                Ref: Payloads
+            - Name: CIRRUS_STATE_DB
+              Value:
+                Ref: StateTable
+            - Name: CIRRUS_EVENT_DB_AND_TABLE
+              Value:
+                Ref: StateEventTimestreamTable
+            - Name: CIRRUS_STACK
+              Value:
+                Fn::Sub: ${AWS::StackName}
+            - Name: CIRRUS_PROCESS_QUEUE_URL
+              Value:
+                Ref: ProcessQueue
+            - Name: CIRRUS_PUBLISH_TOPIC_ARN
+              Value:
+                Ref: PublishTopic
+            - Name: CIRRUS_FAILED_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: CIRRUS_INVALID_TOPIC_ARN
+              Value:
+                Ref: FailedTopic
+            - Name: GDAL_DATA
+              Value: /opt/share/gdal
+            - Name: PROJ_LIB
+              Value: /opt/share/proj
+            - Name: AWS_DEFAULT_REGION
+              Value:
+                Fn::Sub: ${AWS::Region}
+            - Name: AWS_REGION
+              Value:
+                Fn::Sub: ${AWS::Region}
+        RetryStrategy:
+          Attempts: 1
+    TestPluginTaskComputeEnvironment:
+      Type: AWS::Batch::ComputeEnvironment
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+          Fn::GetAtt:
+            - BatchServiceRole
+            - Arn
+        ComputeResources:
+          MaxvCpus: 1000
+          SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+          Subnets: ${self:custom.batch.Subnets}
+          InstanceTypes:
+            - optimal
+          Type: SPOT
+          AllocationStrategy: BEST_FIT_PROGRESSIVE
+          SpotIamFleetRole:
+            Fn::GetAtt:
+              - EC2SpotRole
+              - Arn
+          MinvCpus: 0
+          InstanceRole:
+            Fn::GetAtt:
+              - BatchInstanceProfile
+              - Arn
+          Tags:
+            Name:
+              Fn::Sub: Batch Instance - ${AWS::StackName}
+          DesiredvCpus: 0
+        State: ENABLED
+    TestPluginTaskJobQueue:
+      Type: AWS::Batch::JobQueue
+      Properties:
+        ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment:
+              Ref: TestPluginTaskComputeEnvironment
+        State: ENABLED
+        Priority: 1
+        JobQueueName:
+          Fn::Sub: ${AWS::StackName}-test-plugin-task-jq
+  Outputs:
+    CirrusProcessQueue:
+      Value:
+        Ref: ProcessQueue
+    pubPrivateVPCID:
+      Description: VPC ID
+      Value:
+        Ref: pubPrivateVPC
+      Export:
+        Name:
+          Fn::Join:
+            - '-'
+            - - Ref: AWS::StackName
+              - vpc
+    publicSubnet1ID:
+      Description: Public Subnet A ID
+      Value:
+        Ref: publicSubnet1
+      Export:
+        Name:
+          Fn::Join:
+            - '-'
+            - - Ref: AWS::StackName
+              - public-subnet-a
+    privateSubnet1ID:
+      Description: Private Subnet A ID
+      Value:
+        Ref: privateSubnet1
+      Export:
+        Name:
+          Fn::Join:
+            - '-'
+            - - Ref: AWS::StackName
+              - private-subnet-a
+    privateSubnet2ID:
+      Description: Private Subnet B ID
+      Value:
+        Ref: privateSubnet2
+      Export:
+        Name:
+          Fn::Join:
+            - '-'
+            - - Ref: AWS::StackName
+              - private-subnet-b
+    privateVPCSecurityGroup:
+      Description: Default security for Lambda VPC
+      Value:
+        Fn::GetAtt:
+          - pubPrivateVPC
+          - DefaultSecurityGroup
+      Export:
+        Name:
+          Fn::Join:
+            - '-'
+            - - Ref: AWS::StackName
+              - vpc-sg
+package:
+  individually: true
+  exclude:
+    - '**/*'
+plugins:
+  - serverless-python-requirements
+  - serverless-step-functions
+  - serverless-iam-roles-per-function
