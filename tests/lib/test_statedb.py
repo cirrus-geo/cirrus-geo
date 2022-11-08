@@ -69,7 +69,6 @@ def test_since_to_timedelta():
 
 @pytest.fixture
 def state_table(statedb_table_name, eventdb):
-
     _statedb = StateDB(statedb_table_name, eventdb)
     _statedb.set_processing(
         f'{test_item["id"]}_processing',
