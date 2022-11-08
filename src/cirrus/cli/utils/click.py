@@ -29,9 +29,18 @@ def requires_project(func):
 
 class AliasedShortMatchGroup(click.Group):
     def __init__(self, *args, **kwargs):
+        self.aliases = kwargs.pop("aliases", [])
         super().__init__(*args, **kwargs)
         self._alias2cmd = {}
         self._cmd2aliases = {}
+
+    # used by the plugin loader
+    def add_command(self, cmd, *args, **kwargs):
+        super().add_command(cmd, *args, **kwargs)
+        if aliases := getattr(cmd, "aliases", None):
+            self._cmd2aliases[cmd.name] = aliases
+            for alias in aliases:
+                self._alias2cmd[alias] = cmd.name
 
     def command(self, *args, **kwargs):
         return self._register("command", *args, **kwargs)
