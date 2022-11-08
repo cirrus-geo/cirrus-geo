@@ -22,6 +22,10 @@ config = {
             "handlers": ["standard"],
             "level": getenv("CIRRUS_LOG_LEVEL", "DEBUG"),
         },
+        "function": {
+            "handlers": ["standard"],
+            "level": getenv("CIRRUS_LOG_LEVEL", "DEBUG"),
+        },
         "feeder": {
             "handlers": ["standard"],
             "level": getenv("CIRRUS_LOG_LEVEL", "DEBUG"),
