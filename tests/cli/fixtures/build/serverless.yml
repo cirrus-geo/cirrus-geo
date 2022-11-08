@@ -216,8 +216,6 @@ functions:
         Ref: FailedTopic
       CIRRUS_BASE_WORKFLOW_ARN:
         Fn::Sub: arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-
-      CIRRUS_PROCESS_QUEUE:
-        Ref: ProcessQueue
     package:
       include:
         - ./lambdas/process/**
