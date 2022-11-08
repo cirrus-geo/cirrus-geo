@@ -45,6 +45,10 @@ def make_logging_config(level):
                 "handlers": ["cli"],
                 "propagate": False,
             },
+            "cirrus.core": {
+                "handlers": ["cli"],
+                "propagate": False,
+            },
         },
     }
 

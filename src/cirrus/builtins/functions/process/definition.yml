@@ -1,7 +1,6 @@
 description: Consumes Process Catalogs from queue and invokes workflow
 environment:
   CIRRUS_BASE_WORKFLOW_ARN: "arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}-"
-  CIRRUS_PROCESS_QUEUE: !Ref ProcessQueue
 lambda:
   memorySize: 128
   timeout: 10

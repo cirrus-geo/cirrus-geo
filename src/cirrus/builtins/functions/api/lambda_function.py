@@ -11,7 +11,7 @@ from cirrus.lib2.eventdb import EventDB
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.statedb import STATES, StateDB
 
-logger = get_task_logger("lambda_function.api", payload=tuple())
+logger = get_task_logger("function.api", payload=tuple())
 
 # envvars
 DATA_BUCKET = os.getenv("CIRRUS_DATA_BUCKET", None)

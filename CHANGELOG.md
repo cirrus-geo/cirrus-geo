@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - An AWS Timestream timeseries database has been added to track workflow state change events. This env var
   must be added to the cirrus.yml file: `CIRRUS_EVENT_DB_AND_TABLE: !Ref StateEventTimestreamTable`
 
+### Fixed
+
+- CLI warning and error outputs are again colorized ([#193])
+
 ## [v0.8.0] - 2022-11-02
 
 ### ⚠️ Breaking changes
@@ -668,6 +672,7 @@ Initial release
 [#178]: https://github.com/cirrus-geo/cirrus-geo/issues/178
 [#180]: https://github.com/cirrus-geo/cirrus-geo/issues/180
 [#182]: https://github.com/cirrus-geo/cirrus-geo/issues/182
+[#193]: https://github.com/cirrus-geo/cirrus-geo/issues/193
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73

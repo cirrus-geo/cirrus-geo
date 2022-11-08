@@ -9,7 +9,7 @@ from cirrus.lib2.process_payload import ProcessPayload
 from cirrus.lib2.statedb import StateDB
 from cirrus.lib2.utils import batch_handler
 
-logger = get_task_logger("lambda_function.update-state", payload=tuple())
+logger = get_task_logger("function.update-state", payload=tuple())
 
 # envvars
 FAILED_TOPIC_ARN = getenv("CIRRUS_FAILED_TOPIC_ARN", None)
