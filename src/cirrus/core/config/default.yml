@@ -17,6 +17,7 @@ provider:
     CIRRUS_DATA_BUCKET: !Ref Data
     CIRRUS_PAYLOAD_BUCKET: !Ref Payloads
     CIRRUS_STATE_DB: !Ref StateTable
+    CIRRUS_EVENT_DB_AND_TABLE: !Ref StateEventTimestreamTable
     CIRRUS_STACK: "#{AWS::StackName}"
     CIRRUS_PROCESS_QUEUE_URL: !Ref ProcessQueue
     CIRRUS_PUBLISH_TOPIC_ARN: !Ref PublishTopic

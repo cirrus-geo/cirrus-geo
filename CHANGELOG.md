@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### ⚠️ Breaking changes
+
+- An AWS Timestream timeseries database has been added to track workflow state change events. This env var
+  must be added to the cirrus.yml file: `CIRRUS_EVENT_DB_AND_TABLE: !Ref StateEventTimestreamTable`
+
 ## [v0.8.0] - 2022-11-02
 
 ### ⚠️ Breaking changes
