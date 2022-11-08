@@ -25,6 +25,7 @@ def lambda_handler(event, context):
         except Exception:
             logger.exception("Failed to extract record: %s", json.dumps(message))
             failures.append(message)
+            continue
 
         # if the payload has a URL in it then we'll fetch it from S3
         try:
@@ -41,11 +42,12 @@ def lambda_handler(event, context):
                 "Failed to convert to ProcessPayload: %s", json.dumps(payload)
             )
             failures.append(payload)
-        else:
-            payloads.append(payload)
+            continue
+
+        payloads.append(payload)
 
         if is_sqs_message(message):
-            payload_id = payload.get("id", hash(json.dumps(payload)))
+            payload_id = payload["id"]
             try:
                 messages[payload_id].append(message)
             except KeyError:
