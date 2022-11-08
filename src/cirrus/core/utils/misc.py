@@ -20,6 +20,9 @@ def get_cirrus_lib_requirements() -> List[str]:
 
 
 def relative_to(path1: Path, path2: Path) -> Path:
+    # differs from Path.relative_to(), as this impl
+    # figures out how to get between to paths relatively
+    # in cases that path method doesn't handle
     common_path = path1
     relative = ""
     path = path2.resolve()
