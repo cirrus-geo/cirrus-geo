@@ -36,7 +36,7 @@ class EventDB:
         key: Dict[str, str],
         state: StateEnum,
         event_time: str,
-        execution_arn: Optional[str] = None,
+        execution_arn: str,
     ) -> Dict[str, Any]:
         parts = key.get("collections_workflow", "").rsplit("_", 1)
         if not len(parts) == 2:
@@ -52,7 +52,7 @@ class EventDB:
 
         itemids = key.get("itemids")
 
-        if not workflow or not collections or not itemids:
+        if not all((collections, workflow, itemids)):
             logger.error(
                 f"Event could not be recorded, key {key} missing values to populate 'workflow', 'collections' or 'itemids'"
             )
@@ -69,12 +69,12 @@ class EventDB:
                 {"Name": "workflow", "Value": workflow},
                 {"Name": "collections", "Value": collections},
                 {"Name": "item_ids", "Value": itemids},
-                {"Name": "state", "Value": state.value},
+                {"Name": "execution_arn", "Value": execution_arn},
             ],
             "Time": event_time_ms,
             "MeasureValueType": "VARCHAR",
-            "MeasureName": "execution_arn",
-            "MeasureValue": execution_arn if execution_arn else "none",
+            "MeasureName": "execution_state",
+            "MeasureValue": state.value,
         }
 
         try:

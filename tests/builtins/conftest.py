@@ -6,6 +6,8 @@ import moto
 import pytest
 
 from cirrus.core.components import Feeder, Function, Task
+from cirrus.lib2.eventdb import EventDB
+from cirrus.lib2.statedb import StateDB
 
 
 # we do these import shenannigans to ensure we pick up
@@ -66,6 +68,28 @@ def queue(sqs):
 
 
 @pytest.fixture
+def timestream_write_client():
+    with moto.mock_timestreamwrite():
+        yield boto3.client("timestream-write", region_name="us-east-1")
+
+
+@pytest.fixture
+def eventdb(timestream_write_client):
+    timestream_write_client.create_database(DatabaseName="event-db-1")
+    timestream_write_client.create_table(
+        DatabaseName="event-db-1", TableName="event-table-1"
+    )
+    return EventDB("event-db-1|event-table-1")
+
+
+@pytest.fixture
+def statedb(dynamo, statedb_schema, eventdb) -> str:
+    dynamo.create_table(**statedb_schema)
+    table_name = statedb_schema["TableName"]
+    return StateDB(table_name=table_name, eventdb=eventdb)
+
+
+@pytest.fixture
 def workflow(stepfunctions, iam):
     defn = {
         "StartAt": "FirstState",
@@ -100,8 +124,10 @@ def workflow(stepfunctions, iam):
 
 
 @pytest.fixture(autouse=True)
-def env(queue, statedb_table_name, payloads):
+def env(queue, eventdb, statedb, payloads):
     os.environ["CIRRUS_PROCESS_QUEUE_URL"] = queue["QueueUrl"]
-    os.environ["CIRRUS_STATE_DB"] = statedb_table_name
-    os.environ["CIRRUS_EVENT_DB_AND_TABLE"] = "event-db-1|event-table-1"
+    os.environ["CIRRUS_STATE_DB"] = statedb.table_name
+    os.environ[
+        "CIRRUS_EVENT_DB_AND_TABLE"
+    ] = f"{eventdb.event_db_name}|{eventdb.event_table_name}"
     os.environ["CIRRUS_PAYLOAD_BUCKET"] = payloads

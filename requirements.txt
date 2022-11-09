@@ -5,6 +5,6 @@ rich~=10.6
 cfn-flip~=1.2
 cirrus-lib~=0.8.1
 boto3-utils~=0.3.3
-boto3
+boto3>=1.26.0
 python-json-logger~=2.0
 jsonpath-ng>=1.5.3

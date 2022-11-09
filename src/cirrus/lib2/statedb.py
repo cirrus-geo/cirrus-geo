@@ -256,7 +256,7 @@ class StateDB:
         logger.debug("Claimed processing", extra=key)
         return response
 
-    def set_processing(self, payload_id: str, execution: str) -> Dict[str, Any]:
+    def set_processing(self, payload_id: str, execution_arn: str) -> Dict[str, Any]:
         """Adds execution to existing item or creates new"""
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
@@ -275,17 +275,17 @@ class StateDB:
                 ":state_updated": f"PROCESSING_{now}",
                 ":updated": now,
                 ":empty_list": [],
-                ":exes": [execution],
+                ":exes": [execution_arn],
             },
         )
-        logger.debug("Add execution", extra=key.update({"execution": execution}))
+        logger.debug("Add execution", extra=key.update({"execution": execution_arn}))
 
-        self.write_timeseries_record(key, StateEnum.PROCESSING, now, execution)
+        self.write_timeseries_record(key, StateEnum.PROCESSING, now, execution_arn)
 
         return response
 
     def set_outputs(self, payload_id: str, outputs: List[str]) -> str:
-        """Set this item as COMPLETED
+        """Set this item's outputs
 
         Args:
             payload_id (str): The Cirrus Payload
@@ -316,7 +316,10 @@ class StateDB:
         return response
 
     def set_completed(
-        self, payload_id: str, outputs: Optional[List[str]] = None
+        self,
+        payload_id: str,
+        outputs: Optional[List[str]] = None,
+        execution_arn: Optional[str] = None,
     ) -> str:
         """Set this item as COMPLETED
 
@@ -352,11 +355,12 @@ class StateDB:
         )
         logger.debug("set completed", extra=key.update({"outputs": outputs}))
 
-        self.write_timeseries_record(key, StateEnum.COMPLETED, now)
+        if execution_arn:
+            self.write_timeseries_record(key, StateEnum.COMPLETED, now, execution_arn)
 
         return response
 
-    def set_failed(self, payload_id, msg):
+    def set_failed(self, payload_id, msg, execution_arn: Optional[str] = None):
         """Adds new item as failed"""
         """ Adds new item with state function execution """
         now = datetime.now(timezone.utc).isoformat()
@@ -380,11 +384,14 @@ class StateDB:
         )
         logger.debug("set failed", extra=key.update({"last_error": msg}))
 
-        self.write_timeseries_record(key, StateEnum.FAILED, now)
+        if execution_arn:
+            self.write_timeseries_record(key, StateEnum.FAILED, now, execution_arn)
 
         return response
 
-    def set_invalid(self, payload_id: str, msg: str) -> str:
+    def set_invalid(
+        self, payload_id: str, msg: str, execution_arn: Optional[str] = None
+    ) -> str:
         """Set this item as INVALID
 
         Args:
@@ -415,11 +422,12 @@ class StateDB:
         )
         logger.debug("set invalid", extra=key.update({"last_error": msg}))
 
-        self.write_timeseries_record(key, StateEnum.INVALID, now)
+        if execution_arn:
+            self.write_timeseries_record(key, StateEnum.INVALID, now, execution_arn)
 
         return response
 
-    def set_aborted(self, payload_id: str) -> str:
+    def set_aborted(self, payload_id: str, execution_arn: Optional[str] = None) -> str:
         """Set this item as ABORTED
 
         Args:
@@ -448,7 +456,8 @@ class StateDB:
 
         logger.debug("set aborted")
 
-        self.write_timeseries_record(key, StateEnum.ABORTED, now)
+        if execution_arn:
+            self.write_timeseries_record(key, StateEnum.ABORTED, now, execution_arn)
 
         return response
 
@@ -631,7 +640,7 @@ class StateDB:
         key: Dict[str, str],
         state: StateEnum,
         event_time: str,
-        execution_arn: Optional[str] = None,
+        execution_arn: str,
     ) -> None:
         if self.eventdb:
             self.eventdb.write_timeseries_record(key, state, event_time, execution_arn)
