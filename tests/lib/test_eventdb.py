@@ -20,22 +20,19 @@ def test_writing_record(eventdb, event_kwargs):
     assert response.get("RecordsIngested", {}).get("Total") == 1
 
 
-def test_writing_record_no_arn(eventdb, event_kwargs):
-    event_kwargs["execution_arn"] = None
-    response = eventdb.write_timeseries_record(**event_kwargs)
-    assert response.get("RecordsIngested", {}).get("Total") == 1
-
-
 def test_writing_record_no_collections_workflow(eventdb, event_kwargs):
     event_kwargs["key"].pop("collections_workflow")
-    assert not eventdb.write_timeseries_record(**event_kwargs)
+    with pytest.raises(ValueError):
+        eventdb.write_timeseries_record(**event_kwargs)
 
 
 def test_writing_record_no_itemids(eventdb, event_kwargs):
     event_kwargs["key"].pop("itemids")
-    assert not eventdb.write_timeseries_record(**event_kwargs)
+    with pytest.raises(ValueError):
+        eventdb.write_timeseries_record(**event_kwargs)
 
 
 def test_writing_record_invalid_datetime(eventdb, event_kwargs):
     event_kwargs["event_time"] = "xxxxxx"
-    assert not eventdb.write_timeseries_record(**event_kwargs)
+    with pytest.raises(ValueError):
+        eventdb.write_timeseries_record(**event_kwargs)

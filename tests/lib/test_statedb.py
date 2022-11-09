@@ -104,7 +104,7 @@ def test_get_items(state_table):
 
 def test_get_items_bulk(state_table):
     _count = 25
-    create_items_bulk(_count, state_table.set_processing, execution="arn::test")
+    create_items_bulk(_count, state_table.set_processing, execution_arn="arn::test")
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
@@ -124,7 +124,7 @@ def test_get_items_limit_1(state_table):
 
 
 def test_get_items_limit_1_bulk(state_table):
-    create_items_bulk(20, state_table.set_processing, execution="arn::test")
+    create_items_bulk(20, state_table.set_processing, execution_arn="arn::test")
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
@@ -173,7 +173,7 @@ def test_get_dbitem_noitem(state_table):
 
 def test_get_dbitems(state_table):
     count = 5
-    create_items_bulk(count, state_table.set_processing, execution="arn::test")
+    create_items_bulk(count, state_table.set_processing, execution_arn="arn::test")
     ids = [test_item["id"] + str(i) for i in range(count)]
     dbitems = state_table.get_dbitems(ids)
     assert len(dbitems) == len(ids)
@@ -183,7 +183,7 @@ def test_get_dbitems(state_table):
 
 def test_get_dbitems_duplicates(state_table):
     count = 5
-    create_items_bulk(count, state_table.set_processing, execution="arn::test")
+    create_items_bulk(count, state_table.set_processing, execution_arn="arn::test")
     ids = [test_item["id"] + str(i) for i in range(count)]
     ids.append(ids[0])
     dbitems = state_table.get_dbitems(ids)
@@ -213,7 +213,7 @@ def test_get_states(state_table):
 
 def test_get_counts(state_table):
     _count = 3
-    create_items_bulk(_count, state_table.set_processing, execution="arn::test")
+    create_items_bulk(_count, state_table.set_processing, execution_arn="arn::test")
     count = state_table.get_counts(test_dbitem["collections_workflow"])
     assert count == _count + len(STATES)
     for s in STATES:
@@ -289,7 +289,7 @@ def test_get_counts_since_state(state_table):
 
 
 def test_set_processing(state_table):
-    resp = state_table.set_processing(test_item["id"], execution="arn::test1")
+    resp = state_table.set_processing(test_item["id"], execution_arn="arn::test1")
     assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
     dbitem = state_table.get_dbitem(test_item["id"])
     assert StateDB.key_to_payload_id(dbitem) == test_item["id"]
@@ -298,8 +298,8 @@ def test_set_processing(state_table):
 
 def test_second_execution(state_table):
     # check that processing adds new execution to list
-    state_table.set_processing(test_item["id"], execution="arn::test1")
-    state_table.set_processing(test_item["id"], execution="arn::test2")
+    state_table.set_processing(test_item["id"], execution_arn="arn::test1")
+    state_table.set_processing(test_item["id"], execution_arn="arn::test2")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert len(dbitem["executions"]) == 2
     assert dbitem["executions"][-1] == "arn::test2"
