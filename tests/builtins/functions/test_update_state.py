@@ -49,7 +49,6 @@ def test_success(event, statedb):
 
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
     assert len(items) == 1
-    print(items)
     assert items[0]["state_updated"].startswith("COMPLETED")
 
 
@@ -59,7 +58,6 @@ def test_failed(event, statedb):
 
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
     assert len(items) == 1
-    print(items)
     assert items[0]["state_updated"].startswith("FAILED")
 
 
@@ -69,7 +67,6 @@ def test_timed_out(event, statedb):
 
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
     assert len(items) == 1
-    print(items)
     assert items[0]["state_updated"].startswith("FAILED")
 
 
@@ -79,7 +76,6 @@ def test_aborted(event, statedb):
 
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
     assert len(items) == 1
-    print(items)
     assert items[0]["state_updated"].startswith("ABORTED")
 
 

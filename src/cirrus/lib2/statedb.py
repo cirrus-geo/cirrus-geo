@@ -91,7 +91,7 @@ class StateDB:
             resp = self.db.meta.client.batch_get_item(
                 RequestItems={
                     self.table_name: {
-                        "Keys": [self.payload_id_to_key(id) for id in set(payload_ids)]
+                        "Keys": [self.payload_id_to_key(x) for x in set(payload_ids)]
                     }
                 }
             )
@@ -326,6 +326,7 @@ class StateDB:
         Args:
             payload_id (str): The Cirrus Payload
             outputs (Optional[[str]], optional): List of URLs to output Items. Defaults to None.
+            execution_arn (Optional[str]): The Step Function execution ARN.
 
         Returns:
             str: DynamoDB response
@@ -397,6 +398,7 @@ class StateDB:
         Args:
             payload_id (str): The Cirrus Payload
             msg (str): An error message to include in DynamoDB Item
+            execution_arn (Optional[str]): The Step Function execution ARN.
 
         Returns:
             str: DynamoDB response
@@ -432,6 +434,7 @@ class StateDB:
 
         Args:
             payload_id (str): The Cirrus Payload
+            execution_arn (Optional[str]): The Step Function execution ARN.
 
         Returns:
             str: DynamoDB response

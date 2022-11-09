@@ -6,8 +6,6 @@ import moto
 import pytest
 
 from cirrus.core.components import Feeder, Function, Task
-from cirrus.lib2.eventdb import EventDB
-from cirrus.lib2.statedb import StateDB
 
 
 # we do these import shenannigans to ensure we pick up
@@ -65,28 +63,6 @@ def queue(sqs):
     q = sqs.create_queue(QueueName="test-queue")
     q["Arn"] = "arn:aws:sqs:us-east-1:123456789012:test-queue"
     return q
-
-
-@pytest.fixture
-def timestream_write_client():
-    with moto.mock_timestreamwrite():
-        yield boto3.client("timestream-write", region_name="us-east-1")
-
-
-@pytest.fixture
-def eventdb(timestream_write_client):
-    timestream_write_client.create_database(DatabaseName="event-db-1")
-    timestream_write_client.create_table(
-        DatabaseName="event-db-1", TableName="event-table-1"
-    )
-    return EventDB("event-db-1|event-table-1")
-
-
-@pytest.fixture
-def statedb(dynamo, statedb_schema, eventdb) -> str:
-    dynamo.create_table(**statedb_schema)
-    table_name = statedb_schema["TableName"]
-    return StateDB(table_name=table_name, eventdb=eventdb)
 
 
 @pytest.fixture

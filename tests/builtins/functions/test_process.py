@@ -4,7 +4,6 @@ import os
 
 import pytest
 
-from cirrus.lib2.statedb import StateDB
 from cirrus.test import run_function
 
 
@@ -84,7 +83,6 @@ def test_single_payload(payload, stepfunctions, workflow, statedb):
     # matches our input payload, and it is PROCESSING
     items = statedb.get_dbitems(payload_ids=[payload["id"]])
     assert len(items) == 1
-    print(items)
     assert items[0]["state_updated"].startswith("PROCESSING")
 
 
