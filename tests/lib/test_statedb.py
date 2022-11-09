@@ -23,7 +23,7 @@ test_item = {
 
 
 # use a low limit to force paging
-StateDB.limit = 10
+RECORD_LIMIT = 10
 
 
 def create_items_bulk(item_count, fn, **kwargs):
@@ -68,29 +68,29 @@ def test_since_to_timedelta():
 
 
 @pytest.fixture
-def state_table(statedb_table_name, eventdb):
-    _statedb = StateDB(statedb_table_name, eventdb)
-    _statedb.set_processing(
+def state_table(statedb):
+    statedb.limit = RECORD_LIMIT
+    statedb.set_processing(
         f'{test_item["id"]}_processing',
-        execution="arn::test",
+        execution_arn="arn::test",
     )
-    _statedb.set_completed(
+    statedb.set_completed(
         f'{test_item["id"]}_completed',
         outputs=["item1", "item2"],
     )
-    _statedb.set_failed(
+    statedb.set_failed(
         f'{test_item["id"]}_failed',
         "failed",
     )
-    _statedb.set_invalid(
+    statedb.set_invalid(
         f'{test_item["id"]}_invalid',
         "invalid",
     )
-    _statedb.set_aborted(
+    statedb.set_aborted(
         f'{test_item["id"]}_aborted',
     )
-    yield _statedb
-    _statedb.delete()
+    yield statedb
+    statedb.delete()
 
 
 def test_get_items(state_table):

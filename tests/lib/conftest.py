@@ -4,6 +4,7 @@ import pytest
 from boto3utils import s3
 
 from cirrus.lib2.eventdb import EventDB
+from cirrus.lib2.statedb import StateDB
 
 
 @pytest.fixture
@@ -25,12 +26,6 @@ def dynamo():
 
 
 @pytest.fixture
-def statedb(dynamo, statedb_schema):
-    dynamo.create_table(**statedb_schema)
-    return statedb_schema["TableName"]
-
-
-@pytest.fixture
 def timestream_write_client():
     with moto.mock_timestreamwrite():
         yield boto3.client("timestream-write", region_name="us-east-1")
@@ -43,3 +38,10 @@ def eventdb(timestream_write_client):
         DatabaseName="event-db-1", TableName="event-table-1"
     )
     return EventDB("event-db-1|event-table-1")
+
+
+@pytest.fixture
+def statedb(dynamo, statedb_schema, eventdb) -> str:
+    dynamo.create_table(**statedb_schema)
+    table_name = statedb_schema["TableName"]
+    return StateDB(table_name=table_name, eventdb=eventdb)
