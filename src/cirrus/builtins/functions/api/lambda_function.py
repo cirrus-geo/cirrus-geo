@@ -77,10 +77,10 @@ def get_root(root_url):
 def get_stats(_eventdb: EventDB) -> Optional[Dict[str, Any]]:
     logger.debug("Get stats")
 
-    if daily_results := _eventdb.query_by_bin_and_duration("1d", "60d"):
+    if _eventdb.enabled():
         return {
             "state_transitions": {
-                "daily": daily(daily_results),
+                "daily": daily(_eventdb.query_by_bin_and_duration("1d", "60d")),
                 "hourly": hourly(_eventdb.query_by_bin_and_duration("1h", "36h")),
                 "hourly_rolling": hourly(
                     _eventdb.query_hour(1, 0), _eventdb.query_hour(2, 1)

@@ -38,8 +38,12 @@ def test_hourly_results(env, fixtures):
 
 
 class MockEventDB:
-    def __init__(self, fixtures):
+    def __init__(self, fixtures, enabled: bool = True):
         self.fixtures = fixtures
+        self._enabled = enabled
+
+    def enabled(self):
+        return self._enabled
 
     def query_by_bin_and_duration(self, x, y):
         if x == "1d":
@@ -72,3 +76,12 @@ def test_api_stats_output(fixtures):
         }
     }
     assert actual_result == expected_result
+
+
+def test_api_stats_output_when_not_enabled(fixtures):
+    assert (
+        cirrus.builtins.functions.api.lambda_function.get_stats(
+            MockEventDB(fixtures, enabled=False)
+        )
+        is None
+    )

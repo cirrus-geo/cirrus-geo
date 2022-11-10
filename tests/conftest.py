@@ -58,7 +58,7 @@ def timestream_write_client():
 
 
 @pytest.fixture
-def eventdb(timestream_write_client):
+def eventdb(timestream_write_client) -> EventDB:
     timestream_write_client.create_database(DatabaseName="event-db-1")
     timestream_write_client.create_table(
         DatabaseName="event-db-1", TableName="event-table-1"

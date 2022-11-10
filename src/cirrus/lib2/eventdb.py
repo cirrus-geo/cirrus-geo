@@ -41,6 +41,9 @@ class EventDB:
             self.event_db_name = None
             self.event_table_name = None
 
+    def enabled(self) -> bool:
+        return bool(self.event_db_name and self.event_table_name)
+
     def write_timeseries_record(
         self,
         key: Dict[str, str],
@@ -48,7 +51,7 @@ class EventDB:
         event_time: str,
         execution_arn: str,
     ) -> Optional[Dict[str, Any]]:
-        if not self.event_db_name:
+        if not self.enabled():
             return None
 
         parts = key.get("collections_workflow", "").rsplit("_", 1)
@@ -115,17 +118,23 @@ class EventDB:
             logger.error(f"For {key} Error: {err}")
             raise err
 
+    @staticmethod
     def _mk_query_by_bin_and_duration(
-        self, bin_size: str, duration: str
+        bin_size: str,
+        duration: str,
+        event_db_name: Optional[str],
+        event_table_name: Optional[str],
     ) -> Optional[str]:
         """bin_size is like '1d' '1h'
         duration is like '356d' '60d'
         """
-        if self.event_db_name and self.event_table_name:
+        if not event_db_name or not event_table_name:
+            return None
+        else:
             return f"""
                 WITH data AS (
                     SELECT BIN(time, {bin_size}) as t, measure_value::varchar as state, item_ids, count(*) as count
-                    FROM "{self.event_db_name}"."{self.event_table_name}"
+                    FROM "{event_db_name}"."{event_table_name}"
                     WHERE measure_name = 'state' AND time BETWEEN ago({duration}) AND now()
                     GROUP BY BIN(time, {bin_size}), measure_value::varchar, item_ids
                     )
@@ -134,15 +143,21 @@ class EventDB:
                 GROUP BY t, state
                 ORDER BY t, state
             """
-        else:
-            return None
 
-    def _mk_hour_query(self, start: int, end: int) -> Optional[str]:
-        if self.event_db_name and self.event_table_name:
+    @staticmethod
+    def _mk_hour_query(
+        start: int,
+        end: int,
+        event_db_name: Optional[str],
+        event_table_name: Optional[str],
+    ) -> Optional[str]:
+        if not event_db_name or not event_table_name:
+            return None
+        else:
             return f"""
                 WITH data AS (
                     SELECT ago({start}h) as t, measure_value::varchar as state, item_ids, count(*) as count
-                    FROM "{self.event_db_name}"."{self.event_table_name}"
+                    FROM "{event_db_name}"."{event_table_name}"
                     WHERE measure_name = 'state' AND time BETWEEN ago({start}h) AND ago({end}h)
                     GROUP BY measure_value::varchar, item_ids
                 )
@@ -151,19 +166,20 @@ class EventDB:
                 GROUP BY t, state
                 ORDER BY t, state
             """
-        else:
-            return None
 
     def _query(self, q: Optional[str]) -> Optional[Dict[str, Any]]:
-        if not q:
-            return None
-        else:
-            return self.tsq_client.query(QueryString=q)
+        return self.tsq_client.query(QueryString=q) if self.enabled() and q else None
 
     def query_hour(self, start: int, end: int) -> Optional[Dict[str, Any]]:
-        return self._query(self._mk_hour_query(start, end))
+        return self._query(
+            self._mk_hour_query(start, end, self.event_db_name, self.event_table_name)
+        )
 
     def query_by_bin_and_duration(
         self, bin_size: str, duration: str
     ) -> Optional[Dict[str, Any]]:
-        return self._query(self._mk_query_by_bin_and_duration(bin_size, duration))
+        return self._query(
+            self._mk_query_by_bin_and_duration(
+                bin_size, duration, self.event_db_name, self.event_table_name
+            )
+        )
