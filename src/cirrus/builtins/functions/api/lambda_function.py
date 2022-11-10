@@ -194,11 +194,15 @@ def lambda_handler(event, _context):
         return response(get_root(root_url))
 
     if payload_id == "stats":
-        stats = get_stats(eventdb)
-        if not stats:
-            response("", 404)
-        else:
+        if stats := get_stats(eventdb):
             return response(stats)
+        else:
+            return response(
+                {
+                    "error": "Endpoint /stats is not enabled because timeseries database is not configured"
+                },
+                404,
+            )
 
     if "/workflow-" not in payload_id:
         return response(f"{path} not found", status_code=400)
