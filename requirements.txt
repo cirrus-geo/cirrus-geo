@@ -8,3 +8,4 @@ boto3-utils~=0.3.3
 boto3>=1.26.0
 python-json-logger~=2.0
 jsonpath-ng>=1.5.3
+python-dateutil~=2.8.2
