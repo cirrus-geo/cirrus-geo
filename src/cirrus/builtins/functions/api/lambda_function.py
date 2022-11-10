@@ -1,10 +1,13 @@
 import json
 import os
+from collections import defaultdict
 from copy import deepcopy
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
 from boto3utils import s3
 
+from cirrus.lib2.eventdb import EventDB
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.statedb import STATES, StateDB
 
@@ -15,13 +18,22 @@ DATA_BUCKET = os.getenv("CIRRUS_DATA_BUCKET", None)
 
 # Cirrus state database
 statedb = StateDB()
+eventdb = EventDB()
 
 
-def response(body, status_code=200, headers={}):
-    _headers = deepcopy(headers)
-    # cors
+def response(
+    body: Union[str, Dict[str, Any]],
+    status_code: int = 200,
+    headers: Optional[Dict[str, str]] = None,
+):
+    if headers is None:
+        _headers = {}
+    else:
+        _headers = deepcopy(headers)
+
+    # CORS headers
     _headers.update(
-        {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Credentials": True}
+        {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Credentials": "true"}
     )
     return {"statusCode": status_code, "headers": _headers, "body": json.dumps(body)}
 
@@ -62,6 +74,62 @@ def get_root(root_url):
     return root
 
 
+def get_stats(_eventdb: EventDB) -> Optional[Dict[str, Any]]:
+    logger.debug("Get stats")
+
+    if _eventdb.enabled():
+        return {
+            "state_transitions": {
+                "daily": daily(_eventdb.query_by_bin_and_duration("1d", "60d")),
+                "hourly": hourly(_eventdb.query_by_bin_and_duration("1h", "36h")),
+                "hourly_rolling": hourly(
+                    _eventdb.query_hour(1, 0), _eventdb.query_hour(2, 1)
+                ),
+            }
+        }
+    else:
+        return None
+
+
+def _results_transform(
+    results: Dict[str, Any], timestamp_function: Callable[[str], str], interval: str
+) -> List[Dict[str, Any]]:
+    intervals: Dict[str, Dict[str, Tuple[int, int]]] = defaultdict(dict)
+
+    for row in results["Rows"]:
+        ts = timestamp_function(row["Data"][0]["ScalarValue"])
+        state = row["Data"][1]["ScalarValue"]
+        unique_count = int(row["Data"][2]["ScalarValue"])
+        total_count = int(row["Data"][3]["ScalarValue"])
+        intervals[ts][state] = (unique_count, total_count)
+
+    return [
+        {
+            "period": ts,
+            "interval": interval,
+            "states": [
+                {"state": state, "unique_count": state_val[0], "count": state_val[1]}
+                for state in STATES
+                if (state_val := states.get(state, (0, 0)))
+            ],
+        }
+        for ts, states in intervals.items()
+    ]
+
+
+def daily(results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return _results_transform(results, lambda x: x.split(" ")[0], "day")
+
+
+def hourly(r1: Dict[str, Any], *rs: Dict[str, Any]) -> List[Dict[str, Any]]:
+    combined_results = deepcopy(r1)
+    for result in rs:
+        combined_results["Rows"].extend(result.get("Rows", []))
+    return _results_transform(
+        combined_results, lambda x: x.replace(" ", "T").split(".")[0] + "Z", "hour"
+    )
+
+
 def summary(collections_workflow, since, limit):
     parts = collections_workflow.rsplit("_", maxsplit=1)
     logger.debug("Getting summary for %s", collections_workflow)
@@ -76,11 +144,12 @@ def summary(collections_workflow, since, limit):
     return {"collections": parts[0], "workflow": parts[1], "counts": counts}
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
     logger.debug("Event: %s", json.dumps(event))
 
     # get request URL
     domain = event.get("requestContext", {}).get("domainName", "")
+    path = None
     if domain != "":
         path = event.get("requestContext", {}).get("path", "")
         root_url = f"https://{domain}{path}/"
@@ -123,6 +192,17 @@ def lambda_handler(event, context):
     # root endpoint
     if payload_id == "":
         return response(get_root(root_url))
+
+    if payload_id == "stats":
+        if stats := get_stats(eventdb):
+            return response(stats)
+        else:
+            return response(
+                {
+                    "error": "Endpoint /stats is not enabled because timeseries database is not configured"
+                },
+                404,
+            )
 
     if "/workflow-" not in payload_id:
         return response(f"{path} not found", status_code=400)

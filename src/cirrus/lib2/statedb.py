@@ -1,10 +1,12 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import boto3
 from boto3.dynamodb.conditions import Attr, Key
+
+from .eventdb import EventDB, StateEnum
 
 # envvars
 PAYLOAD_BUCKET = os.getenv("CIRRUS_PAYLOAD_BUCKET")
@@ -18,7 +20,9 @@ logger = logging.getLogger(__name__)
 class StateDB:
     limit = None
 
-    def __init__(self, table_name: str = None):
+    def __init__(
+        self, table_name: Optional[str] = None, eventdb: Optional[EventDB] = None
+    ):
         """Initialize a StateDB instance using the Cirrus State DB table
 
         Args:
@@ -33,6 +37,11 @@ class StateDB:
         self.db = boto3.resource("dynamodb")
         self.table_name = table_name
         self.table = self.db.Table(table_name)
+
+        if eventdb:
+            self.eventdb = eventdb
+        else:
+            self.eventdb = EventDB()
 
     def delete_item(self, payload_id: str):
         key = self.payload_id_to_key(payload_id)
@@ -82,7 +91,7 @@ class StateDB:
             resp = self.db.meta.client.batch_get_item(
                 RequestItems={
                     self.table_name: {
-                        "Keys": [self.payload_id_to_key(id) for id in set(payload_ids)]
+                        "Keys": [self.payload_id_to_key(x) for x in set(payload_ids)]
                     }
                 }
             )
@@ -115,9 +124,8 @@ class StateDB:
         query_kwargs["collections_workflow"] = collections_workflow
         query_kwargs["select"] = "COUNT"
 
-        counts = 0
         resp = self.query(**query_kwargs)
-        counts = resp["Count"]
+        counts = resp.get("Count", 0)
 
         while "LastEvaluatedKey" in resp and (not limit or counts <= limit):
             query_kwargs["ExclusiveStartKey"] = resp["LastEvaluatedKey"]
@@ -135,7 +143,7 @@ class StateDB:
         limit=100,
         nextkey: str = None,
         **kwargs,
-    ) -> List[Dict]:
+    ) -> Dict[str, Any]:
         """Get Items by query
 
         Args:
@@ -148,7 +156,7 @@ class StateDB:
         Returns:
             Dict: List of Items
         """
-        items = {"items": []}
+        items: Dict[str, Any] = {"items": []}
         kwargs.update(
             {
                 "collections_workflow": collections_workflow,
@@ -199,10 +207,8 @@ class StateDB:
 
     def get_state(self, payload_id: str) -> str:
         """Get current state of Item
-
         Args:
             payload_id (str): The Payload ID
-
         Returns:
             str: Current state: PROCESSING, COMPLETED, FAILED, INVALID, ABORTED
         """
@@ -215,10 +221,8 @@ class StateDB:
 
     def get_states(self, payload_ids: List[str]) -> Dict[str, str]:
         """Get current state of items
-
         Args:
             payload_ids (List[str]): List of Payload IDs
-
         Returns:
             Dict[str, str]: Dictionary of Payload IDs to state
         """
@@ -252,7 +256,7 @@ class StateDB:
         logger.debug("Claimed processing", extra=key)
         return response
 
-    def set_processing(self, payload_id, execution):
+    def set_processing(self, payload_id: str, execution_arn: str) -> Dict[str, Any]:
         """Adds execution to existing item or creates new"""
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
@@ -271,14 +275,17 @@ class StateDB:
                 ":state_updated": f"PROCESSING_{now}",
                 ":updated": now,
                 ":empty_list": [],
-                ":exes": [execution],
+                ":exes": [execution_arn],
             },
         )
-        logger.debug("Add execution", extra=key.update({"execution": execution}))
+        logger.debug("Add execution", extra=key.update({"execution": execution_arn}))
+
+        self.write_timeseries_record(key, StateEnum.PROCESSING, now, execution_arn)
+
         return response
 
     def set_outputs(self, payload_id: str, outputs: List[str]) -> str:
-        """Set this item as COMPLETED
+        """Set this item's outputs
 
         Args:
             payload_id (str): The Cirrus Payload
@@ -309,13 +316,17 @@ class StateDB:
         return response
 
     def set_completed(
-        self, payload_id: str, outputs: Optional[List[str]] = None
+        self,
+        payload_id: str,
+        outputs: Optional[List[str]] = None,
+        execution_arn: Optional[str] = None,
     ) -> str:
         """Set this item as COMPLETED
 
         Args:
             payload_id (str): The Cirrus Payload
             outputs (Optional[[str]], optional): List of URLs to output Items. Defaults to None.
+            execution_arn (Optional[str]): The Step Function execution ARN.
 
         Returns:
             str: DynamoDB response
@@ -343,10 +354,14 @@ class StateDB:
             UpdateExpression=expr,
             ExpressionAttributeValues=expr_attrs,
         )
-        logger.debug("set outputs", extra=key.update({"outputs": outputs}))
+        logger.debug("set completed", extra=key.update({"outputs": outputs}))
+
+        if execution_arn:
+            self.write_timeseries_record(key, StateEnum.COMPLETED, now, execution_arn)
+
         return response
 
-    def set_failed(self, payload_id, msg):
+    def set_failed(self, payload_id, msg, execution_arn: Optional[str] = None):
         """Adds new item as failed"""
         """ Adds new item with state function execution """
         now = datetime.now(timezone.utc).isoformat()
@@ -369,14 +384,21 @@ class StateDB:
             },
         )
         logger.debug("set failed", extra=key.update({"last_error": msg}))
+
+        if execution_arn:
+            self.write_timeseries_record(key, StateEnum.FAILED, now, execution_arn)
+
         return response
 
-    def set_invalid(self, payload_id: str, msg: str) -> str:
+    def set_invalid(
+        self, payload_id: str, msg: str, execution_arn: Optional[str] = None
+    ) -> str:
         """Set this item as INVALID
 
         Args:
             payload_id (str): The Cirrus Payload
             msg (str): An error message to include in DynamoDB Item
+            execution_arn (Optional[str]): The Step Function execution ARN.
 
         Returns:
             str: DynamoDB response
@@ -401,13 +423,18 @@ class StateDB:
             },
         )
         logger.debug("set invalid", extra=key.update({"last_error": msg}))
+
+        if execution_arn:
+            self.write_timeseries_record(key, StateEnum.INVALID, now, execution_arn)
+
         return response
 
-    def set_aborted(self, payload_id: str) -> str:
+    def set_aborted(self, payload_id: str, execution_arn: Optional[str] = None) -> str:
         """Set this item as ABORTED
 
         Args:
             payload_id (str): The Cirrus Payload
+            execution_arn (Optional[str]): The Step Function execution ARN.
 
         Returns:
             str: DynamoDB response
@@ -429,7 +456,12 @@ class StateDB:
                 ":updated": now,
             },
         )
+
         logger.debug("set aborted")
+
+        if execution_arn:
+            self.write_timeseries_record(key, StateEnum.ABORTED, now, execution_arn)
+
         return response
 
     def query(
@@ -605,3 +637,13 @@ class StateDB:
         hours = int(since[0:-1]) if unit == "h" else 0
         minutes = int(since[0:-1]) if unit == "m" else 0
         return timedelta(days=days, hours=hours, minutes=minutes)
+
+    def write_timeseries_record(
+        self,
+        key: Dict[str, str],
+        state: StateEnum,
+        event_time: str,
+        execution_arn: str,
+    ) -> None:
+        if self.eventdb:
+            self.eventdb.write_timeseries_record(key, state, event_time, execution_arn)

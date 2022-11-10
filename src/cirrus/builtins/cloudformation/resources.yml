@@ -61,6 +61,20 @@ Resources:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
       TableName: "#{AWS::StackName}-state"
+  StateEventTimestreamDatabase:
+    Type: AWS::Timestream::Database
+    Properties:
+      DatabaseName: "#{AWS::StackName}-state-events"
+      # KmsKeyId: String -- use default one
+  StateEventTimestreamTable:
+    Type: AWS::Timestream::Table
+    DependsOn: StateEventTimestreamDatabase
+    Properties:
+      TableName: "#{AWS::StackName}-state-events-table"
+      DatabaseName: "#{AWS::StackName}-state-events"
+      RetentionProperties:
+        MemoryStoreRetentionPeriodInHours: "24"
+        MagneticStoreRetentionPeriodInDays: "93"
   BatchJobRole:
     Type: AWS::IAM::Role
     Properties:

@@ -1,0 +1,1769 @@
+[
+  {
+    "period": "2022-09-08",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-09",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-10",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-11",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-12",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 6,
+        "count": 6
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-13",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-14",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-15",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-16",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-17",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-18",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 1,
+        "count": 1
+      }
+    ]
+  },
+  {
+    "period": "2022-09-19",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-20",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-21",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-22",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-23",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 7,
+        "count": 7
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-24",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 5,
+        "count": 5
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-25",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-26",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 6,
+        "count": 6
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 1,
+        "count": 1
+      }
+    ]
+  },
+  {
+    "period": "2022-09-27",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 5,
+        "count": 5
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-28",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-09-29",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 7,
+        "count": 7
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 1,
+        "count": 1
+      }
+    ]
+  },
+  {
+    "period": "2022-09-30",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 1,
+        "count": 1
+      }
+    ]
+  },
+  {
+    "period": "2022-10-01",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 6,
+        "count": 6
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 5,
+        "count": 5
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-02",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-03",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-04",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-05",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 5,
+        "count": 5
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 1,
+        "count": 1
+      }
+    ]
+  },
+  {
+    "period": "2022-10-06",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-07",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 8,
+        "count": 8
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 5,
+        "count": 5
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 3,
+        "count": 3
+      }
+    ]
+  },
+  {
+    "period": "2022-10-08",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 8,
+        "count": 8
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 5,
+        "count": 5
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-09",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 5,
+        "count": 5
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-10",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 5,
+        "count": 5
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-11",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 1,
+        "count": 1
+      }
+    ]
+  },
+  {
+    "period": "2022-10-12",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-13",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 5,
+        "count": 5
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-14",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 7,
+        "count": 7
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 5,
+        "count": 5
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 1,
+        "count": 1
+      }
+    ]
+  },
+  {
+    "period": "2022-10-15",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 10,
+        "count": 10
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 10,
+        "count": 10
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 1,
+        "count": 1
+      }
+    ]
+  },
+  {
+    "period": "2022-10-16",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 14,
+        "count": 14
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 6,
+        "count": 6
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-17",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 11,
+        "count": 11
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 16,
+        "count": 16
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 4,
+        "count": 4
+      }
+    ]
+  },
+  {
+    "period": "2022-10-18",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 9,
+        "count": 9
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 10,
+        "count": 10
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 2,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "period": "2022-10-19",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 14,
+        "count": 14
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 12,
+        "count": 12
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 1,
+        "count": 1
+      }
+    ]
+  },
+  {
+    "period": "2022-10-20",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 22,
+        "count": 22
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 19,
+        "count": 19
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 2,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "period": "2022-10-21",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 25,
+        "count": 25
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 24,
+        "count": 24
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 7,
+        "count": 7
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 1,
+        "count": 1
+      }
+    ]
+  },
+  {
+    "period": "2022-10-22",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 30,
+        "count": 30
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 11,
+        "count": 11
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 2,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "period": "2022-10-23",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 30,
+        "count": 30
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 23,
+        "count": 23
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 1,
+        "count": 1
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 2,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "period": "2022-10-24",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 35,
+        "count": 38
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 62,
+        "count": 62
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 7,
+        "count": 8
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 11,
+        "count": 11
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 4,
+        "count": 4
+      }
+    ]
+  },
+  {
+    "period": "2022-10-29",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 61,
+        "count": 61
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 3,
+        "count": 3
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 0,
+        "count": 0
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 0,
+        "count": 0
+      }
+    ]
+  },
+  {
+    "period": "2022-10-30",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 222,
+        "count": 222
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 48,
+        "count": 48
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 8,
+        "count": 8
+      }
+    ]
+  },
+  {
+    "period": "2022-10-31",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 209,
+        "count": 210
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 139,
+        "count": 139
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 24,
+        "count": 24
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 9,
+        "count": 9
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 12,
+        "count": 12
+      }
+    ]
+  },
+  {
+    "period": "2022-11-01",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 428,
+        "count": 444
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 406,
+        "count": 406
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 71,
+        "count": 72
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 32,
+        "count": 32
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 37,
+        "count": 38
+      }
+    ]
+  },
+  {
+    "period": "2022-11-02",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 513,
+        "count": 519
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 108,
+        "count": 108
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 19,
+        "count": 19
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 10,
+        "count": 10
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 20,
+        "count": 20
+      }
+    ]
+  },
+  {
+    "period": "2022-11-03",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 492,
+        "count": 499
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 338,
+        "count": 338
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 65,
+        "count": 65
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 29,
+        "count": 29
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 27,
+        "count": 27
+      }
+    ]
+  },
+  {
+    "period": "2022-11-04",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 521,
+        "count": 615
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 819,
+        "count": 819
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 143,
+        "count": 152
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 58,
+        "count": 58
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 82,
+        "count": 88
+      }
+    ]
+  },
+  {
+    "period": "2022-11-05",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 136,
+        "count": 136
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 24,
+        "count": 24
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 4,
+        "count": 4
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 2,
+        "count": 2
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 4,
+        "count": 4
+      }
+    ]
+  },
+  {
+    "period": "2022-11-06",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 135,
+        "count": 142
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 66,
+        "count": 66
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 17,
+        "count": 17
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 9,
+        "count": 9
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 5,
+        "count": 5
+      }
+    ]
+  },
+  {
+    "period": "2022-11-07",
+    "interval": "day",
+    "states": [
+      {
+        "state": "PROCESSING",
+        "unique_count": 124,
+        "count": 151
+      },
+      {
+        "state": "COMPLETED",
+        "unique_count": 167,
+        "count": 167
+      },
+      {
+        "state": "FAILED",
+        "unique_count": 27,
+        "count": 32
+      },
+      {
+        "state": "INVALID",
+        "unique_count": 13,
+        "count": 13
+      },
+      {
+        "state": "ABORTED",
+        "unique_count": 18,
+        "count": 19
+      }
+    ]
+  }
+]

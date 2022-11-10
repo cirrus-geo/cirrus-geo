@@ -1,0 +1,2127 @@
+{
+  "QueryId": "AEDACANIE3GORUT7EL7ILKLGVIX4RZ64WTR2C5IFJU7XMATQEBIKRTXYEJYHSBQ",
+  "Rows": [
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 02:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 02:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "3"
+        },
+        {
+          "ScalarValue": "3"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 03:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 03:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 04:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "4"
+        },
+        {
+          "ScalarValue": "4"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 04:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "8"
+        },
+        {
+          "ScalarValue": "8"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 05:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 05:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "3"
+        },
+        {
+          "ScalarValue": "3"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 05:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 05:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 07:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 07:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 07:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 08:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 08:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "8"
+        },
+        {
+          "ScalarValue": "8"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 09:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 09:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "8"
+        },
+        {
+          "ScalarValue": "8"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 09:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 10:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "4"
+        },
+        {
+          "ScalarValue": "4"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 10:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 11:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 11:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 11:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "8"
+        },
+        {
+          "ScalarValue": "8"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "4"
+        },
+        {
+          "ScalarValue": "4"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 13:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 13:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 13:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 13:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "8"
+        },
+        {
+          "ScalarValue": "8"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 14:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 14:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 15:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 15:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 16:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 16:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 16:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "6"
+        },
+        {
+          "ScalarValue": "6"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 17:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 17:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 17:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "8"
+        },
+        {
+          "ScalarValue": "8"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 18:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 18:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 18:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "3"
+        },
+        {
+          "ScalarValue": "3"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 19:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "6"
+        },
+        {
+          "ScalarValue": "6"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 19:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 19:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "6"
+        },
+        {
+          "ScalarValue": "6"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 20:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 20:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "4"
+        },
+        {
+          "ScalarValue": "4"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 20:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 20:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "6"
+        },
+        {
+          "ScalarValue": "6"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 21:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "4"
+        },
+        {
+          "ScalarValue": "4"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 21:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 21:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 21:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "6"
+        },
+        {
+          "ScalarValue": "6"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 22:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 22:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "3"
+        },
+        {
+          "ScalarValue": "3"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 22:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 22:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "8"
+        },
+        {
+          "ScalarValue": "8"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 23:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "4"
+        },
+        {
+          "ScalarValue": "4"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 23:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 23:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 00:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 00:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 00:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 00:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 00:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 01:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 01:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 01:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 01:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 01:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 02:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 02:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 03:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 03:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "8"
+        },
+        {
+          "ScalarValue": "8"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 03:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "9"
+        },
+        {
+          "ScalarValue": "9"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 03:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 04:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 04:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 04:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 04:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 05:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "4"
+        },
+        {
+          "ScalarValue": "4"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 05:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "9"
+        },
+        {
+          "ScalarValue": "9"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 06:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 06:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "8"
+        },
+        {
+          "ScalarValue": "8"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 06:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 06:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 06:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 07:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "9"
+        },
+        {
+          "ScalarValue": "9"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 07:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 07:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 07:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 08:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 08:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 08:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 08:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "6"
+        },
+        {
+          "ScalarValue": "6"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 09:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 09:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 09:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "3"
+        },
+        {
+          "ScalarValue": "3"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 09:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 09:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "9"
+        },
+        {
+          "ScalarValue": "9"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 09:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 10:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "10"
+        },
+        {
+          "ScalarValue": "10"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 10:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 10:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 11:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 11:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "13"
+        },
+        {
+          "ScalarValue": "13"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 11:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "3"
+        },
+        {
+          "ScalarValue": "3"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 11:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 11:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "7"
+        },
+        {
+          "ScalarValue": "7"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 11:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "9"
+        },
+        {
+          "ScalarValue": "9"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "3"
+        },
+        {
+          "ScalarValue": "3"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "12"
+        },
+        {
+          "ScalarValue": "12"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 12:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 13:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 13:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "12"
+        },
+        {
+          "ScalarValue": "12"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 13:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "1"
+        },
+        {
+          "ScalarValue": "1"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 13:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "14"
+        },
+        {
+          "ScalarValue": "14"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 13:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 14:00:00.000000000"
+        },
+        {
+          "ScalarValue": "ABORTED"
+        },
+        {
+          "ScalarValue": "2"
+        },
+        {
+          "ScalarValue": "2"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 14:00:00.000000000"
+        },
+        {
+          "ScalarValue": "COMPLETED"
+        },
+        {
+          "ScalarValue": "60"
+        },
+        {
+          "ScalarValue": "60"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 14:00:00.000000000"
+        },
+        {
+          "ScalarValue": "FAILED"
+        },
+        {
+          "ScalarValue": "11"
+        },
+        {
+          "ScalarValue": "12"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 14:00:00.000000000"
+        },
+        {
+          "ScalarValue": "INVALID"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 14:00:00.000000000"
+        },
+        {
+          "ScalarValue": "PROCESSING"
+        },
+        {
+          "ScalarValue": "32"
+        },
+        {
+          "ScalarValue": "38"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-07 14:00:00.000000000"
+        },
+        {
+          "ScalarValue": "TERMINAL"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    }
+  ],
+  "ColumnInfo": [
+    {
+      "Name": "t",
+      "Type": {
+        "ScalarType": "TIMESTAMP"
+      }
+    },
+    {
+      "Name": "state",
+      "Type": {
+        "ScalarType": "VARCHAR"
+      }
+    },
+    {
+      "Name": "unique_count",
+      "Type": {
+        "ScalarType": "BIGINT"
+      }
+    },
+    {
+      "Name": "count",
+      "Type": {
+        "ScalarType": "BIGINT"
+      }
+    }
+  ],
+  "QueryStatus": {
+    "ProgressPercentage": 100,
+    "CumulativeBytesScanned": 78189,
+    "CumulativeBytesMetered": 10000000
+  },
+  "ResponseMetadata": {
+    "RequestId": "VA6KWPFKBISCLWYFT2I4VAAFQI",
+    "HTTPStatusCode": 200,
+    "HTTPHeaders": {
+      "x-amzn-requestid": "VA6KWPFKBISCLWYFT2I4VAAFQI",
+      "content-type": "application/x-amz-json-1.0",
+      "content-length": "16843",
+      "date": "Mon, 07 Nov 2022 14:36:13 GMT"
+    },
+    "RetryAttempts": 0
+  }
+}

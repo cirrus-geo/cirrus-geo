@@ -20,9 +20,3 @@ def sqs():
 def dynamo():
     with moto.mock_dynamodb():
         yield boto3.client("dynamodb", region_name="us-east-1")
-
-
-@pytest.fixture
-def statedb(dynamo, statedb_schema):
-    dynamo.create_table(**statedb_schema)
-    return statedb_schema["TableName"]
