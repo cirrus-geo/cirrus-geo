@@ -14,7 +14,6 @@ import sys
 import uuid
 from datetime import datetime, timezone
 from enum import Enum, unique
-from typing import Optional
 
 import boto3
 from faker import Faker
@@ -43,19 +42,19 @@ def write_timeseries_record(
     itemids: str,
     state: StateEnum,
     event_time: str,
-    execution_arn: Optional[str],
+    execution_arn: str,
 ):
     record = {
         "Dimensions": [
             {"Name": "workflow", "Value": workflow},
             {"Name": "collections", "Value": collections},
             {"Name": "item_ids", "Value": itemids},
-            {"Name": "state", "Value": state.value},
+            {"Name": "execution_arn", "Value": execution_arn},
         ],
         "Time": str(int(datetime.fromisoformat(event_time).timestamp() * 1000)),
         "MeasureValueType": "VARCHAR",
-        "MeasureName": "execution_arn",
-        "MeasureValue": execution_arn if execution_arn else "none",
+        "MeasureName": "state",
+        "MeasureValue": state.value,
     }
 
     try:

@@ -2,7 +2,7 @@ import json
 import os
 from collections import defaultdict
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
 from boto3utils import s3
@@ -21,15 +21,19 @@ statedb = StateDB()
 eventdb = EventDB()
 
 
-def response(body, status_code=200, headers=None):
+def response(
+    body: Union[str, Dict[str, Any]],
+    status_code: int = 200,
+    headers: Optional[Dict[str, str]] = None,
+):
     if headers is None:
         _headers = {}
     else:
         _headers = deepcopy(headers)
 
-    # cors
+    # CORS headers
     _headers.update(
-        {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Credentials": True}
+        {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Credentials": "true"}
     )
     return {"statusCode": status_code, "headers": _headers, "body": json.dumps(body)}
 
@@ -70,18 +74,21 @@ def get_root(root_url):
     return root
 
 
-def get_stats(eventdb: EventDB) -> Dict[str, Any]:
+def get_stats(_eventdb: EventDB) -> Optional[Dict[str, Any]]:
     logger.debug("Get stats")
 
-    return {
-        "state_transitions": {
-            "daily": daily(eventdb.query_by_bin_and_duration("1d", "60d")),
-            "hourly": hourly(eventdb.query_by_bin_and_duration("1h", "36h")),
-            "hourly_rolling": hourly(
-                eventdb.query_hour(1, 0), eventdb.query_hour(2, 1)
-            ),
+    if daily_results := _eventdb.query_by_bin_and_duration("1d", "60d"):
+        return {
+            "state_transitions": {
+                "daily": daily(daily_results),
+                "hourly": hourly(_eventdb.query_by_bin_and_duration("1h", "36h")),
+                "hourly_rolling": hourly(
+                    _eventdb.query_hour(1, 0), _eventdb.query_hour(2, 1)
+                ),
+            }
         }
-    }
+    else:
+        return None
 
 
 def _results_transform(
@@ -187,7 +194,11 @@ def lambda_handler(event, _context):
         return response(get_root(root_url))
 
     if payload_id == "stats":
-        return response(get_stats(eventdb))
+        stats = get_stats(eventdb)
+        if not stats:
+            response("", 404)
+        else:
+            return response(stats)
 
     if "/workflow-" not in payload_id:
         return response(f"{path} not found", status_code=400)

@@ -74,7 +74,7 @@ Resources:
       DatabaseName: "#{AWS::StackName}-state-events"
       RetentionProperties:
         MemoryStoreRetentionPeriodInHours: "24"
-        MagneticStoreRetentionPeriodInDays: "3650"
+        MagneticStoreRetentionPeriodInDays: "93"
   BatchJobRole:
     Type: AWS::IAM::Role
     Properties:

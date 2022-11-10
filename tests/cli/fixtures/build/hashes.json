@@ -1,7 +1,7 @@
 {
   "serverless.yml": {
-    "shasum": "b7a2d9f34bddc08ba75fdfab1087ff9c59e9be1952e8dc995883c2f219dd23ad",
-    "size": 37821
+    "shasum": "d16b566a022a90d55c25ecea05b08526a0fe4653efc95e545c3f65de422cecab",
+    "size": 37819
   },
   "lambdas/pre-batch/requirements.txt": {
     "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",
@@ -72,8 +72,8 @@
     "size": 0
   },
   "lambdas/api/lambda_function.py": {
-    "shasum": "676c7a16f66845e7919c0183ac6f70dd20763071f9cb4749a476a6051f82270f",
-    "size": 7657
+    "shasum": "4433d744f87242a8d58b9d352a30f563b4ce90bdaa98657d31512b4846284b53",
+    "size": 7990
   },
   "lambdas/feed-rerun/requirements.txt": {
     "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",
@@ -116,8 +116,8 @@
     "size": 0
   },
   "cirrus/lib2/eventdb.py": {
-    "shasum": "89eb388c7ddc246f3d2384b333badf7e981cc703d944a9159d023e4ff1b69e18",
-    "size": 5393
+    "shasum": "d3a5af36b17d19e19f469a1732d9c04390f653e7192d217a72cf051cada2ba3d",
+    "size": 6391
   },
   "cirrus/lib2/utils.py": {
     "shasum": "a4ff0ad560b09fab5686e8f0c6dca6f97d170103749e400dfb4eee376fbf97d5",
@@ -128,8 +128,8 @@
     "size": 106
   },
   "cirrus/lib2/statedb.py": {
-    "shasum": "47006ee8218b6c7aba4943dcbe793e0825e1ab0a6dd0e23e340f8e9df8de465f",
-    "size": 21666
+    "shasum": "622af59ad5f72a0d7cddc572e60aed12a22154e84587a8bfe168cb6a03d09dc1",
+    "size": 21559
   },
   "cirrus/lib2/process_payload.py": {
     "shasum": "b5347139d949ec8921a80d7a25ef941815503557f9cc6b7add96c1db7f421fa9",

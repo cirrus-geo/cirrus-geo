@@ -9,8 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### ⚠️ Breaking changes
 
-- An AWS Timestream timeseries database has been added to track workflow state change events. This env var
-  must be added to the cirrus.yml file: `CIRRUS_EVENT_DB_AND_TABLE: !Ref StateEventTimestreamTable`
+- An AWS Timestream timeseries database has been added to track workflow state change events. The environment variable
+  `CIRRUS_EVENT_DB_AND_TABLE: !Ref StateEventTimestreamTable` must be added to the cirrus.yml file if you wish to
+  use this functionality.
+- The Cirrus Process SNS topic has been removed, and the Process SQS queue is used directly now. This requires updating
+  the cirrus.yml file to remove the environment variable `CIRRUS_PROCESS_TOPIC_ARN: !Ref ProcessTopic` and add the
+  environment variable `CIRRUS_PROCESS_QUEUE_URL: !Ref ProcessQueue`.
 
 ### Fixed
 
