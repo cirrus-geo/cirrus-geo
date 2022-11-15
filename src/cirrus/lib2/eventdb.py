@@ -142,7 +142,7 @@ class EventDB:
                 WITH data AS (
                     SELECT BIN(time, {bin_size}) as t, measure_value::varchar as state, item_ids, count(*) as count
                     FROM "{event_db_name}"."{event_table_name}"
-                    WHERE measure_name = 'state' AND time BETWEEN ago({duration}) AND now()
+                    WHERE measure_name = 'execution_state' AND time BETWEEN ago({duration}) AND now()
                     GROUP BY BIN(time, {bin_size}), measure_value::varchar, item_ids
                     )
                 SELECT t, state, count(*) as unique_count, sum(count) as count
@@ -165,7 +165,7 @@ class EventDB:
                 WITH data AS (
                     SELECT ago({start}h) as t, measure_value::varchar as state, item_ids, count(*) as count
                     FROM "{event_db_name}"."{event_table_name}"
-                    WHERE measure_name = 'state' AND time BETWEEN ago({start}h) AND ago({end}h)
+                    WHERE measure_name = 'execution_state' AND time BETWEEN ago({start}h) AND ago({end}h)
                     GROUP BY measure_value::varchar, item_ids
                 )
                 SELECT t, state, count(*) as unique_count, sum(count) as count
