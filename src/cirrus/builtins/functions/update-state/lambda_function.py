@@ -120,7 +120,7 @@ def workflow_completed(execution: Execution) -> None:
     # trying the sns publish, but I could see it the other
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
-    statedb.set_completed(execution.input["id"])
+    statedb.set_completed(execution.input["id"], execution_arn=execution.arn)
     if execution.output:
         with batch_handler(send_batch, {}, "messages", batch_size=10) as handler:
             for next_payload in execution.output.next_payloads():

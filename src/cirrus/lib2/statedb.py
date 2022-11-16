@@ -369,6 +369,8 @@ class StateDB:
 
         if execution_arn:
             self.write_timeseries_record(key, StateEnum.COMPLETED, now, execution_arn)
+        else:
+            logger.debug("set completed called with no execution ARN")
 
         return response
 
