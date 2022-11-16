@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writing workflow definitions &mdash; cirrus-geo  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+        <script src="../../../_static/js/versions-loader.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Batch tasks in workflows" href="batch.html" />
+    <link rel="prev" title="Workflows" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> cirrus-geo
+          </a>
+              <div class="version">
+                v0.9.0c
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../30_payload.html">Cirrus Process Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../60_components.html">Cirrus Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lambdas.html">Lambda-based components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../feeders.html">Feeders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/index.html">Tasks</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Workflows</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Writing workflow definitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#simple-example">Simple example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#basic-step-function-structure">Basic step function structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#triggering-workflows-off-one-another">Triggering workflows off one another</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow-best-practices">Workflow best practices</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="batch.html">Batch tasks in workflows</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chaining.html">Workflow chaining</a></li>
+<li class="toctree-l3"><a class="reference internal" href="callbacks.html">Workflow callbacks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../functions.html">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/feeders/index.html">Feeders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/tasks/index.html">Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/workflows/index.html">Workflows</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">cirrus-geo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../60_components.html">Cirrus Components</a> &raquo;</li>
+          <li><a href="index.html">Workflows</a> &raquo;</li>
+      <li>Writing workflow definitions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/cirrus/components/workflows/definitions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="writing-workflow-definitions">
+<h1>Writing workflow definitions<a class="headerlink" href="#writing-workflow-definitions" title="Permalink to this headline"></a></h1>
+<p>Cirrus workflows, being implemented via <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions</a>, are written in
+the <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html">AWS States Language</a>. Like all Cirrus components, workflows require both a
+<code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> file and a <code class="docutils literal notranslate"><span class="pre">README.md</span></code> file. Cirrus uses the Serverless
+plugin <a class="reference external" href="https://www.serverless.com/plugins/serverless-step-functions">serverless-step-functions</a> to underlay the workflow definitions and
+therefore the <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> format is more or less as documented by the
+plugin.</p>
+<section id="simple-example">
+<h2>Simple example<a class="headerlink" href="#simple-example" title="Permalink to this headline"></a></h2>
+<p>We can use the built-in <code class="docutils literal notranslate"><span class="pre">publish-only</span></code> workflow as a simple example of a
+minimal Cirrus workflow <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>name: &#39;#{AWS::StackName}-publish-only
+enabled: true
+definition:
+  Comment: Simple example that just publishes input Collections and items
+  StartAt: publish
+  States:
+    publish:
+      Type: Task
+      Resource: !GetAtt publish.Arn
+      End: True
+      Retry:
+        - ErrorEquals: [&quot;Lambda.TooManyRequestsException&quot;, &quot;Lambda.Unknown&quot;]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: [&quot;States.ALL&quot;]
+          ResultPath: $.error
+          Next: failure
+    failure:
+      Type: Fail
+</pre></div>
+</div>
+<p>The top-level keys in this example are among those supported by the
+serverless-step-functions plugin, with the exception of <code class="docutils literal notranslate"><span class="pre">enabled</span></code>, which is a
+Cirrus-specific parameter that controls whether this workflow definition should
+be included or not when compiling the Serverless configuration.</p>
+<section id="workflow-naming">
+<h3>Workflow naming<a class="headerlink" href="#workflow-naming" title="Permalink to this headline"></a></h3>
+<p>How a workflow is named is important. Here we can see the name is
+<code class="docutils literal notranslate"><span class="pre">#{AWS::StackName}-publish-only</span></code>, where <code class="docutils literal notranslate"><span class="pre">#{AWS::StackName}</span></code> is like
+<code class="docutils literal notranslate"><span class="pre">${self:service}-${self:provider.stage}</span></code>. If our <code class="docutils literal notranslate"><span class="pre">service</span></code> is <code class="docutils literal notranslate"><span class="pre">cirrus</span></code>
+(the default) and our stage is, say, <code class="docutils literal notranslate"><span class="pre">dev</span></code>, then the resulting step function
+will be created with the name <code class="docutils literal notranslate"><span class="pre">cirrus-dev-publish-only</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">process</span></code> Lambda function which handles all incoming payloads and
+dispatches them to the specified workflow does so via building the specified
+workflow name into a full step function ARN, which it can then execute with the
+input payload. <code class="docutils literal notranslate"><span class="pre">process</span></code> builds step function ARNs by appending the workflow
+name to the string given by
+<code class="docutils literal notranslate"><span class="pre">arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:#{AWS::StackName}-</span></code>.
+As <code class="docutils literal notranslate"><span class="pre">process</span></code> is part of the same CloudFormation stack as workflow step
+functions, the prefix string above is common to all workflows. Thus, a payload
+only needs to specify a workflow name of <code class="docutils literal notranslate"><span class="pre">publish-only</span></code>, and <code class="docutils literal notranslate"><span class="pre">process</span></code> can
+derive the step function ARN and execute the workflow.</p>
+<p>The important takeaway here is that for workflows to be compatible with
+<code class="docutils literal notranslate"><span class="pre">process</span></code>’s ARN builder they must be named using the format
+<code class="docutils literal notranslate"><span class="pre">#{AWS::StackName}-&lt;workflow_name&gt;</span></code>, as in the example.</p>
+</section>
+</section>
+<section id="basic-step-function-structure">
+<h2>Basic step function structure<a class="headerlink" href="#basic-step-function-structure" title="Permalink to this headline"></a></h2>
+<p>All workflows share some common structure within the state machine definition:</p>
+<ul class="simple">
+<li><p>A <code class="docutils literal notranslate"><span class="pre">Comment</span></code> provides a short description of the workflow
+processing/operations</p></li>
+<li><p>At least one <code class="docutils literal notranslate"><span class="pre">Task</span></code> state defined</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">StartAt</span></code> set to the first state in the in the step function</p></li>
+<li><p>At least one state with <code class="docutils literal notranslate"><span class="pre">End:</span> <span class="pre">True</span></code> representing a successful completion of
+the workflow</p></li>
+<li><p>A state of type <code class="docutils literal notranslate"><span class="pre">Fail</span></code> to which all workflow states will go on fatal error</p>
+<ul>
+<li><p>Doing so necessitates that each state properly catches all error states, as
+in the example, to define a the <code class="docutils literal notranslate"><span class="pre">Fail</span></code> state as the next step in the event
+of an error (with some exceptions, like Batch tasks, which are part of a
+larger block of connected tasks)</p></li>
+</ul>
+</li>
+<li><p>While not <em>strictly</em> required, most every workflow should use the built-in
+<code class="docutils literal notranslate"><span class="pre">publish</span></code> task to push all output items into S3 for canonical storage, and
+to the <code class="docutils literal notranslate"><span class="pre">cirrus-&lt;stage&gt;-publish</span></code> topic to trigger any downstream systems
+accepting output items (e.g., stac-server ingest)</p></li>
+</ul>
+<p>Review the built-in workflows for additional examples of how to structure a more
+complex workflow. Also see how to use <a class="reference internal" href="batch.html"><span class="doc">Batch tasks in a workflow</span></a>
+for details related to that specific scenario.</p>
+</section>
+<section id="triggering-workflows-off-one-another">
+<h2>Triggering workflows off one another<a class="headerlink" href="#triggering-workflows-off-one-another" title="Permalink to this headline"></a></h2>
+<p>It is not uncommon to model a processing pipeline as a series of connected
+workflows. Cirrus allows several means of building such multi-stage pipelines:</p>
+<ul>
+<li><p><strong>Workflow chaining</strong>: a pre-defined chain can be specified in an input
+process payload, where all workflows/process definitions can be generated
+ahead of time. Alternatively, steps within a workflow can add additional
+workflows to the chain in the payload being processed, where dynamic chains
+are required.</p>
+<p>Chaining is most useful where a single input payload will generate one or more
+outputs for one or more successive workflows. That is, chaining supports one
+or more branches, but does not have any facilities to accommodate merging
+branches together.</p>
+<p>See the <a class="reference internal" href="chaining.html"><span class="doc">workflow chaining documentation</span></a> for further details.</p>
+</li>
+<li><p><strong>Workflow callbacks</strong>: allow workflows to wait on one or more sub-workflows.
+Callbacks can be used to model something like chains in the form of an outer
+workflow, but can also model merging the output of multiple workflows
+together.</p>
+<p>Callbacks are most useful when a workflow has a dependency on the
+output items from multiple other workflow executions.</p>
+<p>See the <a class="reference internal" href="callbacks.html"><span class="doc">workflow callback documentation</span></a> for further details.</p>
+</li>
+<li><p><strong>Publish topic subscriptions</strong>: custom Lambda functions or other such
+listeners can be subscribed to the <code class="docutils literal notranslate"><span class="pre">cirrus-&lt;stage&gt;-publish</span></code> SNS topic to
+process workflow output items. These functions can be used as feeders,
+performaing any custom logic on output items before triggering any additional
+workflow executions required.</p>
+<p>While chaining and callbacks solve most common cases where workflows need to
+trigger off one another, reach for this solution when custom trigger
+conditions don’t quite fit with the in-the-box approaches.</p>
+</li>
+</ul>
+</section>
+<section id="workflow-best-practices">
+<h2>Workflow best practices<a class="headerlink" href="#workflow-best-practices" title="Permalink to this headline"></a></h2>
+<p>Cirrus has a few guardrails, but generally aims to stay out of the way and
+retain as much flexibility as possible to ensure arbitrary constraints cannot
+get in the way and prevent any legitimate use-cases. This is particularly true
+for Cirrus workflow features and AWS step functions, and this flexibility can
+sometimes work against users. That said, following certain guidelines can help
+ensure a Cirrus deployment remains easy to manage and administer.</p>
+<p>Keep in mind the rules on this list are not hard and fast, but it’s recommended
+to understand the how and why behind a rule before deciding to break it.</p>
+<section id="aws-step-function-best-practices">
+<h3>AWS step function best practices<a class="headerlink" href="#aws-step-function-best-practices" title="Permalink to this headline"></a></h3>
+<p>AWS maintains their own list of <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/sfn-best-practices.html">best practices for step functions</a>. Review this
+list for general step function considerations.</p>
+<p>One such example from the list is to be sure to handle lambda quota limits. The
+<code class="docutils literal notranslate"><span class="pre">publish-only</span></code> example has an <code class="docutils literal notranslate"><span class="pre">Retry</span></code> error handler for that purpose.</p>
+</section>
+<section id="try-to-use-only-one-input-item-per-workflow">
+<h3>Try to use only one input item per workflow<a class="headerlink" href="#try-to-use-only-one-input-item-per-workflow" title="Permalink to this headline"></a></h3>
+<p>State tracking and execution management is much easier to follow if workflows
+have only a single input item. While this is not always possible, trying to keep
+to this guideline is worthwhile.</p>
+<p>In some cases, using a synthetic item (an “AOI” item, a list item) that can
+query for or in some other way resolve the full set of input items is a great
+way to achieve this goal when needing multiple items in a workflow. It is best
+to try to ensure the synthetic item will always resolve the same set of input
+items.</p>
+</section>
+<section id="keep-workflows-short-and-focused">
+<h3>Keep workflows short and focused<a class="headerlink" href="#keep-workflows-short-and-focused" title="Permalink to this headline"></a></h3>
+<p>Generally speaking, a workflow should model a single level of processing.
+Conflating multiple levels of processing into a single worflow should be a good
+indication that a workflow is doing too much and should be split up.</p>
+<p>If modeling a single level of processing requires one or more set of
+intermediate outputs to be persisted, that is also a good indication that the
+workflow should be further broken down into a set of workflows modeling the
+deriviation of each set of intermediate outputs, with one final workflow
+creating the actual outputs for the processing level.</p>
+<p>In short, it is often best to defer to more short workflows than fewer long
+ones.</p>
+</section>
+<section id="workflows-should-not-produce-different-outputs-from-the-same-set-of-inputs">
+<span id="one-output-set"></span><h3>Workflows should not produce different outputs from the same set of inputs<a class="headerlink" href="#workflows-should-not-produce-different-outputs-from-the-same-set-of-inputs" title="Permalink to this headline"></a></h3>
+<p>See the <a class="reference internal" href="../../30_payload.html"><span class="doc">Cirrus Process Payload docs</span></a> for additional details on
+how Cirrus’s idempotency check works. Generally speaking, cirrus will use the
+set of input items as a proxy for the outputs produced by a given workflow.
+Don’t rely on workflow/task parameters to change the set outputs, as those
+settings are not referenced as part of the idempotency check.</p>
+<p>This also leads into the next best practice…</p>
+</section>
+<section id="make-workflows-specific-not-flexible">
+<h3>Make workflows specific, not flexible<a class="headerlink" href="#make-workflows-specific-not-flexible" title="Permalink to this headline"></a></h3>
+<p>It is tempting to make workflows as flexible as possible, having them use
+parameters in the process definition to control all sorts of dynamic behavior.
+While certain types of dynamism can be advantageous (picking resource
+requirements for a batch job depending on input data properties, for example),
+generally dynamism in workflows is best avoided, for a few reasons:</p>
+<dl class="simple">
+<dt>^ Dynamism within a workflow means one cannot simply assume different</dt><dd><p>executions of the same workflow did similar things. This makes
+troubleshooting harder and raises the cognitive load of pipeline management.</p>
+</dd>
+<dt>^ Dynamic workflows can lead to needing to run the workflow multiple times to</dt><dd><p>create different sets of outputs. See <a class="reference internal" href="#one-output-set"><span class="std std-ref">above</span></a>.</p>
+</dd>
+</dl>
+<p>In other words, restricting dynamic parameters to those that do not affect the
+type/contents of the output items is best.</p>
+</section>
+<section id="don-t-use-workflows-for-side-effects">
+<h3>Don’t use workflows for side effects<a class="headerlink" href="#don-t-use-workflows-for-side-effects" title="Permalink to this headline"></a></h3>
+<p>Given that workflows are intended to be functional processing units that
+transform a given input(s) into a fixed set of outputs, using workflows for side
+effects is a Cirrus anti-pattern. If needing to trigger some action for every
+input payload–already processed, in processing, or brand new–reach for a
+different event-based solution.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Workflows" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="batch.html" class="btn btn-neutral float-right" title="Batch tasks in workflows" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: v0.9.0c
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
