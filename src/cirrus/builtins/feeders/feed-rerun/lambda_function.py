@@ -31,7 +31,7 @@ def send_batch(messages):
 def submit(payload_ids):
     with batch_handler(send_batch, {}, "messages", batch_size=10) as handler:
         for payload_id in payload_ids:
-            handler.add(json.dumps({"url": StateDB.get_payload_url(payload_id)}))
+            handler.add(json.dumps({"url": StateDB.payload_id_to_url(payload_id)}))
 
 
 def lambda_handler(payload, context={}):
