@@ -579,7 +579,7 @@ class StateDB:
             "payload": cls.payload_id_to_url(cls.key_to_payload_id(dbitem)),
         }
         if "executions" in dbitem:
-            base_url = f"https://{region}.console.aws.amazon.com/states/home?region={region}#/executions/details/"
+            base_url = f"https://{region}.console.aws.amazon.com/states/home?region={region}#/v2/executions/details/"
             item["executions"] = [base_url + f"{e}" for e in dbitem["executions"]]
         if "outputs" in dbitem:
             item["outputs"] = dbitem["outputs"]
