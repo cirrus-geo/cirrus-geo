@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - CLI warning and error outputs are again colorized ([#193])
 - Error in rerun feeder due to using function removed from cirrus.lib2 ([#207])
 - Update Step Functions State Machine execution url to v2 form.
+- hash_tree was not skipping dot-dirs
 
 ## [v0.8.0] - 2022-11-02
 
