@@ -32,6 +32,8 @@ def shasum(path: Path):
 def hash_tree(src_dir):
     hashed = {}
     for root, dirs, files in os.walk(src_dir):
+        # os.walk needs _in place_ filter of dot-dirs
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
         root = Path(root)
         for f in files:
             if f.startswith("."):
