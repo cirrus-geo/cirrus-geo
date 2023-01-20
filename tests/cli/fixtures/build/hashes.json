@@ -128,8 +128,8 @@
     "size": 106
   },
   "cirrus/lib2/statedb.py": {
-    "shasum": "5ee0a60f209e99f12c1bafd64018829f9b3e672d79a460335b7bba71c58456bb",
-    "size": 22031
+    "shasum": "524fd07227f1ae91fb850944aded93491c5849b315f495c59c8dfec3a15e45f7",
+    "size": 22034
   },
   "cirrus/lib2/process_payload.py": {
     "shasum": "b5347139d949ec8921a80d7a25ef941815503557f9cc6b7add96c1db7f421fa9",
