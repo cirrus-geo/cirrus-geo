@@ -23,11 +23,12 @@ def main(gh_pages_dir):
     gh_pages_dir = Path(gh_pages_dir)
 
     all_versions = set()
-    stable_version = parse("")
+    stable_version = parse("0.0")
     for _file in gh_pages_dir.iterdir():
         if _file.is_dir():
-            version = parse(_file.name)
-            if not isinstance(version, Version):
+            try:
+                version = parse(_file.name)
+            except:
                 continue
             version.name = _file.name
             all_versions.add(version.name)
