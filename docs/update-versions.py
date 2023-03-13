@@ -23,7 +23,8 @@ def main(gh_pages_dir):
     gh_pages_dir = Path(gh_pages_dir)
 
     all_versions = set()
-    stable_version = parse("0.0")
+    default_version = parse("0.0")
+    stable_version = default_version
     for _file in gh_pages_dir.iterdir():
         if _file.is_dir():
             try:
@@ -40,7 +41,7 @@ def main(gh_pages_dir):
     # create 'stable' redirect to most-recent non-prerelease version
     stable = gh_pages_dir.joinpath(STABLE_LINK_NAME)
     stable.unlink(missing_ok=True)
-    if stable_version:
+    if stable_version != default_version:
         stable.symlink_to(stable_version)
         all_versions.add(STABLE_LINK_NAME)
 
