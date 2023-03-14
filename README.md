@@ -199,14 +199,12 @@ available to developers for writing their own tasks.
 ## Documentation
 
 Documentation for deploying, using, and customizing Cirrus is contained
-within the [docs](docs/) directory:
+within the [docs](https://cirrus-geo.github.io/cirrus-geo/) directory:
 
-- Understand the [architecture](docs/architecture.md) of Cirrus and key concepts
-- [Deploy](docs/deployment.md) Cirrus to your own AWS account
-- [Use](docs/usage.md) Cirrus to process input data and publish resulting
-  STAC Items
-- [Customize](docs/customize.md) Cirrus by adding tasks, workflows,
-  and compute environments
+- Learn how to [get started](https://cirrus-geo.github.io/cirrus-geo/stable/cirrus/10_intro.html)
+- Understand the [architecture](https://cirrus-geo.github.io/cirrus-geo/stable/cirrus/20_arch.html) of Cirrus and key concepts
+- [Use](https://cirrus-geo.github.io/cirrus-geo/stable/cirrus/30_payload.html) Cirrus to process input data and publish resulting STAC Items
+- Cirrus features several [component types](https://cirrus-geo.github.io/cirrus-geo/stable/cirrus/60_components.html) that each represent a specific role within the Cirrus architecture
 
 ## About
 
