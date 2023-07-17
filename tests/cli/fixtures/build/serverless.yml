@@ -992,6 +992,10 @@ resources:
     Payloads:
       Type: AWS::S3::Bucket
       Properties:
+        PublicAccessBlockConfiguration:
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
         LifecycleConfiguration:
           Rules:
             - ExpirationInDays: 10
