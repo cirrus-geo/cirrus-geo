@@ -7,17 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [v0.9.1] - 2023-07-14
+## [v0.10.0] - 2023-07-19
+
+### ⚠️ Breaking changes
+
+- Remove support for Python 3.8
 
 ### Fixed
 
 - Include `requirements.txt` for install from source distribution. This was
   missing and prevented install from pypi source.
 - For Batch tasks in workflows, the output payload URL is now explicitly set in the pre-batch lambda
-so that the URL is in the Parameters list of the output, rather than the post-batch function
-having to infer the output payload URL.  This fixes Batch tasks when using stac-task.
-Any JobDefinition using stac-task should specify `url` and `url_out` as Parameters and specify --output
-in the Command, e.g.:
+  so that the URL is in the Parameters list of the output, rather than the post-batch function
+  having to infer the output payload URL. This fixes Batch tasks when using stac-task.
+  Any JobDefinition using stac-task should specify `url` and `url_out` as Parameters and specify --output
+  in the Command, e.g.:
 
 ```
     Parameters:
@@ -31,7 +35,6 @@ in the Command, e.g.:
         - --output
         - Ref::url_out
 ```
-
 
 ## [v0.9.0] - 2023-01-26
 
@@ -638,8 +641,8 @@ cleanup steps.
 
 Initial release
 
-[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.9.1...main
-[v0.9.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.9.0...v0.9.1
+[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.0...main
+[v0.10.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.9.0...v0.10.0
 [v0.9.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.8.0...v0.9.0
 [v0.8.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.6.0...v0.7.0
