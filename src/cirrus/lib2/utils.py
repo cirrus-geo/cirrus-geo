@@ -168,9 +168,10 @@ def extract_record(record):
     if "Message" in record:
         record = json.loads(record["Message"])
 
-    if "url" not in record and "Parameters" in record and "url" in record["Parameters"]:
+    if "url" not in record and "Parameters" in record:
         # this is Batch, get the output payload
-        record = {"url": record["Parameters"]["url"].replace(".json", "_out.json")}
+        if "url_out" in record["Parameters"]:
+            record = {"url": record["Parameters"]["url_out"]}
 
     return record
 

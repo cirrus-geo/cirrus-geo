@@ -1,5 +1,6 @@
 {
   "Parameters": {
-    "url": "s3://payloads/test-payload.json"
+    "url": "s3://payloads/test-payload.json",
+    "url_out": "s3://payloads/test-payload_out.json"
   }
 }
