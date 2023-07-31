@@ -380,11 +380,11 @@ class ProcessPayloads:
                     payload_id = payload()
                 except TerminalError:
                     payload_ids["failed"].append(payload["id"])
-
-                if payload_id is not None:
-                    payload_ids["started"].append(payload_id)
                 else:
-                    payload_ids["skipped"].append(payload["id"])
+                    if payload_id is not None:
+                        payload_ids["started"].append(payload_id)
+                    else:
+                        payload_ids["skipped"].append(payload["id"])
             else:
                 logger.info(f"Skipping {payload['id']}, input already in {state} state")
                 payload_ids["skipped"].append(payload["id"])

@@ -54,6 +54,7 @@ def lambda_handler(event, context):
                 messages[payload_id] = [message]
 
     processed_ids = set()
+    processed = {"started": []}
     if len(payloads) > 0:
         processed = ProcessPayloads(payloads).process()
         processed_ids = {pid for state in processed.keys() for pid in processed[state]}

@@ -48,7 +48,7 @@ def payload():
         ],
         "process": {
             "workflow": "test-workflow1",
-            "output_options": {
+            "upload_options": {
                 "path_template": "/${collection}/${year}/${month}/${day}/${id}",
                 "collections": {
                     "test-collection-output": ".*",
@@ -521,7 +521,7 @@ def test_double_payload_sqs_with_bad_workflow(
         queue["Arn"],
     )
     result = run_function("process", _payload)
-    assert result == 2
+    assert result == 1
 
     exec_count = len(
         stepfunctions.list_executions(
@@ -545,6 +545,23 @@ def test_double_payload_sqs_with_bad_workflow(
         MaxNumberOfMessages=10,
     )
     assert len(messages["Messages"]) == 2
+
+
+def test_payload_bad_workflow_no_id(
+    payload, sqs, queue, stepfunctions, workflow, statedb
+):
+    bad_workflow = "unknown-workflow"
+    payload["process"]["workflow"] = bad_workflow
+    del payload["id"]
+    result = run_function("process", payload)
+    assert result == 0
+
+    exec_count = len(
+        stepfunctions.list_executions(
+            stateMachineArn=workflow["stateMachineArn"],
+        )["executions"]
+    )
+    assert exec_count == 0
 
 
 def test_double_payload_sqs_with_bad_format(
