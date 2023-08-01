@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Ensure correct count returned from `process` lambda and resolve
+  `UnboundLocalError` encountered on certain workflow failures. ([#224])
+
 ## [v0.10.0] - 2023-07-19
 
 ### ⚠️ Breaking changes
@@ -723,6 +728,7 @@ Initial release
 [#138]: https://github.com/cirrus-geo/cirrus-geo/pull/138
 [#143]: https://github.com/cirrus-geo/cirrus-geo/pull/143
 [#160]: https://github.com/cirrus-geo/cirrus-geo/pull/160
+[#224]: https://github.com/cirrus-geo/cirrus-geo/pull/224
 [f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
