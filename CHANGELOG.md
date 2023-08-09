@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Ensure correct count returned from `process` lambda and resolve
   `UnboundLocalError` encountered on certain workflow failures. ([#224])
+- Reduce `ProcessPayload.assign_collections` iteration from `N*M` to
+  `N*log(M)` by exiting the inner loop on first match. ([#226])
 
 ## [v0.10.0] - 2023-07-19
 
