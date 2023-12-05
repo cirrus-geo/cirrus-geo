@@ -1,22 +1,6 @@
 import os
 import os.path
 from pathlib import Path
-from typing import List
-
-
-def get_cirrus_lib_requirements() -> List[str]:
-    """
-    Get the cirrus-lib dependencies.
-    """
-    try:
-        from importlib import metadata
-    except ImportError:
-        import importlib_metadata as metadata
-
-    return [
-        req.split(";")[0].translate(str.maketrans("", "", " ()"))
-        for req in metadata.requires("cirrus-lib")
-    ]
 
 
 def relative_to(path1: Path, path2: Path) -> Path:
