@@ -116,8 +116,8 @@
     "size": 0
   },
   "cirrus/lib2/eventdb.py": {
-    "shasum": "1cad190973b44fd52f70d2285af7a51746f50c0611f0617fa4d7c8a03fd56ac4",
-    "size": 7003
+    "shasum": "a098722cb32ac954dddf6598ecd3eba5d103d711f0f33ffe27d4bbae84e382ab",
+    "size": 7008
   },
   "cirrus/lib2/utils.py": {
     "shasum": "2ed2989f8e3f38e5e0e0b72f671cf6ccc9171958c17a2be186293d69bdfb9b8d",
@@ -134,33 +134,5 @@
   "cirrus/lib2/process_payload.py": {
     "shasum": "fa8177acf9ec13f089ea4cb15df31f3aa0cf22a3c445176660d9a1822c9c44bc",
     "size": 14073
-  },
-  "cirrus/lib/logging.py": {
-    "shasum": "f578f6385a2270dcee92c2b18d541f4d68dae5950e878193c253f7aa5fedeb0d",
-    "size": 1849
-  },
-  "cirrus/lib/__init__.py": {
-    "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "size": 0
-  },
-  "cirrus/lib/transfer.py": {
-    "shasum": "913a5942e43d500e3c64e302827be85c62dfb17badda801446f92470480bb7e9",
-    "size": 6934
-  },
-  "cirrus/lib/utils.py": {
-    "shasum": "7641e699e1abfdc52890a1c9d684b93eaa260e9234858747170f08559ed7a18d",
-    "size": 5084
-  },
-  "cirrus/lib/errors.py": {
-    "shasum": "15c62d1e8015f09103937c5f400a9814c2d8c2cf01844e0c8e1fcbc49c473e9b",
-    "size": 173
-  },
-  "cirrus/lib/statedb.py": {
-    "shasum": "a4c602b3350fd71ffb70af7efe6aa717c8daa2e0253a56c25e229fe81fb2e117",
-    "size": 19361
-  },
-  "cirrus/lib/process_payload.py": {
-    "shasum": "8465f4256acdac71048b4289e2e104c2d3778a1d445b918c18579542a1fc09b6",
-    "size": 20107
   }
 }

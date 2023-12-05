@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Cleaned `cirrus.lib` (old separate package) from lambda templates and build
+  process. ([#230])
+
 ### Fixed
 
 - Ensure correct count returned from `process` lambda and resolve
