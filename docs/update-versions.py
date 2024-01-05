@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from packaging.version import Version, parse
+from packaging.version import parse
 
 REDIRECT = """<!DOCTYPE html>
 <html>
@@ -29,7 +29,7 @@ def main(gh_pages_dir):
         if _file.is_dir():
             try:
                 version = parse(_file.name)
-            except:
+            except Exception:
                 continue
             version.name = _file.name
             all_versions.add(version.name)

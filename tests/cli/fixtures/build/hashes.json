@@ -12,8 +12,8 @@
     "size": 0
   },
   "lambdas/pre-batch/lambda_function.py": {
-    "shasum": "0f4338592635f867c910ccecefe7a6a42de80bed8274a88a9a699c469ec83317",
-    "size": 892
+    "shasum": "e3d90e2f50032e65eb651c4290ea35bf97e6951eca5fe2391fa00e720ee2ee2a",
+    "size": 858
   },
   "lambdas/post-batch/requirements.txt": {
     "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",
@@ -24,8 +24,8 @@
     "size": 0
   },
   "lambdas/post-batch/lambda_function.py": {
-    "shasum": "5c0ee9914f5ac42f63f8b5fe49301408f50135f45529b98bb56e4f1a957a5ba8",
-    "size": 1426
+    "shasum": "c2241a4af118dd4ad615fff80e1a50caf23fa104c50fdb81788fef6093bb047e",
+    "size": 2188
   },
   "lambdas/update-state/requirements.txt": {
     "shasum": "f1962dc2c6c8cc51c7eabb23eb0abf666063167b7609e16fe504971aa663b908",

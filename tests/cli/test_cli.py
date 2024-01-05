@@ -142,7 +142,7 @@ def test_build(invoke, project, reference_build, build_dir):
             f"Test build directory: {build_dir}\n"
             "\n"
             "If all highlighted changes are expected, simply remove \n"
-            "the reference_build directory and rerun the tests to update \n"
+            "the 'Reference build' directory and rerun the tests to update \n"
             "the reference files."
         )
 
