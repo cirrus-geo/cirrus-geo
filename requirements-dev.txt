@@ -10,3 +10,4 @@ pre-commit>=2.20.0
 pre-commit-hooks>=4.3.0
 darglint>=1.8.1
 pep8-naming>=0.13.2
+moto[cloudwatch]~=4.2
