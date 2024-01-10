@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- In post-batch, better handle errors with the task failing to run and/or the CloudWatch log
+  not existing.
 - Ensure correct count returned from `process` lambda and resolve
   `UnboundLocalError` encountered on certain workflow failures. ([#224])
 
