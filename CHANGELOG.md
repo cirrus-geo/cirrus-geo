@@ -5,12 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.10.1] - 2024-01-10
 
 ### Fixed
 
 - In post-batch, better handle errors with the task failing to run and/or the CloudWatch log
-  not existing.
+  not existing. ([#231])
 - Ensure correct count returned from `process` lambda and resolve
   `UnboundLocalError` encountered on certain workflow failures. ([#224])
 
@@ -648,7 +648,8 @@ cleanup steps.
 
 Initial release
 
-[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.0...main
+<!-- [unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.0...main -->
+
 [v0.10.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.9.0...v0.10.0
 [v0.9.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.8.0...v0.9.0
 [v0.8.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.7.0...v0.8.0
@@ -731,6 +732,7 @@ Initial release
 [#143]: https://github.com/cirrus-geo/cirrus-geo/pull/143
 [#160]: https://github.com/cirrus-geo/cirrus-geo/pull/160
 [#224]: https://github.com/cirrus-geo/cirrus-geo/pull/224
+[#231]: https://github.com/cirrus-geo/cirrus-geo/pull/231
 [f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
