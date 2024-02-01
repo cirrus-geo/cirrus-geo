@@ -99,28 +99,30 @@ For more infomation see the :doc:`Batch tasks <batch>` documentation.
 Lambda vs Batch
 ---------------
 
+When to chose either
+^^^^^^^^^^^^^^^^^^^^
+
+* can be run as a Docker image
+
+
 When to chose Lambda
 ^^^^^^^^^^^^^^^^^^^^
 
-.. TODO
-
-* small code size/not many dependencies
-* single-threaded
-* short runtime (no more than 15 minutes max)
-* need code to live in the cirrus project repo
+* short runtime, with a maximum of 15 minutes
+* single vCPU is acceptable
+* under 10GB of memory
+* small code size / few dependencies
+* need code to live in the cirrus project repository
 
 
 When to chose Batch
 ^^^^^^^^^^^^^^^^^^^
 
-.. TODO
-
-* long runtimes
-* large package size/non-native dependecies
-* can use multiple CPUs
+* runtime always longer than 5 minutes
+* larger package size / many dependencies
+* need multiple vCPUs, more than 10GB memory, or the ability to more precisely specify a vCPU-to-memory ratio
 * easier to manage code as separate container images
-* need significant RAM
-* need more than 10GB disk
+* need more than 10GB storage
 * need special hardware resources (e.g., GPU)
 
 
@@ -165,7 +167,7 @@ Lambda-only
 ^^^^^^^^^^^
 
 To create a lambda-only task, simply create a new task with a description and
-the options ``--has-lambda`` and ``--no-batch``::
+the option ``--type lambda``::
 
     ❯ cirrus create task --has-lambda --no-batch <TaskName> "<task description>"
 
@@ -179,9 +181,9 @@ Batch-only
 ^^^^^^^^^^
 
 To create a Batch-only task, simply create a new task with a description, but
-add the ``--has-batch`` and ``--no-lambda`` options::
+add the ``--type batch`` option::
 
-    ❯ cirrus create task --has-batch --no-lambda <TaskName> "<task description>"
+    ❯ cirrus create task --type batch <TaskName> "<task description>"
 
 The task directory and required files will be created from a minimal template.
 The templated Batch configuration in the ``definition.yml`` should be
@@ -193,13 +195,88 @@ Lambda and Batch
 ^^^^^^^^^^^^^^^^
 
 For tasks that should support both Lambda and Batch, run the ``create``
-command, this time using the options ``--has-lambda`` and ``--has-batch``::
+command, this time using the options ``--type lambda`` and ``--type batch``::
 
-    ❯ cirrus create task --has-lambda --has-batch <TaskName> "<task description>"
+    ❯ cirrus create task --type lambda --type batch <TaskName> "<task description>"
 
 This command does the same as both of the above ``create`` command examples, so
 the listed caveats of both apply here: ensure the handler code is completed,
 and the batch configuration is updated to match the task requirements.
+
+* :doc:`Conditionally Using Batch or Lambda <components/workflows/batch>`
+
+Docker Image
+---------------
+
+Unfortuantely, the same Docker image cannot be used by both Batch and Lambda, as they
+have slightly different requirements for the `CMD` and `ENTRYPOINT` parameters. The
+solution to this is to have one base image definition that has all directives exception
+`CMD` and `ENTRYPOINT`, and then create two image definitions that use the base image
+but set `CMD` and `ENTRYPOINT`. For example, if we had a image that used a standard
+AWS lambda image (public.ecr.aws/lambda/python:3.11), we would use these directives for
+Batch and Lambda.
+
+Batch::
+
+  COPY src/task/task.py ${LAMBDA_TASK_ROOT}/task.py
+  ENTRYPOINT []
+
+(any prior `CMD` will be reset by the ENTRYPOINT change, and the command is set by the Batch Job Definition)
+
+Lambda::
+
+  COPY src/task/task.py ${LAMBDA_TASK_ROOT}/task.py
+  CMD [ "task.handler" ]
+
+(base image sets `ENTRYPOINT ["/lambda-entrypoint.sh"]`)
+
+Thereby, an example base image that needed geospatial tools could look like this::
+
+  FROM ghcr.io/lambgeo/lambda-gdal:3.8-python3.11 as gdal
+
+  FROM public.ecr.aws/lambda/python:3.11
+
+  # Bring C libs from lambgeo/lambda-gdal image
+  COPY --from=gdal /opt/lib/ ${LAMBDA_TASK_ROOT}/lib/
+  COPY --from=gdal /opt/include/ ${LAMBDA_TASK_ROOT}/include/
+  COPY --from=gdal /opt/share/ ${LAMBDA_TASK_ROOT}/share/
+  COPY --from=gdal /opt/bin/ ${LAMBDA_TASK_ROOT}/bin/
+
+  ENV \
+    GDAL_DATA=${LAMBDA_TASK_ROOT}/share/gdal \
+    PROJ_LIB=${LAMBDA_TASK_ROOT}/share/proj \
+    GDAL_CONFIG=${LAMBDA_TASK_ROOT}/bin/gdal-config \
+    GEOS_CONFIG=${LAMBDA_TASK_ROOT}/bin/geos-config \
+    PATH=${LAMBDA_TASK_ROOT}/bin:$PATH
+
+  RUN yum update -y && \
+      yum install -y libxml2-devel libxslt-devel python-devel gcc && \
+      yum clean all && \
+      rm -rf /var/cache/yum /var/lib/yum/history
+
+  COPY requirements.txt ${LAMBDA_TASK_ROOT}
+
+  RUN pip3 install --no-cache-dir -r requirements.txt
+
+  COPY src/task/task.py ${LAMBDA_TASK_ROOT}/task.py
+
+That could be built and tagged as the base image, and then the Lambda and/or Batch images
+based on it.
+
+Batch::
+
+  FROM my_base_task
+
+  ENTRYPOINT []
+
+Lambda::
+
+  FROM my_base_task
+
+  CMD [ "task.handler" ]
+
+Of course, if only one of the Batch or Lambda is needed, these commands can be combined into
+a single definition.
 
 
 Task parameters

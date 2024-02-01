@@ -55,7 +55,7 @@ def cli(ctx, verbose, cirrus_dir=None):
 
     for group in project.groups:
         if hasattr(group, "add_create_command"):
-            group.add_create_command(create)
+            group.add_create_comand(create)
         if hasattr(group, "add_show_command"):
             group.add_show_command(show)
 

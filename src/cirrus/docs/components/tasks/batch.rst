@@ -305,7 +305,7 @@ The specified resource requirements are used by the compute environment to pick
 an appropriate-sized instance type for the job, either by doing a best fit
 across all available instance types, or by selecting the best fit instance type
 from a user-provided list. Additional factors come into play with instance
-selection such as whether the compute environment is using on-demand or spot
+selection such as whether the compute environment is using On-Demand or Spot
 instance.
 
 Optimizing task resource requirements to the minimum required is critical.
@@ -416,11 +416,78 @@ CPUs each job requires.
    https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html
 
 
-Using the AWS spot market
+Using the AWS Spot market
 *************************
 
-.. TODO
+Using Spot instances instead of On-Demand can result in a significant cost savings, with only a
+small effect on throughput and latency. Workflow error handling must be well-defined, since Spot
+instances have a significantly higher liklihood of being deallocated as compared with On-Demand
+instances.
 
+This is an example of a ComputeEnvironment that uses Spot::
+
+  FooComputeEnvironment:
+  Type: AWS::Batch::ComputeEnvironment
+  Properties:
+    Type: MANAGED
+    ComputeResources:
+      MinvCpus: ${env:CIRRUS_TASK_FOO_TO_STAC_BATCH_MIN_VCPUS, 0}
+      MaxvCpus: 5000
+      SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+      Subnets: ${self:custom.batch.Subnets}
+      InstanceTypes:
+        - r4.xlarge
+        - r4.2xlarge
+        - r4.4xlarge
+        - r4.8xlarge
+        - r4.16xlarge
+        - r5.xlarge
+        - r5.2xlarge
+        - r5.4xlarge
+        - r5.8xlarge
+        - r5.12xlarge
+        - r5.16xlarge
+        - r5.24xlarge
+        - r6i.xlarge
+        - r6i.2xlarge
+        - r6i.4xlarge
+        - r6i.8xlarge
+        - r6i.12xlarge
+        - r6i.16xlarge
+        - r6i.24xlarge
+        - r7i.xlarge
+        - r7i.2xlarge
+        - r7i.4xlarge
+        - r7i.8xlarge
+        - r7i.12xlarge
+        - r7i.16xlarge
+        - r7i.24xlarge
+      Type: SPOT
+      AllocationStrategy: BEST_FIT_PROGRESSIVE
+      SpotIamFleetRole:
+        Fn::GetAtt: [EC2SpotRole, Arn]
+      InstanceRole:
+        Fn::GetAtt: [BatchInstanceProfile, Arn]
+      Tags: { "Name": "Batch Instance - #{AWS::StackName}" }
+      LaunchTemplate:
+        LaunchTemplateId: !Ref FooComputeEnvironmentLaunchTemplate
+        Version: $Latest
+    State: ENABLED
+
+The AllocationStrategy of `BEST_FIT_PROGRESSIVE` indicates that Spot requests should be made
+progressively for the instance types that ECS determines will best meet the resource needs, but
+that any of these machines is acceptable. This is different than the `BEST_FIT` allocation
+strategy that will pick the best one and wait until that best one can be fulfilled.
+
+These specific `InstanceTypes` were chosen because they match the processor architecture needed
+by the Docker image that will run on them (AMD64) and they most closely "pack" with the amount
+vCPU and memory configured for the container, in this case, 1 vCPU and 9.8GB memory, with their
+1 vCPU to 8GB memory ratios.
+
+`MinvCpus` is set to an environment variable, so we can set it to 0 in our dev environment that
+is rarely incurring load, and non-zero in our production environment so that a temporary period
+in which there is no compute required doesn't result in the deallocation of our entire compute
+pool and a fresh spot request when it does start processing again.
 
 Launch templates
 ^^^^^^^^^^^^^^^^
@@ -585,6 +652,23 @@ mechanisms, and compute environment capacities.
 Also consider the deployment downtime requirements and how changes to compute
 environments must be managed per the following guidelines, making sure that the
 chosen strategy will have enough headroom within the quotas.
+
+The AWS Batch API also limits the number of SubmitJob and DescribeJobs requests
+to 50/sec (it is unclear from the documentation if this an individual or combined quota).
+This makes it critical that the rate of creating new workflows (step function executions)
+be limited so that they do not overwhelm this API with submitting jobs.
+
+
+Subnets
+-------
+
+It is important that the EC2 compute resources for a Batch compute environment
+are configured to use the appropriate subnet. While private subnets are generally
+preferred for security reasons, they can incur significant NAT Gateway Data Processing
+Charges.  These charges are incurred for all data that ingresses or egresses, for example,
+when retrieving data from the internet or accessing or writing S3 objects in another region.
+Therefore, it is preferred to put the Batch compute resources in a public subnet to avoid
+these charges.
 
 
 Managing changes to Batch resources
