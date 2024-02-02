@@ -8,6 +8,7 @@ lambda:
   events:
     - sqs:
         arn: !GetAtt ProcessQueue.Arn
+        maximumConcurrency: 16
   iamRoleStatements:
     - Effect: "Allow"
       Action:
