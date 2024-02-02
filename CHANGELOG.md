@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changed
 
-- `process` function definition now defines a maximumConcurrency for SQS-driven invocation
+- `process` function definition now defines a maximumConcurrency
   of 16. This still results is relatively fast draining of the process queue, but unlike
   an unlimited concurrency, prevents too many step functions from being created too fast,
   which can result in Lambda or Batch overload.

@@ -4,11 +4,11 @@ environment:
 lambda:
   memorySize: 128
   timeout: 10
+  reservedConcurrency: 16
   handler: lambda_function.lambda_handler
   events:
     - sqs:
         arn: !GetAtt ProcessQueue.Arn
-        maximumConcurrency: 16
   iamRoleStatements:
     - Effect: "Allow"
       Action:
