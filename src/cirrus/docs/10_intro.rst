@@ -9,7 +9,7 @@ to massive workloads of millions of items in both a cost-efficient and
 performance-efficient manner, regardless if processing takes
 seconds, hours, or longer.
 
-The core of Cirrus consists of two primary pieces:
+Cirrus consists of two primary pieces:
 - `cirrus`, a CLI-based project management and deploy tool, and
 - `cirrus-lib`, a Python library providing a number of useful
 abstractions solving common needs for users writing their own Cirrus components.
@@ -30,7 +30,7 @@ Concepts
 STAC-based workflows
 ^^^^^^^^^^^^^^^^^^^^
 
-A key design aspect of Cirrus is the use of the `STAC`_ metadata specification as a
+A core design aspect of Cirrus is the use of the `STAC`_ metadata specification as a
 basis for the :doc:`Cirrus Process Payload <30_payload>` format. In this
 way Cirrus, encourages a highly-interoperable, metadata-first approach for both
 pipeline operators and end users alike.

@@ -52,14 +52,12 @@ need for Batch.
 Error handling
 ^^^^^^^^^^^^^^
 
-- When too many step functions are trying to create a new Batch Job, a AWSBatchException is thrown.
-- When the EC2 instance that a Batch Job is running on is reclaimed, as happens frequently with Spot instances
-at scale, we want to retry creating the batch job.
-- Other errors will cause the entire parallel block to be retried.
-- For each step that can fail, we define a `Retry`.
-
-An important consideration is that, at scale, a common cause of errors is system overload.
-
+It is essential that workflows properly handle errors when using Batch, as there are
+more things that can go wrong than when using Lambda. For example, when too many Step
+Functions are trying to create a new Batch Job, a AWSBatchException is thrown. When the
+EC2 instance that a Batch Job is running on is reclaimed, as happens frequently with Spot
+instances at scale, a retry should occur so the Batch Job is attempted again. This is why
+it is recommended to use a Parallel block with retry to wrap the Batch steps.
 
 Additional considerations
 ^^^^^^^^^^^^^^^^^^^^^^^^^
