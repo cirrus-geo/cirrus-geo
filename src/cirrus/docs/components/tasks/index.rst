@@ -203,7 +203,7 @@ This command does the same as both of the above ``create`` command examples, so
 the listed caveats of both apply here: ensure the handler code is completed,
 and the batch configuration is updated to match the task requirements.
 
-* :doc:`Conditionally Using Batch or Lambda <components/workflows/batch>`
+* :doc:`Conditionally Using Batch or Lambda <../workflows/batch>`
 
 Docker Image
 ---------------

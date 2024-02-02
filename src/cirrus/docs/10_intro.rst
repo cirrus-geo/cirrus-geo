@@ -93,7 +93,7 @@ accessible to end-users through the robust ecosystem of STAC tooling.
 
 
 Example Earth Search use case
-----------------
+-----------------------------
 
 One prominent use case of Cirrus is as the processing pipeline for `Earth Search`_.
 
@@ -115,7 +115,7 @@ API and ingesting any new scenes. Similarly, the older Sentinel-2 Level-2A colle
 is populated by receiving SNS messages from an older Cirrus pipeline that supported the
 now-deprecated Earth Search v0 deployment.
 
-.. _earth-search: https://www.element84.com/earth-search/
+.. _earth search: https://www.element84.com/earth-search/
 
 AWS services used
 -----------------
