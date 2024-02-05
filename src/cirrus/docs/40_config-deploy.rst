@@ -23,18 +23,25 @@ Quotas
 
 Quotas are limits imposed per account that can usually be increased.
 
-- Lambda defaults to 1,000 concurrent executions, should be increased to tens of thousands
-- 1M open step function executions per account per region
+- Lambda Functions - defaults to 1,000 concurrent executions, should be increased to at least 10,000
+- Step Functions - 1M open step function executions per account per region
   (see `AWS Step Functions - Quotas https://docs.aws.amazon.com/step-functions/latest/dg/limits-overview.html`_).
   Generally, this is sufficient, and if a higher volume of items is being processed that
   this, their ingress into the system should be throttled earlier in the flow.
+- Step Functions - StartExecution throttle token bucket size: 2,500
+- Step Functions - StartExecution throttle token refill rate per second: 300
+- Step Functions - GetExecutionHistory throttle token bucket size: 2,000
+- Step Functions - GetExecutionHistory throttle token refill rate per second: 100
+- EC2 - Running On-Demand P instances: 64
+- EC2 - Spot Instance requests per-instance type is set to a default of 5, and should increased at least into the hundreds.
+- WAF Classic - Rules per region: 200
+- S3 - General Purpose Buckets: 200
 
 Limits
 ^^^^^^
 
 - Batch API SubmitJob and DescribeJob API endpoints have a limit of 50 requests/sec
 - There are no limits on the number of EC2 Spot instance vCPUs you can have like there are for On-Demand and Dedicated instances
-- The number of Spot Instance requests per-instance type is set to a default of 5, and should increased at least into the hundreds.
 - Lambda has a 15 minute execution time limit
 
 
