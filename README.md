@@ -4,25 +4,28 @@
 
 # Cirrus
 
-Cirrus is a [STAC](https://stacspec.org/)-based processing pipeline.
-As input, Cirrus takes a GeoJSON FeatureCollection with 1 or more STAC Items
-(an `ItemCollection` in pystack nomeclature), with a process definition block.
-That input is called a cirrus `ProcessPayload` (CPP).
+Cirrus is a [STAC](https://stacspec.org/)-based geospatial processing pipeline platform,
+implemented using a scalable architecture deployed on AWS. Cirrus provides the generic
+infrastructure for processing, allowing a user to focus on implementing the specific
+processing logic for their data.
+
+![](src/cirrus/docs/images/arch-overview.png)
+
+As input, Cirrus takes a STAC ItemCollection, with a process definition block.
+That input is called a Cirrus `ProcessPayload` (CPP).
 
 An input is run through a workflow that generates one or more output STAC Items.
 These output Items are added to the Cirrus static STAC catalog in S3,
 and are also broadcast via an SNS topic. Subscrptions to that topic can
-triggering additional workflows or external processes, such as for keeping
-a dynamic STAC catalog up to date (for example,
-[STAC-server](https://github.com/stac-utils/stac-server)).
+triggering additional workflows or external processes, such as indexing into a
+STAC API catalog (e.g.,
+[stac-server](https://github.com/stac-utils/stac-server)).
 
 Cirrus workflows range from the simple publishing of unmodified input items to
 the complex transformation of input Items and generation of wholly-new output
 Items. The current state of CPP processing is tracked in a state database
 to prevent duplicate processing and allow for a user to follow the state of any
 input through the pipeline.
-
-![](docs/images/highlevel.png)
 
 As shown in this high-level overview of Cirrus, users input data to Cirrus
 through the use of _feeders_. Feeders are simply programs that get/generate

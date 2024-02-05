@@ -1,7 +1,7 @@
 {
   "serverless.yml": {
-    "shasum": "e8864e6924e67beb793e05e450b0654fb6e409ec52e6d06ce5f94f9efc166869",
-    "size": 37964
+    "shasum": "e84f4d57b0bfe85be65e36d78e94e104153580a0c50a8791a0c8270c7c74fa9c",
+    "size": 37992
   },
   "lambdas/pre-batch/requirements.txt": {
     "shasum": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -12,8 +12,8 @@
     "size": 0
   },
   "lambdas/pre-batch/lambda_function.py": {
-    "shasum": "0f4338592635f867c910ccecefe7a6a42de80bed8274a88a9a699c469ec83317",
-    "size": 892
+    "shasum": "e3d90e2f50032e65eb651c4290ea35bf97e6951eca5fe2391fa00e720ee2ee2a",
+    "size": 858
   },
   "lambdas/post-batch/requirements.txt": {
     "shasum": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -24,8 +24,8 @@
     "size": 0
   },
   "lambdas/post-batch/lambda_function.py": {
-    "shasum": "5c0ee9914f5ac42f63f8b5fe49301408f50135f45529b98bb56e4f1a957a5ba8",
-    "size": 1426
+    "shasum": "7cca6f45a7a8b3885ea7d852cd59b9c1f56c6a2e4ff8c885f13a7066ca054f4d",
+    "size": 3161
   },
   "lambdas/update-state/requirements.txt": {
     "shasum": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -132,7 +132,7 @@
     "size": 22034
   },
   "cirrus/lib2/process_payload.py": {
-    "shasum": "fa8177acf9ec13f089ea4cb15df31f3aa0cf22a3c445176660d9a1822c9c44bc",
-    "size": 14073
+    "shasum": "901c682441e87446ef13456d4daceec73bd315be3bab1ea275c7bfb36e1dff76",
+    "size": 14099
   }
 }

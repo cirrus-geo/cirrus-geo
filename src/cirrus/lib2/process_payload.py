@@ -200,6 +200,7 @@ class ProcessPayload(dict):
                 if regex.match(item["id"]):
                     self.logger.debug(f"Setting collection to {col}")
                     item["collection"] = col
+                    break
 
     def get_payload(self) -> dict:
         """Get original payload for this ProcessPayload

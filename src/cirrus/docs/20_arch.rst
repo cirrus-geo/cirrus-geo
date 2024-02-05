@@ -9,18 +9,20 @@ An overall picture of Cirrus looks like this:
 .. image:: images/arch-overview.png
 
 As shown in that diagram, input Cirrus Process Payloads are published into an
-input SNS topic via users or automated :doc:`Feeder <components/feeders>`
-processes. Those input payloads are enqueued in an SQS queue for processing by
-the ``process`` lambda.  ``process`` creates or updates the :doc:`State DB
-<70_statedb>` record for the payload and starts a :doc:`Workflow
-<components/workflows/index>` execution by dispatching the payload to the
+input SQS queue, either manually by a user or by automated :doc:`Feeder <components/feeders>`
+processes. Feeder functions can either be invoked manually (e.g., the Re-run Feeder), or
+from an externals source such as an SNS notification. These enqueued messages are
+then processed by
+the ``process`` Lambda Function. The ``process`` function creates or updates the
+:doc:`State DB <70_statedb>` record for the payload and starts a
+:doc:`Workflow <components/workflows/index>` execution by dispatching the payload to the
 specified Workflow.
 
 Any output items and their assets are persisted to S3, and the output items are
-published to an output SNS topic that can notify downstream subscribers like
-stac-server of newly-processed items.
+published to an output SNS topic that can notify downstream subscribers, like
+stac-server, of newly-processed items.
 
-At the end of a workflow execution an EventBridge event is triggered, which
+At the end of a workflow execution, an EventBridge event is triggered, which
 notifies the listening ``update-state`` lambda that the execution has
 completed.  ``update-state`` updates the State DB record for the processed
 payload in accordance with the final workflow state (success, failed, aborted,
