@@ -484,6 +484,15 @@ by the Docker image that will run on them (AMD64) and they most closely "pack" w
 vCPU and memory configured for the container, in this case, 1 vCPU and 9.8GB memory, with their
 1 vCPU to 8GB memory ratios.
 
+If you choose an AllocationStrategy with a wide range of available instance types,
+larger instances will be running more jobs, and you need to ensure you have
+appropriate storage for these larger instances. Unfortunately, only one value can be
+set for storage, which every EC2 instance gets, no matter how many concurrent tasks it
+can support. For example, if each task requires 1vCPU and 3GB of storage and you allow
+r4.xlarge (4 vCPUs) to r4.24xlarge (96 vCPUs), you must specify the the maximum amount of
+storage required (96 x 3GB = 288GB), even though the r4.xlarge instances will always have
+276GB of unused storage that incurs cost.
+
 `MinvCpus` is set to an environment variable, so we can set it to 0 in our dev environment that
 is rarely incurring load, and non-zero in our production environment so that a temporary period
 in which there is no compute required doesn't result in the deallocation of our entire compute
@@ -669,6 +678,10 @@ Charges.  These charges are incurred for all data that ingresses or egresses, fo
 when retrieving data from the internet or accessing or writing S3 objects in another region.
 Therefore, it is preferred to put the Batch compute resources in a public subnet to avoid
 these charges.
+
+It is highly recommended to follow
+`least privilege https://docs.aws.amazon.com/wellarchitected/latest/framework/sec_permissions_least_privileges.html`_
+using AWS Security Groups, especially denying SSH access (port 22).
 
 
 Managing changes to Batch resources

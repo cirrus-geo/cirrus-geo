@@ -208,6 +208,24 @@ and the batch configuration is updated to match the task requirements.
 Docker Image
 ---------------
 
+It is generally recommended to use a Docker image for tasks unless the task is only
+intended to run in Lambda and has few dependencies, which is rarely the case with
+geospatial processing.
+
+The easiest way to do this is to create a Python class that extends stactask.task.Task
+and implements the abstract method `def process(self, **kwargs: Any) -> List[Dict[str, Any]]`.
+This class should be put in the file `src/task/task.py`, and can then be invoked by
+Docker with directives::
+
+  FROM public.ecr.aws/lambda/python:3.11
+
+  # ENTRYPOINT ["/lambda-entrypoint.sh"] # set by base lambda image
+  COPY src/task/task.py ${LAMBDA_TASK_ROOT}/task.py
+  CMD [ "task.handler" ]
+
+If you choose to use your own container that is not based on a standard Lambda image,
+you must add the `lambda-entrypoint.sh` file to your image and set `ENTRYPOINT` explicitly.
+
 Unfortuantely, the same Docker image cannot be used by both Batch and Lambda, as they
 have slightly different requirements for the `CMD` and `ENTRYPOINT` parameters. The
 solution to this is to have one base image definition that has all directives exception
