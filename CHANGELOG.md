@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## Changed
+
+- `process` function definition now defines a maximumConcurrency
+  of 16. This still results is relatively fast draining of the process queue, but unlike
+  an unlimited concurrency, prevents too many step functions from being created too fast,
+  which can result in Lambda or Batch overload.
+
 ## [v0.10.1] - 2024-01-10
 
 ### Fixed
@@ -650,8 +659,7 @@ cleanup steps.
 
 Initial release
 
-<!-- [unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.0...main -->
-
+[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.1...main
 [v0.10.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.0...v0.10.1
 [v0.10.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.9.0...v0.10.0
 [v0.9.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.8.0...v0.9.0
