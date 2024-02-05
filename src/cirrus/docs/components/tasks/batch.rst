@@ -679,10 +679,10 @@ when retrieving data from the internet or accessing or writing S3 objects in ano
 Therefore, it is preferred to put the Batch compute resources in a public subnet to avoid
 these charges.
 
-It is highly recommended to follow
-`least privilege https://docs.aws.amazon.com/wellarchitected/latest/framework/sec_permissions_least_privileges.html`_
+It is highly recommended to follow `least privilege`_
 using AWS Security Groups, especially denying SSH access (port 22).
 
+.. _least privilege: https://docs.aws.amazon.com/wellarchitected/latest/framework/sec_permissions_least_privileges.html
 
 Managing changes to Batch resources
 -----------------------------------
