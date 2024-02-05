@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 
 
 default_handler = """#!/usr/bin/env python
-from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.logging import get_task_logger
+from cirrus.lib2.process_payload import ProcessPayload
+from cirrus.lib2.logging import get_task_logger
 
 
 LAMBDA_TYPE = '{component_type}'

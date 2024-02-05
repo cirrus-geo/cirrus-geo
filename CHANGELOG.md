@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### ⚠️ Breaking changes
+
+- Users relying on the automatic packaging of cirrus.lib into lambdas will need to explicitly add cirrus.lib to those function requirements. Additionally, cirrus.lib is no longer maintained it is recommended to migrate to using stac-task instead.
+
+### Removed
+
+- Cleaned `cirrus.lib` (old separate package) from lambda templates and build
+  process. ([#230])
+
 ## Changed
 
 - `process` function definition now defines a maximumConcurrency

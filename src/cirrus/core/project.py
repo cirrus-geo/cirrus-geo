@@ -128,7 +128,6 @@ class Project:
 
         import shutil
 
-        import cirrus.lib
         import cirrus.lib2
         from cirrus.core.utils import misc
 
@@ -159,14 +158,6 @@ class Project:
         # write serverless config
         self.config.build(self.groups).to_file(
             bd.joinpath(DEFAULT_SERVERLESS_FILENAME),
-        )
-
-        # copy cirrus-lib to build dir for packaging
-        lib_dir = bd.joinpath("cirrus", "lib")
-        shutil.copytree(
-            cirrus.lib.__path__[0],
-            lib_dir,
-            ignore=shutil.ignore_patterns("*.pyc", "__pycache__"),
         )
 
         # copy built-in lib2 to build dir for packaging
