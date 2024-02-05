@@ -1,23 +1,24 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tasks &mdash; cirrus-geo  documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/doctools.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script>mermaid.initialize({startOnLoad:true});</script>
-        <script src="../../../_static/js/versions-loader.js"></script>
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/js/versions-loader.js?v=d43487cb"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -30,14 +31,18 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../index.html" class="icon icon-home"> cirrus-geo
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            cirrus-geo
           </a>
               <div class="version">
                 main
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -61,6 +66,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#lambda-vs-batch">Lambda vs Batch</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#when-to-chose-either">When to chose either</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#when-to-chose-lambda">When to chose Lambda</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#when-to-chose-batch">When to chose Batch</a></li>
 </ul>
@@ -71,6 +77,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#lambda-and-batch">Lambda and Batch</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#docker-image">Docker Image</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#task-parameters">Task parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#running-tasks-locally">Running tasks locally</a></li>
 </ul>
@@ -83,6 +90,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../70_statedb.html">State Database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../95_tips_and_tricks.html">Tips and Tricks</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
@@ -105,9 +113,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../../60_components.html">Cirrus Components</a> &raquo;</li>
-      <li>Tasks</li>
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../60_components.html">Cirrus Components</a></li>
+      <li class="breadcrumb-item active">Tasks</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../../_sources/cirrus/components/tasks/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -118,7 +126,7 @@
            <div itemprop="articleBody">
              
   <section id="tasks">
-<h1>Tasks<a class="headerlink" href="#tasks" title="Permalink to this headline"></a></h1>
+<h1>Tasks<a class="headerlink" href="#tasks" title="Link to this heading"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <p>Tasks in Cirrus implement a unit of processing, to be composed together into a
@@ -140,7 +148,7 @@ specialized instance types.</p>
 subdirectory named for the task. Each task requires a <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> file with
 the task’s configuration, and a <code class="docutils literal notranslate"><span class="pre">README.md</span></code> file documenting the task’s usage.</p>
 <section id="anatomy-of-a-task">
-<h2>Anatomy of a task<a class="headerlink" href="#anatomy-of-a-task" title="Permalink to this headline"></a></h2>
+<h2>Anatomy of a task<a class="headerlink" href="#anatomy-of-a-task" title="Link to this heading"></a></h2>
 <p>Generally speaking, every task should do a few key things:</p>
 <ul class="simple">
 <li><p>Take an input Cirrus Process Payload</p>
@@ -167,7 +175,7 @@ pointing to that payload object in S3</p></li>
 follow this flow. <code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code> provides convenince classes/methods to help with
 these common needs.</p>
 <section id="lambda-tasks">
-<h3>Lambda tasks<a class="headerlink" href="#lambda-tasks" title="Permalink to this headline"></a></h3>
+<h3>Lambda tasks<a class="headerlink" href="#lambda-tasks" title="Link to this heading"></a></h3>
 <p>Lambda tasks use the <a class="reference external" href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda</a> runtime to power executions. Lambda has the
 advantage of quick startup and easy management, but has many restrictions like
 short timeouts and significant resource limits.</p>
@@ -176,7 +184,7 @@ components</span></a> documentation. Refer there for specifics on what files
 are requried for Lambda tasks and how to structure the <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> file.</p>
 </section>
 <section id="batch-tasks">
-<h3>Batch tasks<a class="headerlink" href="#batch-tasks" title="Permalink to this headline"></a></h3>
+<h3>Batch tasks<a class="headerlink" href="#batch-tasks" title="Link to this heading"></a></h3>
 <p>Batch tasks use <a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/what-is-batch.html">AWS Batch</a> semantics to define <a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/jobs.html">jobs</a> that execute within a
 <a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/compute_environments.html">compute environment</a> as determined by the <a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/job_queues.html">job queue</a> to which the job is
 submitted.  Batch compute environments can make use of <a class="reference external" href="https://docs.aws.amazon.com/eks/latest/userguide/fargate.html">Fargate</a> or <a class="reference external" href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html">EC2</a> to
@@ -189,39 +197,45 @@ queue, compute environment, and any other requried resources.</p>
 </section>
 </section>
 <section id="lambda-vs-batch">
-<h2>Lambda vs Batch<a class="headerlink" href="#lambda-vs-batch" title="Permalink to this headline"></a></h2>
-<section id="when-to-chose-lambda">
-<h3>When to chose Lambda<a class="headerlink" href="#when-to-chose-lambda" title="Permalink to this headline"></a></h3>
+<h2>Lambda vs Batch<a class="headerlink" href="#lambda-vs-batch" title="Link to this heading"></a></h2>
+<section id="when-to-chose-either">
+<h3>When to chose either<a class="headerlink" href="#when-to-chose-either" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>small code size/not many dependencies</p></li>
-<li><p>single-threaded</p></li>
-<li><p>short runtime (no more than 15 minutes max)</p></li>
-<li><p>need code to live in the cirrus project repo</p></li>
+<li><p>can be run as a Docker image</p></li>
+</ul>
+</section>
+<section id="when-to-chose-lambda">
+<h3>When to chose Lambda<a class="headerlink" href="#when-to-chose-lambda" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>short runtime, with a maximum of 15 minutes</p></li>
+<li><p>single vCPU is acceptable</p></li>
+<li><p>under 10GB of memory</p></li>
+<li><p>small code size / few dependencies</p></li>
+<li><p>need code to live in the cirrus project repository</p></li>
 </ul>
 </section>
 <section id="when-to-chose-batch">
-<h3>When to chose Batch<a class="headerlink" href="#when-to-chose-batch" title="Permalink to this headline"></a></h3>
+<h3>When to chose Batch<a class="headerlink" href="#when-to-chose-batch" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>long runtimes</p></li>
-<li><p>large package size/non-native dependecies</p></li>
-<li><p>can use multiple CPUs</p></li>
+<li><p>runtime always longer than 5 minutes</p></li>
+<li><p>larger package size / many dependencies</p></li>
+<li><p>need multiple vCPUs, more than 10GB memory, or the ability to more precisely specify a vCPU-to-memory ratio</p></li>
 <li><p>easier to manage code as separate container images</p></li>
-<li><p>need significant RAM</p></li>
-<li><p>need more than 10GB disk</p></li>
+<li><p>need more than 10GB storage</p></li>
 <li><p>need special hardware resources (e.g., GPU)</p></li>
 </ul>
 </section>
 </section>
 <section id="creating-a-new-task">
-<h2>Creating a new task<a class="headerlink" href="#creating-a-new-task" title="Permalink to this headline"></a></h2>
+<h2>Creating a new task<a class="headerlink" href="#creating-a-new-task" title="Link to this heading"></a></h2>
 <p>Creating a new task involves creating a directory with the task name under
 <code class="docutils literal notranslate"><span class="pre">tasks/</span></code> and the required files inside it. Getting everything setup with all
 the requisite boiler-plate takes some minor work. The <code class="docutils literal notranslate"><span class="pre">cirrus</span></code> cli includes
 a convenience function to automate getting started with a new task.</p>
 <section id="lambda-only">
-<h3>Lambda-only<a class="headerlink" href="#lambda-only" title="Permalink to this headline"></a></h3>
+<h3>Lambda-only<a class="headerlink" href="#lambda-only" title="Link to this heading"></a></h3>
 <p>To create a lambda-only task, simply create a new task with a description and
-the options <code class="docutils literal notranslate"><span class="pre">--has-lambda</span></code> and <code class="docutils literal notranslate"><span class="pre">--no-batch</span></code>:</p>
+the option <code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">lambda</span></code>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus create task --has-lambda --no-batch &lt;TaskName&gt; &quot;&lt;task description&gt;&quot;
 </pre></div>
 </div>
@@ -232,10 +246,10 @@ ensure it matches the task requirements. Any usage information should also be
 added to the <code class="docutils literal notranslate"><span class="pre">README.md</span></code> file.</p>
 </section>
 <section id="batch-only">
-<h3>Batch-only<a class="headerlink" href="#batch-only" title="Permalink to this headline"></a></h3>
+<h3>Batch-only<a class="headerlink" href="#batch-only" title="Link to this heading"></a></h3>
 <p>To create a Batch-only task, simply create a new task with a description, but
-add the <code class="docutils literal notranslate"><span class="pre">--has-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">--no-lambda</span></code> options:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus create task --has-batch --no-lambda &lt;TaskName&gt; &quot;&lt;task description&gt;&quot;
+add the <code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">batch</span></code> option:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus create task --type batch &lt;TaskName&gt; &quot;&lt;task description&gt;&quot;
 </pre></div>
 </div>
 <p>The task directory and required files will be created from a minimal template.
@@ -245,19 +259,106 @@ modification for most uses. Be sure to also update the <code class="docutils lit
 usage information.</p>
 </section>
 <section id="lambda-and-batch">
-<h3>Lambda and Batch<a class="headerlink" href="#lambda-and-batch" title="Permalink to this headline"></a></h3>
+<h3>Lambda and Batch<a class="headerlink" href="#lambda-and-batch" title="Link to this heading"></a></h3>
 <p>For tasks that should support both Lambda and Batch, run the <code class="docutils literal notranslate"><span class="pre">create</span></code>
-command, this time using the options <code class="docutils literal notranslate"><span class="pre">--has-lambda</span></code> and <code class="docutils literal notranslate"><span class="pre">--has-batch</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus create task --has-lambda --has-batch &lt;TaskName&gt; &quot;&lt;task description&gt;&quot;
+command, this time using the options <code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">lambda</span></code> and <code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">batch</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus create task --type lambda --type batch &lt;TaskName&gt; &quot;&lt;task description&gt;&quot;
 </pre></div>
 </div>
 <p>This command does the same as both of the above <code class="docutils literal notranslate"><span class="pre">create</span></code> command examples, so
 the listed caveats of both apply here: ensure the handler code is completed,
 and the batch configuration is updated to match the task requirements.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../workflows/batch.html"><span class="doc">Conditionally Using Batch or Lambda</span></a></p></li>
+</ul>
 </section>
+</section>
+<section id="docker-image">
+<h2>Docker Image<a class="headerlink" href="#docker-image" title="Link to this heading"></a></h2>
+<p>It is generally recommended to use a Docker image for tasks unless the task is only
+intended to run in Lambda and has few dependencies, which is rarely the case with
+geospatial processing.</p>
+<p>The easiest way to do this is to create a Python class that extends stactask.task.Task
+and implements the abstract method <cite>def process(self, **kwargs: Any) -&gt; List[Dict[str, Any]]</cite>.
+This class should be put in the file <cite>src/task/task.py</cite>, and can then be invoked by
+Docker with directives:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>FROM public.ecr.aws/lambda/python:3.11
+
+# ENTRYPOINT [&quot;/lambda-entrypoint.sh&quot;] # set by base lambda image
+COPY src/task/task.py ${LAMBDA_TASK_ROOT}/task.py
+CMD [ &quot;task.handler&quot; ]
+</pre></div>
+</div>
+<p>If you choose to use your own container that is not based on a standard Lambda image,
+you must add the <cite>lambda-entrypoint.sh</cite> file to your image and set <cite>ENTRYPOINT</cite> explicitly.</p>
+<p>Unfortuantely, the same Docker image cannot be used by both Batch and Lambda, as they
+have slightly different requirements for the <cite>CMD</cite> and <cite>ENTRYPOINT</cite> parameters. The
+solution to this is to have one base image definition that has all directives exception
+<cite>CMD</cite> and <cite>ENTRYPOINT</cite>, and then create two image definitions that use the base image
+but set <cite>CMD</cite> and <cite>ENTRYPOINT</cite>. For example, if we had a image that used a standard
+AWS lambda image (public.ecr.aws/lambda/python:3.11), we would use these directives for
+Batch and Lambda.</p>
+<p>Batch:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>COPY src/task/task.py ${LAMBDA_TASK_ROOT}/task.py
+ENTRYPOINT []
+</pre></div>
+</div>
+<p>(any prior <cite>CMD</cite> will be reset by the ENTRYPOINT change, and the command is set by the Batch Job Definition)</p>
+<p>Lambda:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>COPY src/task/task.py ${LAMBDA_TASK_ROOT}/task.py
+CMD [ &quot;task.handler&quot; ]
+</pre></div>
+</div>
+<p>(base image sets <cite>ENTRYPOINT [“/lambda-entrypoint.sh”]</cite>)</p>
+<p>Thereby, an example base image that needed geospatial tools could look like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>FROM ghcr.io/lambgeo/lambda-gdal:3.8-python3.11 as gdal
+
+FROM public.ecr.aws/lambda/python:3.11
+
+# Bring C libs from lambgeo/lambda-gdal image
+COPY --from=gdal /opt/lib/ ${LAMBDA_TASK_ROOT}/lib/
+COPY --from=gdal /opt/include/ ${LAMBDA_TASK_ROOT}/include/
+COPY --from=gdal /opt/share/ ${LAMBDA_TASK_ROOT}/share/
+COPY --from=gdal /opt/bin/ ${LAMBDA_TASK_ROOT}/bin/
+
+ENV \
+  GDAL_DATA=${LAMBDA_TASK_ROOT}/share/gdal \
+  PROJ_LIB=${LAMBDA_TASK_ROOT}/share/proj \
+  GDAL_CONFIG=${LAMBDA_TASK_ROOT}/bin/gdal-config \
+  GEOS_CONFIG=${LAMBDA_TASK_ROOT}/bin/geos-config \
+  PATH=${LAMBDA_TASK_ROOT}/bin:$PATH
+
+RUN yum update -y &amp;&amp; \
+    yum install -y libxml2-devel libxslt-devel python-devel gcc &amp;&amp; \
+    yum clean all &amp;&amp; \
+    rm -rf /var/cache/yum /var/lib/yum/history
+
+COPY requirements.txt ${LAMBDA_TASK_ROOT}
+
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+COPY src/task/task.py ${LAMBDA_TASK_ROOT}/task.py
+</pre></div>
+</div>
+<p>That could be built and tagged as the base image, and then the Lambda and/or Batch images
+based on it.</p>
+<p>Batch:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FROM</span> <span class="n">my_base_task</span>
+
+<span class="n">ENTRYPOINT</span> <span class="p">[]</span>
+</pre></div>
+</div>
+<p>Lambda:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FROM</span> <span class="n">my_base_task</span>
+
+<span class="n">CMD</span> <span class="p">[</span> <span class="s2">&quot;task.handler&quot;</span> <span class="p">]</span>
+</pre></div>
+</div>
+<p>Of course, if only one of the Batch or Lambda is needed, these commands can be combined into
+a single definition.</p>
 </section>
 <section id="task-parameters">
-<h2>Task parameters<a class="headerlink" href="#task-parameters" title="Permalink to this headline"></a></h2>
+<h2>Task parameters<a class="headerlink" href="#task-parameters" title="Link to this heading"></a></h2>
 <p>Tasks can take arguments at runtime via process definition parameters. See the
 <a class="reference internal" href="../../30_payload.html"><span class="doc">Cirrus Process Payload</span></a> docs for more information. When
 authoring a task, be sure to document all supported task parameters in the
@@ -270,7 +371,7 @@ view via the cli:</p>
 markup applied.</p>
 </section>
 <section id="running-tasks-locally">
-<h2>Running tasks locally<a class="headerlink" href="#running-tasks-locally" title="Permalink to this headline"></a></h2>
+<h2>Running tasks locally<a class="headerlink" href="#running-tasks-locally" title="Link to this heading"></a></h2>
 <p>We are working to standardize task code and <code class="docutils literal notranslate"><span class="pre">cirrus</span></code> cli tooling to provide
 an easy and consistent means to execute tasks locally. This feature is still
 under development, so for now please consult the project or task documentation

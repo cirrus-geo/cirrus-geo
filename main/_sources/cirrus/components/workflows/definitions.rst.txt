@@ -147,6 +147,49 @@ workflows. Cirrus allows several means of building such multi-stage pipelines:
   conditions don't quite fit with the in-the-box approaches.
 
 
+Error handling
+--------------
+
+A critical aspect of scalable workflows is the ability to tolerate and properly recover
+from errors.
+
+Some errors can occur prior to even executing a task, for example,
+a Lambda.TooManyRequestsException occurs when too many Lambda requests are being made
+(a quota that defaults to 1,000 and can be set to tens of thousands) or an AWSBatchException
+can occur when the AWS Batch API SubmitJob quota of 50/sec is breached. In both cases, these
+steps should be retried; however, they are likely to fail again if retried immediately, and
+the accumulating load will result in an increased failure rate.
+
+Because of this, it is important
+to have a well-designed retry definition for each task in a workflow.
+
+A robust retry definition looks like the following::
+
+  IntervalSeconds: 600
+  MaxDelaySeconds: 86400
+  BackoffRate: 2.0
+  MaxAttempts: 20
+  JitterStrategy: FULL
+
+The `JitterStrategy` setting of `FULL` indicates that the next retry should be a random
+amount of time between 0 and the current delay interval. The `JitterStrategy` of `NONE`
+(which is also the default if undefined) simply multiplies the current delay interval by
+the `BackoffRate` parameter on each attempt. `IntervalSeconds` defines what the first
+delay period should be, and then for each retry, this is multiplied by the `BackoffRate`.
+Without jitter, in our example above, the retry would simply wait 600 seconds, then 1200,
+then 2400, etc. With jitter, retry will wait a random amount of time between 0 and 600,
+0 and 1200, 0 and 2400, etc. This randomness means that sudden spike of requests that results
+in errors won't continue to create a periodic spike of errors as they all retry on exactly
+the same cycle. `MaxAttempts` defines the total number of attempts to run the task, and
+`MaxDelaySeconds`` puts a reasonable cap on the delay period, for example, making the
+maximum delay one 1 day instead of 10 years (600 * 2 ^ 19 seconds).
+
+Also see the AWS documentation for `error handling in Step Functions`_.
+
+.. _error handling in Step Functions:
+  https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
+
+
 Workflow best practices
 -----------------------
 

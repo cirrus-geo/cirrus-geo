@@ -1,23 +1,24 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cirrus Process Payload &mdash; cirrus-geo  documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script>mermaid.initialize({startOnLoad:true});</script>
-        <script src="../_static/js/versions-loader.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/js/versions-loader.js?v=d43487cb"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -30,14 +31,18 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> cirrus-geo
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            cirrus-geo
           </a>
               <div class="version">
                 main
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -68,6 +73,7 @@
 <li class="toctree-l1"><a class="reference internal" href="70_statedb.html">State Database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="95_tips_and_tricks.html">Tips and Tricks</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
@@ -90,8 +96,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Cirrus Process Payload</li>
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Cirrus Process Payload</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/cirrus/30_payload.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -102,16 +108,16 @@
            <div itemprop="articleBody">
              
   <section id="cirrus-process-payload">
-<h1>Cirrus Process Payload<a class="headerlink" href="#cirrus-process-payload" title="Permalink to this headline"></a></h1>
+<h1>Cirrus Process Payload<a class="headerlink" href="#cirrus-process-payload" title="Link to this heading"></a></h1>
 <p>A Cirrus Process Payload is a JSON object containing the input metadata along with a parameters
 for processing that metadata and associated data. A Cirrus payload is used to start a
 single execution of a workflow.</p>
-<table class="colwidths-given docutils align-default" id="id1">
-<caption><span class="caption-text">Cirrus Process Payload</span><a class="headerlink" href="#id1" title="Permalink to this table"></a></caption>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Cirrus Process Payload</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 50%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Field Name</p></th>
@@ -157,7 +163,7 @@ One common use-case is to take in a single input item and generate a single outp
 <blockquote>
 <div></div></blockquote>
 <section id="item">
-<span id="payload-item"></span><h2>Item<a class="headerlink" href="#item" title="Permalink to this headline"></a></h2>
+<span id="payload-item"></span><h2>Item<a class="headerlink" href="#item" title="Link to this heading"></a></h2>
 <p>An input item to Cirrus is commonly 1 or more STAC Items, allowing workflow tasks
 to be interoperable across different data sources. For example an NDVI task could
 create an NDVI asset, adding it to the item regardless of if it was a Landsat or
@@ -166,12 +172,12 @@ Sentinel STAC Item.</p>
 mapping metadata in different formats into STAC. Thus, as far as Cirrus is concerned,
 the only required field in the payload is an <cite>id</cite> field. The <cite>id</cite> is used to track
 the individual execution of a workflow.</p>
-<table class="colwidths-given docutils align-default" id="id2">
-<caption><span class="caption-text">Item</span><a class="headerlink" href="#id2" title="Permalink to this table"></a></caption>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">Item</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 50%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Field Name</p></th>
@@ -221,13 +227,13 @@ of actual STAC Items.</p>
 <div></div></blockquote>
 </section>
 <section id="process-definition">
-<span id="payload-processdef"></span><h2>Process Definition<a class="headerlink" href="#process-definition" title="Permalink to this headline"></a></h2>
-<table class="colwidths-given docutils align-default" id="id3">
-<caption><span class="caption-text">Process Definition</span><a class="headerlink" href="#id3" title="Permalink to this table"></a></caption>
+<span id="payload-processdef"></span><h2>Process Definition<a class="headerlink" href="#process-definition" title="Link to this heading"></a></h2>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-text">Process Definition</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 50%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Field Name</p></th>
@@ -259,7 +265,7 @@ of actual STAC Items.</p>
 </tbody>
 </table>
 <section id="input-collections">
-<h3>input_collections<a class="headerlink" href="#input-collections" title="Permalink to this headline"></a></h3>
+<h3>input_collections<a class="headerlink" href="#input-collections" title="Link to this heading"></a></h3>
 <p>The <cite>input_collections</cite> field is a way to explicitly group together input items
 across executions of workflows. It is optional, and if not provided <cite>input_collections</cite>
 is derived from all the collections the input items belong to. For instance, if
@@ -271,24 +277,24 @@ For instance, if the items are in collections <cite>sat-c-l1</cite> and <cite>sa
 <cite>input_collections</cite> would be <cite>sat-a-l1/sat-c-l1</cite></p>
 </section>
 <section id="tasks">
-<h3>tasks<a class="headerlink" href="#tasks" title="Permalink to this headline"></a></h3>
+<h3>tasks<a class="headerlink" href="#tasks" title="Link to this heading"></a></h3>
 <p>The tasks field is a dictionary with an optional key for each task. If present, it
 contains a dictionary of parameters for the task. The documentation for each task
 will supply the list of available parameters.</p>
 </section>
 </section>
 <section id="output-options">
-<span id="payload-outputopts"></span><h2>Output Options<a class="headerlink" href="#output-options" title="Permalink to this headline"></a></h2>
+<span id="payload-outputopts"></span><h2>Output Options<a class="headerlink" href="#output-options" title="Link to this heading"></a></h2>
 <p>The output options object is a dictionary of parameters to used to control the
 publishing of the metadata and uploading data assets. Any task that uploads
 data should use the OutputOptions to control where and how that data is uploaded.
 See the cirrus-lib function <cite>transfer.upload_item_assets</cite></p>
-<table class="colwidths-given docutils align-default" id="id4">
-<caption><span class="caption-text">Output Options</span><a class="headerlink" href="#id4" title="Permalink to this table"></a></caption>
+<table class="docutils align-default" id="id4">
+<caption><span class="caption-text">Output Options</span><a class="headerlink" href="#id4" title="Link to this table"></a></caption>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 50%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Field Name</p></th>
@@ -320,16 +326,16 @@ See the cirrus-lib function <cite>transfer.upload_item_assets</cite></p>
 </tbody>
 </table>
 <section id="path-template">
-<h3>path_template<a class="headerlink" href="#path-template" title="Permalink to this headline"></a></h3>
+<h3>path_template<a class="headerlink" href="#path-template" title="Link to this heading"></a></h3>
 <p>The <cite>path_template</cite> string is a way to control the output location of uploaded assets from a
 STAC Item using metadata from the Item itself. The template can contain fixed strings
 along with variables used for substitution. The following variables can be used in the template.</p>
-<table class="colwidths-given docutils align-default" id="id5">
-<caption><span class="caption-text">Output Options</span><a class="headerlink" href="#id5" title="Permalink to this table"></a></caption>
+<table class="docutils align-default" id="id5">
+<caption><span class="caption-text">Output Options</span><a class="headerlink" href="#id5" title="Link to this table"></a></caption>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 50%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Field Name</p></th>
@@ -374,7 +380,7 @@ to a path based on the Item’s collection and ID to the default Cirrus data buc
 then the data will be uploaded to the provided bucket.</p>
 </section>
 <section id="collections">
-<h3>collections<a class="headerlink" href="#collections" title="Permalink to this headline"></a></h3>
+<h3>collections<a class="headerlink" href="#collections" title="Link to this heading"></a></h3>
 <p>The <cite>collections</cite> dictionary is a way to control what collection output STAC Items
 are ultimately assigned to. Each dictionary key is the name of a collection, and it’s
 value is a regex expression that is used to match against each STAC Item ID that
