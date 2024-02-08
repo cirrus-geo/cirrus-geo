@@ -115,32 +115,20 @@ Succesfully initialized project in '/Users/jkeifer/cirrus-project'.
 # We can see all the built in feeders, tasks, and workflows (among others)
 ❯ cirrus show feeders
 feed-rerun (built-in): Rerun items in the database
-feed-s3-inventory (built-in): Feed Sentinel AWS inventory data to Cirrus for cataloging
-feed-stac-api (built-in): Feed data from a STAC API to Cirrus for processing
-feed-stac-crawl (built-in): Crawl static STAC assets
 
 ❯ cirrus show tasks
-add-preview (built-in, lambda): Create a preview and/or thumbnail from one or more assets
-convert-to-cog (built-in, lambda): Convert specified assets into Cloud Optimized GeoTIFFs
-copy-assets (built-in, lambda): Copy specified assets from Item(s) to an S3 bucket
 post-batch (built-in, lambda): Post process batch job by copying input from S3
 pre-batch (built-in, lambda): Pre process batch job by copying input to S3
 publish (built-in, lambda): Publish resulting STAC Collections and Items to catalog, and optionally SNS
 
 ❯ cirrus show workflows
-cog-archive (built-in): Create mirror with some cogified assets
-mirror (built-in): Mirror items with selected assets
-mirror-with-preview (built-in): Mirror items with selected assets
-publish-only (built-in): Simple example that just published input Collections and items
+publish-only (built-in): Simple example that just published input Collections and Items
 
 # To create a new task, for example, we can do this
 ❯ cirrus create task -t lambda a_task "A task that doesn't do much yet"
 task a_task created
 
 ❯ cirrus show tasks
-add-preview (built-in, lambda): Create a preview and/or thumbnail from one or more assets
-convert-to-cog (built-in, lambda): Convert specified assets into Cloud Optimized GeoTIFFs
-copy-assets (built-in, lambda): Copy specified assets from Item(s) to an S3 bucket
 post-batch (built-in, lambda): Post process batch job by copying input from S3
 pre-batch (built-in, lambda): Pre process batch job by copying input to S3
 publish (built-in, lambda): Publish resulting STAC Collections and Items to catalog, and optionally SNS
