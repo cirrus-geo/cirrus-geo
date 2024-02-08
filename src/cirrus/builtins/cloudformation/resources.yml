@@ -3,28 +3,32 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       TopicName: "#{AWS::StackName}-publish"
+
   # SNS Topic for failed workflows
   FailedTopic:
     Type: "AWS::SNS::Topic"
     Properties:
       TopicName: "#{AWS::StackName}-failed"
-  # Process Queue
+
   ProcessQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: "#{AWS::StackName}-process"
-      VisibilityTimeout: 60
+      VisibilityTimeout: 180
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
         maxReceiveCount: 5
+
   ProcessDeadLetterQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: "#{AWS::StackName}-process-dead-letter"
+
   UpdateStateDLQ:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: "#{AWS::StackName}-update-state-dead-letter"
+
   StateTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -61,11 +65,13 @@ Resources:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
       TableName: "#{AWS::StackName}-state"
+
   StateEventTimestreamDatabase:
     Type: AWS::Timestream::Database
     Properties:
       DatabaseName: "#{AWS::StackName}-state-events"
       # KmsKeyId: String -- use default one
+
   StateEventTimestreamTable:
     Type: AWS::Timestream::Table
     DependsOn: StateEventTimestreamDatabase
@@ -75,6 +81,7 @@ Resources:
       RetentionProperties:
         MemoryStoreRetentionPeriodInHours: "24"
         MagneticStoreRetentionPeriodInDays: "93"
+
   BatchJobRole:
     Type: AWS::IAM::Role
     Properties:
@@ -127,12 +134,14 @@ Resources:
                   - lambda:GetFunction
                 Resource:
                   - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:#{AWS::StackName}-*
+
   BatchInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: "/"
       Roles:
         - Ref: BatchInstanceRole
+
   BatchInstanceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -148,6 +157,7 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+
   EC2SpotRole:
     Type: AWS::IAM::Role
     Properties:
