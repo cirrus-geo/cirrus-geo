@@ -828,7 +828,7 @@ resources:
       Properties:
         QueueName:
           Fn::Sub: ${AWS::StackName}-process
-        VisibilityTimeout: 60
+        VisibilityTimeout: 180
         RedrivePolicy:
           deadLetterTargetArn:
             Fn::GetAtt:
