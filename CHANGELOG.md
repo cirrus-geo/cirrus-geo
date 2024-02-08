@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changes
 
-- ProcessQueue SQS queue visibility timeout increased from 60 to 180
+- ProcessQueue SQS queue visibility timeout increased from 60 to 180([#245])
 
 ## [v0.11.0] - 2024-02-05
 
