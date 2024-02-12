@@ -1,30 +1,44 @@
+Conditions:
+  TimestreamIsSupportedInRegion: !Or
+    - !Equals ["us-east-1", "#{AWS::Region}"]
+    - !Equals ["us-east-2", "#{AWS::Region}"]
+    - !Equals ["us-west-2", "#{AWS::Region}"]
+    - !Equals ["eu-central-1", "#{AWS::Region}"]
+    - !Equals ["eu-west-1", "#{AWS::Region}"]
+    - !Equals ["ap-southeast-2", "#{AWS::Region}"]
+    - !Equals ["ap-northeast-1", "#{AWS::Region}"]
+
 Resources:
   PublishTopic:
     Type: "AWS::SNS::Topic"
     Properties:
       TopicName: "#{AWS::StackName}-publish"
+
   # SNS Topic for failed workflows
   FailedTopic:
     Type: "AWS::SNS::Topic"
     Properties:
       TopicName: "#{AWS::StackName}-failed"
-  # Process Queue
+
   ProcessQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: "#{AWS::StackName}-process"
-      VisibilityTimeout: 60
+      VisibilityTimeout: 180
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
         maxReceiveCount: 5
+
   ProcessDeadLetterQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: "#{AWS::StackName}-process-dead-letter"
+
   UpdateStateDLQ:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: "#{AWS::StackName}-update-state-dead-letter"
+
   StateTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -61,13 +75,17 @@ Resources:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
       TableName: "#{AWS::StackName}-state"
+
   StateEventTimestreamDatabase:
     Type: AWS::Timestream::Database
+    Condition: TimestreamIsSupportedInRegion
     Properties:
       DatabaseName: "#{AWS::StackName}-state-events"
       # KmsKeyId: String -- use default one
+
   StateEventTimestreamTable:
     Type: AWS::Timestream::Table
+    Condition: TimestreamIsSupportedInRegion
     DependsOn: StateEventTimestreamDatabase
     Properties:
       TableName: "#{AWS::StackName}-state-events-table"
@@ -75,6 +93,7 @@ Resources:
       RetentionProperties:
         MemoryStoreRetentionPeriodInHours: "24"
         MagneticStoreRetentionPeriodInDays: "93"
+
   BatchJobRole:
     Type: AWS::IAM::Role
     Properties:
@@ -127,12 +146,14 @@ Resources:
                   - lambda:GetFunction
                 Resource:
                   - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:#{AWS::StackName}-*
+
   BatchInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: "/"
       Roles:
         - Ref: BatchInstanceRole
+
   BatchInstanceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -148,6 +169,7 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+
   EC2SpotRole:
     Type: AWS::IAM::Role
     Properties:
