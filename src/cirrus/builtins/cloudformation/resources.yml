@@ -1,3 +1,13 @@
+Conditions:
+  TimestreamIsSupportedInRegion: !Or
+    - !Equals ["us-east-1", "#{AWS::Region}"]
+    - !Equals ["us-east-2", "#{AWS::Region}"]
+    - !Equals ["us-west-2", "#{AWS::Region}"]
+    - !Equals ["eu-central-1", "#{AWS::Region}"]
+    - !Equals ["eu-west-1", "#{AWS::Region}"]
+    - !Equals ["ap-southeast-2", "#{AWS::Region}"]
+    - !Equals ["ap-northeast-1", "#{AWS::Region}"]
+
 Resources:
   PublishTopic:
     Type: "AWS::SNS::Topic"
@@ -68,12 +78,14 @@ Resources:
 
   StateEventTimestreamDatabase:
     Type: AWS::Timestream::Database
+    Condition: TimestreamIsSupportedInRegion
     Properties:
       DatabaseName: "#{AWS::StackName}-state-events"
       # KmsKeyId: String -- use default one
 
   StateEventTimestreamTable:
     Type: AWS::Timestream::Table
+    Condition: TimestreamIsSupportedInRegion
     DependsOn: StateEventTimestreamDatabase
     Properties:
       TableName: "#{AWS::StackName}-state-events-table"

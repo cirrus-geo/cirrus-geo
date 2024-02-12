@@ -10,12 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changes
 
 - ProcessQueue SQS queue visibility timeout increased from 60 to 180([#245])
+- Only create Timestream resources if the region supports them. ([#246])
 
 ## [v0.11.0] - 2024-02-05
 
 ### ⚠️ Breaking changes
 
-- Users relying on the automatic packaging of cirrus.lib into lambdas will need to explicitly add cirrus.lib to those function requirements. Additionally, cirrus.lib is no longer maintained it is recommended to migrate to using stac-task instead.
+- Users relying on the automatic packaging of cirrus.lib into lambdas will need to explicitly add cirrus.lib to those function requirements. Additionally, cirrus.lib is no longer maintained it is recommended to migrate to using stac-task instead. ([#230])
 
 ### Removed
 
