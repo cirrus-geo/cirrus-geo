@@ -65,14 +65,12 @@
 <li class="toctree-l4"><a class="reference internal" href="#other-considerations">Other considerations</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#batch-cloudformation-resources-in-the-cli">Batch CloudFormation resources in the cli</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#batch-quotas">Batch Quotas</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#subnets">Subnets</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#managing-changes-to-batch-resources">Managing changes to Batch resources</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="index.html#anatomy-of-a-task">Anatomy of a task</a></li>
 <li class="toctree-l3"><a class="reference internal" href="index.html#lambda-vs-batch">Lambda vs Batch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="index.html#creating-a-new-task">Creating a new task</a></li>
-<li class="toctree-l3"><a class="reference internal" href="index.html#docker-image">Docker Image</a></li>
 <li class="toctree-l3"><a class="reference internal" href="index.html#task-parameters">Task parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="index.html#running-tasks-locally">Running tasks locally</a></li>
 </ul>
@@ -85,7 +83,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../70_statedb.html">State Database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../95_tips_and_tricks.html">Tips and Tricks</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
@@ -392,7 +389,7 @@ requirements.</p>
 an appropriate-sized instance type for the job, either by doing a best fit
 across all available instance types, or by selecting the best fit instance type
 from a user-provided list. Additional factors come into play with instance
-selection such as whether the compute environment is using On-Demand or Spot
+selection such as whether the compute environment is using on-demand or spot
 instance.</p>
 <p>Optimizing task resource requirements to the minimum required is critical.
 While doing so certainly provides an important cost savings, often the more
@@ -479,81 +476,7 @@ multiplying the maximum number of simultaneous jobs required by the number of
 CPUs each job requires.</p>
 </section>
 <section id="using-the-aws-spot-market">
-<h4>Using the AWS Spot market<a class="headerlink" href="#using-the-aws-spot-market" title="Link to this heading"></a></h4>
-<p>Using Spot instances instead of On-Demand can result in a significant cost savings, with only a
-small effect on throughput and latency. Workflow error handling must be well-defined, since Spot
-instances have a significantly higher liklihood of being deallocated as compared with On-Demand
-instances.</p>
-<p>This is an example of a ComputeEnvironment that uses Spot:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>FooComputeEnvironment:
-Type: AWS::Batch::ComputeEnvironment
-Properties:
-  Type: MANAGED
-  ComputeResources:
-    MinvCpus: ${env:CIRRUS_TASK_FOO_TO_STAC_BATCH_MIN_VCPUS, 0}
-    MaxvCpus: 5000
-    SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
-    Subnets: ${self:custom.batch.Subnets}
-    InstanceTypes:
-      - r4.xlarge
-      - r4.2xlarge
-      - r4.4xlarge
-      - r4.8xlarge
-      - r4.16xlarge
-      - r5.xlarge
-      - r5.2xlarge
-      - r5.4xlarge
-      - r5.8xlarge
-      - r5.12xlarge
-      - r5.16xlarge
-      - r5.24xlarge
-      - r6i.xlarge
-      - r6i.2xlarge
-      - r6i.4xlarge
-      - r6i.8xlarge
-      - r6i.12xlarge
-      - r6i.16xlarge
-      - r6i.24xlarge
-      - r7i.xlarge
-      - r7i.2xlarge
-      - r7i.4xlarge
-      - r7i.8xlarge
-      - r7i.12xlarge
-      - r7i.16xlarge
-      - r7i.24xlarge
-    Type: SPOT
-    AllocationStrategy: BEST_FIT_PROGRESSIVE
-    SpotIamFleetRole:
-      Fn::GetAtt: [EC2SpotRole, Arn]
-    InstanceRole:
-      Fn::GetAtt: [BatchInstanceProfile, Arn]
-    Tags: { &quot;Name&quot;: &quot;Batch Instance - #{AWS::StackName}&quot; }
-    LaunchTemplate:
-      LaunchTemplateId: !Ref FooComputeEnvironmentLaunchTemplate
-      Version: $Latest
-  State: ENABLED
-</pre></div>
-</div>
-<p>The AllocationStrategy of <cite>BEST_FIT_PROGRESSIVE</cite> indicates that Spot requests should be made
-progressively for the instance types that ECS determines will best meet the resource needs, but
-that any of these machines is acceptable. This is different than the <cite>BEST_FIT</cite> allocation
-strategy that will pick the best one and wait until that best one can be fulfilled.</p>
-<p>These specific <cite>InstanceTypes</cite> were chosen because they match the processor architecture needed
-by the Docker image that will run on them (AMD64) and they most closely “pack” with the amount
-vCPU and memory configured for the container, in this case, 1 vCPU and 9.8GB memory, with their
-1 vCPU to 8GB memory ratios.</p>
-<p>If you choose an AllocationStrategy with a wide range of available instance types,
-larger instances will be running more jobs, and you need to ensure you have
-appropriate storage for these larger instances. Unfortunately, only one value can be
-set for storage, which every EC2 instance gets, no matter how many concurrent tasks it
-can support. For example, if each task requires 1vCPU and 3GB of storage and you allow
-r4.xlarge (4 vCPUs) to r4.24xlarge (96 vCPUs), you must specify the the maximum amount of
-storage required (96 x 3GB = 288GB), even though the r4.xlarge instances will always have
-276GB of unused storage that incurs cost.</p>
-<p><cite>MinvCpus</cite> is set to an environment variable, so we can set it to 0 in our dev environment that
-is rarely incurring load, and non-zero in our production environment so that a temporary period
-in which there is no compute required doesn’t result in the deallocation of our entire compute
-pool and a fresh spot request when it does start processing again.</p>
+<h4>Using the AWS spot market<a class="headerlink" href="#using-the-aws-spot-market" title="Link to this heading"></a></h4>
 </section>
 </section>
 <section id="launch-templates">
@@ -684,22 +607,6 @@ mechanisms, and compute environment capacities.</p>
 <p>Also consider the deployment downtime requirements and how changes to compute
 environments must be managed per the following guidelines, making sure that the
 chosen strategy will have enough headroom within the quotas.</p>
-<p>The AWS Batch API also limits the number of SubmitJob and DescribeJobs requests
-to 50/sec (it is unclear from the documentation if this an individual or combined quota).
-This makes it critical that the rate of creating new workflows (step function executions)
-be limited so that they do not overwhelm this API with submitting jobs.</p>
-</section>
-<section id="subnets">
-<h2>Subnets<a class="headerlink" href="#subnets" title="Link to this heading"></a></h2>
-<p>It is important that the EC2 compute resources for a Batch compute environment
-are configured to use the appropriate subnet. While private subnets are generally
-preferred for security reasons, they can incur significant NAT Gateway Data Processing
-Charges.  These charges are incurred for all data that ingresses or egresses, for example,
-when retrieving data from the internet or accessing or writing S3 objects in another region.
-Therefore, it is preferred to put the Batch compute resources in a public subnet to avoid
-these charges.</p>
-<p>It is highly recommended to follow <a class="reference external" href="https://docs.aws.amazon.com/wellarchitected/latest/framework/sec_permissions_least_privileges.html">least privilege</a>
-using AWS Security Groups, especially denying SSH access (port 22).</p>
 </section>
 <section id="managing-changes-to-batch-resources">
 <h2>Managing changes to Batch resources<a class="headerlink" href="#managing-changes-to-batch-resources" title="Link to this heading"></a></h2>

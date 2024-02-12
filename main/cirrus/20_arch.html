@@ -66,7 +66,6 @@
 <li class="toctree-l1"><a class="reference internal" href="70_statedb.html">State Database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="95_tips_and_tricks.html">Tips and Tricks</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
@@ -107,18 +106,14 @@
 <p>An overall picture of Cirrus looks like this:</p>
 <img alt="../_images/arch-overview.png" src="../_images/arch-overview.png" />
 <p>As shown in that diagram, input Cirrus Process Payloads are published into an
-input SQS queue, either manually by a user or by automated <a class="reference internal" href="components/feeders.html"><span class="doc">Feeder</span></a>
-processes. Feeder functions can either be invoked manually (e.g., the Re-run Feeder), or
-from an externals source such as an SNS notification. These enqueued messages are
-then processed by
-the <code class="docutils literal notranslate"><span class="pre">process</span></code> Lambda Function. The <code class="docutils literal notranslate"><span class="pre">process</span></code> function creates or updates the
-<a class="reference internal" href="70_statedb.html"><span class="doc">State DB</span></a> record for the payload and starts a
-<a class="reference internal" href="components/workflows/index.html"><span class="doc">Workflow</span></a> execution by dispatching the payload to the
+input SNS topic via users or automated <a class="reference internal" href="components/feeders.html"><span class="doc">Feeder</span></a>
+processes. Those input payloads are enqueued in an SQS queue for processing by
+the <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda.  <code class="docutils literal notranslate"><span class="pre">process</span></code> creates or updates the <a class="reference internal" href="70_statedb.html"><span class="doc">State DB</span></a> record for the payload and starts a <a class="reference internal" href="components/workflows/index.html"><span class="doc">Workflow</span></a> execution by dispatching the payload to the
 specified Workflow.</p>
 <p>Any output items and their assets are persisted to S3, and the output items are
-published to an output SNS topic that can notify downstream subscribers, like
-stac-server, of newly-processed items.</p>
-<p>At the end of a workflow execution, an EventBridge event is triggered, which
+published to an output SNS topic that can notify downstream subscribers like
+stac-server of newly-processed items.</p>
+<p>At the end of a workflow execution an EventBridge event is triggered, which
 notifies the listening <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda that the execution has
 completed.  <code class="docutils literal notranslate"><span class="pre">update-state</span></code> updates the State DB record for the processed
 payload in accordance with the final workflow state (success, failed, aborted,
