@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cirrus Process Payload &mdash; cirrus-geo  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/js/versions-loader.js?v=d43487cb"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Configuration and Deployment" href="40_config-deploy.html" />
+    <link rel="prev" title="Cirrus architecture" href="20_arch.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            cirrus-geo
+          </a>
+              <div class="version">
+                v0.11.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Cirrus Process Payload</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#item">Item</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#process-definition">Process Definition</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#input-collections">input_collections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tasks">tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#output-options">Output Options</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#path-template">path_template</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#collections">collections</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="60_components.html">Cirrus Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../components/feeders/index.html">Feeders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/tasks/index.html">Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/workflows/index.html">Workflows</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">cirrus-geo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Cirrus Process Payload</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/cirrus/30_payload.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cirrus-process-payload">
+<h1>Cirrus Process Payload<a class="headerlink" href="#cirrus-process-payload" title="Link to this heading"></a></h1>
+<p>A Cirrus Process Payload is a JSON object containing the input metadata along with a parameters
+for processing that metadata and associated data. A Cirrus payload is used to start a
+single execution of a workflow.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Cirrus Process Payload</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field Name</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>type</p></td>
+<td><p>string</p></td>
+<td><p>Type of the GeoJSON Object. If set, it must be set to FeatureCollection.</p></td>
+</tr>
+<tr class="row-odd"><td><p>features</p></td>
+<td><p>[<a class="reference internal" href="#payload-item"><span class="std std-ref">Item</span></a>]</p></td>
+<td><p>An array of STAC-like input items</p></td>
+</tr>
+<tr class="row-even"><td><p>process</p></td>
+<td><p>[<a class="reference internal" href="#payload-processdef"><span class="std std-ref">Process Definition</span></a>]</p></td>
+<td><p>An array of process definitions</p></td>
+</tr>
+</tbody>
+</table>
+<p>At a high-level, the payload looks like a GeoJSON FeatureCollection with an additional
+<cite>process</cite> field.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;FeatureCollection&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="o">&lt;</span><span class="n">stac</span><span class="o">-</span><span class="n">item</span><span class="o">-</span><span class="mi">1</span><span class="o">&gt;</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="o">&lt;</span><span class="n">stac</span><span class="o">-</span><span class="n">item</span><span class="o">-</span><span class="mi">2</span><span class="o">&gt;</span>
+        <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;process&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="o">&lt;</span><span class="n">process</span><span class="o">-</span><span class="n">definition</span><span class="o">&gt;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A workflow task may take 1 or more items as input, and could output 1 or more items.
+One common use-case is to take in a single input item and generate a single output item.</p>
+<blockquote>
+<div></div></blockquote>
+<section id="item">
+<span id="payload-item"></span><h2>Item<a class="headerlink" href="#item" title="Link to this heading"></a></h2>
+<p>An input item to Cirrus is commonly 1 or more STAC Items, allowing workflow tasks
+to be interoperable across different data sources. For example an NDVI task could
+create an NDVI asset, adding it to the item regardless of if it was a Landsat or
+Sentinel STAC Item.</p>
+<p>However, sometimes workflows are also responsible for creating proper STAC Items,
+mapping metadata in different formats into STAC. Thus, as far as Cirrus is concerned,
+the only required field in the payload is an <cite>id</cite> field. The <cite>id</cite> is used to track
+the individual execution of a workflow.</p>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">Item</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field Name</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>id</p></td>
+<td><p>string</p></td>
+<td><p><strong>REQUIRED</strong> An ID for this item</p></td>
+</tr>
+</tbody>
+</table>
+<p>Each workflow task will have it’s own requirements on the items, and may perform
+additional validation. Payloads that fail validation of a workflow task should
+throw an <cite>InvalidInput</cite> exception, which will mark the execution in the
+state database as <cite>INVALID</cite>.</p>
+<p>In the following example the input item is a partial STAC Item, using STAC fields
+but missing most required fields (e.g., geometry, datetime). In this case,
+this item provides URLs to the original Sentinel-2 metadata which will be converted
+to a STAC Item during during one of the workflow tasks.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tiles-15-V-WG-2022-3-21-0&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;assets&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;tileInfo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;href&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/15/V/WG/2022/3/21/0/tileInfo.json&quot;</span>
+<span class="w">                </span><span class="p">},</span>
+<span class="w">                </span><span class="nt">&quot;productInfo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;href&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/15/V/WG/2022/3/21/0/productInfo.json&quot;</span>
+<span class="w">                </span><span class="p">},</span>
+<span class="w">                </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;href&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/15/V/WG/2022/3/21/0/metadata.xml&quot;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>While partial STAC Items make sense as input to workflows that create STAC
+metadata, the final output of a Cirrus workflow should always contain an array
+of actual STAC Items.</p>
+<blockquote>
+<div></div></blockquote>
+</section>
+<section id="process-definition">
+<span id="payload-processdef"></span><h2>Process Definition<a class="headerlink" href="#process-definition" title="Link to this heading"></a></h2>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-text">Process Definition</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field Name</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>description</p></td>
+<td><p>string</p></td>
+<td><p>An optional description of the process</p></td>
+</tr>
+<tr class="row-odd"><td><p>workflow</p></td>
+<td><p>string</p></td>
+<td><p><strong>REQUIRED</strong> Name of the workflow to run</p></td>
+</tr>
+<tr class="row-even"><td><p>input_collections</p></td>
+<td><p>string</p></td>
+<td><p>An identifier representing the set of collections the input items belong to</p></td>
+</tr>
+<tr class="row-odd"><td><p>upload_options</p></td>
+<td><p><a class="reference internal" href="#payload-outputopts"><span class="std std-ref">Output Options</span></a></p></td>
+<td><p>Parameters affecting the upload of item assets</p></td>
+</tr>
+<tr class="row-even"><td><p>tasks</p></td>
+<td><p>Map&lt;string, Map&lt;str, object&gt;&gt;</p></td>
+<td><p>A dictionary of task names (keys), each containing a dictionary of parameters for that task</p></td>
+</tr>
+</tbody>
+</table>
+<section id="input-collections">
+<h3>input_collections<a class="headerlink" href="#input-collections" title="Link to this heading"></a></h3>
+<p>The <cite>input_collections</cite> field is a way to explicitly group together input items
+across executions of workflows. It is optional, and if not provided <cite>input_collections</cite>
+is derived from all the collections the input items belong to. For instance, if
+a payload contains a single item, and it belongs in the collection <cite>sat-a-l1</cite>,
+then <cite>input_collections</cite> is <cite>sat-a-l1</cite>.</p>
+<p>If the payload contains multiple items spanning more than 1 collection, then
+<cite>input_collections</cite> is a ‘/’ separated string of the sorted list of collections.
+For instance, if the items are in collections <cite>sat-c-l1</cite> and <cite>sat-a-l1</cite> then
+<cite>input_collections</cite> would be <cite>sat-a-l1/sat-c-l1</cite></p>
+</section>
+<section id="tasks">
+<h3>tasks<a class="headerlink" href="#tasks" title="Link to this heading"></a></h3>
+<p>The tasks field is a dictionary with an optional key for each task. If present, it
+contains a dictionary of parameters for the task. The documentation for each task
+will supply the list of available parameters.</p>
+</section>
+</section>
+<section id="output-options">
+<span id="payload-outputopts"></span><h2>Output Options<a class="headerlink" href="#output-options" title="Link to this heading"></a></h2>
+<p>The output options object is a dictionary of parameters to used to control the
+publishing of the metadata and uploading data assets. Any task that uploads
+data should use the OutputOptions to control where and how that data is uploaded.
+See the cirrus-lib function <cite>transfer.upload_item_assets</cite></p>
+<table class="docutils align-default" id="id4">
+<caption><span class="caption-text">Output Options</span><a class="headerlink" href="#id4" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field Name</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>path_template</p></td>
+<td><p>string</p></td>
+<td><p><strong>REQUIRED</strong> A string template for specifying the location of uploaded assets</p></td>
+</tr>
+<tr class="row-odd"><td><p>collections</p></td>
+<td><p>Map&lt;str, str&gt;</p></td>
+<td><p><strong>REQUIRED</strong> A mapping of output collection name to a regex pattern used on Item IDs</p></td>
+</tr>
+<tr class="row-even"><td><p>public_assets</p></td>
+<td><p>[str]</p></td>
+<td><p>A list of asset keys that should be marked as public when uploaded</p></td>
+</tr>
+<tr class="row-odd"><td><p>headers</p></td>
+<td><p>Map&lt;str, str&gt;</p></td>
+<td><p>A set of key, value headers to send when uploading data to s3</p></td>
+</tr>
+<tr class="row-even"><td><p>s3_urls</p></td>
+<td><p>bool</p></td>
+<td><p>Controls if the final published URLs should be an s3 (s3://&lt;bucket&gt;/&lt;key&gt;) or https URL.</p></td>
+</tr>
+</tbody>
+</table>
+<section id="path-template">
+<h3>path_template<a class="headerlink" href="#path-template" title="Link to this heading"></a></h3>
+<p>The <cite>path_template</cite> string is a way to control the output location of uploaded assets from a
+STAC Item using metadata from the Item itself. The template can contain fixed strings
+along with variables used for substitution. The following variables can be used in the template.</p>
+<table class="docutils align-default" id="id5">
+<caption><span class="caption-text">Output Options</span><a class="headerlink" href="#id5" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field Name</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>id</p></td>
+<td><p>string</p></td>
+<td><p>The id of the Item</p></td>
+</tr>
+<tr class="row-odd"><td><p>collection</p></td>
+<td><p>string</p></td>
+<td><p>The name of the Item’s Collection</p></td>
+</tr>
+<tr class="row-even"><td><p>date</p></td>
+<td><p>string</p></td>
+<td><p>The date portion of the Item’s <cite>datetime</cite> property of the form YYYY-MM-DD</p></td>
+</tr>
+<tr class="row-odd"><td><p>year</p></td>
+<td><p>string</p></td>
+<td><p>The year portion of the Item’s <cite>datetime</cite> property</p></td>
+</tr>
+<tr class="row-even"><td><p>month</p></td>
+<td><p>string</p></td>
+<td><p>The month portion of the Item’s <cite>datetime</cite> property</p></td>
+</tr>
+<tr class="row-odd"><td><p>day</p></td>
+<td><p>string</p></td>
+<td><p>The day portion of the Item’s <cite>datetime</cite> property</p></td>
+</tr>
+<tr class="row-even"><td><p>&lt;property&gt;</p></td>
+<td><p>varies</p></td>
+<td><p>Any Item property (e.g., <cite>mgrs:utm_zone</cite>)</p></td>
+</tr>
+</tbody>
+</table>
+<p>As an example, a <cite>path_template</cite> of <cite>/data/${collection}/${id}/</cite> will upload all assets
+to a path based on the Item’s collection and ID to the default Cirrus data bucket.</p>
+<p>If a complete s3 URL is provided instead (e.g., s3://my-bucket/data/${collection}/${id}/)
+then the data will be uploaded to the provided bucket.</p>
+</section>
+<section id="collections">
+<h3>collections<a class="headerlink" href="#collections" title="Link to this heading"></a></h3>
+<p>The <cite>collections</cite> dictionary is a way to control what collection output STAC Items
+are ultimately assigned to. Each dictionary key is the name of a collection, and it’s
+value is a regex expression that is used to match against each STAC Item ID that
+will be published. The first matching collection will be used.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;upload_options&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;collections&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;sat-a-l1&quot;</span><span class="p">:</span><span class="w"> </span><span class="nt">&quot;sa.*&quot;</span>
+<span class="w">        </span><span class="nt">&quot;sat-b-l1&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sb.*&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>With this example an Item with an ID of “sa-l1-20200107” will be put in the <cite>sat-a-l1</cite>
+collection, and Item “sb-l1-19731212” would be put in the <cite>sat-b-l1</cite> collection.</p>
+<p>If <cite>collections</cite> is supplied, each Item is assigned a new collection before it is
+published. If not provided the collections will remain as they were.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="20_arch.html" class="btn btn-neutral float-left" title="Cirrus architecture" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="40_config-deploy.html" class="btn btn-neutral float-right" title="Configuration and Deployment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: v0.11.1
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
