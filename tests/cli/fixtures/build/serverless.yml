@@ -828,7 +828,7 @@ resources:
       Properties:
         QueueName:
           Fn::Sub: ${AWS::StackName}-process
-        VisibilityTimeout: 60
+        VisibilityTimeout: 180
         RedrivePolicy:
           deadLetterTargetArn:
             Fn::GetAtt:
@@ -884,11 +884,13 @@ resources:
           Fn::Sub: ${AWS::StackName}-state
     StateEventTimestreamDatabase:
       Type: AWS::Timestream::Database
+      Condition: TimestreamIsSupportedInRegion
       Properties:
         DatabaseName:
           Fn::Sub: ${AWS::StackName}-state-events
     StateEventTimestreamTable:
       Type: AWS::Timestream::Table
+      Condition: TimestreamIsSupportedInRegion
       DependsOn: StateEventTimestreamDatabase
       Properties:
         TableName:
@@ -1338,6 +1340,30 @@ resources:
             - '-'
             - - Ref: AWS::StackName
               - vpc-sg
+  Conditions:
+    TimestreamIsSupportedInRegion:
+      Fn::Or:
+        - Fn::Equals:
+            - us-east-1
+            - Fn::Sub: ${AWS::Region}
+        - Fn::Equals:
+            - us-east-2
+            - Fn::Sub: ${AWS::Region}
+        - Fn::Equals:
+            - us-west-2
+            - Fn::Sub: ${AWS::Region}
+        - Fn::Equals:
+            - eu-central-1
+            - Fn::Sub: ${AWS::Region}
+        - Fn::Equals:
+            - eu-west-1
+            - Fn::Sub: ${AWS::Region}
+        - Fn::Equals:
+            - ap-southeast-2
+            - Fn::Sub: ${AWS::Region}
+        - Fn::Equals:
+            - ap-northeast-1
+            - Fn::Sub: ${AWS::Region}
 package:
   individually: true
   exclude:

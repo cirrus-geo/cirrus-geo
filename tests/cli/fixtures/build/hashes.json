@@ -1,7 +1,7 @@
 {
   "serverless.yml": {
-    "shasum": "8bfedecc8d0fae1904fa8df66f035ad5bc8d8fbb68013c6693413bb29927bb9d",
-    "size": 37992
+    "shasum": "a1c4a7794b9d8bb5881be5d777120f086b10d2b03ce7f6b048fb0c7dce721b5b",
+    "size": 38751
   },
   "lambdas/pre-batch/requirements.txt": {
     "shasum": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
