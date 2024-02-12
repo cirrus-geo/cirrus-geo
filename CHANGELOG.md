@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased] - TBD
 
-- Only create Timestream resources if the region supports them. ([])
+- Only create Timestream resources if the region supports them. ([#246])
 
 ## [v0.11.0] - 2024-02-05
 
