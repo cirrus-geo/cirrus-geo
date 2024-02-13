@@ -86,10 +86,10 @@ functions:
           - s3:GetBucketLocation
         Resource:
           - Fn::Join:
-              - ""
-              - - "arn:aws:s3:::"
+              - ''
+              - - 'arn:aws:s3:::'
                 - ${self:provider.environment.CIRRUS_DATA_BUCKET}
-                - "*"
+                - '*'
       - Effect: Allow
         Action: secretsmanager:GetSecretValue
         Resource:
@@ -106,7 +106,7 @@ functions:
               - StateTable
               - Arn
           - Fn::Join:
-              - ""
+              - ''
               - - Fn::GetAtt:
                     - StateTable
                     - Arn
@@ -117,7 +117,7 @@ functions:
         Resource:
           - Fn::If:
               - TimestreamIsSupportedInRegion
-              - "*"
+              - '*'
               - Ref: AWS::NoValue
       - Effect: Allow
         Action:
@@ -185,7 +185,7 @@ functions:
               - StateTable
               - Arn
           - Fn::Join:
-              - ""
+              - ''
               - - Fn::GetAtt:
                     - StateTable
                     - Arn
@@ -196,7 +196,7 @@ functions:
         Resource:
           - Fn::If:
               - TimestreamIsSupportedInRegion
-              - "*"
+              - '*'
               - Ref: AWS::NoValue
       - Effect: Allow
         Action:
@@ -222,16 +222,16 @@ functions:
           - s3:ListBucket
           - s3:GetObject
           - s3:GetBucketLocation
-        Resource: "*"
+        Resource: '*'
       - Effect: Allow
         Action:
           - s3:PutObject
         Resource:
           - Fn::Join:
-              - ""
-              - - "arn:aws:s3:::"
+              - ''
+              - - 'arn:aws:s3:::'
                 - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-                - "*"
+                - '*'
       - Effect: Allow
         Action: secretsmanager:GetSecretValue
         Resource:
@@ -303,7 +303,7 @@ functions:
               - StateTable
               - Arn
           - Fn::Join:
-              - ""
+              - ''
               - - Fn::GetAtt:
                     - StateTable
                     - Arn
@@ -314,7 +314,7 @@ functions:
         Resource:
           - Fn::If:
               - TimestreamIsSupportedInRegion
-              - "*"
+              - '*'
               - Ref: AWS::NoValue
       - Effect: Allow
         Action:
@@ -348,10 +348,10 @@ functions:
           - s3:GetObject
         Resource:
           - Fn::Join:
-              - ""
-              - - "arn:aws:s3:::"
+              - ''
+              - - 'arn:aws:s3:::'
                 - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-                - "*"
+                - '*'
     description: update the cirrus database with the execution state
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
@@ -402,7 +402,7 @@ functions:
           - ec2:CreateNetworkInterface
           - ec2:DescribeNetworkInterfaces
           - ec2:DeleteNetworkInterface
-        Resource: "*"
+        Resource: '*'
       - Effect: Allow
         Action:
           - dynamodb:Query
@@ -415,7 +415,7 @@ functions:
               - StateTable
               - Arn
           - Fn::Join:
-              - ""
+              - ''
               - - Fn::GetAtt:
                     - StateTable
                     - Arn
@@ -455,10 +455,10 @@ functions:
           - s3:PutObject
         Resource:
           - Fn::Join:
-              - ""
-              - - "arn:aws:s3:::"
+              - ''
+              - - 'arn:aws:s3:::'
                 - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-                - "*"
+                - '*'
       - Effect: Allow
         Action:
           - logs:GetLogEvents
@@ -469,7 +469,7 @@ functions:
           - s3:ListBucket
           - s3:GetObject
           - s3:GetBucketLocation
-        Resource: "*"
+        Resource: '*'
       - Effect: Allow
         Action: secretsmanager:GetSecretValue
         Resource:
@@ -509,16 +509,16 @@ functions:
           - s3:PutObject
         Resource:
           - Fn::Join:
-              - ""
-              - - "arn:aws:s3:::"
+              - ''
+              - - 'arn:aws:s3:::'
                 - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-                - "*"
+                - '*'
       - Effect: Allow
         Action:
           - s3:ListBucket
           - s3:GetObject
           - s3:GetBucketLocation
-        Resource: "*"
+        Resource: '*'
       - Effect: Allow
         Action: secretsmanager:GetSecretValue
         Resource:
@@ -567,7 +567,7 @@ functions:
               - StateTable
               - Arn
           - Fn::Join:
-              - ""
+              - ''
               - - Fn::GetAtt:
                     - StateTable
                     - Arn
@@ -579,13 +579,12 @@ functions:
           - s3:GetBucketLocation
           - s3:PutObject
           - s3:PutObjectAcl
-        Resource: "*"
+        Resource: '*'
       - Effect: Allow
         Action: secretsmanager:GetSecretValue
         Resource:
           - Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:cirrus-creds-*
-    description:
-      Publish resulting STAC Collections and Items to catalog, and optionally
+    description: Publish resulting STAC Collections and Items to catalog, and optionally
       SNS
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
@@ -725,8 +724,8 @@ resources:
           Fn::Sub: ${AWS::StackName}-geolambda-as-batch
         Type: Container
         Parameters:
-          lambda_function: ""
-          url: ""
+          lambda_function: ''
+          url: ''
         ContainerProperties:
           Command:
             - run
@@ -784,8 +783,8 @@ resources:
           Fn::Sub: ${AWS::StackName}-lambda-as-batch
         Type: Container
         Parameters:
-          lambda_function: ""
-          url: ""
+          lambda_function: ''
+          url: ''
         ContainerProperties:
           Command:
             - run
@@ -915,13 +914,13 @@ resources:
         DatabaseName:
           Fn::Sub: ${AWS::StackName}-state-events
         RetentionProperties:
-          MemoryStoreRetentionPeriodInHours: "24"
-          MagneticStoreRetentionPeriodInDays: "93"
+          MemoryStoreRetentionPeriodInHours: '24'
+          MagneticStoreRetentionPeriodInDays: '93'
     BatchJobRole:
       Type: AWS::IAM::Role
       Properties:
         AssumeRolePolicyDocument:
-          Version: "2012-10-17"
+          Version: '2012-10-17'
           Statement:
             - Effect: Allow
               Principal:
@@ -940,28 +939,28 @@ resources:
         Policies:
           - PolicyName: Cirrus
             PolicyDocument:
-              Version: "2012-10-17"
+              Version: '2012-10-17'
               Statement:
                 - Effect: Allow
                   Action:
                     - s3:PutObject
                   Resource:
                     - Fn::Join:
-                        - ""
-                        - - "arn:aws:s3:::"
+                        - ''
+                        - - 'arn:aws:s3:::'
                           - ${self:provider.environment.CIRRUS_DATA_BUCKET}
-                          - "*"
+                          - '*'
                     - Fn::Join:
-                        - ""
-                        - - "arn:aws:s3:::"
+                        - ''
+                        - - 'arn:aws:s3:::'
                           - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
-                          - "*"
+                          - '*'
                 - Effect: Allow
                   Action:
                     - s3:ListBucket
                     - s3:GetObject
                     - s3:GetBucketLocation
-                  Resource: "*"
+                  Resource: '*'
                 - Effect: Allow
                   Action: secretsmanager:GetSecretValue
                   Resource:
@@ -981,7 +980,7 @@ resources:
       Type: AWS::IAM::Role
       Properties:
         AssumeRolePolicyDocument:
-          Version: "2012-10-17"
+          Version: '2012-10-17'
           Statement:
             - Effect: Allow
               Principal:
@@ -996,7 +995,7 @@ resources:
       Type: AWS::IAM::Role
       Properties:
         AssumeRolePolicyDocument:
-          Version: "2012-10-17"
+          Version: '2012-10-17'
           Statement:
             - Effect: Allow
               Principal:
@@ -1040,14 +1039,14 @@ resources:
         AvailabilityZone:
           Fn::Select:
             - 0
-            - Fn::GetAZs: ""
+            - Fn::GetAZs: ''
         CidrBlock: 172.31.0.0/24
         MapPublicIpOnLaunch: true
         Tags:
           - Key: Name
             Value:
               Fn::Join:
-                - "-"
+                - '-'
                 - - Ref: AWS::StackName
                   - public-subnet
     privateSubnet1:
@@ -1058,14 +1057,14 @@ resources:
         AvailabilityZone:
           Fn::Select:
             - 0
-            - Fn::GetAZs: ""
+            - Fn::GetAZs: ''
         CidrBlock: 172.31.3.0/24
         MapPublicIpOnLaunch: false
         Tags:
           - Key: Name
             Value:
               Fn::Join:
-                - "-"
+                - '-'
                 - - Ref: AWS::StackName
                   - private-subnet-a
     privateSubnet2:
@@ -1076,14 +1075,14 @@ resources:
         AvailabilityZone:
           Fn::Select:
             - 1
-            - Fn::GetAZs: ""
+            - Fn::GetAZs: ''
         CidrBlock: 172.31.2.0/24
         MapPublicIpOnLaunch: false
         Tags:
           - Key: Name
             Value:
               Fn::Join:
-                - "-"
+                - '-'
                 - - Ref: AWS::StackName
                   - private-subnet-b
     internetGateway:
@@ -1093,7 +1092,7 @@ resources:
           - Key: Name
             Value:
               Fn::Join:
-                - "-"
+                - '-'
                 - - Ref: AWS::StackName
                   - gateway
     gatewayToInternet:
@@ -1170,14 +1169,14 @@ resources:
       Type: AWS::EC2::VPCEndpoint
       Properties:
         PolicyDocument:
-          Version: "2012-10-17"
+          Version: '2012-10-17'
           Statement:
             - Effect: Allow
-              Principal: "*"
+              Principal: '*'
               Action:
                 - s3:*
               Resource:
-                - "*"
+                - '*'
         RouteTableIds:
           - Ref: privateRouteTable
         ServiceName:
@@ -1188,14 +1187,14 @@ resources:
       Type: AWS::EC2::VPCEndpoint
       Properties:
         PolicyDocument:
-          Version: "2012-10-17"
+          Version: '2012-10-17'
           Statement:
             - Effect: Allow
-              Principal: "*"
+              Principal: '*'
               Action:
                 - dynamodb:*
               Resource:
-                - "*"
+                - '*'
         RouteTableIds:
           - Ref: privateRouteTable
         ServiceName:
@@ -1209,7 +1208,7 @@ resources:
           Fn::Sub: ${AWS::StackName}-test-plugin-task-as-batch
         Type: Container
         Parameters:
-          url: ""
+          url: ''
         ContainerProperties:
           Command:
             - run
@@ -1312,7 +1311,7 @@ resources:
       Export:
         Name:
           Fn::Join:
-            - "-"
+            - '-'
             - - Ref: AWS::StackName
               - vpc
     publicSubnet1ID:
@@ -1322,7 +1321,7 @@ resources:
       Export:
         Name:
           Fn::Join:
-            - "-"
+            - '-'
             - - Ref: AWS::StackName
               - public-subnet-a
     privateSubnet1ID:
@@ -1332,7 +1331,7 @@ resources:
       Export:
         Name:
           Fn::Join:
-            - "-"
+            - '-'
             - - Ref: AWS::StackName
               - private-subnet-a
     privateSubnet2ID:
@@ -1342,7 +1341,7 @@ resources:
       Export:
         Name:
           Fn::Join:
-            - "-"
+            - '-'
             - - Ref: AWS::StackName
               - private-subnet-b
     privateVPCSecurityGroup:
@@ -1354,7 +1353,7 @@ resources:
       Export:
         Name:
           Fn::Join:
-            - "-"
+            - '-'
             - - Ref: AWS::StackName
               - vpc-sg
   Conditions:
@@ -1384,7 +1383,7 @@ resources:
 package:
   individually: true
   exclude:
-    - "**/*"
+    - '**/*'
 plugins:
   - serverless-python-requirements
   - serverless-step-functions
