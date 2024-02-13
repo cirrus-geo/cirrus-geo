@@ -40,6 +40,12 @@ def sqs(aws_credentials):
 
 
 @pytest.fixture
+def sns(aws_credentials):
+    with moto.mock_sns():
+        yield boto3.client("sns", region_name="us-east-1")
+
+
+@pytest.fixture
 def stepfunctions(aws_credentials):
     with moto.mock_stepfunctions():
         yield boto3.client("stepfunctions", region_name="us-east-1")

@@ -2,14 +2,14 @@
 import json
 from dataclasses import dataclass
 from os import getenv
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import boto3
 
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import batch_handler
+from cirrus.lib2.utils import SQSPublisher
 
 logger = get_task_logger("function.update-state", payload=tuple())
 
@@ -108,13 +108,6 @@ def mk_error(error: str, cause: str) -> Dict[str, str]:
     }
 
 
-def send_batch(messages: List[Dict[str, Any]]) -> Dict[str, Any]:
-    entries = [{"Id": str(idx), "MessageBody": msg} for idx, msg in enumerate(messages)]
-    resp = QUEUE.send_messages(Entries=entries)
-    logger.debug(f"Published {len(messages)} payloads to {PROCESS_QUEUE_URL}")
-    return resp
-
-
 def workflow_completed(execution: Execution) -> None:
     # I think changing the state should be done before
     # trying the sns publish, but I could see it the other
@@ -122,9 +115,9 @@ def workflow_completed(execution: Execution) -> None:
     # a different order/behavior (fail on error or something?).
     statedb.set_completed(execution.input["id"], execution_arn=execution.arn)
     if execution.output:
-        with batch_handler(send_batch, {}, "messages", batch_size=10) as handler:
+        with SQSPublisher.get_handler(PROCESS_QUEUE_URL) as publisher:
             for next_payload in execution.output.next_payloads():
-                handler.add(json.dumps(next_payload))
+                publisher.add(json.dumps(next_payload))
 
 
 def workflow_aborted(execution: Execution) -> None:

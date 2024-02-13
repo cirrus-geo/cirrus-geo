@@ -305,11 +305,14 @@ def delete_from_queue_batch(messages):
 
 
 class BatchHandler:
-    def __init__(self, fn, params, batch_param_name, batch_size=10):
+    def __init__(
+        self, fn, params, batch_param_name, batch_size=10, dest_name="default"
+    ):
         self.fn = fn
         self.params = params
         self.batch_param_name = batch_param_name
         self.batch_size = batch_size
+        self.dest_name = dest_name
         self._batch = []
 
     def add(self, element):
@@ -318,23 +321,87 @@ class BatchHandler:
         if len(self._batch) >= self.batch_size:
             self.execute()
 
+    def _prepare_batch(self):
+        """identity function suffices in base case"""
+        return self._batch
+
     def execute(self):
         if not self._batch:
             return
 
         params = self.params.copy()
-        params[self.batch_param_name] = self._batch
+        params[self.batch_param_name] = self._prepare_batch()
 
         try:
             self.fn(**params)
+            logger.debug(f"Published {len(params)} payloads to {self.dest_name}")
         finally:
             self._batch = []
+
+    @classmethod
+    @contextmanager
+    def get_handler(cls, *args, **kwargs):
+        publisher = cls(*args, **kwargs)
+        try:
+            yield publisher
+        finally:
+            publisher.execute()
 
 
 @contextmanager
 def batch_handler(*args, **kwargs):
+    # TODO: Deprecate this in favor of managed classes
     handler = BatchHandler(*args, **kwargs)
     try:
         yield handler
     finally:
         handler.execute()
+
+
+class SNSPublisher(BatchHandler):
+    """Handles publication of SNS messages via batched interface."""
+
+    def __init__(self, topic_arn, **kwargs):
+        self.topic_arn = topic_arn
+        self.dest_name = topic_arn.split(":")[-1]
+        self._sns_client = boto3.client("sns")
+        super().__init__(
+            fn=self._sns_client.publish_batch,
+            params={"TopicArn": self.topic_arn, "PublishBatchRequestEntries": []},
+            batch_param_name="PublishBatchRequestEntries",
+            **kwargs,
+        )
+
+    def _prepare_batch(self):
+        return [
+            {
+                "Id": str(idx),
+                "Message": msg,
+            }
+            for idx, msg in enumerate(self._batch)
+        ]
+
+
+class SQSPublisher(BatchHandler):
+    """Handles publication of SQS messages via batched interface."""
+
+    def __init__(self, queue_url, **kwargs):
+        self.queue_url = queue_url
+        self.dest_name = queue_url.split("/")[-1]
+        self._sqs_client = boto3.resource("sqs")
+        self._queue = self._sqs_client.Queue(self.queue_url)
+        super().__init__(
+            fn=self._queue.send_messages,
+            params={},
+            batch_param_name="Entries",
+            **kwargs,
+        )
+
+    def _prepare_batch(self):
+        return [
+            {
+                "Id": str(idx),
+                "MessageBody": msg,
+            }
+            for idx, msg in enumerate(self._batch)
+        ]
