@@ -115,14 +115,20 @@ functions:
         Action:
           - timestream:DescribeEndpoints
         Resource:
-          - '*'
+          - Fn::If:
+              - TimestreamIsSupportedInRegion
+              - '*'
+              - Ref: AWS::NoValue
       - Effect: Allow
         Action:
           - timestream:Select
         Resource:
-          - Fn::GetAtt:
-              - StateEventTimestreamTable
-              - Arn
+          - Fn::If:
+              - TimestreamIsSupportedInRegion
+              - Fn::GetAtt:
+                  - StateEventTimestreamTable
+                  - Arn
+              - Ref: AWS::NoValue
     description: Cirrus API
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
@@ -188,14 +194,20 @@ functions:
         Action:
           - timestream:DescribeEndpoints
         Resource:
-          - '*'
+          - Fn::If:
+              - TimestreamIsSupportedInRegion
+              - '*'
+              - Ref: AWS::NoValue
       - Effect: Allow
         Action:
           - timestream:WriteRecords
         Resource:
-          - Fn::GetAtt:
-              - StateEventTimestreamTable
-              - Arn
+          - Fn::If:
+              - TimestreamIsSupportedInRegion
+              - Fn::GetAtt:
+                  - StateEventTimestreamTable
+                  - Arn
+              - Ref: AWS::NoValue
       - Effect: Allow
         Action:
           - sqs:GetQueueUrl
@@ -300,14 +312,20 @@ functions:
         Action:
           - timestream:DescribeEndpoints
         Resource:
-          - '*'
+          - Fn::If:
+              - TimestreamIsSupportedInRegion
+              - '*'
+              - Ref: AWS::NoValue
       - Effect: Allow
         Action:
           - timestream:WriteRecords
         Resource:
-          - Fn::GetAtt:
-              - StateEventTimestreamTable
-              - Arn
+          - Fn::If:
+              - TimestreamIsSupportedInRegion
+              - Fn::GetAtt:
+                  - StateEventTimestreamTable
+                  - Arn
+              - Ref: AWS::NoValue
       - Effect: Allow
         Action:
           - states:GetExecutionHistory
