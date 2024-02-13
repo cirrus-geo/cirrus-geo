@@ -36,7 +36,10 @@ lambda:
       Action:
         - timestream:DescribeEndpoints
       Resource:
-        - "*"
+        - !If
+          - TimestreamIsSupportedInRegion
+          - "*"
+          - !Ref AWS::NoValue
     - Effect: "Allow"
       Action:
         - timestream:Select
@@ -44,4 +47,4 @@ lambda:
         - !If
           - TimestreamIsSupportedInRegion
           - !GetAtt StateEventTimestreamTable.Arn
-          - "arn:aws:timestream:*:*:database/farts/table/farts"
+          - "arn:aws:timestream:*:*:database/nonexistent/table/nonexistent"
