@@ -41,7 +41,7 @@ lambda:
         - !If
           - TimestreamIsSupportedInRegion
           - !GetAtt StateEventTimestreamTable.Arn
-          - !Ref AWS::NoValue
+          - "arn:aws:timestream:*:*:database/nonexistent/table/nonexistent"
     - Effect: "Allow"
       Action:
         - sqs:GetQueueUrl

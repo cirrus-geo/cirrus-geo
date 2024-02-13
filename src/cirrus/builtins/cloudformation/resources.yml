@@ -78,14 +78,12 @@ Resources:
 
   StateEventTimestreamDatabase:
     Type: AWS::Timestream::Database
-    Condition: TimestreamIsSupportedInRegion
     Properties:
       DatabaseName: "#{AWS::StackName}-state-events"
       # KmsKeyId: String -- use default one
 
   StateEventTimestreamTable:
     Type: AWS::Timestream::Table
-    Condition: TimestreamIsSupportedInRegion
     DependsOn: StateEventTimestreamDatabase
     Properties:
       TableName: "#{AWS::StackName}-state-events-table"
