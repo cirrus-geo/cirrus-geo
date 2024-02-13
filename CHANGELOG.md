@@ -687,11 +687,101 @@ cleanup steps.
 
 Initial release
 
-<!-- [unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.1...main -->
+<!-- [unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.3...main -->
 
-<<<<<<< HEAD
 [v0.11.3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.2...v0.11.3
-=======
-
-> > > > > > > main
-> > > > > > > [v0.11.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.1...v0.11.2 > > > > > > > [v0.11.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.0...v0.11.1 > > > > > > > [v0.11.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.1...v0.11.0 > > > > > > > [v0.10.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.0...v0.10.1 > > > > > > > [v0.10.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.9.0...v0.10.0 > > > > > > > [v0.9.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.8.0...v0.9.0 > > > > > > > [v0.8.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.7.0...v0.8.0 > > > > > > > [v0.7.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.6.0...v0.7.0 > > > > > > > [v0.6.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.4...v0.6.0 > > > > > > > [v0.5.4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.3...v0.5.4 > > > > > > > [v0.5.3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.2...v0.5.3 > > > > > > > [v0.5.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.1...v0.5.2 > > > > > > > [v0.5.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0...v0.5.1 > > > > > > > [v0.5.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a5...v0.5.0 > > > > > > > [v0.5.0a5]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a4...v0.5.0a5 > > > > > > > [v0.5.0a4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a3...v0.5.0a4 > > > > > > > [v0.5.0a3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a2...v0.5.0a3 > > > > > > > [v0.5.0a2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a1...v0.5.0a2 > > > > > > > [v0.5.0a1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a0...v0.5.0a1 > > > > > > > [v0.5.0a0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.4.2...v0.5.0a0 > > > > > > > [v0.4.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.4.1...v0.4.2 > > > > > > > [v0.4.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.4.0...v0.4.1 > > > > > > > [v0.4.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.3.0...v0.4.0 > > > > > > > [v0.3.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.2.1...v0.3.0 > > > > > > > [v0.2.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.2.0...v0.2.1 > > > > > > > [v0.2.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.1.0...v0.2.0 > > > > > > > [v0.1.0]: https://github.com/cirrus-geo/cirrus-geo/cirrus/tree/legacy > > > > > > > [#47]: https://github.com/cirrus-geo/cirrus-geo/issues/47 > > > > > > > [#51]: https://github.com/cirrus-geo/cirrus-geo/issues/51 > > > > > > > [#53]: https://github.com/cirrus-geo/cirrus-geo/issues/53 > > > > > > > [#54]: https://github.com/cirrus-geo/cirrus-geo/issues/54 > > > > > > > [#62]: https://github.com/cirrus-geo/cirrus-geo/issues/62 > > > > > > > [#64]: https://github.com/cirrus-geo/cirrus-geo/issues/64 > > > > > > > [#65]: https://github.com/cirrus-geo/cirrus-geo/issues/65 > > > > > > > [#74]: https://github.com/cirrus-geo/cirrus-geo/issues/74 > > > > > > > [#75]: https://github.com/cirrus-geo/cirrus-geo/issues/75 > > > > > > > [#78]: https://github.com/cirrus-geo/cirrus-geo/issues/78 > > > > > > > [#79]: https://github.com/cirrus-geo/cirrus-geo/issues/79 > > > > > > > [#82]: https://github.com/cirrus-geo/cirrus-geo/issues/82 > > > > > > > [#85]: https://github.com/cirrus-geo/cirrus-geo/issues/85 > > > > > > > [#98]: https://github.com/cirrus-geo/cirrus-geo/issues/98 > > > > > > > [#99]: https://github.com/cirrus-geo/cirrus-geo/issues/99 > > > > > > > [#102]: https://github.com/cirrus-geo/cirrus-geo/issues/102 > > > > > > > [#103]: https://github.com/cirrus-geo/cirrus-geo/issues/103 > > > > > > > [#105]: https://github.com/cirrus-geo/cirrus-geo/issues/105 > > > > > > > [#106]: https://github.com/cirrus-geo/cirrus-geo/issues/106 > > > > > > > [#107]: https://github.com/cirrus-geo/cirrus-geo/issues/107 > > > > > > > [#108]: https://github.com/cirrus-geo/cirrus-geo/issues/108 > > > > > > > [#111]: https://github.com/cirrus-geo/cirrus-geo/issues/111 > > > > > > > [#114]: https://github.com/cirrus-geo/cirrus-geo/issues/114 > > > > > > > [#116]: https://github.com/cirrus-geo/cirrus-geo/issues/116 > > > > > > > [#120]: https://github.com/cirrus-geo/cirrus-geo/issues/120 > > > > > > > [#123]: https://github.com/cirrus-geo/cirrus-geo/issues/123 > > > > > > > [#128]: https://github.com/cirrus-geo/cirrus-geo/issues/128 > > > > > > > [#131]: https://github.com/cirrus-geo/cirrus-geo/issues/131 > > > > > > > [#132]: https://github.com/cirrus-geo/cirrus-geo/issues/132 > > > > > > > [#135]: https://github.com/cirrus-geo/cirrus-geo/issues/135 > > > > > > > [#134]: https://github.com/cirrus-geo/cirrus-geo/issues/134 > > > > > > > [#139]: https://github.com/cirrus-geo/cirrus-geo/issues/139 > > > > > > > [#140]: https://github.com/cirrus-geo/cirrus-geo/issues/140 > > > > > > > [#145]: https://github.com/cirrus-geo/cirrus-geo/issues/145 > > > > > > > [#147]: https://github.com/cirrus-geo/cirrus-geo/issues/147 > > > > > > > [#149]: https://github.com/cirrus-geo/cirrus-geo/issues/149 > > > > > > > [#154]: https://github.com/cirrus-geo/cirrus-geo/issues/154 > > > > > > > [#155]: https://github.com/cirrus-geo/cirrus-geo/issues/155 > > > > > > > [#158]: https://github.com/cirrus-geo/cirrus-geo/issues/158 > > > > > > > [#169]: https://github.com/cirrus-geo/cirrus-geo/issues/169 > > > > > > > [#172]: https://github.com/cirrus-geo/cirrus-geo/issues/172 > > > > > > > [#173]: https://github.com/cirrus-geo/cirrus-geo/issues/173 > > > > > > > [#174]: https://github.com/cirrus-geo/cirrus-geo/issues/174 > > > > > > > [#177]: https://github.com/cirrus-geo/cirrus-geo/issues/177 > > > > > > > [#178]: https://github.com/cirrus-geo/cirrus-geo/issues/178 > > > > > > > [#180]: https://github.com/cirrus-geo/cirrus-geo/issues/180 > > > > > > > [#182]: https://github.com/cirrus-geo/cirrus-geo/issues/182 > > > > > > > [#193]: https://github.com/cirrus-geo/cirrus-geo/issues/193 > > > > > > > [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72 > > > > > > > [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72 > > > > > > > [#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73 > > > > > > > [#87]: https://github.com/cirrus-geo/cirrus-geo/pull/87 > > > > > > > [#88]: https://github.com/cirrus-geo/cirrus-geo/pull/88 > > > > > > > [#89]: https://github.com/cirrus-geo/cirrus-geo/pull/89 > > > > > > > [#90]: https://github.com/cirrus-geo/cirrus-geo/pull/90 > > > > > > > [#138]: https://github.com/cirrus-geo/cirrus-geo/pull/138 > > > > > > > [#143]: https://github.com/cirrus-geo/cirrus-geo/pull/143 > > > > > > > [#160]: https://github.com/cirrus-geo/cirrus-geo/pull/160 > > > > > > > [#224]: https://github.com/cirrus-geo/cirrus-geo/pull/224 > > > > > > > [#231]: https://github.com/cirrus-geo/cirrus-geo/pull/231 > > > > > > > [f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2 > > > > > > > [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1 > > > > > > > [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c > > > > > > > [1e652f2]: https://github.com/cirrus-geo/cirrus-geo/commit/1e652f20ef38298f56ebc81aea0d61aaad135f67 > > > > > > > [9f56981]: https://github.com/cirrus-geo/cirrus-geo/commit/9f569819d1c4a59fc71f15642b3ea0b30058c885 > > > > > > > [44bebc5]: https://github.com/cirrus-geo/cirrus-geo/commit/44bebc5d1e2d802fc0e596be381fb3e1e1042170 > > > > > > > [ba3e04b]: https://github.com/cirrus-geo/cirrus-geo/commit/ba3e04ba2c2ae554fecf9b80e22c71690a9eb518 > > > > > > > [cl0.6.0]: https://github.com/cirrus-geo/cirrus-lib/releases/tag/v0.6.0
+[v0.11.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.1...v0.11.2
+[v0.11.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.0...v0.11.1
+[v0.11.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.1...v0.11.0
+[v0.10.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.0...v0.10.1
+[v0.10.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.9.0...v0.10.0
+[v0.9.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.8.0...v0.9.0
+[v0.8.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.7.0...v0.8.0
+[v0.7.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.6.0...v0.7.0
+[v0.6.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.4...v0.6.0
+[v0.5.4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.3...v0.5.4
+[v0.5.3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.2...v0.5.3
+[v0.5.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.1...v0.5.2
+[v0.5.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0...v0.5.1
+[v0.5.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a5...v0.5.0
+[v0.5.0a5]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a4...v0.5.0a5
+[v0.5.0a4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a3...v0.5.0a4
+[v0.5.0a3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a2...v0.5.0a3
+[v0.5.0a2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a1...v0.5.0a2
+[v0.5.0a1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.5.0a0...v0.5.0a1
+[v0.5.0a0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.4.2...v0.5.0a0
+[v0.4.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.4.1...v0.4.2
+[v0.4.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.4.0...v0.4.1
+[v0.4.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.3.0...v0.4.0
+[v0.3.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.2.1...v0.3.0
+[v0.2.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.2.0...v0.2.1
+[v0.2.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.1.0...v0.2.0
+[v0.1.0]: https://github.com/cirrus-geo/cirrus-geo/cirrus/tree/legacy
+[#47]: https://github.com/cirrus-geo/cirrus-geo/issues/47
+[#51]: https://github.com/cirrus-geo/cirrus-geo/issues/51
+[#53]: https://github.com/cirrus-geo/cirrus-geo/issues/53
+[#54]: https://github.com/cirrus-geo/cirrus-geo/issues/54
+[#62]: https://github.com/cirrus-geo/cirrus-geo/issues/62
+[#64]: https://github.com/cirrus-geo/cirrus-geo/issues/64
+[#65]: https://github.com/cirrus-geo/cirrus-geo/issues/65
+[#74]: https://github.com/cirrus-geo/cirrus-geo/issues/74
+[#75]: https://github.com/cirrus-geo/cirrus-geo/issues/75
+[#78]: https://github.com/cirrus-geo/cirrus-geo/issues/78
+[#79]: https://github.com/cirrus-geo/cirrus-geo/issues/79
+[#82]: https://github.com/cirrus-geo/cirrus-geo/issues/82
+[#85]: https://github.com/cirrus-geo/cirrus-geo/issues/85
+[#98]: https://github.com/cirrus-geo/cirrus-geo/issues/98
+[#99]: https://github.com/cirrus-geo/cirrus-geo/issues/99
+[#102]: https://github.com/cirrus-geo/cirrus-geo/issues/102
+[#103]: https://github.com/cirrus-geo/cirrus-geo/issues/103
+[#105]: https://github.com/cirrus-geo/cirrus-geo/issues/105
+[#106]: https://github.com/cirrus-geo/cirrus-geo/issues/106
+[#107]: https://github.com/cirrus-geo/cirrus-geo/issues/107
+[#108]: https://github.com/cirrus-geo/cirrus-geo/issues/108
+[#111]: https://github.com/cirrus-geo/cirrus-geo/issues/111
+[#114]: https://github.com/cirrus-geo/cirrus-geo/issues/114
+[#116]: https://github.com/cirrus-geo/cirrus-geo/issues/116
+[#120]: https://github.com/cirrus-geo/cirrus-geo/issues/120
+[#123]: https://github.com/cirrus-geo/cirrus-geo/issues/123
+[#128]: https://github.com/cirrus-geo/cirrus-geo/issues/128
+[#131]: https://github.com/cirrus-geo/cirrus-geo/issues/131
+[#132]: https://github.com/cirrus-geo/cirrus-geo/issues/132
+[#135]: https://github.com/cirrus-geo/cirrus-geo/issues/135
+[#134]: https://github.com/cirrus-geo/cirrus-geo/issues/134
+[#139]: https://github.com/cirrus-geo/cirrus-geo/issues/139
+[#140]: https://github.com/cirrus-geo/cirrus-geo/issues/140
+[#145]: https://github.com/cirrus-geo/cirrus-geo/issues/145
+[#147]: https://github.com/cirrus-geo/cirrus-geo/issues/147
+[#149]: https://github.com/cirrus-geo/cirrus-geo/issues/149
+[#154]: https://github.com/cirrus-geo/cirrus-geo/issues/154
+[#155]: https://github.com/cirrus-geo/cirrus-geo/issues/155
+[#158]: https://github.com/cirrus-geo/cirrus-geo/issues/158
+[#169]: https://github.com/cirrus-geo/cirrus-geo/issues/169
+[#172]: https://github.com/cirrus-geo/cirrus-geo/issues/172
+[#173]: https://github.com/cirrus-geo/cirrus-geo/issues/173
+[#174]: https://github.com/cirrus-geo/cirrus-geo/issues/174
+[#177]: https://github.com/cirrus-geo/cirrus-geo/issues/177
+[#178]: https://github.com/cirrus-geo/cirrus-geo/issues/178
+[#180]: https://github.com/cirrus-geo/cirrus-geo/issues/180
+[#182]: https://github.com/cirrus-geo/cirrus-geo/issues/182
+[#193]: https://github.com/cirrus-geo/cirrus-geo/issues/193
+[#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
+[#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
+[#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73
+[#87]: https://github.com/cirrus-geo/cirrus-geo/pull/87
+[#88]: https://github.com/cirrus-geo/cirrus-geo/pull/88
+[#89]: https://github.com/cirrus-geo/cirrus-geo/pull/89
+[#90]: https://github.com/cirrus-geo/cirrus-geo/pull/90
+[#138]: https://github.com/cirrus-geo/cirrus-geo/pull/138
+[#143]: https://github.com/cirrus-geo/cirrus-geo/pull/143
+[#160]: https://github.com/cirrus-geo/cirrus-geo/pull/160
+[#224]: https://github.com/cirrus-geo/cirrus-geo/pull/224
+[#231]: https://github.com/cirrus-geo/cirrus-geo/pull/231
+[f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
+[85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
+[1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
+[1e652f2]: https://github.com/cirrus-geo/cirrus-geo/commit/1e652f20ef38298f56ebc81aea0d61aaad135f67
+[9f56981]: https://github.com/cirrus-geo/cirrus-geo/commit/9f569819d1c4a59fc71f15642b3ea0b30058c885
+[44bebc5]: https://github.com/cirrus-geo/cirrus-geo/commit/44bebc5d1e2d802fc0e596be381fb3e1e1042170
+[ba3e04b]: https://github.com/cirrus-geo/cirrus-geo/commit/ba3e04ba2c2ae554fecf9b80e22c71690a9eb518
+[cl0.6.0]: https://github.com/cirrus-geo/cirrus-lib/releases/tag/v0.6.0
