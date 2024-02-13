@@ -6,7 +6,7 @@ lambda:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
-        - SNS:Publish
+        - sns:Publish
       Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
     - Effect: "Allow"
       Action:

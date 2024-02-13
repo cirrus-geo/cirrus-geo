@@ -30,12 +30,18 @@ lambda:
       Action:
         - timestream:DescribeEndpoints
       Resource:
-        - "*"
+        - !If
+          - TimestreamIsSupportedInRegion
+          - "*"
+          - !Ref AWS::NoValue
     - Effect: "Allow"
       Action:
         - timestream:WriteRecords
       Resource:
-        - !GetAtt StateEventTimestreamTable.Arn
+        - !If
+          - TimestreamIsSupportedInRegion
+          - !GetAtt StateEventTimestreamTable.Arn
+          - !Ref AWS::NoValue
     - Effect: "Allow"
       Action:
         - sqs:GetQueueUrl

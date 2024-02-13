@@ -315,7 +315,7 @@ functions:
           - Fn::Sub: arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${AWS::StackName}-*
       - Effect: Allow
         Action:
-          - SNS:Publish
+          - sns:Publish
         Resource:
           Fn::Sub: arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*
       - Effect: Allow
@@ -537,7 +537,7 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
-          - SNS:Publish
+          - sns:Publish
         Resource:
           Fn::Sub: arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*
       - Effect: Allow

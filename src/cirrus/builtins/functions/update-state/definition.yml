@@ -37,12 +37,18 @@ lambda:
       Action:
         - timestream:DescribeEndpoints
       Resource:
-        - "*"
+        - !If
+          - TimestreamIsSupportedInRegion
+          - "*"
+          - !Ref AWS::NoValue
     - Effect: "Allow"
       Action:
         - timestream:WriteRecords
       Resource:
-        - !GetAtt StateEventTimestreamTable.Arn
+        - !If
+          - TimestreamIsSupportedInRegion
+          - !GetAtt StateEventTimestreamTable.Arn
+          - !Ref AWS::NoValue
     - Effect: Allow
       Action:
         - states:GetExecutionHistory
@@ -50,7 +56,7 @@ lambda:
         - arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:execution:#{AWS::StackName}-*
     - Effect: "Allow"
       Action:
-        - SNS:Publish
+        - sns:Publish
       Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:*
     - Effect: "Allow"
       Action:
