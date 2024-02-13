@@ -4,32 +4,21 @@ import logging
 import sys
 from os import getenv
 
-import boto3
-
 from cirrus.lib2.logging import defer, get_task_logger
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import batch_handler, submit_batch_job
+from cirrus.lib2.utils import SQSPublisher, submit_batch_job
 
 logger = get_task_logger("feeder.rerun", payload=tuple())
 
 # envvars
 QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 
-# boto clients
-SQS_CLIENT = boto3.resource("sqs")
-QUEUE = SQS_CLIENT.Queue(QUEUE_URL)
-
 # Cirrus state DB
 statedb = StateDB()
 
 
-def send_batch(messages):
-    entries = [{"Id": str(idx), "MessageBody": msg} for idx, msg in enumerate(messages)]
-    return QUEUE.send_messages(Entries=entries)
-
-
 def submit(payload_ids):
-    with batch_handler(send_batch, {}, "messages", batch_size=10) as handler:
+    with SQSPublisher.get_handler(QUEUE_URL) as handler:
         for payload_id in payload_ids:
             handler.add(json.dumps({"url": StateDB.payload_id_to_url(payload_id)}))
 
