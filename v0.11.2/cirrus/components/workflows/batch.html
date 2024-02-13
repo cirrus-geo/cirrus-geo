@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Batch tasks in workflows &mdash; cirrus-geo  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/js/versions-loader.js?v=d43487cb"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Workflow chaining" href="chaining.html" />
+    <link rel="prev" title="Writing workflow definitions" href="definitions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            cirrus-geo
+          </a>
+              <div class="version">
+                v0.11.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../30_payload.html">Cirrus Process Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../60_components.html">Cirrus Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lambdas.html">Lambda-based components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../feeders.html">Feeders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/index.html">Tasks</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Workflows</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="definitions.html">Writing workflow definitions</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Batch tasks in workflows</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pre-batch-and-post-batch"><code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">post-batch</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#put-it-all-together-with-a-parallel-block">Put it all together with a <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#batch-retries-vs-step-function-retries">Batch retries vs step function retries</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chaining.html">Workflow chaining</a></li>
+<li class="toctree-l3"><a class="reference internal" href="callbacks.html">Workflow callbacks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../functions.html">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/feeders/index.html">Feeders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/tasks/index.html">Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/workflows/index.html">Workflows</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">cirrus-geo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../60_components.html">Cirrus Components</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Workflows</a></li>
+      <li class="breadcrumb-item active">Batch tasks in workflows</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/cirrus/components/workflows/batch.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="batch-tasks-in-workflows">
+<h1>Batch tasks in workflows<a class="headerlink" href="#batch-tasks-in-workflows" title="Link to this heading"></a></h1>
+<p>Using Batch tasks in workflows is a little more involved than with Lambda tasks.
+Lambdas integrate a more natively with step functions than batch, which has
+additional layer of infrastructure between. As a result, users must keep a few
+more things in mind when wanting to use Batch tasks.</p>
+<section id="pre-batch-and-post-batch">
+<h2><code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">post-batch</span></code><a class="headerlink" href="#pre-batch-and-post-batch" title="Link to this heading"></a></h2>
+<p>Because Batch tasks cannot take the input payload natively like Lambda and must
+redirect through S3, Cirrus provides a built-in Lambda task to assist. The
+<code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> task takes an input payload, uploads it to S3, and returns an
+output JSON payload with a <code class="docutils literal notranslate"><span class="pre">url</span></code> key with the S3 payload URL as its value.
+<code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> should always be run immediately proceeding a Batch task for this
+purpose.</p>
+<p>Similarly, Batch does not integrate returned payloads with step functions nearly
+as well as Lambda, so Cirrus has a built-in <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> task to help with,
+well, post-batch operations. Specifically, <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> can pull the Batch
+payload from S3 and return that in the case of a successful Batch execution. In
+the case of a Batch error, <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> will scrape the execution logs for an
+exception or other error message, and raise it within the step function. This
+helps “bubble” Batch task errors up to the step function. Errors can then be
+handled within the step function semantics or used to fail the step function
+execution with error context that can ultimately be pushed into the state
+database, increasing error visibility and assisting with troubleshooting.</p>
+<p>Therefore, like <code class="docutils literal notranslate"><span class="pre">pre-batch</span></code>, a <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> step should always immediately
+follow a Batch task step.</p>
+</section>
+<section id="put-it-all-together-with-a-parallel-block">
+<h2>Put it all together with a <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block<a class="headerlink" href="#put-it-all-together-with-a-parallel-block" title="Link to this heading"></a></h2>
+<p>Now, instead of simply being able to have a single step in a step function for a
+Batch task, we end up with three steps. Because of the way they operate
+together, we can think of the <code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> -&gt; Batch task -&gt; <code class="docutils literal notranslate"><span class="pre">post-batch</span></code>
+triad as a single step from the perspective of error handling and retries. That
+is, if we encounter an error anywhere in that set of three, we either want to
+fail them all or retry them all together.</p>
+<p>Enter the step function <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block. Step functions provide this control
+primative to allow users to define one or more branches in a workflow that can
+execute in parallel. Interestly for us, <code class="docutils literal notranslate"><span class="pre">parallel</span></code> supports both <code class="docutils literal notranslate"><span class="pre">Catch</span></code> and
+<code class="docutils literal notranslate"><span class="pre">Retry</span></code> policies for error handling, which provides us with the control we
+need for Batch.</p>
+<section id="minimal-example">
+<h3>Minimal example<a class="headerlink" href="#minimal-example" title="Link to this heading"></a></h3>
+<p>Let’s see an example of a workflow using <code class="docutils literal notranslate"><span class="pre">parallel</span></code> to group the set of Batch
+operations together. Notice how the example uses <code class="docutils literal notranslate"><span class="pre">parallel</span></code> with only a single
+branch defined, but that fits the Batch use-case perfectly.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>name: &#39;#{AWS::StackName}-batch-example
+definition:
+  Comment: &quot;Example workflow using parallel to make a &#39;batch group&#39;&quot;
+  StartAt: batch-group
+  States:
+    batch-group:
+      Type: Parallel
+      Branches:
+        - StartAt: pre-batch
+          States:
+            pre-batch:
+              Type: Task
+              Resource: !GetAtt pre-batch.Arn
+              Next: batch-task
+              Retry:
+                - ErrorEquals: [&quot;Lambda.TooManyRequestsException&quot;, &quot;Lambda.Unknown&quot;]
+                  IntervalSeconds: 1
+                  BackoffRate: 2.0
+                  MaxAttempts: 5
+            batch-task:
+              Type: Task
+              Resource: arn:aws:states:::batch:submitJob.sync
+              Parameters:
+                JobName: some-batch-job
+                JobQueue: &quot;#{ExampleJobQueue}&quot;
+                JobDefinition: &quot;#{ExampleBatchJob}&quot;
+                # Note that this passes the value of the `url` key in the step&#39;s
+                # input JSON to the job definition as the parameter `url`i.
+                Parameters:
+                  url.$: &quot;$.url&quot;
+              Next: post-batch
+              Catch:
+                # Ensures we always go to post-batch to pull errors
+                - ErrorEquals: [&quot;States.ALL&quot;]
+                  ResultPath: $.error
+                  Next: post-batch
+            post-batch:
+              Type: Task
+              Resource: !GetAtt post-batch.Arn
+              # End of the branch, not the step function
+              End: True
+              Retry:
+                - ErrorEquals: [&quot;Lambda.TooManyRequestsException&quot;, &quot;Lambda.Unknown&quot;]
+                  IntervalSeconds: 1
+                  BackoffRate: 2.0
+                  MaxAttempts: 5
+      Next: publish
+      # Parallel output is always an array of the outputs from each branch.
+      # We can use the OutputPath selector to get output index 0 as we only
+      # have a single branch, so we don&#39;t pass an array as input to the
+      # next task.
+      OutputPath: $[0]
+      Retry:
+        # This policy will retry any errors a second time
+        - ErrorEquals: [&quot;States.ALL&quot;]
+          IntervalSeconds: 3
+          MaxAttempts: 2
+      Catch:
+        # If the branch fails more than twice we fail the workflow
+        - ErrorEquals: [&quot;States.ALL&quot;]
+          ResultPath: $.error
+          Next: failure
+    publish:
+      Type: Task
+      Resource: !GetAtt publish.Arn
+      End: True
+      Retry:
+        - ErrorEquals: [&quot;Lambda.TooManyRequestsException&quot;, &quot;Lambda.Unknown&quot;]
+          IntervalSeconds: 1
+          BackoffRate: 2.0
+          MaxAttempts: 5
+      Catch:
+        - ErrorEquals: [&quot;States.ALL&quot;]
+          ResultPath: $.error
+          Next: failure
+    failure:
+      Type: Fail
+</pre></div>
+</div>
+</section>
+</section>
+<section id="batch-retries-vs-step-function-retries">
+<h2>Batch retries vs step function retries<a class="headerlink" href="#batch-retries-vs-step-function-retries" title="Link to this heading"></a></h2>
+<p>Whenver possible, using the step function retry semantics over those provided by
+Batch is preferred. While Batch retries can be used without having to manage the
+additional complexity of the <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block, Batch retries regardless of
+error type, while step function retries allow matching specific error types,
+allowing users more granular control over when to retry or fail.</p>
+<p>Additionally, retrying within the step function shows the retry as a separate
+step than the first. This makes it much more obvious to users investigating
+failures that a retry happened and what the initial error was. Batch retries
+are more or less hidden from the step functions.</p>
+<p>For these reasons, the overhead of the <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block is worth the
+investment.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="definitions.html" class="btn btn-neutral float-left" title="Writing workflow definitions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="chaining.html" class="btn btn-neutral float-right" title="Workflow chaining" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: v0.11.2
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
