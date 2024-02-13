@@ -30,10 +30,7 @@ lambda:
       Action:
         - timestream:DescribeEndpoints
       Resource:
-        - !If
-          - TimestreamIsSupportedInRegion
-          - "*"
-          - !Ref AWS::NoValue
+        - "*"
     - Effect: "Allow"
       Action:
         - timestream:WriteRecords
@@ -41,7 +38,7 @@ lambda:
         - !If
           - TimestreamIsSupportedInRegion
           - !GetAtt StateEventTimestreamTable.Arn
-          - !Ref AWS::NoValue
+          - "arn:aws:timestream:*:*:database/farts/table/farts"
     - Effect: "Allow"
       Action:
         - sqs:GetQueueUrl

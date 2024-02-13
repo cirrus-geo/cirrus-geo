@@ -115,10 +115,7 @@ functions:
         Action:
           - timestream:DescribeEndpoints
         Resource:
-          - Fn::If:
-              - TimestreamIsSupportedInRegion
-              - '*'
-              - Ref: AWS::NoValue
+          - '*'
       - Effect: Allow
         Action:
           - timestream:Select
@@ -128,7 +125,7 @@ functions:
               - Fn::GetAtt:
                   - StateEventTimestreamTable
                   - Arn
-              - Ref: AWS::NoValue
+              - arn:aws:timestream:*:*:database/farts/table/farts
     description: Cirrus API
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
@@ -194,10 +191,7 @@ functions:
         Action:
           - timestream:DescribeEndpoints
         Resource:
-          - Fn::If:
-              - TimestreamIsSupportedInRegion
-              - '*'
-              - Ref: AWS::NoValue
+          - '*'
       - Effect: Allow
         Action:
           - timestream:WriteRecords
@@ -207,7 +201,7 @@ functions:
               - Fn::GetAtt:
                   - StateEventTimestreamTable
                   - Arn
-              - Ref: AWS::NoValue
+              - arn:aws:timestream:*:*:database/farts/table/farts
       - Effect: Allow
         Action:
           - sqs:GetQueueUrl
@@ -312,10 +306,7 @@ functions:
         Action:
           - timestream:DescribeEndpoints
         Resource:
-          - Fn::If:
-              - TimestreamIsSupportedInRegion
-              - '*'
-              - Ref: AWS::NoValue
+          - '*'
       - Effect: Allow
         Action:
           - timestream:WriteRecords
@@ -325,7 +316,7 @@ functions:
               - Fn::GetAtt:
                   - StateEventTimestreamTable
                   - Arn
-              - Ref: AWS::NoValue
+              - arn:aws:timestream:*:*:database/farts/table/farts
       - Effect: Allow
         Action:
           - states:GetExecutionHistory
@@ -902,13 +893,11 @@ resources:
           Fn::Sub: ${AWS::StackName}-state
     StateEventTimestreamDatabase:
       Type: AWS::Timestream::Database
-      Condition: TimestreamIsSupportedInRegion
       Properties:
         DatabaseName:
           Fn::Sub: ${AWS::StackName}-state-events
     StateEventTimestreamTable:
       Type: AWS::Timestream::Table
-      Condition: TimestreamIsSupportedInRegion
       DependsOn: StateEventTimestreamDatabase
       Properties:
         TableName:
