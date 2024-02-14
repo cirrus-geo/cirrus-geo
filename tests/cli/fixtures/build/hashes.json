@@ -103,10 +103,6 @@
     "shasum": "a99c010da293b43200d9d5d33d59c123db19babb398cba3fce376f8bc84cb478",
     "size": 26
   },
-  "lambdas/process/processes.json": {
-    "shasum": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
-    "size": 3
-  },
   "lambdas/process/lambda_function.py": {
     "shasum": "341190902c9c48555f9a5615a088c25fc327c02fdffd9328ee121d61630d8b03",
     "size": 2627
