@@ -111,41 +111,17 @@
     "shasum": "bee855ad35595b58e26bb094e0e516eed2e98337a4817d6543e7d49e7cfa8a97",
     "size": 2700
   },
-  "cirrus/lib2/statedb.py,cover": {
-    "shasum": "f69fd995eea316008ab0abb93533c35d35415a00d966be4a5bc07e155f5ddccb",
-    "size": 23370
-  },
   "cirrus/lib2/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "size": 0
-  },
-  "cirrus/lib2/utils.py,cover": {
-    "shasum": "434b02a2e87adc0f8d99358200164897991b04085fcf68a2251fc02056e41423",
-    "size": 13646
-  },
-  "cirrus/lib2/process_payload.py,cover": {
-    "shasum": "684ae1f1422c1299a6e71985e8f789b00054bde8e5f463725b304bf710d109b6",
-    "size": 14887
-  },
-  "cirrus/lib2/logging.py,cover": {
-    "shasum": "185f48f85718df332c5a8ce71036a6f69fff0528c7977e6f1c0993c1b53cc649",
-    "size": 2882
   },
   "cirrus/lib2/eventdb.py": {
     "shasum": "1cad190973b44fd52f70d2285af7a51746f50c0611f0617fa4d7c8a03fd56ac4",
     "size": 7003
   },
   "cirrus/lib2/utils.py": {
-    "shasum": "715d415e7c48d34b5106f4006ac207967439b0d31bf0a26a309bcf84859170d2",
-    "size": 12744
-  },
-  "cirrus/lib2/errors.py,cover": {
-    "shasum": "571c5a2f9910316e8bd3a71127f390f4f213ae03e74732163f7328b9321865e3",
-    "size": 114
-  },
-  "cirrus/lib2/eventdb.py,cover": {
-    "shasum": "e469d03bd636cc870e3070727ac244be9f844b90b7f1eed6058de7998a9d8f70",
-    "size": 7387
+    "shasum": "e0ba8e3f77a7853222f5f0c5c9ea5e71173574a944dd52fe00d6bb46c0c2ea5a",
+    "size": 14111
   },
   "cirrus/lib2/errors.py": {
     "shasum": "94ff1e0410118c41269067a37f3eeae6fd040fa5c727e054ebcb7df1a4583a59",
@@ -158,9 +134,5 @@
   "cirrus/lib2/process_payload.py": {
     "shasum": "901c682441e87446ef13456d4daceec73bd315be3bab1ea275c7bfb36e1dff76",
     "size": 14099
-  },
-  "cirrus/lib2/__init__.py,cover": {
-    "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "size": 0
   }
 }

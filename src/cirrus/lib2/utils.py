@@ -322,6 +322,19 @@ class BatchHandler:
         dest_name: str = "default",
         logger: logging.Logger = logger,
     ):
+        """
+        Handles dispatch of messages to AWS functions which support batched operation.
+        Provides a context manager (via `get_handler`) to ensure complete dispatch of
+        all messages (flushing any fractional batch on exit).
+
+        Args:
+          fn (Callable): function to be passed message batches.
+          params (dict): dictionary of the named parameters which `fn` takes.
+          batch_param_name (str): key to be populated with the messages in `params`
+          batch_size (int): size of batches to be sent (defaults to 10)
+          dest_name (str): common name of location message is being sent (default is "default")
+          logger (logging.Logger): logger class to use (defaults to cirrus.utils.logger)
+        """
 
         self.fn = fn
         self.params = params
@@ -344,7 +357,9 @@ class BatchHandler:
             self.execute()
 
     def _prepare_batch(self) -> list[dict[str, Any]]:
-        """identity function suffices in base case"""
+        """Identity function suffices in this base class.  Overriden in subclass, if
+        messages need to be massaged before publication.
+        """
         return self._batch
 
     def execute(self):
@@ -386,6 +401,7 @@ class SNSPublisher(BatchHandler):
     """Handles publication of SNS messages via batched interface."""
 
     def __init__(self, topic_arn: str, **kwargs):
+        """extend BatchHandler constructor to add topic_arn and setup SNS Client"""
         self.topic_arn = topic_arn
         self.dest_name = topic_arn.split(":")[-1]
         self._sns_client = boto3.client("sns")
@@ -399,7 +415,7 @@ class SNSPublisher(BatchHandler):
     def add(self, message: str, message_attrs: Optional[dict] = None):
         """
         Add the given messages to the `_batch`, and ship them if there are more than
-        `batch_size`.
+        `batch_size`. Override of `BatchHandler.add` to add message attribute support.
         Args:
           messages (str): message to be handled by `fn`
           message_attrs (Optional[dict]): attributes to be added to the message.
@@ -420,6 +436,8 @@ class SNSPublisher(BatchHandler):
             self.execute()
 
     def _prepare_batch(self) -> list[dict[str, Any]]:
+        """override of `BatchHandler._prepare_batch` that is consistent with how
+        parameters are added to `SNSPublisher._batch`."""
         return [
             dict(Id=str(idx), **message_params)
             for idx, message_params in enumerate(self._batch)
@@ -430,6 +448,7 @@ class SQSPublisher(BatchHandler):
     """Handles publication of SQS messages via batched interface."""
 
     def __init__(self, queue_url: str, **kwargs):
+        """extend BatchHandler constructor to add queue_url and setup SQS Queue"""
         self.queue_url = queue_url
         self.dest_name = queue_url.split("/")[-1]
         self._sqs_client = boto3.resource("sqs")
@@ -442,6 +461,8 @@ class SQSPublisher(BatchHandler):
         )
 
     def _prepare_batch(self) -> list[dict[str, Any]]:
+        """override of `BatchHandler._prepare_batch` that is consistent with how
+        parameters are added to `SQSPublisher._batch`."""
         return [
             {
                 "Id": str(idx),
