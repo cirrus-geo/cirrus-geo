@@ -36,11 +36,7 @@ lambda:
     - Effect: "Allow"
       Action:
         - timestream:DescribeEndpoints
-      Resource:
-        - !If
-          - TimestreamIsSupportedInRegion
-          - "*"
-          - !Ref AWS::NoValue
+      Resource: "*"
     - Effect: "Allow"
       Action:
         - timestream:WriteRecords
