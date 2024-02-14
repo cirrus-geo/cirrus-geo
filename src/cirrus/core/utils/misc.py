@@ -1,6 +1,17 @@
 import os
 import os.path
+from importlib import metadata
 from pathlib import Path
+
+
+def get_cirrus_geo_requirements() -> list[str]:
+    """
+    Get the cirrus-geo dependencies.
+    """
+    return [
+        req.split(";")[0].translate(str.maketrans("", "", " ()"))
+        for req in metadata.requires("cirrus-geo")
+    ]
 
 
 def relative_to(path1: Path, path2: Path) -> Path:
