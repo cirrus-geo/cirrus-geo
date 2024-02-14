@@ -2,9 +2,11 @@ import json
 import logging
 import re
 import uuid
+from collections.abc import Callable
 from contextlib import contextmanager
 from os import getenv
 from string import Formatter, Template
+from typing import Optional
 
 import boto3
 from boto3utils import s3
@@ -306,17 +308,31 @@ def delete_from_queue_batch(messages):
 
 class BatchHandler:
     def __init__(
-        self, fn, params, batch_param_name, batch_size=10, dest_name="default"
+        self,
+        fn: Callable,
+        params: dict,
+        batch_param_name: str,
+        batch_size: int = 10,
+        dest_name: str = "default",
+        logger: logging.Logger = logger,
     ):
+
         self.fn = fn
         self.params = params
         self.batch_param_name = batch_param_name
         self.batch_size = batch_size
         self.dest_name = dest_name
         self._batch = []
+        self.logger = logger
 
-    def add(self, element):
-        self._batch.append(element)
+    def add(self, message: str):
+        """
+        Add the given messages to the `_batch`, and ship them if there are more than
+        `batch_size`.
+        Args:
+          message (str): message to be handled by `fn`
+        """
+        self._batch.append(message)
 
         if len(self._batch) >= self.batch_size:
             self.execute()
@@ -334,7 +350,7 @@ class BatchHandler:
 
         try:
             self.fn(**params)
-            logger.debug(f"Published {len(params)} payloads to {self.dest_name}")
+            self.logger.debug(f"Published {len(params)} payloads to {self.dest_name}")
         finally:
             self._batch = []
 
@@ -372,13 +388,33 @@ class SNSPublisher(BatchHandler):
             **kwargs,
         )
 
+    def add(self, message: str, message_attrs: Optional[dict] = None):
+        """
+        Add the given messages to the `_batch`, and ship them if there are more than
+        `batch_size`.
+        Args:
+          messages (str): message to be handled by `fn`
+          message_attrs (Optional[dict]): attributes to be added to the message.
+        """
+        message_params = {"Message": message}
+        if message_attrs:
+            if len(message_attrs) > 10:
+                self.logger.error(
+                    "sns to sqs relay only supports 10 attributes: "
+                    "https://docs.aws.amazon.com/sns/latest/dg/"
+                    "sns-message-attributes.html"
+                )
+                raise ValueError(f"message_attrs too long: {len(message_attrs)}")
+            message_params.update({"MessageAttributes": message_attrs})
+        self._batch.append(message_params)
+
+        if len(self._batch) >= self.batch_size:
+            self.execute()
+
     def _prepare_batch(self):
         return [
-            {
-                "Id": str(idx),
-                "Message": msg,
-            }
-            for idx, msg in enumerate(self._batch)
+            dict(Id=str(idx), **message_params)
+            for idx, message_params in enumerate(self._batch)
         ]
 
 

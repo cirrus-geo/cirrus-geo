@@ -115,7 +115,7 @@ def workflow_completed(execution: Execution) -> None:
     # a different order/behavior (fail on error or something?).
     statedb.set_completed(execution.input["id"], execution_arn=execution.arn)
     if execution.output:
-        with SQSPublisher.get_handler(PROCESS_QUEUE_URL) as publisher:
+        with SQSPublisher.get_handler(PROCESS_QUEUE_URL, logger=logger) as publisher:
             for next_payload in execution.output.next_payloads():
                 publisher.add(json.dumps(next_payload))
 

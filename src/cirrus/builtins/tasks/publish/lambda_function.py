@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime, timezone
+from logging import Logger
 
 import boto3
 from boto3utils import s3, secrets
@@ -9,7 +10,7 @@ from botocore.exceptions import ClientError
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import get_path
+from cirrus.lib2.utils import SNSPublisher, get_path
 
 # envvars
 DATA_BUCKET = os.getenv("CIRRUS_DATA_BUCKET")
@@ -20,7 +21,6 @@ PUBLISH_TOPICS = os.getenv("CIRRUS_PUBLISH_SNS", None)
 
 # Cirrus state db
 statedb = StateDB()
-snsclient = boto3.client("sns")
 
 # global dictionary of sessions per bucket
 s3_sessions = {}
@@ -108,18 +108,10 @@ def sns_attributes(item) -> dict:
     return attrs
 
 
-def publish_items_to_sns(payload, topic_arn, logger):
-    responses = []
-    for item in payload["features"]:
-        responses.append(
-            snsclient.publish(
-                TopicArn=topic_arn,
-                Message=json.dumps(item),
-                MessageAttributes=sns_attributes(item),
-            )
-        )
-        logger.debug(f"Published item to {topic_arn}")
-    return responses
+def publish_items_to_sns(payload: dict, topic_arn: str, logger: Logger) -> None:
+    with SNSPublisher.get_handler(topic_arn, logger=logger) as publisher:
+        for item in payload["features"]:
+            publisher.add(message=json.dumps(item), message_attrs=sns_attributes(item))
 
 
 def get_s3_session(s3url: str, logger) -> s3:
