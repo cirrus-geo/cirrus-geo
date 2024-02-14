@@ -3,10 +3,10 @@ import logging
 import re
 import uuid
 from collections.abc import Callable
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from os import getenv
 from string import Formatter, Template
-from typing import Optional
+from typing import Any, Optional
 
 import boto3
 from boto3utils import s3
@@ -39,8 +39,12 @@ def get_sqs_client():
 
 
 def submit_batch_job(
-    payload, arn, queue="basic-ondemand", definition="geolambda-as-batch", name=None
-):
+    payload: dict,
+    arn: str,
+    queue: str = "basic-ondemand",
+    definition: str = "geolambda-as-batch",
+    name: str = None,
+) -> None:
     # envvars
     stack_prefix = getenv("CIRRUS_STACK")
     payload_bucket = getenv("CIRRUS_PAYLOAD_BUCKET")
@@ -70,7 +74,7 @@ def get_path(item: dict, template: str = "${collection}/${id}") -> str:
     """Get path name based on STAC Item and template string
 
     Args:
-        item (Dict): A STAC Item.
+        item (dict): A STAC Item.
         template (str, optional): Path template using variables referencing Item fields. Defaults to'${collection}/${id}'.
 
     Returns:
@@ -98,7 +102,9 @@ def get_path(item: dict, template: str = "${collection}/${id}") -> str:
     return Template(_template).substitute(**subs).replace("__colon__", ":")
 
 
-def recursive_compare(d1, d2, level="root", print=print):
+def recursive_compare(
+    d1: dict, d2: dict, level: str = "root", print: "Callable" = print
+) -> bool:
     import difflib
 
     same = True
@@ -161,7 +167,7 @@ def recursive_compare(d1, d2, level="root", print=print):
     return same
 
 
-def extract_record(record):
+def extract_record(record: dict):
     if "body" in record:
         record = json.loads(record["body"])
     elif "Sns" in record:
@@ -178,7 +184,7 @@ def extract_record(record):
     return record
 
 
-def normalize_event(event):
+def normalize_event(event: dict):
     if "Records" not in event:
         # not from SQS or SNS
         records = [event]
@@ -187,12 +193,12 @@ def normalize_event(event):
     return records
 
 
-def extract_event_records(event, convertfn=None):
+def extract_event_records(event: dict, convertfn=None):
     for record in normalize_event(event):
         yield extract_record(record)
 
 
-def payload_from_s3(record):
+def payload_from_s3(record: dict) -> dict:
     try:
         payload = s3().read_json(record["url"])
     except KeyError:
@@ -202,7 +208,7 @@ def payload_from_s3(record):
     return payload
 
 
-def parse_queue_arn(queue_arn):
+def parse_queue_arn(queue_arn: str) -> dict:
     parsed = QUEUE_ARN_REGEX.match(queue_arn)
 
     if parsed is None:
@@ -214,7 +220,7 @@ def parse_queue_arn(queue_arn):
 QUEUE_URLS = {}
 
 
-def get_queue_url(message):
+def get_queue_url(message: dict) -> str:
     arn = message["eventSourceARN"]
 
     try:
@@ -231,7 +237,7 @@ def get_queue_url(message):
     return queue_url
 
 
-def delete_from_queue(message):
+def delete_from_queue(message: dict) -> None:
     receipt_handle = None
     for key in ("receiptHandle", "ReceiptHandle"):
         receipt_handle = message.get(key)
@@ -246,7 +252,7 @@ def delete_from_queue(message):
     )
 
 
-def delete_from_queue_batch(messages):
+def delete_from_queue_batch(messages: list[dict]) -> dict:
     queue_url = None
     _messages = []
     bad_messages = []
@@ -337,7 +343,7 @@ class BatchHandler:
         if len(self._batch) >= self.batch_size:
             self.execute()
 
-    def _prepare_batch(self):
+    def _prepare_batch(self) -> list[dict[str, Any]]:
         """identity function suffices in base case"""
         return self._batch
 
@@ -356,7 +362,9 @@ class BatchHandler:
 
     @classmethod
     @contextmanager
-    def get_handler(cls, *args, **kwargs):
+    def get_handler(
+        cls: "BatchHandler", *args, **kwargs
+    ) -> AbstractContextManager["BatchHandler"]:
         publisher = cls(*args, **kwargs)
         try:
             yield publisher
@@ -365,7 +373,7 @@ class BatchHandler:
 
 
 @contextmanager
-def batch_handler(*args, **kwargs):
+def batch_handler(*args, **kwargs) -> AbstractContextManager[BatchHandler]:
     # TODO: Deprecate this in favor of managed classes
     handler = BatchHandler(*args, **kwargs)
     try:
@@ -377,7 +385,7 @@ def batch_handler(*args, **kwargs):
 class SNSPublisher(BatchHandler):
     """Handles publication of SNS messages via batched interface."""
 
-    def __init__(self, topic_arn, **kwargs):
+    def __init__(self, topic_arn: str, **kwargs):
         self.topic_arn = topic_arn
         self.dest_name = topic_arn.split(":")[-1]
         self._sns_client = boto3.client("sns")
@@ -411,7 +419,7 @@ class SNSPublisher(BatchHandler):
         if len(self._batch) >= self.batch_size:
             self.execute()
 
-    def _prepare_batch(self):
+    def _prepare_batch(self) -> list[dict[str, Any]]:
         return [
             dict(Id=str(idx), **message_params)
             for idx, message_params in enumerate(self._batch)
@@ -421,7 +429,7 @@ class SNSPublisher(BatchHandler):
 class SQSPublisher(BatchHandler):
     """Handles publication of SQS messages via batched interface."""
 
-    def __init__(self, queue_url, **kwargs):
+    def __init__(self, queue_url: str, **kwargs):
         self.queue_url = queue_url
         self.dest_name = queue_url.split("/")[-1]
         self._sqs_client = boto3.resource("sqs")
@@ -433,7 +441,7 @@ class SQSPublisher(BatchHandler):
             **kwargs,
         )
 
-    def _prepare_batch(self):
+    def _prepare_batch(self) -> list[dict[str, Any]]:
         return [
             {
                 "Id": str(idx),

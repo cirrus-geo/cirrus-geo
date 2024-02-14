@@ -26,14 +26,14 @@ statedb = StateDB()
 s3_sessions = {}
 
 
-def sns_attributes(item) -> dict:
+def sns_attributes(item: dict) -> dict:
     """Create attributes from Item for publishing to SNS
 
     Args:
-        item (Dict): A STAC Item
+        item (dict): A STAC Item
 
     Returns:
-        Dict: Attributes for SNS publishing
+        dict: Attributes for SNS publishing
     """
     # note that sns -> sqs supports only 10 message attributes
     # when not using raw mode, and we currently have 10 attrs
@@ -114,7 +114,7 @@ def publish_items_to_sns(payload: dict, topic_arn: str, logger: Logger) -> None:
             publisher.add(message=json.dumps(item), message_attrs=sns_attributes(item))
 
 
-def get_s3_session(s3url: str, logger) -> s3:
+def get_s3_session(s3url: str, logger: Logger) -> s3:
     """Get boto3-utils s3 class for interacting with an s3 bucket. A secret will be looked for with the name
     `cirrus-creds-<bucket-name>`. If no secret is found the default session will be used
 
@@ -147,7 +147,9 @@ def get_s3_session(s3url: str, logger) -> s3:
     return s3_sessions[bucket]
 
 
-def publish_items_to_s3(payload, bucket, public, logger) -> list:
+def publish_items_to_s3(
+    payload: ProcessPayload, bucket: str, public: bool, logger: Logger
+) -> list:
     opts = payload.process.get("upload_options", {})
     s3urls = []
     for item in payload["features"]:
@@ -197,7 +199,7 @@ def publish_items_to_s3(payload, bucket, public, logger) -> list:
     return s3urls
 
 
-def lambda_handler(event, context):
+def lambda_handler(event: dict, context: dict) -> dict:
     payload = ProcessPayload.from_event(event)
     logger = get_task_logger("task.publish", payload=payload)
 

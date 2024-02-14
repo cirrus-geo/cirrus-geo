@@ -232,3 +232,32 @@ def test_snspublisher_batch(sns, topic):
     sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
     all_send_notifications = sns_backend.topics[topic].sent_notifications
     assert {e[1] for e in all_send_notifications} == set(items)
+
+
+def test_snspublisher_mesg_attrs(sns, topic):
+    items = [str(x) for x in range(10)]
+    with utils.SNSPublisher.get_handler(topic_arn=topic, batch_size=3) as publisher:
+        for item in items:
+            publisher.add(
+                str(item),
+                {"status": {"DataType": "String", "StringValue": "succeeded"}},
+            )
+
+    sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
+    all_send_notifications = sns_backend.topics[topic].sent_notifications
+    assert {e[1] for e in all_send_notifications} == set(items)
+
+
+def test_snspublisher_too_many_mesg_attrs(sns, topic):
+    with utils.SNSPublisher.get_handler(topic_arn=topic, batch_size=3) as publisher:
+        with pytest.raises(ValueError):
+            publisher.add(
+                "too many attrs",
+                {
+                    f"status{i}": {
+                        "DataType": "String",
+                        "StringValue": "succeeded",
+                    }
+                    for i in range(11)
+                },
+            )
