@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tasks &mdash; cirrus-geo  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/js/versions-loader.js?v=d43487cb"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Batch tasks" href="batch.html" />
+    <link rel="prev" title="Feeders" href="../feeders.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            cirrus-geo
+          </a>
+              <div class="version">
+                v0.12.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../30_payload.html">Cirrus Process Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../60_components.html">Cirrus Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lambdas.html">Lambda-based components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../feeders.html">Feeders</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tasks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="batch.html">Batch tasks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#anatomy-of-a-task">Anatomy of a task</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#lambda-tasks">Lambda tasks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#batch-tasks">Batch tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#lambda-vs-batch">Lambda vs Batch</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#when-to-chose-lambda">When to chose Lambda</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#when-to-chose-batch">When to chose Batch</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-new-task">Creating a new task</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#lambda-only">Lambda-only</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#batch-only">Batch-only</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#lambda-and-batch">Lambda and Batch</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#task-parameters">Task parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-tasks-locally">Running tasks locally</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../workflows/index.html">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../functions.html">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/feeders/index.html">Feeders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/tasks/index.html">Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/workflows/index.html">Workflows</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">cirrus-geo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../60_components.html">Cirrus Components</a></li>
+      <li class="breadcrumb-item active">Tasks</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/cirrus/components/tasks/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tasks">
+<h1>Tasks<a class="headerlink" href="#tasks" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<p>Tasks in Cirrus implement a unit of processing, to be composed together into a
+<a class="reference internal" href="../workflows/index.html"><span class="doc">Workflow</span></a>. Tasks are expected to support both input and
+output formatted as a <a class="reference internal" href="../../30_payload.html"><span class="doc">Cirrus Process Payload</span></a>. As part of its
+processing, a task can make any requisite modifications to its input payload
+and/or derive any output assets, pushing them to the canonical storage location
+in S3.</p>
+<p>In other other words, to implement custom processing routines for a pipeline,
+use a task. The best tasks are modular, simple, focused, and composable. Most
+projects end up with more custom tasks than other component types, so it pays
+to be familiar with the tasks ins and outs.</p>
+<p>Tasks can make use of AWS Lambda and/or AWS Batch for execution. Lambda tasks
+are simpler to manage and quicker to start up, but the Lambda runtime
+constraints can be prohibitive or untenable for some task workloads. In those
+cases, Batch allows for extended runtimes, greater resource limits, and
+specialized instance types.</p>
+<p>In a Cirrus project, tasks are stored inside the <code class="docutils literal notranslate"><span class="pre">tasks/</span></code> directory, each in a
+subdirectory named for the task. Each task requires a <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> file with
+the task’s configuration, and a <code class="docutils literal notranslate"><span class="pre">README.md</span></code> file documenting the task’s usage.</p>
+<section id="anatomy-of-a-task">
+<h2>Anatomy of a task<a class="headerlink" href="#anatomy-of-a-task" title="Link to this heading"></a></h2>
+<p>Generally speaking, every task should do a few key things:</p>
+<ul class="simple">
+<li><p>Take an input Cirrus Process Payload</p>
+<ul>
+<li><p>In the case of Batch tasks and/or large payloads, tasks should support
+receiving a <code class="docutils literal notranslate"><span class="pre">url</span></code> input parameter pointing to a payload object in S3</p></li>
+</ul>
+</li>
+<li><p>Instantiate a <code class="docutils literal notranslate"><span class="pre">cirrus.lib.ProcessPayload</span></code> instance from the input payload
+JSON</p></li>
+<li><p>Download all required assets from the items in the input payload</p></li>
+<li><p>Perform any asset metadata manipulation and/or derived product processing</p></li>
+<li><p>Update/replace payload items based on task outputs</p></li>
+<li><p>Upload any output assets to S3 for persistence</p></li>
+<li><p>Return the output Cirrus Process Payload</p>
+<ul>
+<li><p>In the case of Batch tasks and/or large payloads, tasks should support
+uploading the output payload to S3 and returning an output <code class="docutils literal notranslate"><span class="pre">url</span></code> parameter
+pointing to that payload object in S3</p></li>
+</ul>
+</li>
+</ul>
+<p>Certain tasks may deviate from this pattern, but the vast majoity of tasks will
+follow this flow. <code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code> provides convenince classes/methods to help with
+these common needs.</p>
+<section id="lambda-tasks">
+<h3>Lambda tasks<a class="headerlink" href="#lambda-tasks" title="Link to this heading"></a></h3>
+<p>Lambda tasks use the <a class="reference external" href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda</a> runtime to power executions. Lambda has the
+advantage of quick startup and easy management, but has many restrictions like
+short timeouts and significant resource limits.</p>
+<p>Lambda-only tasks follow the specifications outlined in the <a class="reference internal" href="../lambdas.html"><span class="doc">Lambda-based
+components</span></a> documentation. Refer there for specifics on what files
+are requried for Lambda tasks and how to structure the <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> file.</p>
+</section>
+<section id="batch-tasks">
+<h3>Batch tasks<a class="headerlink" href="#batch-tasks" title="Link to this heading"></a></h3>
+<p>Batch tasks use <a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/what-is-batch.html">AWS Batch</a> semantics to define <a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/jobs.html">jobs</a> that execute within a
+<a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/compute_environments.html">compute environment</a> as determined by the <a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/job_queues.html">job queue</a> to which the job is
+submitted.  Batch compute environments can make use of <a class="reference external" href="https://docs.aws.amazon.com/eks/latest/userguide/fargate.html">Fargate</a> or <a class="reference external" href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html">EC2</a> to
+run jobs, allowing significantly more control over the execution environment
+than Lambda allows, as well as much greater limits on resources.</p>
+<p>Batch tasks are inherently just an abstraction around a set of CloudFormation
+resources, minimally just a Batch <a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/job_definitions.html">job definition</a>, but commonly also the job
+queue, compute environment, and any other requried resources.</p>
+<p>For more infomation see the <a class="reference internal" href="batch.html"><span class="doc">Batch tasks</span></a> documentation.</p>
+</section>
+</section>
+<section id="lambda-vs-batch">
+<h2>Lambda vs Batch<a class="headerlink" href="#lambda-vs-batch" title="Link to this heading"></a></h2>
+<section id="when-to-chose-lambda">
+<h3>When to chose Lambda<a class="headerlink" href="#when-to-chose-lambda" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>small code size/not many dependencies</p></li>
+<li><p>single-threaded</p></li>
+<li><p>short runtime (no more than 15 minutes max)</p></li>
+<li><p>need code to live in the cirrus project repo</p></li>
+</ul>
+</section>
+<section id="when-to-chose-batch">
+<h3>When to chose Batch<a class="headerlink" href="#when-to-chose-batch" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>long runtimes</p></li>
+<li><p>large package size/non-native dependecies</p></li>
+<li><p>can use multiple CPUs</p></li>
+<li><p>easier to manage code as separate container images</p></li>
+<li><p>need significant RAM</p></li>
+<li><p>need more than 10GB disk</p></li>
+<li><p>need special hardware resources (e.g., GPU)</p></li>
+</ul>
+</section>
+</section>
+<section id="creating-a-new-task">
+<h2>Creating a new task<a class="headerlink" href="#creating-a-new-task" title="Link to this heading"></a></h2>
+<p>Creating a new task involves creating a directory with the task name under
+<code class="docutils literal notranslate"><span class="pre">tasks/</span></code> and the required files inside it. Getting everything setup with all
+the requisite boiler-plate takes some minor work. The <code class="docutils literal notranslate"><span class="pre">cirrus</span></code> cli includes
+a convenience function to automate getting started with a new task.</p>
+<section id="lambda-only">
+<h3>Lambda-only<a class="headerlink" href="#lambda-only" title="Link to this heading"></a></h3>
+<p>To create a lambda-only task, simply create a new task with a description and
+the options <code class="docutils literal notranslate"><span class="pre">--has-lambda</span></code> and <code class="docutils literal notranslate"><span class="pre">--no-batch</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus create task --has-lambda --no-batch &lt;TaskName&gt; &quot;&lt;task description&gt;&quot;
+</pre></div>
+</div>
+<p>This command will create the task directory and required files from a minimal
+template. The new task will obviously need to have the custom handler code
+added, and the <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> configuration will need to be validated to
+ensure it matches the task requirements. Any usage information should also be
+added to the <code class="docutils literal notranslate"><span class="pre">README.md</span></code> file.</p>
+</section>
+<section id="batch-only">
+<h3>Batch-only<a class="headerlink" href="#batch-only" title="Link to this heading"></a></h3>
+<p>To create a Batch-only task, simply create a new task with a description, but
+add the <code class="docutils literal notranslate"><span class="pre">--has-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">--no-lambda</span></code> options:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus create task --has-batch --no-lambda &lt;TaskName&gt; &quot;&lt;task description&gt;&quot;
+</pre></div>
+</div>
+<p>The task directory and required files will be created from a minimal template.
+The templated Batch configuration in the <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> should be
+considered a rough starting point, and will require fairly significant
+modification for most uses. Be sure to also update the <code class="docutils literal notranslate"><span class="pre">README.md</span></code> file with
+usage information.</p>
+</section>
+<section id="lambda-and-batch">
+<h3>Lambda and Batch<a class="headerlink" href="#lambda-and-batch" title="Link to this heading"></a></h3>
+<p>For tasks that should support both Lambda and Batch, run the <code class="docutils literal notranslate"><span class="pre">create</span></code>
+command, this time using the options <code class="docutils literal notranslate"><span class="pre">--has-lambda</span></code> and <code class="docutils literal notranslate"><span class="pre">--has-batch</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus create task --has-lambda --has-batch &lt;TaskName&gt; &quot;&lt;task description&gt;&quot;
+</pre></div>
+</div>
+<p>This command does the same as both of the above <code class="docutils literal notranslate"><span class="pre">create</span></code> command examples, so
+the listed caveats of both apply here: ensure the handler code is completed,
+and the batch configuration is updated to match the task requirements.</p>
+</section>
+</section>
+<section id="task-parameters">
+<h2>Task parameters<a class="headerlink" href="#task-parameters" title="Link to this heading"></a></h2>
+<p>Tasks can take arguments at runtime via process definition parameters. See the
+<a class="reference internal" href="../../30_payload.html"><span class="doc">Cirrus Process Payload</span></a> docs for more information. When
+authoring a task, be sure to document all supported task parameters in the
+task’s <code class="docutils literal notranslate"><span class="pre">README.md</span></code>. In using an existing task, the task README can always be
+view via the cli:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus show task &lt;TaskName&gt; readme
+</pre></div>
+</div>
+<p>This will dump the <code class="docutils literal notranslate"><span class="pre">README.md</span></code> contents to the terminal with appropriate
+markup applied.</p>
+</section>
+<section id="running-tasks-locally">
+<h2>Running tasks locally<a class="headerlink" href="#running-tasks-locally" title="Link to this heading"></a></h2>
+<p>We are working to standardize task code and <code class="docutils literal notranslate"><span class="pre">cirrus</span></code> cli tooling to provide
+an easy and consistent means to execute tasks locally. This feature is still
+under development, so for now please consult the project or task documentation
+for further information (if available).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../feeders.html" class="btn btn-neutral float-left" title="Feeders" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="batch.html" class="btn btn-neutral float-right" title="Batch tasks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: v0.12.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
