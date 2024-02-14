@@ -8,7 +8,6 @@ def test_get_cirrus_geo_requirements():
         "click-plugins~=1.1",
         "rich~=10.6",
         "cfn-flip~=1.2",
-        "cirrus-lib~=0.8.1",
         "boto3-utils~=0.4.1",
         "boto3>=1.26.0",
         "python-json-logger~=2.0",
