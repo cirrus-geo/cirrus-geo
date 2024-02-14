@@ -3,6 +3,7 @@ from pathlib import Path
 
 from cirrus.core.constants import DEFAULT_CONFIG_FILENAME, SERVERLESS_PLUGINS
 from cirrus.core.exceptions import ConfigError
+from cirrus.core.utils import misc
 from cirrus.core.utils.yaml import NamedYamlable
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,9 @@ class Config(NamedYamlable):
             self.custom.pythonRequirements = {}
         if "include" not in self.custom.pythonRequirements:
             self.custom.pythonRequirements.include = []
+        self.custom.pythonRequirements.include.extend(
+            misc.get_cirrus_geo_requirements(),
+        )
 
         # populate required plugin list
         try:
