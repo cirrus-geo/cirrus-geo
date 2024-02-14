@@ -9,7 +9,7 @@ import boto3
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import SQSPublisher
+from cirrus.lib2.utils import SNSPublisher, SQSPublisher
 
 logger = get_task_logger("function.update-state", payload=tuple())
 
@@ -19,7 +19,6 @@ INVALID_TOPIC_ARN = getenv("CIRRUS_INVALID_TOPIC_ARN", None)
 PROCESS_QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 
 # boto3 clients
-SNS_CLIENT = boto3.client("sns")
 SFN_CLIENT = boto3.client("stepfunctions")
 SQS_CLIENT = boto3.resource("sqs")
 QUEUE = SQS_CLIENT.Queue(PROCESS_QUEUE_URL)
@@ -168,11 +167,8 @@ def workflow_failed(execution: Execution) -> None:
                 "error": {"DataType": "String", "StringValue": error},
             }
             logger.debug(f"Publishing item to {notification_topic_arn}")
-            SNS_CLIENT.publish(
-                TopicArn=notification_topic_arn,
-                Message=json.dumps(item),
-                MessageAttributes=attrs,
-            )
+            with SNSPublisher.get_handler(notification_topic_arn) as publisher:
+                publisher.add(json.dumps(item), attrs)
         except Exception:
             logger.exception(f"Failed publishing to {notification_topic_arn}")
             raise
