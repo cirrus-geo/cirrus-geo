@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Fix IAM perms for timestream:DescribeEndpoints to be '\*'. ([#249])
+- Fix IAM perms for timestream:DescribeEndpoints to be '\*'. ([#252])
 
 ## [v0.11.3] - 2024-02-13
 
@@ -787,7 +787,7 @@ Initial release
 [#231]: https://github.com/cirrus-geo/cirrus-geo/pull/231
 [#245]: https://github.com/cirrus-geo/cirrus-geo/pull/245
 [#246]: https://github.com/cirrus-geo/cirrus-geo/pull/246
-[#247]: https://github.com/cirrus-geo/cirrus-geo/pull/247
+[#252]: https://github.com/cirrus-geo/cirrus-geo/pull/252
 [f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
