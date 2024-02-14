@@ -103,7 +103,7 @@ def get_path(item: dict, template: str = "${collection}/${id}") -> str:
 
 
 def recursive_compare(
-    d1: dict, d2: dict, level: str = "root", print: "Callable" = print
+    d1: dict, d2: dict, level: str = "root", print: Callable = print
 ) -> bool:
     import difflib
 
