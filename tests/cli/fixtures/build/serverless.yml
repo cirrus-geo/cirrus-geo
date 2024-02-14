@@ -114,11 +114,7 @@ functions:
       - Effect: Allow
         Action:
           - timestream:DescribeEndpoints
-        Resource:
-          - Fn::If:
-              - TimestreamIsSupportedInRegion
-              - '*'
-              - Ref: AWS::NoValue
+        Resource: '*'
       - Effect: Allow
         Action:
           - timestream:Select
@@ -193,11 +189,7 @@ functions:
       - Effect: Allow
         Action:
           - timestream:DescribeEndpoints
-        Resource:
-          - Fn::If:
-              - TimestreamIsSupportedInRegion
-              - '*'
-              - Ref: AWS::NoValue
+        Resource: '*'
       - Effect: Allow
         Action:
           - timestream:WriteRecords
@@ -311,11 +303,7 @@ functions:
       - Effect: Allow
         Action:
           - timestream:DescribeEndpoints
-        Resource:
-          - Fn::If:
-              - TimestreamIsSupportedInRegion
-              - '*'
-              - Ref: AWS::NoValue
+        Resource: '*'
       - Effect: Allow
         Action:
           - timestream:WriteRecords
