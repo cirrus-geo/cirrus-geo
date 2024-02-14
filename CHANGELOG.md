@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [v0.11.3] - 2024-02-14
+## [v0.11.4] - 2024-02-13
+
+### Fixed
+
+- Fix IAM perms for timestream:DescribeEndpoints to be '\*'. ([#253])
+
+## [v0.11.3] - 2024-02-13
 
 ### Fixed
 
@@ -689,6 +695,7 @@ Initial release
 
 <!-- [unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.3...main -->
 
+[v0.11.4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.3...v0.11.4
 [v0.11.3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.2...v0.11.3
 [v0.11.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.1...v0.11.2
 [v0.11.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.11.0...v0.11.1
@@ -777,6 +784,7 @@ Initial release
 [#160]: https://github.com/cirrus-geo/cirrus-geo/pull/160
 [#224]: https://github.com/cirrus-geo/cirrus-geo/pull/224
 [#231]: https://github.com/cirrus-geo/cirrus-geo/pull/231
+[#253]: https://github.com/cirrus-geo/cirrus-geo/pull/253
 [f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
