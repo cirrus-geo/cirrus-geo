@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Restore `InvalidInput` exception, which only existed in `cirrus-lib` (and
-  `stactask`). ([#255])
+  `stactask`). ([#256])
 
 ## [v0.12.0] - 2024-02-14
 
