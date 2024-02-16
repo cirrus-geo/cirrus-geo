@@ -99,8 +99,7 @@ class CFObjectMeta(GroupMeta):
             return self.cf_types[top_level_key]
         except KeyError:
             raise CloudFormationError(
-                "Unknown cloudformation type '%s'",
-                top_level_key,
+                f"Unknown cloudformation type '{top_level_key}'",
             )
 
     def create_cf_objects(
