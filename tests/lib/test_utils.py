@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 
 import pytest
+from moto.core import DEFAULT_ACCOUNT_ID
+from moto.sns import sns_backends
 
 from cirrus.lib2 import utils
 
@@ -17,6 +19,11 @@ def payloads(boto3utils_s3):
 @pytest.fixture
 def queue(sqs):
     return sqs.create_queue(QueueName="test-queue")["QueueUrl"]
+
+
+@pytest.fixture
+def topic(sns):
+    return sns.create_topic(Name="some-topic")["TopicArn"]
 
 
 same_dicts = [
@@ -167,6 +174,16 @@ def test_batch_handler(batch_tester):
     assert batch_tester.items[0] == 1
 
 
+def test_batchhandler_context_mgr(batch_tester):
+    with utils.BatchHandler.get_handler(batch_tester, {}, "batch") as handler:
+        handler.add(1)
+        handler.execute()
+    assert len(batch_tester.calls) == 1
+    assert batch_tester.calls[0] == {"batch": [1]}
+    assert len(batch_tester.items) == 1
+    assert batch_tester.items[0] == 1
+
+
 def test_batch_handler_extra_args(batch_tester):
     handler = utils.BatchHandler(batch_tester, {"arg": "value"}, "batch")
     handler.add(1)
@@ -191,3 +208,56 @@ def test_batch_handler_batch(batch_tester):
 
     assert len(batch_tester.calls) == 4
     assert batch_tester.items == items
+
+
+def test_sqspublisher_batch(sqs, queue):
+    items = list(range(10))
+    with utils.SQSPublisher.get_handler(queue_url=queue, batch_size=3) as publisher:
+        for item in items:
+            publisher.add(str(item))
+
+    msgs = []
+    for item in items:
+        msg = int(sqs.receive_message(QueueUrl=queue)["Messages"][0]["Body"])
+        msgs.append(msg)
+    assert msgs == items
+
+
+def test_snspublisher_batch(sns, topic):
+    items = [str(x) for x in range(10)]
+    with utils.SNSPublisher.get_handler(topic_arn=topic, batch_size=3) as publisher:
+        for item in items:
+            publisher.add(str(item))
+
+    sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
+    all_send_notifications = sns_backend.topics[topic].sent_notifications
+    assert {e[1] for e in all_send_notifications} == set(items)
+
+
+def test_snspublisher_mesg_attrs(sns, topic):
+    items = [str(x) for x in range(10)]
+    with utils.SNSPublisher.get_handler(topic_arn=topic, batch_size=3) as publisher:
+        for item in items:
+            publisher.add(
+                str(item),
+                {"status": {"DataType": "String", "StringValue": "succeeded"}},
+            )
+
+    sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
+    all_send_notifications = sns_backend.topics[topic].sent_notifications
+    assert {e[1] for e in all_send_notifications} == set(items)
+
+
+def test_snspublisher_too_many_mesg_attrs(sns, topic):
+    with utils.SNSPublisher.get_handler(topic_arn=topic, batch_size=3) as publisher:
+        with pytest.raises(ValueError):
+            publisher.add(
+                "too many attrs",
+                {
+                    f"status{i}": {
+                        "DataType": "String",
+                        "StringValue": "succeeded",
+                    }
+                    for i in range(11)
+                },
+            )

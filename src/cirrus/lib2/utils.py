@@ -2,9 +2,11 @@ import json
 import logging
 import re
 import uuid
-from contextlib import contextmanager
+from collections.abc import Callable
+from contextlib import AbstractContextManager, contextmanager
 from os import getenv
 from string import Formatter, Template
+from typing import Any, Optional
 
 import boto3
 from boto3utils import s3
@@ -37,8 +39,12 @@ def get_sqs_client():
 
 
 def submit_batch_job(
-    payload, arn, queue="basic-ondemand", definition="geolambda-as-batch", name=None
-):
+    payload: dict,
+    arn: str,
+    queue: str = "basic-ondemand",
+    definition: str = "geolambda-as-batch",
+    name: str = None,
+) -> None:
     # envvars
     stack_prefix = getenv("CIRRUS_STACK")
     payload_bucket = getenv("CIRRUS_PAYLOAD_BUCKET")
@@ -68,7 +74,7 @@ def get_path(item: dict, template: str = "${collection}/${id}") -> str:
     """Get path name based on STAC Item and template string
 
     Args:
-        item (Dict): A STAC Item.
+        item (dict): A STAC Item.
         template (str, optional): Path template using variables referencing Item fields. Defaults to'${collection}/${id}'.
 
     Returns:
@@ -96,7 +102,9 @@ def get_path(item: dict, template: str = "${collection}/${id}") -> str:
     return Template(_template).substitute(**subs).replace("__colon__", ":")
 
 
-def recursive_compare(d1, d2, level="root", print=print):
+def recursive_compare(
+    d1: dict, d2: dict, level: str = "root", print: Callable = print
+) -> bool:
     import difflib
 
     same = True
@@ -159,7 +167,7 @@ def recursive_compare(d1, d2, level="root", print=print):
     return same
 
 
-def extract_record(record):
+def extract_record(record: dict):
     if "body" in record:
         record = json.loads(record["body"])
     elif "Sns" in record:
@@ -176,7 +184,7 @@ def extract_record(record):
     return record
 
 
-def normalize_event(event):
+def normalize_event(event: dict):
     if "Records" not in event:
         # not from SQS or SNS
         records = [event]
@@ -185,12 +193,12 @@ def normalize_event(event):
     return records
 
 
-def extract_event_records(event, convertfn=None):
+def extract_event_records(event: dict, convertfn=None):
     for record in normalize_event(event):
         yield extract_record(record)
 
 
-def payload_from_s3(record):
+def payload_from_s3(record: dict) -> dict:
     try:
         payload = s3().read_json(record["url"])
     except KeyError:
@@ -200,7 +208,7 @@ def payload_from_s3(record):
     return payload
 
 
-def parse_queue_arn(queue_arn):
+def parse_queue_arn(queue_arn: str) -> dict:
     parsed = QUEUE_ARN_REGEX.match(queue_arn)
 
     if parsed is None:
@@ -212,7 +220,7 @@ def parse_queue_arn(queue_arn):
 QUEUE_URLS = {}
 
 
-def get_queue_url(message):
+def get_queue_url(message: dict) -> str:
     arn = message["eventSourceARN"]
 
     try:
@@ -229,7 +237,7 @@ def get_queue_url(message):
     return queue_url
 
 
-def delete_from_queue(message):
+def delete_from_queue(message: dict) -> None:
     receipt_handle = None
     for key in ("receiptHandle", "ReceiptHandle"):
         receipt_handle = message.get(key)
@@ -244,7 +252,7 @@ def delete_from_queue(message):
     )
 
 
-def delete_from_queue_batch(messages):
+def delete_from_queue_batch(messages: list[dict]) -> dict:
     queue_url = None
     _messages = []
     bad_messages = []
@@ -305,36 +313,160 @@ def delete_from_queue_batch(messages):
 
 
 class BatchHandler:
-    def __init__(self, fn, params, batch_param_name, batch_size=10):
+    def __init__(
+        self,
+        fn: Callable,
+        params: dict,
+        batch_param_name: str,
+        batch_size: int = 10,
+        dest_name: str = "default",
+        logger: logging.Logger = logger,
+    ):
+        """
+        Handles dispatch of messages to AWS functions which support batched operation.
+        Provides a context manager (via `get_handler`) to ensure complete dispatch of
+        all messages (flushing any fractional batch on exit).
+
+        Args:
+          fn (Callable): function to be passed message batches.
+          params (dict): dictionary of the named parameters which `fn` takes.
+          batch_param_name (str): key to be populated with the messages in `params`
+          batch_size (int): size of batches to be sent (defaults to 10)
+          dest_name (str): common name of location message is being sent (default is "default")
+          logger (logging.Logger): logger class to use (defaults to cirrus.utils.logger)
+        """
+
         self.fn = fn
         self.params = params
         self.batch_param_name = batch_param_name
         self.batch_size = batch_size
+        self.dest_name = dest_name
         self._batch = []
+        self.logger = logger
 
-    def add(self, element):
-        self._batch.append(element)
+    def add(self, message: str):
+        """
+        Add the given messages to the `_batch`, and ship them if there are more than
+        `batch_size`.
+        Args:
+          message (str): message to be handled by `fn`
+        """
+        self._batch.append(message)
 
         if len(self._batch) >= self.batch_size:
             self.execute()
+
+    def _prepare_batch(self) -> list[dict[str, Any]]:
+        """Identity function suffices in this base class.  Overriden in subclass, if
+        messages need to be massaged before publication.
+        """
+        return self._batch
 
     def execute(self):
         if not self._batch:
             return
 
         params = self.params.copy()
-        params[self.batch_param_name] = self._batch
+        params[self.batch_param_name] = self._prepare_batch()
 
         try:
             self.fn(**params)
+            self.logger.debug(f"Published {len(params)} payloads to {self.dest_name}")
         finally:
             self._batch = []
 
+    @classmethod
+    @contextmanager
+    def get_handler(
+        cls: "BatchHandler", *args, **kwargs
+    ) -> AbstractContextManager["BatchHandler"]:
+        publisher = cls(*args, **kwargs)
+        try:
+            yield publisher
+        finally:
+            publisher.execute()
+
 
 @contextmanager
-def batch_handler(*args, **kwargs):
+def batch_handler(*args, **kwargs) -> AbstractContextManager[BatchHandler]:
+    # TODO: Deprecate this in favor of managed classes
     handler = BatchHandler(*args, **kwargs)
     try:
         yield handler
     finally:
         handler.execute()
+
+
+class SNSPublisher(BatchHandler):
+    """Handles publication of SNS messages via batched interface."""
+
+    def __init__(self, topic_arn: str, **kwargs):
+        """extend BatchHandler constructor to add topic_arn and setup SNS Client"""
+        self.topic_arn = topic_arn
+        self.dest_name = topic_arn.split(":")[-1]
+        self._sns_client = boto3.client("sns")
+        super().__init__(
+            fn=self._sns_client.publish_batch,
+            params={"TopicArn": self.topic_arn, "PublishBatchRequestEntries": []},
+            batch_param_name="PublishBatchRequestEntries",
+            **kwargs,
+        )
+
+    def add(self, message: str, message_attrs: Optional[dict] = None):
+        """
+        Add the given messages to the `_batch`, and ship them if there are more than
+        `batch_size`. Override of `BatchHandler.add` to add message attribute support.
+        Args:
+          messages (str): message to be handled by `fn`
+          message_attrs (Optional[dict]): attributes to be added to the message.
+        """
+        message_params = {"Message": message}
+        if message_attrs:
+            if len(message_attrs) > 10:
+                self.logger.error(
+                    "sns to sqs relay only supports 10 attributes: "
+                    "https://docs.aws.amazon.com/sns/latest/dg/"
+                    "sns-message-attributes.html"
+                )
+                raise ValueError(f"message_attrs too long: {len(message_attrs)}")
+            message_params.update({"MessageAttributes": message_attrs})
+        self._batch.append(message_params)
+
+        if len(self._batch) >= self.batch_size:
+            self.execute()
+
+    def _prepare_batch(self) -> list[dict[str, Any]]:
+        """override of `BatchHandler._prepare_batch` that is consistent with how
+        parameters are added to `SNSPublisher._batch`."""
+        return [
+            dict(Id=str(idx), **message_params)
+            for idx, message_params in enumerate(self._batch)
+        ]
+
+
+class SQSPublisher(BatchHandler):
+    """Handles publication of SQS messages via batched interface."""
+
+    def __init__(self, queue_url: str, **kwargs):
+        """extend BatchHandler constructor to add queue_url and setup SQS Queue"""
+        self.queue_url = queue_url
+        self.dest_name = queue_url.split("/")[-1]
+        self._sqs_client = boto3.resource("sqs")
+        self._queue = self._sqs_client.Queue(self.queue_url)
+        super().__init__(
+            fn=self._queue.send_messages,
+            params={},
+            batch_param_name="Entries",
+            **kwargs,
+        )
+
+    def _prepare_batch(self) -> list[dict[str, Any]]:
+        """override of `BatchHandler._prepare_batch` that is consistent with how
+        parameters are added to `SQSPublisher._batch`."""
+        return [
+            {
+                "Id": str(idx),
+                "MessageBody": msg,
+            }
+            for idx, msg in enumerate(self._batch)
+        ]

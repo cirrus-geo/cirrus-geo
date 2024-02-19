@@ -2,14 +2,14 @@
 import json
 from dataclasses import dataclass
 from os import getenv
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import boto3
 
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import batch_handler
+from cirrus.lib2.utils import SNSPublisher, SQSPublisher
 
 logger = get_task_logger("function.update-state", payload=tuple())
 
@@ -19,7 +19,6 @@ INVALID_TOPIC_ARN = getenv("CIRRUS_INVALID_TOPIC_ARN", None)
 PROCESS_QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 
 # boto3 clients
-SNS_CLIENT = boto3.client("sns")
 SFN_CLIENT = boto3.client("stepfunctions")
 SQS_CLIENT = boto3.resource("sqs")
 QUEUE = SQS_CLIENT.Queue(PROCESS_QUEUE_URL)
@@ -108,13 +107,6 @@ def mk_error(error: str, cause: str) -> Dict[str, str]:
     }
 
 
-def send_batch(messages: List[Dict[str, Any]]) -> Dict[str, Any]:
-    entries = [{"Id": str(idx), "MessageBody": msg} for idx, msg in enumerate(messages)]
-    resp = QUEUE.send_messages(Entries=entries)
-    logger.debug(f"Published {len(messages)} payloads to {PROCESS_QUEUE_URL}")
-    return resp
-
-
 def workflow_completed(execution: Execution) -> None:
     # I think changing the state should be done before
     # trying the sns publish, but I could see it the other
@@ -122,9 +114,9 @@ def workflow_completed(execution: Execution) -> None:
     # a different order/behavior (fail on error or something?).
     statedb.set_completed(execution.input["id"], execution_arn=execution.arn)
     if execution.output:
-        with batch_handler(send_batch, {}, "messages", batch_size=10) as handler:
+        with SQSPublisher.get_handler(PROCESS_QUEUE_URL, logger=logger) as publisher:
             for next_payload in execution.output.next_payloads():
-                handler.add(json.dumps(next_payload))
+                publisher.add(json.dumps(next_payload))
 
 
 def workflow_aborted(execution: Execution) -> None:
@@ -175,11 +167,8 @@ def workflow_failed(execution: Execution) -> None:
                 "error": {"DataType": "String", "StringValue": error},
             }
             logger.debug(f"Publishing item to {notification_topic_arn}")
-            SNS_CLIENT.publish(
-                TopicArn=notification_topic_arn,
-                Message=json.dumps(item),
-                MessageAttributes=attrs,
-            )
+            with SNSPublisher.get_handler(notification_topic_arn) as publisher:
+                publisher.add(json.dumps(item), attrs)
         except Exception:
             logger.exception(f"Failed publishing to {notification_topic_arn}")
             raise
