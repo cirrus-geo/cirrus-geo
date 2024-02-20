@@ -832,10 +832,13 @@ Initial release
 [#160]: https://github.com/cirrus-geo/cirrus-geo/pull/160
 [#207]: https://github.com/cirrus-geo/cirrus-geo/pull/207
 [#224]: https://github.com/cirrus-geo/cirrus-geo/pull/224
+[#226]: https://github.com/cirrus-geo/cirrus-geo/pull/226
 [#230]: https://github.com/cirrus-geo/cirrus-geo/pull/230
 [#231]: https://github.com/cirrus-geo/cirrus-geo/pull/231
+[#245]: https://github.com/cirrus-geo/cirrus-geo/pull/245
 [#246]: https://github.com/cirrus-geo/cirrus-geo/pull/246
 [#247]: https://github.com/cirrus-geo/cirrus-geo/pull/247
+[#248]: https://github.com/cirrus-geo/cirrus-geo/pull/248
 [#249]: https://github.com/cirrus-geo/cirrus-geo/pull/249
 [#253]: https://github.com/cirrus-geo/cirrus-geo/pull/253
 [#254]: https://github.com/cirrus-geo/cirrus-geo/pull/254
