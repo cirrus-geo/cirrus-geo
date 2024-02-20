@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - SNS and SQS publisher classes to manage batching of messages. ([#249])
-- Added markdownlint-cli to pre-commit hooks. ([TBD])
+- Added markdownlint-cli to pre-commit hooks. ([#259])
 
 ## [v0.12.1] - 2024-02-15
 
@@ -837,6 +837,7 @@ Initial release
 [#231]: https://github.com/cirrus-geo/cirrus-geo/pull/231
 [#245]: https://github.com/cirrus-geo/cirrus-geo/pull/245
 [#246]: https://github.com/cirrus-geo/cirrus-geo/pull/246
+[#248]: https://github.com/cirrus-geo/cirrus-geo/pull/248
 [#247]: https://github.com/cirrus-geo/cirrus-geo/pull/247
 [#248]: https://github.com/cirrus-geo/cirrus-geo/pull/248
 [#249]: https://github.com/cirrus-geo/cirrus-geo/pull/249
