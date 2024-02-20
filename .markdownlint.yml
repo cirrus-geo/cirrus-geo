@@ -1,0 +1,11 @@
+MD013:
+  line_length: 88
+  heading_line_length: 88
+  code_block_line_length: 100
+
+MD024:
+  siblings_only: true
+
+MD053:
+  ignored_definitions:
+    - "unreleased"
