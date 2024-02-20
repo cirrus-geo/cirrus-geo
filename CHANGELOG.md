@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - SNS and SQS publisher classes to manage batching of messages. ([#249])
+- Added markdownlint-cli to pre-commit hooks. ([TBD])
 
 ## [v0.12.1] - 2024-02-15
 
@@ -53,7 +54,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### ⚠️ Breaking changes
 
-- Users relying on the automatic packaging of cirrus.lib into lambdas will need to explicitly add cirrus.lib to those function requirements. Additionally, cirrus.lib is no longer maintained it is recommended to migrate to using stac-task instead. ([#230])
+- Users relying on the automatic packaging of cirrus.lib into lambdas will need
+  to explicitly add cirrus.lib to those function requirements. Additionally,
+  cirrus.lib is no longer maintained it is recommended to migrate to using
+  stac-task instead. ([#230])
 
 ### Removed
 
@@ -71,8 +75,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- In post-batch, better handle errors with the task failing to run and/or the CloudWatch log
-  not existing. ([#231])
+- In post-batch, better handle errors with the task failing to run and/or the
+  CloudWatch log not existing. ([#231])
 - Ensure correct count returned from `process` lambda and resolve
   `UnboundLocalError` encountered on certain workflow failures. ([#224])
 - Reduce `ProcessPayload.assign_collections` iteration from `N*M` to
@@ -87,36 +91,39 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Include `requirements.txt` for install from source distribution. This was
-  missing and prevented install from pypi source.
-- For Batch tasks in workflows, the output payload URL is now explicitly set in the pre-batch lambda
-  so that the URL is in the Parameters list of the output, rather than the post-batch function
-  having to infer the output payload URL. This fixes Batch tasks when using stac-task.
-  Any JobDefinition using stac-task should specify `url` and `url_out` as Parameters and specify --output
-  in the Command, e.g.:
+  missing and prevented install from pypi source. - For Batch tasks in
+  workflows, the output payload URL is now explicitly set in the pre-batch
+  lambda so that the URL is in the Parameters list of the output, rather than
+  the post-batch function having to infer the output payload URL. This fixes
+  Batch tasks when using stac-task. Any JobDefinition using stac-task should
+  specify `url` and `url_out` as Parameters and specify --output in the
+  Command, e.g.:
 
-```
-    Parameters:
-      url: ""
-      url_out: ""
-    ContainerProperties:
-      Command:
-        - task
-        - run
-        - Ref::url
-        - --output
-        - Ref::url_out
+```yaml
+Parameters:
+  url: ""
+  url_out: ""
+ContainerProperties:
+  Command:
+    - task
+    - run
+    - Ref::url
+    - --output
+    - Ref::url_out
 ```
 
 ## [v0.9.0] - 2023-01-26
 
 ### ⚠️ Breaking changes
 
-- An AWS Timestream timeseries database has been added to track workflow state change events. The environment variable
-  `CIRRUS_EVENT_DB_AND_TABLE: !Ref StateEventTimestreamTable` must be added to the cirrus.yml file if you wish to
-  use this functionality.
-- The Cirrus Process SNS topic has been removed, and the Process SQS queue is used directly now. This requires updating
-  the cirrus.yml file to remove the environment variable `CIRRUS_PROCESS_TOPIC_ARN: !Ref ProcessTopic` and add the
-  environment variable `CIRRUS_PROCESS_QUEUE_URL: !Ref ProcessQueue`.
+- An AWS Timestream timeseries database has been added to track workflow state
+  change events. The environment variable
+  `CIRRUS_EVENT_DB_AND_TABLE: !Ref StateEventTimestreamTable`
+  must be added to the cirrus.yml file if you wish to use this functionality.
+- The Cirrus Process SNS topic has been removed, and the Process SQS queue is
+  used directly now. This requires updating the cirrus.yml file to remove the
+  environment variable `CIRRUS_PROCESS_TOPIC_ARN: !Ref ProcessTopic` and add
+  the environment variable `CIRRUS_PROCESS_QUEUE_URL: !Ref ProcessQueue`.
 
 ### Fixed
 
@@ -143,7 +150,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
   To disable it, it is easiest to run this from your project root:
 
-  ```
+  ```shell
   mkdir functions/update-state
   echo "description: temporarily disabled" > functions/update-state/definition.yml
   ```
@@ -151,7 +158,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Then, run the deploy as normal. Once that is complete, remove the
   `update-state` override:
 
-  ```
+  ```shell
   rm -r functions/update-state
   ```
 
@@ -167,7 +174,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   topic for migration or other use, the removed configuration can be
   reintroduced by adding the following CloudFormation template to your project:
 
-  ```
+  ```yaml
   # cloudformation/sns.yml
   Resources:
     ProcessTopic:
@@ -209,7 +216,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - cirrus-lib dependency injection will be removed in the next major release.
   Switch tasks now to the new `stac-task` class or be prepared to update task
   requirements to explicitly include cirrus-lib with the next release (see
-  [#178 for context]).
+  [#178] for context).
 
 ### Added
 
@@ -262,7 +269,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
   Tested `package.json` dependency versions:
 
-  ```
+  ```yaml
     "serverless": "~3.18.0",
     "serverless-python-requirements": "~5.4.0",
     "serverless-step-functions": "~3.7.0",
@@ -280,7 +287,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
   To disable it, it is easiest to run this from your project root:
 
-  ```
+  ```shell
   mkdir functions/update-state
   echo "description: temporarily disabled" > functions/update-state/definition.yml
   ```
@@ -288,7 +295,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Then, run the deploy as normal. Once that is complete, remove the
   `update-state` override:
 
-  ```
+  ```shell
   rm -r functions/update-state
   ```
 
@@ -310,7 +317,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   of these buckets defined in their cloudformation resource templates. The
   previously-default configuration looks like this ([#147]):
 
-  ```
+  ```yaml
   # cloudformation/s3.yml
   Resources:
     # Main data bucket
@@ -462,7 +469,7 @@ additional details about the changes included in this release.
 
   Example `definition.yml`:
 
-  ```
+  ```yaml
   description: example
   lambda:
     ...
@@ -548,7 +555,7 @@ and then replace all custom `cirrus.yml` content that is still required.
 
 - Don't load step function definitions twice ([f25acd4])
 - Add `__subclass__` hook to `CollectionMeta` to fix tests ([1b89611])
-- Fix `enabled` support for workflows ([#82])
+- Fix `enabled` support for workflows ([#82], [1e652f2])
 
 ## [v0.5.0a3] - 2021-11-19
 
@@ -614,13 +621,18 @@ cleanup steps.
 ### Added
 
 - API root now returns child links to summaries if configured in the Cirrus root catalog
-- `status` field added to attributes of published SNS messages, `created` if new STAC Item (not in Cirrus catalog), or `updated` if it already exists
-- `created` and `updated` properties added to STAC Items when adding to Cirrus static catalog on s3
+- `status` field added to attributes of published SNS messages, `created` if
+  new STAC Item (not in Cirrus catalog), or `updated` if it already exists
+- `created` and `updated` properties added to STAC Items when adding to Cirrus
+  static catalog on s3
 
 ### Changed
 
-- feeder.test Lambda moved to core/publish-test Lambda and defaults to being subscribed to the Cirrus Publish SNS. The Lambda only logs the payload
-- API changes: get single catalog is now `/<catid>`, collection names now include collections + workflow, Item response updated as detailed in cirrus-lib 0.4
+- feeder.test Lambda moved to core/publish-test Lambda and defaults to being
+  subscribed to the Cirrus Publish SNS. The Lambda only logs the payload.
+- API changes: get single catalog is now `/<catid>`, collection names now
+  include collections + workflow, Item response updated as detailed in
+  cirrus-lib 0.4.
 - State Schema changes, see `cirrus-lib`
 - `publish-test` moved to core lambdas, and auto subscribes to Cirrus endpoint
 - Feeders cleaned up, updated to cirrus-lib 0.4 where needed
@@ -630,18 +642,24 @@ cleanup steps.
 ### Added
 
 - Structured logging, providing additional context to logs
-- `add-collections` Lambda function for adding Collections to the Cirrus static STAC catalog
-- `process` Lambda updated to accept `catids` as an argument which it will replace with that Catalog's original input file
-- `process_update` parameter added to `rerun` to allow for partial updated of process definition in reruns
+- `add-collections` Lambda function for adding Collections to the Cirrus static
+  STAC catalog
+- `process` Lambda updated to accept `catids` as an argument which it will
+  replace with that Catalog's original input file
+- `process_update` parameter added to `rerun` to allow for partial updated of
+  process definition in reruns
 - Additional retry logic added in workflows, Unknown Lambda errors retried
 - /catid/<catalog_id> endpoint added to Cirrus API
-- Link relation type `via-cirrus` added to output items where title is the Catalog ID and the href links to that catalog ID in the Cirrus API
+- Link relation type `via-cirrus` added to output items where title is the
+  Catalog ID and the href links to that catalog ID in the Cirrus API
 
 ### Changed
 
 - Update `cirrus-lib` to 0.3.3
-- Lambda code files renamed from lambda_function.py to feeder.py for feeders and task.py for tasks, allowing better logging
-- Lambda handler functions renamed from `lambda_handler` to `handler` since they could be Batch rather than lambdas
+- Lambda code files renamed from lambda_function.py to feeder.py for feeders
+  and task.py for tasks, allowing better logging
+- Lambda handler functions renamed from `lambda_handler` to `handler` since
+  they could be Batch rather than lambdas
 - Batch Compute Environment definitions moved to core/ directory
 - API Lambda refactored to return collections in Cirrus static STAC catalog
 - Handler function names changed for feeders to `feeder.handler`
@@ -654,19 +672,22 @@ cleanup steps.
 
 ### Removed
 
-- `catids` no longer valid argument `rerun` payload - publish array of `catids` directly to Cirrus queue instead
+- `catids` no longer valid argument `rerun` payload - publish array of `catids`
+  directly to Cirrus queue instead
 
 ## [v0.2.1] - 2020-09-10
 
 ### Added
 
-- Failed workflows publish state db info to new SNS topic: cirrus-<stage>-failed
-- STAC Lambda added for adding collections to the Cirrus root catalog. This is not currently required, but is good practice
+- Failed workflows publish state db info to new SNS topic: `cirrus-<stage>-failed`
+- STAC Lambda added for adding collections to the Cirrus root catalog. This is
+  not currently required, but is good practice
 - s3 inventory feeder: added support for s3 orc inventory files
 
 ### Removed
 
-- assigning of collections in the `copy-assets` and `publish` Lambdas - this is done in cirrus-lib when parsing for a payload so this was redundant
+- assigning of collections in the `copy-assets` and `publish` Lambdas - this is
+  done in cirrus-lib when parsing for a payload so this was redundant
 
 ### Changed
 
@@ -682,9 +703,11 @@ cleanup steps.
 
 ### Added
 
-- `process` Lambda that consumes from ProcessQueue that both validates the payload and starts the workflow.
+- `process` Lambda that consumes from ProcessQueue that both validates the
+  payload and starts the workflow.
 - `stac` Lambda added for adding Collections to the Cirrus Catalog
-- `s2-inventory` for creating partial STAC Items (i.e., JSON with assets) from s3 inventory files
+- `s2-inventory` for creating partial STAC Items (i.e., JSON with assets) from
+  s3 inventory files
 - `feed-stac-crawl` for adding Items by crawling a STAC catalog (using PySTAC)
 - Retries added to all tasks in workflows
 - Added back "post-batch" steps to all workflows
@@ -693,9 +716,11 @@ cleanup steps.
 
 - Update cirrus-lib to 0.3.0
 - IAM configuration (previously batch/iam.yml) combined into Core resources (core.yml)
-- `pre-batch` and `post-batch` Lambda functions moved from `core` to `tasks` (since they are tasks that can be used in a workflow)
+- `pre-batch` and `post-batch` Lambda functions moved from `core` to `tasks`
+  (since they are tasks that can be used in a workflow)
 - `add-preview` now suffixes thumbnails with `_thumb.png` instead of `_preview.png`
-- Batch processes now write output payload back to a new file rather than overwriting the input payload.
+- Batch processes now write output payload back to a new file rather than
+  overwriting the input payload.
 
 ### Removed
 
@@ -704,8 +729,11 @@ cleanup steps.
 
 ### Fixed
 
-- `feed-stac-api` Lambda fixed to split requests by hours, not days. Fixes issue where there are more scenes in 1 day than the per request limit
-- `lambda-as-batch` and `geolambda-as-batch` Batch tasks fixed to properly return newly returned STAC Catalog rather than the original one (which may have been modified as it is passed by reference to handler)
+- `feed-stac-api` Lambda fixed to split requests by hours, not days. Fixes
+  issue where there are more scenes in 1 day than the per request limit
+- `lambda-as-batch` and `geolambda-as-batch` Batch tasks fixed to properly
+  return newly returned STAC Catalog rather than the original one (which may
+  have been modified as it is passed by reference to handler)
 - `convert-to-cog` now properly populates `derived_from` link in newly created STAC Item
 
 ## [v0.1.0] - 2020-08-07
@@ -802,11 +830,18 @@ Initial release
 [#138]: https://github.com/cirrus-geo/cirrus-geo/pull/138
 [#143]: https://github.com/cirrus-geo/cirrus-geo/pull/143
 [#160]: https://github.com/cirrus-geo/cirrus-geo/pull/160
+[#207]: https://github.com/cirrus-geo/cirrus-geo/pull/207
 [#224]: https://github.com/cirrus-geo/cirrus-geo/pull/224
+[#230]: https://github.com/cirrus-geo/cirrus-geo/pull/230
 [#231]: https://github.com/cirrus-geo/cirrus-geo/pull/231
+[#246]: https://github.com/cirrus-geo/cirrus-geo/pull/246
+[#247]: https://github.com/cirrus-geo/cirrus-geo/pull/247
+[#249]: https://github.com/cirrus-geo/cirrus-geo/pull/249
 [#253]: https://github.com/cirrus-geo/cirrus-geo/pull/253
 [#254]: https://github.com/cirrus-geo/cirrus-geo/pull/254
-[f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
+[#256]: https://github.com/cirrus-geo/cirrus-geo/pull/256
+[#259]: https://github.com/cirrus-geo/cirrus-geo/pull/259
+[f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
 [1e652f2]: https://github.com/cirrus-geo/cirrus-geo/commit/1e652f20ef38298f56ebc81aea0d61aaad135f67
