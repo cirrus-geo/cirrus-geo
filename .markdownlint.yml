@@ -6,6 +6,9 @@ MD013:
 MD024:
   siblings_only: true
 
+MD052:
+  shortcut_syntax: true
+
 MD053:
   ignored_definitions:
     - "unreleased"
