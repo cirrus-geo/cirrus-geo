@@ -4,7 +4,8 @@ from datetime import datetime
 
 import pytest
 
-from cirrus.lib2.statedb import STATES, StateDB
+from cirrus.lib2.enums import StateEnum
+from cirrus.lib2.statedb import StateDB
 
 os.environ["CIRRUS_PAYLOAD_BUCKET"] = "test"
 
@@ -24,6 +25,8 @@ test_item = {
 
 # use a low limit to force paging
 RECORD_LIMIT = 10
+
+STATES = [str(s) for s in StateEnum]
 
 
 def create_items_bulk(item_count, fn, **kwargs):
