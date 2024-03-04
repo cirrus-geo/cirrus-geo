@@ -6,9 +6,8 @@ from typing import Any, Dict, List, Optional
 import boto3
 from boto3.dynamodb.conditions import Attr, Key
 
-from .eventdb import EventDB, StateEnum
-
-STATES = ["PROCESSING", "COMPLETED", "FAILED", "INVALID", "ABORTED"]
+from .enums import StateEnum
+from .eventdb import EventDB
 
 # logging
 logger = logging.getLogger(__name__)

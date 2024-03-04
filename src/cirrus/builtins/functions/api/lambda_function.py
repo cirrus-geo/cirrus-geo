@@ -7,9 +7,10 @@ from urllib.parse import urljoin
 
 from boto3utils import s3
 
+from cirrus.lib2.enums import StateEnum
 from cirrus.lib2.eventdb import EventDB
 from cirrus.lib2.logging import get_task_logger
-from cirrus.lib2.statedb import STATES, StateDB
+from cirrus.lib2.statedb import StateDB
 
 logger = get_task_logger("function.api", payload=tuple())
 
@@ -109,7 +110,7 @@ def _results_transform(
             "interval": interval,
             "states": [
                 {"state": state, "unique_count": state_val[0], "count": state_val[1]}
-                for state in STATES
+                for state in StateEnum
                 if (state_val := states.get(state, (0, 0)))
             ],
         }
@@ -134,7 +135,7 @@ def summary(collections_workflow, since, limit):
     parts = collections_workflow.rsplit("_", maxsplit=1)
     logger.debug("Getting summary for %s", collections_workflow)
     counts = {}
-    for s in STATES:
+    for s in [str(st) for st in StateEnum]:
         counts[s] = statedb.get_counts(
             collections_workflow,
             state=s,

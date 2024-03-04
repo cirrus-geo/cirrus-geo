@@ -30,6 +30,7 @@ statedb = StateDB()
 # for an error cause in a FAILED state
 MAX_EXECUTION_EVENTS = 10
 
+# StepFunctions status strings
 SUCCEEDED = "SUCCEEDED"
 FAILED = "FAILED"
 ABORTED = "ABORTED"
