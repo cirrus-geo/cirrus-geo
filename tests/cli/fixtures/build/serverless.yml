@@ -824,6 +824,11 @@ resources:
       Properties:
         TopicName:
           Fn::Sub: ${AWS::StackName}-publish
+    WFEventTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName:
+          Fn::Sub: ${AWS::StackName}-wf-event
     FailedTopic:
       Type: AWS::SNS::Topic
       Properties:

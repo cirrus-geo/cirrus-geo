@@ -1,15 +1,16 @@
-try:
-    from importlib.metadata import entry_points
-except ImportError:
-    from importlib_metadata import entry_points
+from collections.abc import Generator
 
+try:
+    from importlib.metadata import EntryPoint, entry_points
+except ImportError:
+    from importlib_metadata import EntryPoint, entry_points
 
 PLUGIN_GROUP = "cirrus.plugins"
 COMMANDS_GROUP = "cirrus.commands"
 RESOURCES_GROUP = "cirrus.resources"
 
 
-def iter_entry_points(group_name):
+def iter_entry_points(group_name: str) -> Generator[EntryPoint]:
     def sorter(ep):
         # we want to ensure built-ins
         # are always loaded first
@@ -18,14 +19,24 @@ def iter_entry_points(group_name):
             return "\0"
         return ep.name
 
-    eps = list(entry_points().get(group_name, []))
+    ep_collection = entry_points()
+    if hasattr(ep_collection, "select"):
+        # python 3.10 and forward
+        eps = list(ep_collection.select(group=group_name))
+    elif type(ep_collection) is dict:
+        # python 3.9 and backward
+        eps = list(ep_collection.get(group_name, []))
+    else:
+        raise RuntimeError(
+            f"Unknown type returned from entry_points {type(ep_collection)}"
+        )
     eps.sort(key=sorter)
     yield from eps
 
 
-def iter_plugins():
+def iter_plugins() -> Generator[EntryPoint]:
     yield from iter_entry_points(PLUGIN_GROUP)
 
 
-def iter_resources():
+def iter_resources() -> Generator[EntryPoint]:
     yield from iter_entry_points(RESOURCES_GROUP)
