@@ -1,7 +1,7 @@
 {
   "serverless.yml": {
-    "shasum": "1a5ee32eab789588b284563e10ecbcfdc7bc4fb3207ddcc8117e6a0f982e7804",
-    "size": 39089
+    "shasum": "653a89f9dd455b3e3a5d353d6e6aa711bfffdc622c96074eac24dd66a5eb88dc",
+    "size": 39218
   },
   "lambdas/pre-batch/requirements.txt": {
     "shasum": "e5f05c7df535c6dfb7c9eab53bbb4bdebea7ee03f1894c58410795dfcb398538",
@@ -40,8 +40,8 @@
     "size": 83
   },
   "lambdas/update-state/lambda_function.py": {
-    "shasum": "887a788bc53650a652eb7ea07ad7f4dac4ad8f0fa6dee23e982d8c752cd83be4",
-    "size": 7039
+    "shasum": "2ed24abb9102592dffd421e2e3f0799f7d55888c807c37e87789b8eefa4b02d4",
+    "size": 7070
   },
   "lambdas/publish/requirements.txt": {
     "shasum": "e5f05c7df535c6dfb7c9eab53bbb4bdebea7ee03f1894c58410795dfcb398538",
@@ -72,8 +72,8 @@
     "size": 0
   },
   "lambdas/api/lambda_function.py": {
-    "shasum": "276b35854f5e1001cbcf9adb70cc5e4ac23a91961f3c55a2def58c382a792d05",
-    "size": 8124
+    "shasum": "fbe6e55cba61e882394f8d76facb27c67888d6edd6d2b419bfd3227428118f72",
+    "size": 8182
   },
   "lambdas/feed-rerun/requirements.txt": {
     "shasum": "e5f05c7df535c6dfb7c9eab53bbb4bdebea7ee03f1894c58410795dfcb398538",
@@ -111,13 +111,17 @@
     "shasum": "eccfdad4b87f655ea68fb993bd29067116aeb6e2043f2edeb17034fd5d4d895b",
     "size": 2909
   },
+  "cirrus/lib2/enums.py": {
+    "shasum": "42e6a94f32eb6dec360a7207a9de5ecd0cf6e7498974eb4e155ce653745859aa",
+    "size": 246
+  },
   "cirrus/lib2/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "size": 0
   },
   "cirrus/lib2/eventdb.py": {
-    "shasum": "1cad190973b44fd52f70d2285af7a51746f50c0611f0617fa4d7c8a03fd56ac4",
-    "size": 7003
+    "shasum": "ab074fef37cb15b215da027ed57d5aae5ffbb028f6662e75d569a8a4fc2a4d3d",
+    "size": 7624
   },
   "cirrus/lib2/utils.py": {
     "shasum": "9e70fb5a50479cdfa0f8418d9cac99052052b755087d3fee6f955b377d33673d",
@@ -128,8 +132,8 @@
     "size": 237
   },
   "cirrus/lib2/statedb.py": {
-    "shasum": "524fd07227f1ae91fb850944aded93491c5849b315f495c59c8dfec3a15e45f7",
-    "size": 22034
+    "shasum": "e012129b246605b1d276db3cffd39d91e2b56626e17eb3bde4ad6364cdf189c6",
+    "size": 21982
   },
   "cirrus/lib2/process_payload.py": {
     "shasum": "901c682441e87446ef13456d4daceec73bd315be3bab1ea275c7bfb36e1dff76",
