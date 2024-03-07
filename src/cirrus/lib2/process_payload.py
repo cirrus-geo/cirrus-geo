@@ -13,6 +13,7 @@ import jsonpath_ng.ext as jsonpath
 from boto3utils import s3
 
 from cirrus.lib2.errors import NoUrlError
+from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.statedb import StateDB
 from cirrus.lib2.utils import extract_event_records, payload_from_s3
@@ -22,8 +23,16 @@ logger = logging.getLogger(__name__)
 
 
 # clients
+_event_manager = None
 _statedb = None
 _stepfunctions = None
+
+
+def get_event_manager():
+    global _event_manager
+    if _event_manager is None:
+        _event_manager = WorkflowEventManager(logger=logger)
+    return _event_manager
 
 
 def get_statedb():
@@ -237,7 +246,7 @@ class ProcessPayload(dict):
             s3().upload_json(self, url)
 
             # create DynamoDB record - this overwrites existing states other than PROCESSING
-            get_statedb().claim_processing(self["id"])
+            get_event_manager().claim_processing(self)
 
             # invoke step function
             self.logger.debug(f"Running Step Function {arn}")
@@ -247,18 +256,18 @@ class ProcessPayload(dict):
             )
 
             # add execution to DynamoDB record
-            get_statedb().set_processing(self["id"], exe_response["executionArn"])
+            get_event_manager().started_processing(self, exe_response["executionArn"])
 
             return self["id"]
         except get_statedb().db.meta.client.exceptions.ConditionalCheckFailedException:
-            self.logger.warning("Already in PROCESSING state")
+            get_event_manager().already_processing(self)
             return None
         except get_stepfunctions().exceptions.StateMachineDoesNotExist as e:
             # This failure is tracked in the DB and we raise an error
             # so we can handle it specifically, to keep the payload
             # falling through to the DLQ and alerting.
             logger.error(e)
-            get_statedb().set_failed(self["id"], str(e))
+            get_event_manager().failed(self, str(e))
             raise TerminalError()
         except Exception as err:
             # This case should be like the above, except we don't know
@@ -268,7 +277,7 @@ class ProcessPayload(dict):
             # here, we should add terminal exception handlers for them.
             msg = f"failed starting workflow ({err})"
             self.logger.exception(msg)
-            get_statedb().set_failed(self["id"], msg)
+            get_event_manager().failed(self, msg)
             raise
 
 
