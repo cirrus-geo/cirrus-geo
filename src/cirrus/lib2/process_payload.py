@@ -31,7 +31,10 @@ _stepfunctions = None
 def get_event_manager():
     global _event_manager
     if _event_manager is None:
-        _event_manager = WorkflowEventManager(logger=logger)
+        _event_manager = WorkflowEventManager(
+            logger=logger,
+            statedb=get_statedb(),
+        )
     return _event_manager
 
 
@@ -383,7 +386,7 @@ class ProcessPayloads:
                 or payload["id"] in payload_ids["skipped"]
                 or payload["id"] in payload_ids["failed"]
             ):
-                logger.warning(f"Dropping duplicated payload {payload['id']}")
+                get_event_manager().duplicated(payload)
                 payload_ids["dropped"].append(payload["id"])
             elif state in ["FAILED", "ABORTED", ""] or _replace:
                 try:
@@ -397,6 +400,7 @@ class ProcessPayloads:
                         payload_ids["skipped"].append(payload["id"])
             else:
                 logger.info(f"Skipping {payload['id']}, input already in {state} state")
+                get_event_manager().skipping(payload, state)
                 payload_ids["skipped"].append(payload["id"])
                 continue
 
