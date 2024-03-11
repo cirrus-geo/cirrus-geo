@@ -40,7 +40,7 @@ class WorkflowEventManager:
         statedb: StateDB = None,
     ):
         self.boto3_session = boto3_session if boto3_session else boto3.Session()
-        self.wfet_publisher = (
+        self.event_publisher = (
             SNSPublisher(
                 self.wf_event_topic_arn,
                 logger=logger,
@@ -56,13 +56,13 @@ class WorkflowEventManager:
     def announce(
         self,
         event_type: str,
-        payload: Dict,
-        extra_message: str = "",
+        payload: dict = None,
+        payload_id: str = None,
+        extra_message: Dict = None,
     ) -> None:
-        # WorkflowEvent Topic, if configured
-        if self.wfet_publisher:
+        if self.event_publisher:
             message = self._get_message(event_type, payload)
-            self.wfet_publisher.add(message)
+            self.event_publisher.add(message)
 
     def claim_processing(self, payload):
         self.statedb.claim_processing(payload["id"])

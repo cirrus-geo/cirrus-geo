@@ -6,9 +6,10 @@ from typing import Any, Dict, Optional
 
 import boto3
 
+from cirrus.lib2.enums import SfnStatus
+from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload
-from cirrus.lib2.statedb import StateDB
 from cirrus.lib2.utils import SNSPublisher, SQSPublisher
 
 logger = get_task_logger("function.update-state", payload=tuple())
@@ -24,17 +25,12 @@ SQS_CLIENT = boto3.resource("sqs")
 QUEUE = SQS_CLIENT.Queue(PROCESS_QUEUE_URL)
 
 # Cirrus state database
-statedb = StateDB()
+wf_event_manager = WorkflowEventManager(logger=logger)
+statedb = wf_event_manager.statedb
 
 # how many execution events to request/check
 # for an error cause in a FAILED state
 MAX_EXECUTION_EVENTS = 10
-
-# StepFunctions status strings
-SUCCEEDED = "SUCCEEDED"
-FAILED = "FAILED"
-ABORTED = "ABORTED"
-TIMED_OUT = "TIMED_OUT"
 
 INVALID_EXCEPTIONS = (
     "InvalidInput",
@@ -47,15 +43,15 @@ class Execution:
     arn: str
     input: ProcessPayload
     output: ProcessPayload
-    status: str
+    status: SfnStatus
     error: Optional[dict]
 
     def update_state(self) -> None:
         status_update_map = {
-            SUCCEEDED: workflow_completed,
-            FAILED: workflow_failed,
-            ABORTED: workflow_aborted,
-            TIMED_OUT: workflow_failed,
+            SfnStatus.SUCCEEDED: workflow_completed,
+            SfnStatus.FAILED: workflow_failed,
+            SfnStatus.ABORTED: workflow_aborted,
+            SfnStatus.TIMED_OUT: workflow_failed,
         }
 
         if self.status not in status_update_map:
@@ -76,13 +72,13 @@ class Execution:
             status = event["detail"]["status"]
             error = None
 
-            if status == SUCCEEDED:
+            if status == SfnStatus.SUCCEEDED:
                 pass
-            elif status == FAILED:
+            elif status == SfnStatus.FAILED:
                 error = get_execution_error(arn)
-            elif status == ABORTED:
+            elif status == SfnStatus.ABORTED:
                 pass
-            elif status == TIMED_OUT:
+            elif status == SfnStatus.TIMED_OUT:
                 error = mk_error(
                     "TimedOutError",
                     "The step function execution timed out.",
