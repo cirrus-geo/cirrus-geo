@@ -215,7 +215,7 @@ class StateDB:
             return items
         return items[:limit]
 
-    def get_state(self, payload_id: str) -> str:
+    def get_state(self, payload_id: str) -> StateEnum:
         """Get current state of Item
         Args:
             payload_id (str): The Payload ID
@@ -224,12 +224,12 @@ class StateDB:
         """
         response = self.table.get_item(Key=self.payload_id_to_key(payload_id))
         if "Item" in response:
-            return response["Item"]["state_updated"].split("_")[0]
+            return StateEnum(response["Item"]["state_updated"].split("_")[0])
         else:
             # assuming no such item in database
             return ""
 
-    def get_states(self, payload_ids: List[str]) -> Dict[str, str]:
+    def get_states(self, payload_ids: List[str]) -> Dict[str, StateEnum]:
         """Get current state of items
         Args:
             payload_ids (List[str]): List of Payload IDs
@@ -351,7 +351,7 @@ class StateDB:
         )
         expr_attrs = {
             ":created": now,
-            ":state_updated": f"COMPLETED_{now}",
+            ":state_updated": f"{StateEnum.COMPLETED}_{now}",
             ":updated": now,
         }
 
@@ -390,7 +390,7 @@ class StateDB:
             UpdateExpression=expr,
             ExpressionAttributeValues={
                 ":created": now,
-                ":state_updated": f"FAILED_{now}",
+                ":state_updated": f"{StateEnum.FAILED}_{now}",
                 ":updated": now,
                 ":last_error": msg,
             },
@@ -429,7 +429,7 @@ class StateDB:
             UpdateExpression=expr,
             ExpressionAttributeValues={
                 ":created": now,
-                ":state_updated": f"INVALID_{now}",
+                ":state_updated": f"{StateEnum.INVALID}_{now}",
                 ":updated": now,
                 ":last_error": msg,
             },
@@ -464,7 +464,7 @@ class StateDB:
             UpdateExpression=expr,
             ExpressionAttributeValues={
                 ":created": now,
-                ":state_updated": f"ABORTED_{now}",
+                ":state_updated": f"{StateEnum.ABORTED}_{now}",
                 ":updated": now,
             },
         )
