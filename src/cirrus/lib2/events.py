@@ -74,9 +74,9 @@ class WorkflowEventManager:
         elif payload_id is None:
             payload_id = payload["id"]
 
-        if payload is not None and payload.get("id", payload_id) != payload_id:
+        if payload is not None and payload["id"] != payload_id:
             raise ValueError(
-                "payload_id and payload['id'] must match, if both supplied."
+                "payload_id and payload['id'] must match if both supplied."
             )
         message = {
             "event_type": event_type,

@@ -116,8 +116,8 @@
     "size": 458
   },
   "cirrus/lib2/events.py": {
-    "shasum": "e86792a25d3e72ef06045121e6236ef6455dd21324f933cbc284d07b11eea706",
-    "size": 5067
+    "shasum": "7069426726b9ed4bdc056646bb81a84a1d59ae1d70cc2b86055bac84fcf75e3f",
+    "size": 5050
   },
   "cirrus/lib2/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
