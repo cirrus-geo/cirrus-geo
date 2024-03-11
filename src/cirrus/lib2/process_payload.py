@@ -12,6 +12,7 @@ import boto3
 import jsonpath_ng.ext as jsonpath
 from boto3utils import s3
 
+from cirrus.lib2.enums import StateEnum
 from cirrus.lib2.errors import NoUrlError
 from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import get_task_logger
@@ -354,14 +355,14 @@ class ProcessPayloads:
         logger.debug(f"Retrieved {len(payloads)} process payloads")
         return cls(payloads, state_items=items)
 
-    def get_states(self):
+    def get_states(self) -> dict[str, StateEnum]:
         if self.state_items is None:
             items = [
                 get_statedb().dbitem_to_item(i)
                 for i in get_statedb().get_dbitems(self.payload_ids)
             ]
             self.state_items = items
-        states = {c["payload_id"]: c["state"] for c in self.state_items}
+        states = {c["payload_id"]: StateEnum(c["state"]) for c in self.state_items}
         return states
 
     def process(self, replace=False):
@@ -388,7 +389,7 @@ class ProcessPayloads:
             ):
                 get_event_manager().duplicated(payload)
                 payload_ids["dropped"].append(payload["id"])
-            elif state in ["FAILED", "ABORTED", ""] or _replace:
+            elif state in [StateEnum.FAILED, StateEnum.ABORTED, ""] or _replace:
                 try:
                     payload_id = payload()
                 except TerminalError:

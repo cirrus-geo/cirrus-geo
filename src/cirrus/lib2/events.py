@@ -1,7 +1,7 @@
 import json
 import os
 from logging import Logger, getLogger
-from typing import Any, Dict, Tuple
+from typing import Dict
 
 import boto3
 
@@ -19,26 +19,13 @@ class WorkflowEventManager:
 
     wf_event_topic_arn = os.getenv("CIRRUS_WF_EVENT_TOPIC_ARN", None)
 
-    _message_template: Tuple[Tuple[str, Any]] = (
-        ("payload_id", "some_id"),
-        ("workflow_name", "some_workflow"),
-        ("event_type", None),
-        ("payload", None),
-    )
-
-    @classmethod
-    def _get_message(cls, event_type: str, payload: Dict) -> Dict:
-        message = dict(cls._message_template)
-        message["event_type"] = event_type
-        message["payload"] = payload
-        return json.dumps(message)
-
     def __init__(
         self,
-        logger: Logger = None,
+        logger: Logger = logger,
         boto3_session: boto3.Session = None,
         statedb: StateDB = None,
     ):
+        self.logger = logger
         self.boto3_session = boto3_session if boto3_session else boto3.Session()
         self.event_publisher = (
             SNSPublisher(
@@ -60,38 +47,76 @@ class WorkflowEventManager:
         payload_id: str = None,
         extra_message: Dict = None,
     ) -> None:
-        if self.event_publisher:
-            message = self._get_message(event_type, payload)
-            self.event_publisher.add(message)
+        """Construct message payload and publish to WorkflowEventTopic"""
+        if self.event_publisher is None:
+            return
 
-    def claim_processing(self, payload):
-        self.statedb.claim_processing(payload["id"])
-        self.announce("CLAIMED_PROCESSING", payload)
+        if payload is None:
+            if payload_id is None:
+                raise ValueError("must specify payload_id or payload")
+        elif payload_id is None:
+            payload_id = payload["id"]
 
-    def started_processing(self, payload: Dict, execution_arn: str):
-        self.statedb.set_processing(self["id"], execution_arn)
-        self.announce("STARTED_PROCESSING", payload, execution_arn)
+        if payload is not None and payload["id"] != payload_id:
+            raise ValueError(
+                "payload_id and payload['id'] must match if both supplied."
+            )
+        message = {
+            "event_type": event_type,
+            "payload": payload,
+            "payload_id": payload_id,
+        }
 
-    def skipping(self, payload: Dict, state: StateEnum):
+        if extra_message:
+            if not all(k not in message for k in extra_message):
+                raise ValueError(
+                    "extra_message parameters must not include "
+                    "event_type, payload, or payload_id."
+                )
+            message.update(extra_message)
+        self.event_publisher.add(json.dumps(message))
+
+    def claim_processing(self, payload: dict):
+        self.statedb.claim_processing(payload_id=payload["id"])
+        self.announce("CLAIMED_PROCESSING", payload=payload)
+
+    def started_processing(self, payload: dict, execution_arn: str):
+        self.statedb.set_processing(payload["id"], execution_arn)
+        self.announce(
+            "STARTED_PROCESSING",
+            payload=payload,
+            extra_message={"execution_arn": execution_arn},
+        )
+
+    def skipping(self, payload: dict, state: StateEnum):
         self.logger.warning(f"already in {state} state: {payload['id']}")
         self.announce(f"ALREADY_{state}", payload)
 
-    def duplicated(self, payload: Dict):
+    def duplicated(self, payload: dict):
         self.logger.warning("duplicate payload_id dropped %s", payload["id"])
         self.announce("DUPLICATE_ID_ENCOUNTERED", payload)
 
-    def failed(self, payload: Dict, message: str = ""):
-        self.statedb.set_failed(self["id"], message)
-        self.announce("FAILED", payload, extra_message=message)
+    def failed(self, payload: dict, message: str = "", execution_arn=None):
+        self.statedb.set_failed(payload["id"], message, execution_arn=execution_arn)
+        self.announce(
+            "FAILED",
+            payload,
+            extra_message={"error": message, "execution_arn": execution_arn},
+        )
 
-    def succeeded(self, payload: Dict):
-        self.announce("SUCCEEDED", payload)
+    def succeeded(self, payload_id: str, execution_arn: str):
+        self.statedb.set_completed(payload_id, execution_arn=execution_arn)
+        self.announce("SUCCEEDED", payload_id=payload_id)
 
-    def invalid(self, payload: Dict):
+    def invalid(self, payload: dict, error: str, execution_arn: str):
+        self.statedb.set_invalid(
+            payload, extra_message={"error": error, "execution_arn": execution_arn}
+        )
+
         self.announce("INVALID", payload)
 
-    def aborted(self, payload: Dict):
-        self.announce("ABORTED", payload)
-
-    def timed_out(self, payload: Dict):
-        self.announce("TIMED_OUT", payload)
+    def aborted(self, payload: dict, execution_arn: str):
+        self.statedb.set_aborted(payload["id"], execution_arn=execution_arn)
+        self.announce(
+            "ABORTED", payload, extra_message={"execution_arn": execution_arn}
+        )
