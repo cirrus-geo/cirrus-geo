@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Iterator
 
 try:
     from importlib.metadata import EntryPoint, entry_points
@@ -10,7 +10,7 @@ COMMANDS_GROUP = "cirrus.commands"
 RESOURCES_GROUP = "cirrus.resources"
 
 
-def iter_entry_points(group_name: str) -> Generator[EntryPoint]:
+def iter_entry_points(group_name: str) -> Iterator[EntryPoint]:
     def sorter(ep):
         # we want to ensure built-ins
         # are always loaded first
@@ -34,9 +34,9 @@ def iter_entry_points(group_name: str) -> Generator[EntryPoint]:
     yield from eps
 
 
-def iter_plugins() -> Generator[EntryPoint]:
+def iter_plugins() -> Iterator[EntryPoint]:
     yield from iter_entry_points(PLUGIN_GROUP)
 
 
-def iter_resources() -> Generator[EntryPoint]:
+def iter_resources() -> Iterator[EntryPoint]:
     yield from iter_entry_points(RESOURCES_GROUP)
