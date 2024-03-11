@@ -5,6 +5,7 @@ from typing import Any, Dict, Tuple
 
 import boto3
 
+from .enums import StateEnum
 from .statedb import StateDB
 from .utils import SNSPublisher
 
@@ -32,18 +33,32 @@ class WorkflowEventManager:
         message["payload"] = payload
         return json.dumps(message)
 
-    def __init__(self, logger: Logger = None, boto3_session: boto3.Session = None):
+    def __init__(
+        self,
+        logger: Logger = None,
+        boto3_session: boto3.Session = None,
+        statedb: StateDB = None,
+    ):
         self.boto3_session = boto3_session if boto3_session else boto3.Session()
         self.wfet_publisher = (
             SNSPublisher(
-                self.wf_event_topic_arn, logger=logger, boto3_session=self.boto3_session
+                self.wf_event_topic_arn,
+                logger=logger,
+                boto3_session=self.boto3_session,
             )
             if self.wf_event_topic_arn
             else None
         )
-        self.statedb = StateDB(session=self.boto3_session)
+        self.statedb = (
+            statedb if statedb is not None else StateDB(session=self.boto3_session)
+        )
 
-    def announce(self, event_type: str, payload: Dict, extra_message: str = "") -> None:
+    def announce(
+        self,
+        event_type: str,
+        payload: Dict,
+        extra_message: str = "",
+    ) -> None:
         # WorkflowEvent Topic, if configured
         if self.wfet_publisher:
             message = self._get_message(event_type, payload)
@@ -57,19 +72,13 @@ class WorkflowEventManager:
         self.statedb.set_processing(self["id"], execution_arn)
         self.announce("STARTED_PROCESSING", payload, execution_arn)
 
-    def already_processing(self, payload: Dict):
-        self.logger.warning(f"already in processing state: {payload['id']}")
-        self.announce("ALREADY_PROCESSING", payload)
+    def skipping(self, payload: Dict, state: StateEnum):
+        self.logger.warning(f"already in {state} state: {payload['id']}")
+        self.announce(f"ALREADY_{state}", payload)
 
-    def already_completed(self, payload: Dict):
-        # TODO: check with jarrett on how he sees this function used.  perhaps
-        #      raising a special exception from `StateDB.set_completed`, which forwards
-        #      over to this function?
-        self.announce("ALREADY_COMPLETE", payload)
-
-    def already_invalid(self, payload: Dict):
-        # TODO: check with jarrett similar to already_completed
-        self.announce("ALREADY_INVALID", payload)
+    def duplicated(self, payload: Dict):
+        self.logger.warning("duplicate payload_id dropped %s", payload["id"])
+        self.announce("DUPLICATE_ID_ENCOUNTERED", payload)
 
     def failed(self, payload: Dict, message: str = ""):
         self.statedb.set_failed(self["id"], message)
