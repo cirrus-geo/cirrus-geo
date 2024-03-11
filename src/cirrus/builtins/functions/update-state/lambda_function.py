@@ -109,7 +109,7 @@ def workflow_completed(execution: Execution) -> None:
     # trying the sns publish, but I could see it the other
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
-    statedb.set_completed(execution.input["id"], execution_arn=execution.arn)
+    wf_event_manager.succeeded(execution.input["id"], execution_arn=execution.arn)
     if execution.output:
         with SQSPublisher.get_handler(PROCESS_QUEUE_URL, logger=logger) as publisher:
             for next_payload in execution.output.next_payloads():
@@ -117,7 +117,7 @@ def workflow_completed(execution: Execution) -> None:
 
 
 def workflow_aborted(execution: Execution) -> None:
-    statedb.set_aborted(execution.input["id"], execution_arn=execution.arn)
+    wf_event_manager.aborted(execution.input, execution_arn=execution.arn)
 
 
 def workflow_failed(execution: Execution) -> None:
@@ -139,14 +139,12 @@ def workflow_failed(execution: Execution) -> None:
 
     try:
         if error_type in INVALID_EXCEPTIONS:
-            statedb.set_invalid(
-                execution.input["id"], error, execution_arn=execution.arn
+            wf_event_manager.invalid(
+                execution.input, error, execution_arn=execution.arn
             )
             notification_topic_arn = INVALID_TOPIC_ARN
         else:
-            statedb.set_failed(
-                execution.input["id"], error, execution_arn=execution.arn
-            )
+            wf_event_manager.failed(execution.input, error, execution_arn=execution.arn)
             notification_topic_arn = FAILED_TOPIC_ARN
     except Exception:
         logger.exception("Unable to update state")
