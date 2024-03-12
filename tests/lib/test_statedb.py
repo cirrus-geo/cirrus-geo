@@ -26,7 +26,7 @@ test_item = {
 # use a low limit to force paging
 RECORD_LIMIT = 10
 
-STATES = [str(s) for s in StateEnum]
+STATES = list(StateEnum._member_names_)
 
 
 def create_items_bulk(item_count, fn, **kwargs):

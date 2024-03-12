@@ -135,7 +135,7 @@ def summary(collections_workflow, since, limit):
     parts = collections_workflow.rsplit("_", maxsplit=1)
     logger.debug("Getting summary for %s", collections_workflow)
     counts = {}
-    for s in [str(st) for st in StateEnum]:
+    for s in StateEnum:
         counts[s] = statedb.get_counts(
             collections_workflow,
             state=s,

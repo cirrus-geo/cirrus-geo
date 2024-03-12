@@ -85,3 +85,52 @@ def test_api_stats_output_when_not_enabled(fixtures):
         )
         is None
     )
+
+
+@pytest.fixture
+def state_table(statedb):
+    itemid = "test-collection/workflow-test-workflow/badbeefa11da7"
+    statedb.limit = 10
+    statedb.set_processing(
+        f"{itemid}_processing",
+        execution_arn="arn::test",
+    )
+    statedb.set_completed(
+        f"{itemid}_completed",
+        outputs=["item1", "item2"],
+    )
+    statedb.set_failed(
+        f"{itemid}_failed",
+        "failed",
+    )
+    statedb.set_failed(
+        f"{itemid}_failed2",
+        "failed2",
+    )
+    statedb.set_invalid(
+        f"{itemid}_invalid",
+        "invalid",
+    )
+    statedb.set_aborted(
+        f"{itemid}_aborted",
+    )
+    yield statedb
+    statedb.delete()
+
+
+def test_api_collection_summary(state_table):
+    result = cirrus.builtins.functions.api.lambda_function.summary(
+        "test-collection_test-workflow", "1d", 10
+    )
+    expected = {
+        "collections": "test-collection",
+        "workflow": "test-workflow",
+        "counts": {
+            "PROCESSING": 1,
+            "COMPLETED": 1,
+            "FAILED": 2,
+            "INVALID": 1,
+            "ABORTED": 1,
+        },
+    }
+    assert result == expected
