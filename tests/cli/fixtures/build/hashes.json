@@ -72,8 +72,8 @@
     "size": 0
   },
   "lambdas/api/lambda_function.py": {
-    "shasum": "fbe6e55cba61e882394f8d76facb27c67888d6edd6d2b419bfd3227428118f72",
-    "size": 8182
+    "shasum": "0e413c92689febc39be5e9a9567a490455368d4689412b20c36c936420b7b5ad",
+    "size": 8162
   },
   "lambdas/feed-rerun/requirements.txt": {
     "shasum": "e5f05c7df535c6dfb7c9eab53bbb4bdebea7ee03f1894c58410795dfcb398538",
