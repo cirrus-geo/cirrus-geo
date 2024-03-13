@@ -103,6 +103,14 @@ class WorkflowEventManager:
             extra_message={"error": message, "execution_arn": execution_arn},
         )
 
+    def timed_out(self, payload: dict, message: str = "", execution_arn=None):
+        self.statedb.set_failed(payload["id"], message, execution_arn=execution_arn)
+        self.announce(
+            "TIMED_OUT",
+            payload,
+            extra_message={"error": message, "execution_arn": execution_arn},
+        )
+
     def succeeded(self, payload_id: str, execution_arn: str):
         self.statedb.set_completed(payload_id, execution_arn=execution_arn)
         self.announce("SUCCEEDED", payload_id=payload_id)

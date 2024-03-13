@@ -143,6 +143,11 @@ def workflow_failed(execution: Execution) -> None:
                 execution.input, error, execution_arn=execution.arn
             )
             notification_topic_arn = INVALID_TOPIC_ARN
+        elif error_type == "TimedOutError":
+            wf_event_manager.timed_out(
+                execution.input, error, execution_arn=execution.arn
+            )
+            notification_topic_arn = FAILED_TOPIC_ARN
         else:
             wf_event_manager.failed(execution.input, error, execution_arn=execution.arn)
             notification_topic_arn = FAILED_TOPIC_ARN
