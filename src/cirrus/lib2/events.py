@@ -22,21 +22,23 @@ class WorkflowEventManager:
         logger: Logger = logger,
         boto3_session: boto3.Session = None,
         statedb: StateDB = None,
+        batch_size: int = 10,
     ):
         self.logger = logger
-        self.boto3_session = boto3_session if boto3_session else boto3.Session()
+        self._boto3_session = boto3_session if boto3_session else boto3.Session()
         wf_event_topic_arn = os.getenv("CIRRUS_WORKFLOW_EVENT_TOPIC_ARN", None)
         self.event_publisher = (
             SNSPublisher(
                 wf_event_topic_arn,
                 logger=logger,
-                boto3_session=self.boto3_session,
+                boto3_session=self._boto3_session,
+                batch_size=batch_size,
             )
             if wf_event_topic_arn
             else None
         )
         self.statedb = (
-            statedb if statedb is not None else StateDB(session=self.boto3_session)
+            statedb if statedb is not None else StateDB(session=self._boto3_session)
         )
 
     def announce(
