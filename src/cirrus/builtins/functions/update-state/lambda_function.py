@@ -25,7 +25,8 @@ SQS_CLIENT = boto3.resource("sqs")
 QUEUE = SQS_CLIENT.Queue(PROCESS_QUEUE_URL)
 
 # Cirrus state database
-wf_event_manager = WorkflowEventManager(logger=logger)
+# and workflow event topic manager  (w/ batch_size = 1 becuase updates don't batch)
+wf_event_manager = WorkflowEventManager(logger=logger, batch_size=1)
 statedb = wf_event_manager.statedb
 
 # how many execution events to request/check
