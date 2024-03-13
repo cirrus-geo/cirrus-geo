@@ -17,8 +17,6 @@ class WorkflowEventManager:
     state(dynamo), activity(timestream), and notifications of decisions and/or status
     changes (SNS)."""
 
-    wf_event_topic_arn = os.getenv("CIRRUS_WF_EVENT_TOPIC_ARN", None)
-
     def __init__(
         self,
         logger: Logger = logger,
@@ -27,13 +25,14 @@ class WorkflowEventManager:
     ):
         self.logger = logger
         self.boto3_session = boto3_session if boto3_session else boto3.Session()
+        wf_event_topic_arn = os.getenv("CIRRUS_WORKFLOW_EVENT_TOPIC_ARN", None)
         self.event_publisher = (
             SNSPublisher(
-                self.wf_event_topic_arn,
+                wf_event_topic_arn,
                 logger=logger,
                 boto3_session=self.boto3_session,
             )
-            if self.wf_event_topic_arn
+            if wf_event_topic_arn
             else None
         )
         self.statedb = (
