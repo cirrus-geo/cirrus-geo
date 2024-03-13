@@ -87,8 +87,7 @@ def test_api_stats_output_when_not_enabled(fixtures):
     )
 
 
-@pytest.fixture
-def state_table(statedb):
+def test_api_collection_summary(statedb):
     itemid = "test-collection/workflow-test-workflow/badbeefa11da7"
     statedb.limit = 10
     statedb.set_processing(
@@ -114,11 +113,6 @@ def state_table(statedb):
     statedb.set_aborted(
         f"{itemid}_aborted",
     )
-    yield statedb
-    statedb.delete()
-
-
-def test_api_collection_summary(state_table):
     result = cirrus.builtins.functions.api.lambda_function.summary(
         "test-collection_test-workflow", "1d", 10
     )
