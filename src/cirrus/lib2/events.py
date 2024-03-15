@@ -118,11 +118,13 @@ class WorkflowEventManager:
         self.announce("SUCCEEDED", payload_id=payload_id)
 
     def invalid(self, payload: dict, error: str, execution_arn: str):
-        self.statedb.set_invalid(
-            payload, extra_message={"error": error, "execution_arn": execution_arn}
-        )
+        self.statedb.set_invalid(payload["id"], error, execution_arn)
 
-        self.announce("INVALID", payload)
+        self.announce(
+            "INVALID",
+            payload,
+            extra_message={"error": error, "execution_arn": execution_arn},
+        )
 
     def aborted(self, payload: dict, execution_arn: str):
         self.statedb.set_aborted(payload["id"], execution_arn=execution_arn)

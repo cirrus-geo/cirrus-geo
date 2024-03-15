@@ -134,7 +134,30 @@ def test_aborted(event, statedb):
     assert items[0]["state_updated"].startswith("ABORTED")
 
 
-# TODO: test INVALID (requires get-execution-history to resolve InvalidError)
+def test_invalid(event, statedb, monkeypatch):
+    # special loading of the lambda_function as a module from the
+    # update-state, which is not a valid name for a package/module,
+    # so that we can monkeypatch it.
+    run_function("update-state", event)
+
+    lambda_function = sys.modules[
+        "cirrus.builtins.functions.update-state.lambda_function"
+    ]
+    monkeypatch.setattr(
+        lambda_function,
+        "get_execution_error",
+        lambda x: {"Error": "InvalidInput", "Cause": "banana in the tailpipe"},
+    )
+
+    # now run with a failed payload
+    event["detail"]["status"] = "FAILED"
+    run_function("update-state", event)
+
+    items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
+    assert len(items) == 1
+    assert items[0]["state_updated"].startswith("INVALID")
+
+
 # TODO: test URL input
 # TODO: test URL output
 # TODO: test bad payloads
