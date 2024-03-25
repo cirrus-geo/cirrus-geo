@@ -31,7 +31,7 @@ def project(project_testdir):
     return Project.resolve(strict=True)
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def test_plugin(fixtures):
     dist = fixtures.joinpath("plugin", "cirrus_test_plugin-0.0.0.dist-info")
     plugin_testing.add_plugin_finder(dist)

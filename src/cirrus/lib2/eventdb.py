@@ -1,21 +1,13 @@
 import logging
 import os
 from datetime import datetime
-from enum import Enum, unique
 from typing import Any, Dict, Optional
 
 import boto3
 
+from .enums import StateEnum
+
 logger = logging.getLogger(__name__)
-
-
-@unique
-class StateEnum(Enum):
-    PROCESSING = "PROCESSING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    INVALID = "INVALID"
-    ABORTED = "ABORTED"
 
 
 class EventDB:

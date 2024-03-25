@@ -15,6 +15,12 @@ Resources:
       TopicName: "#{AWS::StackName}-publish"
 
   # SNS Topic for failed workflows
+  WorkflowEventTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      TopicName: "#{AWS::StackName}-workflow-event"
+
+  # SNS Topic for failed workflows
   FailedTopic:
     Type: "AWS::SNS::Topic"
     Properties:
