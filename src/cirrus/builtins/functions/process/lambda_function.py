@@ -2,6 +2,7 @@ import json
 
 from cirrus.lib2 import utils
 from cirrus.lib2.errors import NoUrlError
+from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import defer, get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload, ProcessPayloads
 
@@ -22,8 +23,15 @@ def lambda_handler(event, context):
 
         try:
             payload = utils.extract_record(message)
-        except Exception:
-            logger.exception("Failed to extract record: %s", json.dumps(message))
+        except Exception as exc:
+            logger.exception("Failed to extract record: %s", message)
+            with WorkflowEventManager.handler(logger=logger) as wfem:
+                wfem.announce(
+                    "RECORD_EXTRACT_FAILED",
+                    payload=message,
+                    payload_id="unknown",
+                    extra_message={"exception": str(exc)},
+                )
             failures.append(message)
             continue
 
@@ -37,10 +45,17 @@ def lambda_handler(event, context):
 
         try:
             payload = ProcessPayload(payload, set_id_if_missing=True)
-        except Exception:
+        except Exception as exc:
             logger.exception(
                 "Failed to convert to ProcessPayload: %s", json.dumps(payload)
             )
+            with WorkflowEventManager.handler(logger=logger) as wfem:
+                wfem.announce(
+                    "NOT_A_PROCESS_PAYLOAD",
+                    payload=payload,
+                    payload_id=payload.get("id", "unknown"),
+                    extra_message={"exception": str(exc)},
+                )
             failures.append(payload)
             continue
 
