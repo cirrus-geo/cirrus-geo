@@ -14,7 +14,7 @@ from cirrus.lib2.events import WorkflowEventManager
             {"id": "banana"},
             "pancake",
             None,
-            r".*must match if both supplied\.",
+            r".*must match, if both supplied\.",
         ),
         (
             "blah",
