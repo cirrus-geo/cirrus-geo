@@ -3,8 +3,18 @@ import json
 import os
 
 import pytest
+from moto.core import DEFAULT_ACCOUNT_ID
+from moto.sns import sns_backends
 
 from cirrus.test import run_function
+
+
+def assert_sns_message_sequence(expected, topic):
+    sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
+    assert [
+        json.loads(x[1])["event_type"]
+        for x in sns_backend.topics[topic].sent_notifications
+    ] == expected
 
 
 def sqs_to_event(sqs_resp, sqs_arn):
@@ -27,9 +37,10 @@ def sqs_to_event(sqs_resp, sqs_arn):
 
 
 @pytest.fixture(autouse=True)
-def process_env(workflow):
+def process_env(workflow, workflow_event_topic):
     workflow_prefix = workflow["stateMachineArn"].rsplit(":", 1)[0] + ":"
     os.environ["CIRRUS_BASE_WORKFLOW_ARN"] = workflow_prefix
+    os.environ["CIRRUS_WORKFLOW_EVENT_TOPIC_ARN"] = workflow_event_topic
 
 
 @pytest.fixture
@@ -60,12 +71,14 @@ def payload():
     }
 
 
-def test_empty_event():
+def test_empty_event(workflow_event_topic):
     with pytest.raises(Exception):
         run_function("process", {})
 
 
-def test_single_payload(payload, stepfunctions, workflow, statedb):
+def test_single_payload(
+    payload, stepfunctions, workflow, statedb, workflow_event_topic
+):
     result = run_function("process", payload)
 
     # we processed one payload
@@ -85,8 +98,14 @@ def test_single_payload(payload, stepfunctions, workflow, statedb):
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("PROCESSING")
 
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING"], workflow_event_topic
+    )
 
-def test_rerun_in_process(payload, stepfunctions, workflow, eventdb):
+
+def test_rerun_in_process(
+    payload, stepfunctions, workflow, eventdb, workflow_event_topic
+):
     result = run_function("process", payload)
     # the first time we should process the one payload
     assert result == 1
@@ -103,9 +122,15 @@ def test_rerun_in_process(payload, stepfunctions, workflow, eventdb):
         )["executions"]
     )
     assert exec_count == 1
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING", "ALREADY_PROCESSING"],
+        workflow_event_topic,
+    )
 
 
-def test_rerun_completed(payload, stepfunctions, workflow, statedb):
+def test_rerun_completed(
+    payload, stepfunctions, workflow, statedb, workflow_event_topic
+):
     # create payload state record in COMPLETED state
     items = statedb.set_completed(payload["id"])
 
@@ -125,9 +150,12 @@ def test_rerun_completed(payload, stepfunctions, workflow, statedb):
     items = statedb.get_dbitems(payload_ids=[payload["id"]])
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("COMPLETED")
+    assert_sns_message_sequence(["ALREADY_COMPLETED"], workflow_event_topic)
 
 
-def test_rerun_completed_replace(payload, stepfunctions, workflow, statedb):
+def test_rerun_completed_replace(
+    payload, stepfunctions, workflow, statedb, workflow_event_topic
+):
     payload["process"]["replace"] = True
 
     # create payload state record in COMPLETED state
@@ -146,9 +174,12 @@ def test_rerun_completed_replace(payload, stepfunctions, workflow, statedb):
     items = statedb.get_dbitems(payload_ids=[payload["id"]])
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("PROCESSING")
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING"], workflow_event_topic
+    )
 
 
-def test_rerun_failed(payload, stepfunctions, workflow, statedb):
+def test_rerun_failed(payload, stepfunctions, workflow, statedb, workflow_event_topic):
     # create payload state record in FAILED state
     items = statedb.set_failed(payload["id"], "failure")
 
@@ -165,9 +196,12 @@ def test_rerun_failed(payload, stepfunctions, workflow, statedb):
     items = statedb.get_dbitems(payload_ids=[payload["id"]])
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("PROCESSING")
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING"], workflow_event_topic
+    )
 
 
-def test_rerun_aborted(payload, stepfunctions, workflow, statedb):
+def test_rerun_aborted(payload, stepfunctions, workflow, statedb, workflow_event_topic):
     # create payload state record in ABORTED state
     items = statedb.set_aborted(payload["id"])
 
@@ -184,9 +218,12 @@ def test_rerun_aborted(payload, stepfunctions, workflow, statedb):
     items = statedb.get_dbitems(payload_ids=[payload["id"]])
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("PROCESSING")
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING"], workflow_event_topic
+    )
 
 
-def test_rerun_invalid(payload, stepfunctions, workflow, statedb):
+def test_rerun_invalid(payload, stepfunctions, workflow, statedb, workflow_event_topic):
     # create payload state record in INVALID state
     items = statedb.set_invalid(payload["id"], "invalid")
 
@@ -203,9 +240,12 @@ def test_rerun_invalid(payload, stepfunctions, workflow, statedb):
     items = statedb.get_dbitems(payload_ids=[payload["id"]])
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("INVALID")
+    assert_sns_message_sequence(["ALREADY_INVALID"], workflow_event_topic)
 
 
-def test_rerun_invalid_replace(payload, stepfunctions, workflow, statedb):
+def test_rerun_invalid_replace(
+    payload, stepfunctions, workflow, statedb, workflow_event_topic
+):
     payload["process"]["replace"] = True
 
     # create payload state record in INVALID state
@@ -224,9 +264,14 @@ def test_rerun_invalid_replace(payload, stepfunctions, workflow, statedb):
     items = statedb.get_dbitems(payload_ids=[payload["id"]])
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("PROCESSING")
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING"], workflow_event_topic
+    )
 
 
-def test_single_payload_sqs(payload, sqs, queue, stepfunctions, workflow, statedb):
+def test_single_payload_sqs(
+    payload, sqs, queue, stepfunctions, workflow, statedb, workflow_event_topic
+):
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
         MessageBody=json.dumps(payload),
@@ -261,9 +306,14 @@ def test_single_payload_sqs(payload, sqs, queue, stepfunctions, workflow, stated
     # we should still have a message as on 100%
     # success we rely on lambda to do the SQS delete
     assert len(messages["Messages"]) == 1
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING"], workflow_event_topic
+    )
 
 
-def test_single_payload_no_id(payload, sqs, queue, stepfunctions, workflow, statedb):
+def test_single_payload_no_id(
+    payload, sqs, queue, stepfunctions, workflow, statedb, workflow_event_topic
+):
     payload_id = payload.pop("id")
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
@@ -297,6 +347,9 @@ def test_single_payload_no_id(payload, sqs, queue, stepfunctions, workflow, stat
         MaxNumberOfMessages=10,
     )
     assert len(messages["Messages"]) == 1
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING"], workflow_event_topic
+    )
 
 
 def test_single_payload_sqs_url(
@@ -308,6 +361,7 @@ def test_single_payload_sqs_url(
     stepfunctions,
     workflow,
     statedb,
+    workflow_event_topic,
 ):
     with io.BytesIO(json.dumps(payload).encode()) as fileobj:
         s3.upload_fileobj(fileobj, payloads, "payload.json")
@@ -344,6 +398,9 @@ def test_single_payload_sqs_url(
         MaxNumberOfMessages=10,
     )
     assert len(messages["Messages"]) == 1
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING"], workflow_event_topic
+    )
 
 
 def test_single_payload_sqs_bad_format(
@@ -415,7 +472,9 @@ def test_single_payload_sqs_bad_json(sqs, queue, stepfunctions, workflow, stated
     assert len(messages["Messages"]) == 1
 
 
-def test_double_payload_sqs(payload, sqs, queue, stepfunctions, workflow, statedb):
+def test_double_payload_sqs(
+    payload, sqs, queue, stepfunctions, workflow, statedb, workflow_event_topic
+):
     first_id = payload["id"]
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
@@ -456,9 +515,14 @@ def test_double_payload_sqs(payload, sqs, queue, stepfunctions, workflow, stated
     # we should still have a message as on 100%
     # success we rely on lambda to do the SQS delete
     assert len(messages["Messages"]) == 2
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING"] * 2, workflow_event_topic
+    )
 
 
-def test_duplicated_payload_sqs(payload, sqs, queue, stepfunctions, workflow, statedb):
+def test_duplicated_payload_sqs(
+    payload, sqs, queue, stepfunctions, workflow, statedb, workflow_event_topic
+):
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
         MessageBody=json.dumps(payload),
@@ -495,10 +559,14 @@ def test_duplicated_payload_sqs(payload, sqs, queue, stepfunctions, workflow, st
         MaxNumberOfMessages=10,
     )
     assert len(messages["Messages"]) == 2
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING", "DUPLICATE_ID_ENCOUNTERED"],
+        workflow_event_topic,
+    )
 
 
 def test_double_payload_sqs_with_bad_workflow(
-    payload, sqs, queue, stepfunctions, workflow, statedb
+    payload, sqs, queue, stepfunctions, workflow, statedb, workflow_event_topic
 ):
     bad_workflow = "unknown-workflow"
     first_id = payload["id"]
@@ -545,10 +613,20 @@ def test_double_payload_sqs_with_bad_workflow(
         MaxNumberOfMessages=10,
     )
     assert len(messages["Messages"]) == 2
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", "STARTED_PROCESSING", "CLAIMED_PROCESSING", "FAILED"],
+        workflow_event_topic,
+    )
 
 
 def test_payload_bad_workflow_no_id(
-    payload, sqs, queue, stepfunctions, workflow, statedb
+    payload,
+    sqs,
+    queue,
+    stepfunctions,
+    workflow,
+    statedb,
+    workflow_event_topic,
 ):
     bad_workflow = "unknown-workflow"
     payload["process"]["workflow"] = bad_workflow
@@ -562,6 +640,7 @@ def test_payload_bad_workflow_no_id(
         )["executions"]
     )
     assert exec_count == 0
+    assert_sns_message_sequence(["CLAIMED_PROCESSING", "FAILED"], workflow_event_topic)
 
 
 def test_double_payload_sqs_with_bad_format(

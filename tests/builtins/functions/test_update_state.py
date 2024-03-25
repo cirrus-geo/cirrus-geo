@@ -51,11 +51,6 @@ def test_empty_event():
         run_function("update-state", {})
 
 
-@pytest.fixture
-def workflow_event_topic(sns):
-    return sns.create_topic(Name="app-cirrus-workflow-event")["TopicArn"]
-
-
 @pytest.mark.parametrize(
     "wf_event_enabled,sfn_state", product((True, False), SfnStatus._member_names_)
 )

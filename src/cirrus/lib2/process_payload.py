@@ -6,6 +6,7 @@ import os
 import re
 import uuid
 import warnings
+from contextlib import ContextDecorator
 from copy import deepcopy
 
 import boto3
@@ -32,11 +33,28 @@ _stepfunctions = None
 def get_event_manager():
     global _event_manager
     if _event_manager is None:
-        _event_manager = WorkflowEventManager(
-            logger=logger,
-            statedb=get_statedb(),
-        )
+        _event_manager = WorkflowEventManager(logger=logger, statedb=get_statedb())
     return _event_manager
+
+
+class EventManagerFlush(ContextDecorator):
+    """
+    Given that there are any number of exits from the functions in ProcessPayload and
+    ProcessPayloads, this decorator should be used on any function which calls
+    `get_event_manager` to logically put the entire function in a `with
+    WorkflowEventManager` block, and ensure the SNS messages are flushed after the
+    function exits.
+
+    This is different from the `WorkflowEventManager.handler` context manager in that
+    this relies on the module global `_event_manager`, instead of a self managed
+    instance.
+    """
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *exc):
+        get_event_manager().flush()
 
 
 def get_statedb():
@@ -230,6 +248,7 @@ class ProcessPayload(dict):
         else:
             return dict(self)
 
+    @EventManagerFlush()
     def __call__(self) -> str:
         """Add this ProcessPayload to Cirrus and start workflow
 
@@ -365,6 +384,7 @@ class ProcessPayloads:
         states = {c["payload_id"]: StateEnum(c["state"]) for c in self.state_items}
         return states
 
+    @EventManagerFlush()
     def process(self, replace=False):
         """Create Item in Cirrus State DB for each ProcessPayload and add to processing queue"""
         payload_ids = {
