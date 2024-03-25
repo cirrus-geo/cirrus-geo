@@ -116,8 +116,8 @@
     "size": 458
   },
   "cirrus/lib2/events.py": {
-    "shasum": "1d8a021c5c108dcd53c4e344a53c3e8a41663e6eead270440cc224b129f489b6",
-    "size": 4626
+    "shasum": "6dc8f011362dcc7ec6490dcbf0fd597ab04b9ae9abb7c11515280343c2a6761c",
+    "size": 5082
   },
   "cirrus/lib2/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -140,7 +140,7 @@
     "size": 22053
   },
   "cirrus/lib2/process_payload.py": {
-    "shasum": "50717c6b387554550b0036878455170c977b7f23b50ef08d32362f53494624f1",
-    "size": 13677
+    "shasum": "d69ebf8b82e455db2bcedffed99e3e15a0897ac3349a2b2d293933f06e5c9c41",
+    "size": 14421
   }
 }
