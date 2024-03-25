@@ -292,8 +292,7 @@ def test_get_counts_since_state(state_table):
 
 
 def test_set_processing(state_table):
-    resp = state_table.set_processing(test_item["id"], execution_arn="arn::test1")
-    assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+    state_table.set_processing(test_item["id"], execution_arn="arn::test1")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert StateDB.key_to_payload_id(dbitem) == test_item["id"]
     assert dbitem["executions"] == ["arn::test1"]
@@ -309,53 +308,46 @@ def test_second_execution(state_table):
 
 
 def test_set_outputs_(state_table):
-    resp = state_table.set_outputs(test_item["id"], outputs=["output-item"])
-    assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+    state_table.set_outputs(test_item["id"], outputs=["output-item"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["outputs"][0] == "output-item"
 
 
 def test_set_outputs_completed(state_table):
-    resp = state_table.set_completed(test_item["id"], outputs=["output-item"])
-    assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+    state_table.set_completed(test_item["id"], outputs=["output-item"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["outputs"][0] == "output-item"
 
 
 def test_set_completed(state_table):
-    resp = state_table.set_completed(test_item["id"])
-    assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+    state_table.set_completed(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("COMPLETED")
 
 
 def test_set_failed(state_table):
-    resp = state_table.set_failed(test_item["id"], msg="test failure")
-    assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+    state_table.set_failed(test_item["id"], msg="test failure")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("FAILED")
     assert dbitem["last_error"] == "test failure"
 
 
 def test_set_completed_with_outputs(state_table):
-    resp = state_table.set_completed(test_item["id"], outputs=["output-item2"])
-    assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+    state_table.set_completed(test_item["id"], outputs=["output-item2"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("COMPLETED")
     assert dbitem["outputs"][0] == "output-item2"
 
 
 def test_set_invalid(state_table):
-    resp = state_table.set_invalid(test_item["id"], msg="test failure")
-    assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+    state_table.set_invalid(test_item["id"], msg="test failure")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("INVALID")
     assert dbitem["last_error"] == "test failure"
 
 
 def test_set_aborted(state_table):
-    resp = state_table.set_aborted(test_item["id"])
-    assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+    state_table.set_aborted(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("ABORTED")
 

@@ -7,6 +7,7 @@ from typing import Dict
 import boto3
 
 from .enums import StateEnum
+from .eventdb import EventDB
 from .statedb import StateDB
 from .utils import SNSPublisher
 
@@ -23,6 +24,7 @@ class WorkflowEventManager:
         logger: Logger = logger,
         boto3_session: boto3.Session = None,
         statedb: StateDB = None,
+        eventdb: EventDB = None,
         batch_size: int = 10,
     ):
         self.logger = logger
@@ -40,6 +42,9 @@ class WorkflowEventManager:
         )
         self.statedb = (
             statedb if statedb is not None else StateDB(session=self._boto3_session)
+        )
+        self.eventdb = (
+            eventdb if eventdb is not None else EventDB(session=self._boto3_session)
         )
 
     def flush(self):
@@ -98,7 +103,13 @@ class WorkflowEventManager:
         self.announce("CLAIMED_PROCESSING", payload=payload)
 
     def started_processing(self, payload: dict, execution_arn: str):
-        self.statedb.set_processing(payload["id"], execution_arn)
+        dbkey, tstamp = self.statedb.set_processing(payload["id"], execution_arn)
+        self.write_timeseries_record(
+            key=dbkey,
+            state=StateEnum.PROCESSING,
+            event_time=tstamp,
+            execution_arn=execution_arn,
+        )
         self.announce(
             "STARTED_PROCESSING",
             payload=payload,
@@ -114,7 +125,12 @@ class WorkflowEventManager:
         self.announce("DUPLICATE_ID_ENCOUNTERED", payload)
 
     def failed(self, payload: dict, message: str = "", execution_arn=None):
-        self.statedb.set_failed(payload["id"], message, execution_arn=execution_arn)
+        dbkey, tstamp = self.statedb.set_failed(
+            payload["id"], message, execution_arn=execution_arn
+        )
+        if execution_arn:
+            self.write_timeseries_record(dbkey, StateEnum.FAILED, tstamp, execution_arn)
+
         self.announce(
             "FAILED",
             payload,
@@ -130,11 +146,24 @@ class WorkflowEventManager:
         )
 
     def succeeded(self, payload: dict, execution_arn: str):
-        self.statedb.set_completed(payload["id"], execution_arn=execution_arn)
+        dbkey, tstamp = self.statedb.set_completed(
+            payload["id"], execution_arn=execution_arn
+        )
+        if execution_arn:
+            self.write_timeseries_record(
+                dbkey, StateEnum.COMPLETED, tstamp, execution_arn
+            )
+        else:
+            logger.debug("set completed called with no execution ARN")
+
         self.announce("SUCCEEDED", payload)
 
     def invalid(self, payload: dict, error: str, execution_arn: str):
-        self.statedb.set_invalid(payload["id"], error, execution_arn)
+        dbkey, tstamp = self.statedb.set_invalid(payload["id"], error, execution_arn)
+        if execution_arn:
+            self.write_timeseries_record(
+                dbkey, StateEnum.INVALID, tstamp, execution_arn
+            )
 
         self.announce(
             "INVALID",
@@ -143,7 +172,23 @@ class WorkflowEventManager:
         )
 
     def aborted(self, payload: dict, execution_arn: str):
-        self.statedb.set_aborted(payload["id"], execution_arn=execution_arn)
+        dbkey, tstamp = self.statedb.set_aborted(
+            payload["id"], execution_arn=execution_arn
+        )
+        if execution_arn:
+            self.write_timeseries_record(
+                dbkey, StateEnum.ABORTED, tstamp, execution_arn
+            )
         self.announce(
             "ABORTED", payload, extra_message={"execution_arn": execution_arn}
         )
+
+    def write_timeseries_record(
+        self,
+        key: Dict[str, str],
+        state: StateEnum,
+        event_time: str,
+        execution_arn: str,
+    ) -> None:
+        if self.eventdb:
+            self.eventdb.write_timeseries_record(key, state, event_time, execution_arn)

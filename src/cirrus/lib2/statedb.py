@@ -7,7 +7,6 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 
 from .enums import StateEnum
-from .eventdb import EventDB
 
 # logging
 logger = logging.getLogger(__name__)
@@ -27,7 +26,6 @@ class StateDB:
     def __init__(
         self,
         table_name: Optional[str] = None,
-        eventdb: Optional[EventDB] = None,
         session: Optional[boto3.Session] = None,
     ):
         """Initialize a StateDB instance using the Cirrus State DB table
@@ -47,11 +45,6 @@ class StateDB:
         self.db = session.resource("dynamodb")
         self.table_name = table_name
         self.table = self.db.Table(table_name)
-
-        if eventdb:
-            self.eventdb = eventdb
-        else:
-            self.eventdb = EventDB(session=session)
 
     def delete_item(self, payload_id: str):
         key = self.payload_id_to_key(payload_id)
@@ -243,7 +236,12 @@ class StateDB:
         return states
 
     def claim_processing(self, payload_id):
-        """Sets payload_id to PROCESSING to claim it (preventing other runs)"""
+        """Sets payload_id to PROCESSING to claim it (preventing other runs)
+        Returns:
+           tuple:
+           - db_key (dict): statedb dynamo key
+           - timestamp (str): timestamp when operation started
+        """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
@@ -263,11 +261,18 @@ class StateDB:
                 ":proc": "PROCESSING",
             },
         )
-        logger.debug("Claimed processing", extra=key)
-        return response
+        check_response_code(key, response, "Claimed processing")
+
+        return key, now
 
     def set_processing(self, payload_id: str, execution_arn: str) -> Dict[str, Any]:
-        """Adds execution to existing item or creates new"""
+        """
+        Adds execution to existing item or creates new
+        Returns:
+           tuple:
+           - db_key (dict): statedb dynamo key
+           - timestamp (str): timestamp when operation started
+        """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
@@ -288,11 +293,9 @@ class StateDB:
                 ":exes": [execution_arn],
             },
         )
-        logger.debug("Add execution", extra=key.update({"execution": execution_arn}))
+        check_response_code(key, response, extra={"execution": execution_arn})
 
-        self.write_timeseries_record(key, StateEnum.PROCESSING, now, execution_arn)
-
-        return response
+        return key, now
 
     def set_outputs(self, payload_id: str, outputs: List[str]) -> str:
         """Set this item's outputs
@@ -302,7 +305,9 @@ class StateDB:
             outputs ([str]): List of URLs to output Items
 
         Returns:
-            str: DynamoDB response
+           tuple:
+           - db_key (dict): statedb dynamo key
+           - timestamp (str): timestamp when operation started
         """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
@@ -322,8 +327,11 @@ class StateDB:
                 ":outputs": outputs,
             },
         )
-        logger.debug("set outputs", extra=key.update({"outputs": outputs}))
-        return response
+        check_response_code(
+            key, response, msg_prefix="set outputs", extra={"outputs": outputs}
+        )
+
+        return key, now
 
     def set_completed(
         self,
@@ -339,7 +347,9 @@ class StateDB:
             execution_arn (Optional[str]): The Step Function execution ARN.
 
         Returns:
-            str: DynamoDB response
+           tuple:
+           - db_key (dict): statedb dynamo key
+           - timestamp (str): timestamp when operation started
         """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
@@ -364,18 +374,19 @@ class StateDB:
             UpdateExpression=expr,
             ExpressionAttributeValues=expr_attrs,
         )
-        logger.debug("set completed", extra=key.update({"outputs": outputs}))
+        check_response_code(
+            key, response, msg_prefix="set completed", extra={"outputs": outputs}
+        )
 
-        if execution_arn:
-            self.write_timeseries_record(key, StateEnum.COMPLETED, now, execution_arn)
-        else:
-            logger.debug("set completed called with no execution ARN")
-
-        return response
+        return key, now
 
     def set_failed(self, payload_id, msg, execution_arn: Optional[str] = None):
-        """Adds new item as failed"""
-        """ Adds new item with state function execution """
+        """Adds/updates item with stepfunction execution
+        Returns:
+           tuple:
+           - db_key (dict): statedb dynamo key
+           - timestamp (str): timestamp when operation started
+        """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
@@ -395,12 +406,11 @@ class StateDB:
                 ":last_error": msg,
             },
         )
-        logger.debug("set failed", extra=key.update({"last_error": msg}))
+        check_response_code(
+            key, response, msg_prefix="set failed", extra={"last_error": msg}
+        )
 
-        if execution_arn:
-            self.write_timeseries_record(key, StateEnum.FAILED, now, execution_arn)
-
-        return response
+        return key, now
 
     def set_invalid(
         self, payload_id: str, msg: str, execution_arn: Optional[str] = None
@@ -413,7 +423,9 @@ class StateDB:
             execution_arn (Optional[str]): The Step Function execution ARN.
 
         Returns:
-            str: DynamoDB response
+           tuple:
+           - db_key (dict): statedb dynamo key
+           - timestamp (str): timestamp when operation started
         """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
@@ -434,12 +446,11 @@ class StateDB:
                 ":last_error": msg,
             },
         )
-        logger.debug("set invalid", extra=key.update({"last_error": msg}))
+        check_response_code(
+            key, response, msg_prefix="set invalid", extra={"last_error": msg}
+        )
 
-        if execution_arn:
-            self.write_timeseries_record(key, StateEnum.INVALID, now, execution_arn)
-
-        return response
+        return key, now
 
     def set_aborted(self, payload_id: str, execution_arn: Optional[str] = None) -> str:
         """Set this item as ABORTED
@@ -449,7 +460,9 @@ class StateDB:
             execution_arn (Optional[str]): The Step Function execution ARN.
 
         Returns:
-            str: DynamoDB response
+           tuple:
+           - db_key (dict): statedb dynamo key
+           - timestamp (str): timestamp when operation started
         """
         now = datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
@@ -469,12 +482,9 @@ class StateDB:
             },
         )
 
-        logger.debug("set aborted")
+        check_response_code(key, response, msg_prefix="set aborted")
 
-        if execution_arn:
-            self.write_timeseries_record(key, StateEnum.ABORTED, now, execution_arn)
-
-        return response
+        return key, now
 
     def query(
         self,
@@ -656,12 +666,25 @@ class StateDB:
         minutes = int(since[0:-1]) if unit == "m" else 0
         return timedelta(days=days, hours=hours, minutes=minutes)
 
-    def write_timeseries_record(
-        self,
-        key: Dict[str, str],
-        state: StateEnum,
-        event_time: str,
-        execution_arn: str,
-    ) -> None:
-        if self.eventdb:
-            self.eventdb.write_timeseries_record(key, state, event_time, execution_arn)
+
+def check_response_code(
+    key: dict, response: dict, msg_prefix: str = "statedb updated", extra: dict = None
+):
+    """Check dynamodb response code, log appropriately, and raise RuntimeError if not
+    successfull
+
+    Args:
+        key (dict): dynamo db key of payload
+        response (dict): dynamo db response to request
+        msg_prefix (str): message prefix string for logging
+        extra (dict): annotations for logger extra parameter
+
+    Raises:
+        RuntimeError: if HTTPStatusCode not 2xx
+    """
+    status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+    if 200 <= status < 300:
+        logger.debug(msg_prefix, extra=extra)
+    else:
+        logger.error("%s failed (HTTPStatusCode %s)", msg_prefix, status, extra=extra)
+        raise RuntimeError(msg_prefix, response)
