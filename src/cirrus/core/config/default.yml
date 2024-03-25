@@ -23,6 +23,7 @@ provider:
     CIRRUS_PUBLISH_TOPIC_ARN: !Ref PublishTopic
     CIRRUS_FAILED_TOPIC_ARN: !Ref FailedTopic
     CIRRUS_INVALID_TOPIC_ARN: !Ref FailedTopic
+    CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopic
 
 custom:
   batch:

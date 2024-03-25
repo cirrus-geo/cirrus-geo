@@ -45,6 +45,11 @@ def sns(aws_credentials):
         yield boto3.client("sns", region_name="us-east-1")
 
 
+@pytest.fixture(autouse=True)
+def workflow_event_topic(sns):
+    return sns.create_topic(Name="app-cirrus-workflow-event")["TopicArn"]
+
+
 @pytest.fixture
 def stepfunctions(aws_credentials):
     with moto.mock_stepfunctions():

@@ -6,13 +6,16 @@ import os
 import re
 import uuid
 import warnings
+from contextlib import ContextDecorator
 from copy import deepcopy
 
 import boto3
 import jsonpath_ng.ext as jsonpath
 from boto3utils import s3
 
+from cirrus.lib2.enums import StateEnum
 from cirrus.lib2.errors import NoUrlError
+from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.statedb import StateDB
 from cirrus.lib2.utils import extract_event_records, payload_from_s3
@@ -22,8 +25,36 @@ logger = logging.getLogger(__name__)
 
 
 # clients
+_event_manager = None
 _statedb = None
 _stepfunctions = None
+
+
+def get_event_manager():
+    global _event_manager
+    if _event_manager is None:
+        _event_manager = WorkflowEventManager(logger=logger, statedb=get_statedb())
+    return _event_manager
+
+
+class EventManagerFlush(ContextDecorator):
+    """
+    Given that there are any number of exits from the functions in ProcessPayload and
+    ProcessPayloads, this decorator should be used on any function which calls
+    `get_event_manager` to logically put the entire function in a `with
+    WorkflowEventManager` block, and ensure the SNS messages are flushed after the
+    function exits.
+
+    This is different from the `WorkflowEventManager.handler` context manager in that
+    this relies on the module global `_event_manager`, instead of a self managed
+    instance.
+    """
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *exc):
+        get_event_manager().flush()
 
 
 def get_statedb():
@@ -217,6 +248,7 @@ class ProcessPayload(dict):
         else:
             return dict(self)
 
+    @EventManagerFlush()
     def __call__(self) -> str:
         """Add this ProcessPayload to Cirrus and start workflow
 
@@ -237,7 +269,7 @@ class ProcessPayload(dict):
             s3().upload_json(self, url)
 
             # create DynamoDB record - this overwrites existing states other than PROCESSING
-            get_statedb().claim_processing(self["id"])
+            get_event_manager().claim_processing(self)
 
             # invoke step function
             self.logger.debug(f"Running Step Function {arn}")
@@ -247,18 +279,18 @@ class ProcessPayload(dict):
             )
 
             # add execution to DynamoDB record
-            get_statedb().set_processing(self["id"], exe_response["executionArn"])
+            get_event_manager().started_processing(self, exe_response["executionArn"])
 
             return self["id"]
         except get_statedb().db.meta.client.exceptions.ConditionalCheckFailedException:
-            self.logger.warning("Already in PROCESSING state")
+            get_event_manager().already_processing(self)
             return None
         except get_stepfunctions().exceptions.StateMachineDoesNotExist as e:
             # This failure is tracked in the DB and we raise an error
             # so we can handle it specifically, to keep the payload
             # falling through to the DLQ and alerting.
             logger.error(e)
-            get_statedb().set_failed(self["id"], str(e))
+            get_event_manager().failed(self, str(e))
             raise TerminalError()
         except Exception as err:
             # This case should be like the above, except we don't know
@@ -268,7 +300,7 @@ class ProcessPayload(dict):
             # here, we should add terminal exception handlers for them.
             msg = f"failed starting workflow ({err})"
             self.logger.exception(msg)
-            get_statedb().set_failed(self["id"], msg)
+            get_event_manager().failed(self, msg)
             raise
 
 
@@ -342,16 +374,17 @@ class ProcessPayloads:
         logger.debug(f"Retrieved {len(payloads)} process payloads")
         return cls(payloads, state_items=items)
 
-    def get_states(self):
+    def get_states(self) -> dict[str, StateEnum]:
         if self.state_items is None:
             items = [
                 get_statedb().dbitem_to_item(i)
                 for i in get_statedb().get_dbitems(self.payload_ids)
             ]
             self.state_items = items
-        states = {c["payload_id"]: c["state"] for c in self.state_items}
+        states = {c["payload_id"]: StateEnum(c["state"]) for c in self.state_items}
         return states
 
+    @EventManagerFlush()
     def process(self, replace=False):
         """Create Item in Cirrus State DB for each ProcessPayload and add to processing queue"""
         payload_ids = {
@@ -374,9 +407,9 @@ class ProcessPayloads:
                 or payload["id"] in payload_ids["skipped"]
                 or payload["id"] in payload_ids["failed"]
             ):
-                logger.warning(f"Dropping duplicated payload {payload['id']}")
+                get_event_manager().duplicated(payload)
                 payload_ids["dropped"].append(payload["id"])
-            elif state in ["FAILED", "ABORTED", ""] or _replace:
+            elif state in [StateEnum.FAILED, StateEnum.ABORTED, ""] or _replace:
                 try:
                     payload_id = payload()
                 except TerminalError:
@@ -388,6 +421,7 @@ class ProcessPayloads:
                         payload_ids["skipped"].append(payload["id"])
             else:
                 logger.info(f"Skipping {payload['id']}, input already in {state} state")
+                get_event_manager().skipping(payload, state)
                 payload_ids["skipped"].append(payload["id"])
                 continue
 
