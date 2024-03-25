@@ -404,7 +404,7 @@ def test_single_payload_sqs_url(
 
 
 def test_single_payload_sqs_bad_format(
-    payload, sqs, queue, stepfunctions, workflow, statedb
+    payload, sqs, queue, stepfunctions, workflow, statedb, workflow_event_topic
 ):
     del payload["process"]
     sqs.send_message(
@@ -439,9 +439,12 @@ def test_single_payload_sqs_bad_format(
     )
     # failed messages should remain in the queue
     assert len(messages["Messages"]) == 1
+    assert_sns_message_sequence(["NOT_A_PROCESS_PAYLOAD"], workflow_event_topic)
 
 
-def test_single_payload_sqs_bad_json(sqs, queue, stepfunctions, workflow, statedb):
+def test_single_payload_sqs_bad_json(
+    sqs, queue, stepfunctions, workflow, statedb, workflow_event_topic
+):
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
         MessageBody="{'this-is-bad-json': th}",
@@ -470,6 +473,7 @@ def test_single_payload_sqs_bad_json(sqs, queue, stepfunctions, workflow, stated
         MaxNumberOfMessages=10,
     )
     assert len(messages["Messages"]) == 1
+    assert_sns_message_sequence(["RECORD_EXTRACT_FAILED"], workflow_event_topic)
 
 
 def test_double_payload_sqs(
@@ -644,7 +648,7 @@ def test_payload_bad_workflow_no_id(
 
 
 def test_double_payload_sqs_with_bad_format(
-    payload, sqs, queue, stepfunctions, workflow, statedb
+    payload, sqs, queue, stepfunctions, workflow, statedb, workflow_event_topic
 ):
     first_id = payload["id"]
     sqs.send_message(
@@ -686,3 +690,7 @@ def test_double_payload_sqs_with_bad_format(
     )
     assert len(messages["Messages"]) == 1
     assert json.loads(messages["Messages"][0]["Body"])["id"] == second_id
+    assert_sns_message_sequence(
+        ["NOT_A_PROCESS_PAYLOAD", "CLAIMED_PROCESSING", "STARTED_PROCESSING"],
+        workflow_event_topic,
+    )
