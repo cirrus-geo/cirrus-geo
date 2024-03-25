@@ -1,5 +1,6 @@
 import json
 import os
+from contextlib import AbstractContextManager, contextmanager
 from logging import Logger, getLogger
 from typing import Dict
 
@@ -41,6 +42,21 @@ class WorkflowEventManager:
             statedb if statedb is not None else StateDB(session=self._boto3_session)
         )
 
+    def flush(self):
+        if self.event_publisher:
+            self.event_publisher.execute()
+
+    @classmethod
+    @contextmanager
+    def handler(
+        cls: "WorkflowEventManager", *args, **kwargs
+    ) -> AbstractContextManager["WorkflowEventManager"]:
+        wfem = cls(*args, **kwargs)
+        try:
+            yield wfem
+        finally:
+            wfem.flush()
+
     def announce(
         self,
         event_type: str,
@@ -58,9 +74,9 @@ class WorkflowEventManager:
         elif payload_id is None:
             payload_id = payload["id"]
 
-        if payload is not None and payload["id"] != payload_id:
+        if payload is not None and payload.get("id", payload_id) != payload_id:
             raise ValueError(
-                "payload_id and payload['id'] must match if both supplied."
+                "payload_id and payload['id'] must match, if both supplied."
             )
         message = {
             "event_type": event_type,
