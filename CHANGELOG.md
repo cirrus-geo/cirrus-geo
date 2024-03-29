@@ -7,10 +7,41 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- `workflow-event-topic` SNS topic, and `WorkflowEventManager` class for
+  managing workflow event actions. ([#261]) The actions managed by this class
+  include:
+
+  - updating state of workflows in `StateDB`
+  - announcing interactions cirrus has with a payload to the
+    `workflow-event-topic`
+    Note: To use this topic, existing deployments will need to add the following
+    to their environment in both their `cirrus.yml` file:
+
+  ```yaml
+  CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopic
+  ```
+
+  and add the Topic to their `cloudformation/resources.yml` file:
+
+  ```yaml
+  # SNS Topic for failed workflows
+  WorkflowEventTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+    TopicName: "#{AWS::StackName}-workflow-event"
+  ```
+
+- Testing of python 3.12. ([#261])
+- `SfnStatus` string enum added for StepFunctions execution status strings. ([#261])
+
 ### Changed
 
 - Prevent `cirrus.lib2.logging` logger messages from being duplicated by the
   root logger. ([#264])
+- Moved `StateEnum` to `cirrus.lib2.enums` module for use across `lib2` and `builtins`. ([#261])
+
 
 ## [v0.13.0] - 2024-03-04
 
@@ -853,6 +884,7 @@ Initial release
 [#254]: https://github.com/cirrus-geo/cirrus-geo/pull/254
 [#256]: https://github.com/cirrus-geo/cirrus-geo/pull/256
 [#259]: https://github.com/cirrus-geo/cirrus-geo/pull/259
+[#261]: https://github.com/cirrus-geo/cirrus-geo/pull/261
 [#264]: https://github.com/cirrus-geo/cirrus-geo/pull/264
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
