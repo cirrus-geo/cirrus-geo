@@ -1,12 +1,13 @@
 import json
 import os
 from contextlib import AbstractContextManager, contextmanager
+from datetime import datetime, timezone
 from logging import Logger, getLogger
 from typing import Dict
 
 import boto3
 
-from .enums import StateEnum
+from .enums import StateEnum, WFEventType
 from .eventdb import EventDB
 from .statedb import StateDB
 from .utils import SNSPublisher
@@ -64,12 +65,22 @@ class WorkflowEventManager:
 
     def announce(
         self,
-        event_type: str,
+        event_type: WFEventType,
         payload: dict = None,
         payload_id: str = None,
-        extra_message: Dict = None,
+        extra_message: dict = None,
     ) -> None:
-        """Construct message payload and publish to WorkflowEventTopic"""
+        """
+        Construct message payload and publish to WorkflowEventTopic.
+
+        Args:
+            event_type (WFEventType): the type of event which occurred
+            payload (dict): The ProcessPayload which triggered the event.
+            payload_id (str): The ID of the payload.  Must match payload["id"] if that
+                              exists / is  provided.
+            extra_message (dict): dictionary of additional items to be placed into the
+                                  SNS message body.
+        """
         if self.event_publisher is None:
             return
 
@@ -98,89 +109,123 @@ class WorkflowEventManager:
             message.update(extra_message)
         self.event_publisher.add(json.dumps(message))
 
-    def claim_processing(self, payload: dict):
-        self.statedb.claim_processing(payload_id=payload["id"])
-        self.announce("CLAIMED_PROCESSING", payload=payload)
+    def claim_processing(self, payload: dict, isotimestamp: str = None):
+        if not isotimestamp:
+            isotimestamp = datetime.now(timezone.utc).isoformat()
+        self.statedb.claim_processing(
+            payload_id=payload["id"], isotimestamp=isotimestamp
+        )
+        self.announce(WFEventType.CLAIMED_PROCESSING, payload=payload)
 
-    def started_processing(self, payload: dict, execution_arn: str):
-        dbkey, tstamp = self.statedb.set_processing(payload["id"], execution_arn)
+    def started_processing(
+        self, payload: dict, execution_arn: str, isotimestamp: str = None
+    ):
+        if not isotimestamp:
+            isotimestamp = datetime.now(timezone.utc).isoformat()
+        self.statedb.set_processing(payload["id"], execution_arn, isotimestamp)
         self.write_timeseries_record(
-            key=dbkey,
+            payload["id"],
             state=StateEnum.PROCESSING,
-            event_time=tstamp,
+            event_time=isotimestamp,
             execution_arn=execution_arn,
         )
         self.announce(
-            "STARTED_PROCESSING",
+            WFEventType.STARTED_PROCESSING,
             payload=payload,
             extra_message={"execution_arn": execution_arn},
         )
 
     def skipping(self, payload: dict, state: StateEnum):
         self.logger.warning(f"already in {state} state: {payload['id']}")
-        self.announce(f"ALREADY_{state}", payload)
+        self.announce(WFEventType(f"ALREADY_{state}"), payload)
 
     def duplicated(self, payload: dict):
         self.logger.warning("duplicate payload_id dropped %s", payload["id"])
-        self.announce("DUPLICATE_ID_ENCOUNTERED", payload)
+        self.announce(WFEventType.DUPLICATE_ID_ENCOUNTERED, payload)
 
-    def failed(self, payload: dict, message: str = "", execution_arn=None):
-        dbkey, tstamp = self.statedb.set_failed(
-            payload["id"], message, execution_arn=execution_arn
-        )
-        if execution_arn:
-            self.write_timeseries_record(dbkey, StateEnum.FAILED, tstamp, execution_arn)
-
-        self.announce(
-            "FAILED",
-            payload,
-            extra_message={"error": message, "execution_arn": execution_arn},
-        )
-
-    def timed_out(self, payload: dict, message: str = "", execution_arn=None):
+    def failed(
+        self,
+        payload: dict,
+        message: str = "",
+        execution_arn=None,
+        isotimestamp: str = None,
+    ):
+        if not isotimestamp:
+            isotimestamp = datetime.now(timezone.utc).isoformat()
         self.statedb.set_failed(payload["id"], message, execution_arn=execution_arn)
+        if execution_arn:
+            self.write_timeseries_record(
+                payload["id"], StateEnum.FAILED, isotimestamp, execution_arn
+            )
+
         self.announce(
-            "TIMED_OUT",
+            WFEventType.FAILED,
             payload,
             extra_message={"error": message, "execution_arn": execution_arn},
         )
 
-    def succeeded(self, payload: dict, execution_arn: str):
-        dbkey, tstamp = self.statedb.set_completed(
-            payload["id"], execution_arn=execution_arn
+    def timed_out(
+        self,
+        payload: dict,
+        message: str = "",
+        execution_arn=None,
+        isotimestamp: str = None,
+    ):
+        if not isotimestamp:
+            isotimestamp = datetime.now(timezone.utc).isoformat()
+        self.statedb.set_failed(
+            payload["id"],
+            message,
+            execution_arn=execution_arn,
+            isotimestamp=isotimestamp,
+        )
+        self.announce(
+            WFEventType.TIMED_OUT,
+            payload,
+            extra_message={"error": message, "execution_arn": execution_arn},
+        )
+
+    def succeeded(self, payload: dict, execution_arn: str, isotimestamp: str = None):
+        if not isotimestamp:
+            isotimestamp = datetime.now(timezone.utc).isoformat()
+        self.statedb.set_completed(
+            payload["id"], execution_arn=execution_arn, isotimestamp=isotimestamp
         )
         if execution_arn:
             self.write_timeseries_record(
-                dbkey, StateEnum.COMPLETED, tstamp, execution_arn
+                payload["id"], StateEnum.COMPLETED, isotimestamp, execution_arn
             )
         else:
             logger.debug("set completed called with no execution ARN")
+        self.announce(WFEventType.SUCCEEDED, payload)
 
-        self.announce("SUCCEEDED", payload)
-
-    def invalid(self, payload: dict, error: str, execution_arn: str):
-        dbkey, tstamp = self.statedb.set_invalid(payload["id"], error, execution_arn)
+    def invalid(
+        self, payload: dict, error: str, execution_arn: str, isotimestamp: str = None
+    ):
+        if not isotimestamp:
+            isotimestamp = datetime.now(timezone.utc).isoformat()
+        self.statedb.set_invalid(payload["id"], error, execution_arn, isotimestamp)
         if execution_arn:
             self.write_timeseries_record(
-                dbkey, StateEnum.INVALID, tstamp, execution_arn
+                payload["id"], StateEnum.INVALID, isotimestamp, execution_arn
             )
 
         self.announce(
-            "INVALID",
+            WFEventType.INVALID,
             payload,
             extra_message={"error": error, "execution_arn": execution_arn},
         )
 
-    def aborted(self, payload: dict, execution_arn: str):
-        dbkey, tstamp = self.statedb.set_aborted(
-            payload["id"], execution_arn=execution_arn
-        )
+    def aborted(self, payload: dict, execution_arn: str, isotimestamp: str = None):
+        if not isotimestamp:
+            isotimestamp = datetime.now(timezone.utc).isoformat()
+        self.statedb.set_aborted(payload["id"], execution_arn=execution_arn)
         if execution_arn:
             self.write_timeseries_record(
-                dbkey, StateEnum.ABORTED, tstamp, execution_arn
+                payload["id"], StateEnum.ABORTED, isotimestamp, execution_arn
             )
         self.announce(
-            "ABORTED", payload, extra_message={"execution_arn": execution_arn}
+            WFEventType.ABORTED, payload, extra_message={"execution_arn": execution_arn}
         )
 
     def write_timeseries_record(

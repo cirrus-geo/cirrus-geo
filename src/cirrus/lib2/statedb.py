@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 from typing import Any, Dict, List, Optional
 
 import boto3
@@ -18,6 +19,51 @@ def get_payload_bucket():
 
 def get_state_db():
     return os.getenv("CIRRUS_STATE_DB")
+
+
+def successful_state_change(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        check_timestamp(kwargs.get("isotimestamp"))
+        resp = f(*args, **kwargs)
+        check_response_code(
+            response=resp,
+            msg_prefix=f.__name__,
+            extra={"payload_id": kwargs.get("payload_id")},
+        )
+        return resp
+
+    return wrapper
+
+
+def check_timestamp(timestamp: str = None) -> None:
+    if timestamp is None:
+        return
+    stamp = datetime.fromisoformat(timestamp)
+    if stamp.utcoffset() not in (None, timedelta(0)):
+        raise ValueError(f"timestamp must be utc iso valued string ({timestamp})")
+
+
+def check_response_code(
+    response: dict, msg_prefix: str = "statedb updated", extra: dict = None
+):
+    """Check dynamodb response code, log appropriately, and raise RuntimeError if not
+    successful
+
+    Args:
+        response (dict): dynamo db response to request
+        msg_prefix (str): message prefix string for logging
+        extra (dict): annotations for logger extra parameter
+
+    Raises:
+        RuntimeError: if HTTPStatusCode not 2xx
+    """
+    status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+    if 200 <= status < 300:
+        logger.debug(msg_prefix, extra=extra)
+    else:
+        logger.error("%s failed (HTTPStatusCode %s)", msg_prefix, status, extra=extra)
+        raise RuntimeError(msg_prefix, response)
 
 
 class StateDB:
@@ -235,14 +281,19 @@ class StateDB:
             states[item["payload_id"]] = item["state"]
         return states
 
-    def claim_processing(self, payload_id):
+    @successful_state_change
+    def claim_processing(self, payload_id: str, isotimestamp: str = None):
         """Sets payload_id to PROCESSING to claim it (preventing other runs)
-        Returns:
-           tuple:
-           - db_key (dict): statedb dynamo key
-           - timestamp (str): timestamp when operation started
+        Args:
+            payload_id (str): The Cirrus Payload
+            execution_arn (Optional[str]): The Step Function execution ARN.
+            isotimestamp (str): ISO format UTC timestamp for this action.
+
+        Raises:
+            ValueError: if isotimestamp is not ISO and UTC
+            RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -261,19 +312,23 @@ class StateDB:
                 ":proc": "PROCESSING",
             },
         )
-        check_response_code(key, response, "Claimed processing")
+        return response
 
-        return key, now
+    @successful_state_change
+    def set_processing(
+        self, payload_id: str, execution_arn: str, isotimestamp: str = None
+    ) -> Dict[str, Any]:
+        """Adds execution to existing item or creates new.
+        Args:
+            payload_id (str): The Cirrus Payload
+            execution_arn (Optional[str]): The Step Function execution ARN.
+            isotimestamp (Optional[str]): ISO format UTC timestamp for this action.
 
-    def set_processing(self, payload_id: str, execution_arn: str) -> Dict[str, Any]:
+        Raises:
+            ValueError: if isotimestamp is not ISO and UTC
+            RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        Adds execution to existing item or creates new
-        Returns:
-           tuple:
-           - db_key (dict): statedb dynamo key
-           - timestamp (str): timestamp when operation started
-        """
-        now = datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -293,23 +348,25 @@ class StateDB:
                 ":exes": [execution_arn],
             },
         )
-        check_response_code(key, response, extra={"execution": execution_arn})
 
-        return key, now
+        return response
 
-    def set_outputs(self, payload_id: str, outputs: List[str]) -> str:
+    @successful_state_change
+    def set_outputs(
+        self, payload_id: str, outputs: List[str], isotimestamp: str = None
+    ) -> Dict:
         """Set this item's outputs
 
         Args:
             payload_id (str): The Cirrus Payload
             outputs ([str]): List of URLs to output Items
+            isotimestamp (str): ISO format UTC timestamp for this action.
 
-        Returns:
-           tuple:
-           - db_key (dict): statedb dynamo key
-           - timestamp (str): timestamp when operation started
+        Raises:
+            ValueError: if isotimestamp is not ISO and UTC
+            RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -327,31 +384,30 @@ class StateDB:
                 ":outputs": outputs,
             },
         )
-        check_response_code(
-            key, response, msg_prefix="set outputs", extra={"outputs": outputs}
-        )
 
-        return key, now
+        return response
 
+    @successful_state_change
     def set_completed(
         self,
         payload_id: str,
         outputs: Optional[List[str]] = None,
         execution_arn: Optional[str] = None,
-    ) -> str:
+        isotimestamp: str = None,
+    ) -> Dict:
         """Set this item as COMPLETED
 
         Args:
             payload_id (str): The Cirrus Payload
             outputs (Optional[[str]], optional): List of URLs to output Items. Defaults to None.
             execution_arn (Optional[str]): The Step Function execution ARN.
+            isotimestamp (str): ISO format UTC timestamp for this action.
 
-        Returns:
-           tuple:
-           - db_key (dict): statedb dynamo key
-           - timestamp (str): timestamp when operation started
+        Raises:
+            ValueError: if isotimestamp is not ISO and UTC
+            RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -374,20 +430,30 @@ class StateDB:
             UpdateExpression=expr,
             ExpressionAttributeValues=expr_attrs,
         )
-        check_response_code(
-            key, response, msg_prefix="set completed", extra={"outputs": outputs}
-        )
 
-        return key, now
+        return response
 
-    def set_failed(self, payload_id, msg, execution_arn: Optional[str] = None):
+    @successful_state_change
+    def set_failed(
+        self,
+        payload_id,
+        msg,
+        execution_arn: Optional[str] = None,
+        isotimestamp: str = None,
+    ) -> Dict:
         """Adds/updates item with stepfunction execution
-        Returns:
-           tuple:
-           - db_key (dict): statedb dynamo key
-           - timestamp (str): timestamp when operation started
+        Args:
+            payload_id (str): The Cirrus Payload
+            msg (str): An error message to include in DynamoDB Item
+            execution_arn (Optional[str]): The Step Function execution ARN.
+            isotimestamp (str): ISO format UTC timestamp for this action.
+
+        Raises:
+            ValueError: if isotimestamp is not ISO and UTC
+            RuntimeError: if dynamo response HTTPStatusCode not 2xx
+
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -406,28 +472,30 @@ class StateDB:
                 ":last_error": msg,
             },
         )
-        check_response_code(
-            key, response, msg_prefix="set failed", extra={"last_error": msg}
-        )
 
-        return key, now
+        return response
 
+    @successful_state_change
     def set_invalid(
-        self, payload_id: str, msg: str, execution_arn: Optional[str] = None
-    ) -> str:
+        self,
+        payload_id: str,
+        msg: str,
+        execution_arn: Optional[str] = None,
+        isotimestamp: str = None,
+    ) -> Dict:
         """Set this item as INVALID
 
         Args:
             payload_id (str): The Cirrus Payload
             msg (str): An error message to include in DynamoDB Item
             execution_arn (Optional[str]): The Step Function execution ARN.
+            isotimestamp (str): ISO format UTC timestamp for this action.
 
-        Returns:
-           tuple:
-           - db_key (dict): statedb dynamo key
-           - timestamp (str): timestamp when operation started
+        Raises:
+            ValueError: if isotimestamp is not ISO and UTC
+            RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -446,25 +514,28 @@ class StateDB:
                 ":last_error": msg,
             },
         )
-        check_response_code(
-            key, response, msg_prefix="set invalid", extra={"last_error": msg}
-        )
 
-        return key, now
+        return response
 
-    def set_aborted(self, payload_id: str, execution_arn: Optional[str] = None) -> str:
+    @successful_state_change
+    def set_aborted(
+        self,
+        payload_id: str,
+        execution_arn: Optional[str] = None,
+        isotimestamp: str = None,
+    ) -> Dict:
         """Set this item as ABORTED
 
         Args:
             payload_id (str): The Cirrus Payload
             execution_arn (Optional[str]): The Step Function execution ARN.
+            isotimestamp (str): ISO format UTC timestamp for this action.
 
-        Returns:
-           tuple:
-           - db_key (dict): statedb dynamo key
-           - timestamp (str): timestamp when operation started
+        Raises:
+            ValueError: if isotimestamp is not ISO and UTC
+            RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -482,9 +553,7 @@ class StateDB:
             },
         )
 
-        check_response_code(key, response, msg_prefix="set aborted")
-
-        return key, now
+        return response
 
     def query(
         self,
@@ -665,26 +734,3 @@ class StateDB:
         hours = int(since[0:-1]) if unit == "h" else 0
         minutes = int(since[0:-1]) if unit == "m" else 0
         return timedelta(days=days, hours=hours, minutes=minutes)
-
-
-def check_response_code(
-    key: dict, response: dict, msg_prefix: str = "statedb updated", extra: dict = None
-):
-    """Check dynamodb response code, log appropriately, and raise RuntimeError if not
-    successfull
-
-    Args:
-        key (dict): dynamo db key of payload
-        response (dict): dynamo db response to request
-        msg_prefix (str): message prefix string for logging
-        extra (dict): annotations for logger extra parameter
-
-    Raises:
-        RuntimeError: if HTTPStatusCode not 2xx
-    """
-    status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-    if 200 <= status < 300:
-        logger.debug(msg_prefix, extra=extra)
-    else:
-        logger.error("%s failed (HTTPStatusCode %s)", msg_prefix, status, extra=extra)
-        raise RuntimeError(msg_prefix, response)
