@@ -103,8 +103,8 @@ class WorkflowEventManager:
         if extra_message:
             if not all(k not in message for k in extra_message):
                 raise ValueError(
-                    "extra_message parameters must not include "
-                    "event_type, payload, or payload_id."
+                    "extra_message parameters must not include: "
+                    + f"{','.join(message.keys())}."
                 )
             message.update(extra_message)
         self.event_publisher.add(json.dumps(message))
