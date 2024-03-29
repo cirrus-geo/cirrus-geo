@@ -34,11 +34,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   ```
 
 - Testing of python 3.12. ([#261])
-- `SfnStatus` string enum added for StepFunctions execution status strings. ([#261])
+- `SfnStatus` string enum added for StepFunctions execution status
+  strings. ([#261])
+- Added check of status returned from AWS calls to update the `StateDB` table,
+  which raises a `RuntimeError` including the response if the write fails.
+  This addresses Issue [#202]. ([#263])
 
 ### Changed
 
-- Moved `StateEnum` to `cirrus.lib2.enums` module for use across `lib2` and `builtins`. ([#261])
+- Moved `StateEnum` to `cirrus.lib2.enums` module for use across `lib2` and
+  `builtins`. ([#261])
+- Migrated management of timeseries (`EventDB`) events from `StateDB` to
+  `WorkflowEventManager`. ([#263])
+- Provide option to pass in timestamp to `WorkflowEventManager` state-change
+  functions. ([#263])
 
 ## [v0.14.0] - 2024-04-26
 
@@ -872,6 +881,7 @@ Initial release
 [#180]: https://github.com/cirrus-geo/cirrus-geo/issues/180
 [#182]: https://github.com/cirrus-geo/cirrus-geo/issues/182
 [#193]: https://github.com/cirrus-geo/cirrus-geo/issues/193
+[#202]: https://github.com/cirrus-geo/cirrus-geo/issues/202
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73
@@ -897,6 +907,7 @@ Initial release
 [#256]: https://github.com/cirrus-geo/cirrus-geo/pull/256
 [#259]: https://github.com/cirrus-geo/cirrus-geo/pull/259
 [#261]: https://github.com/cirrus-geo/cirrus-geo/pull/261
+[#263]: https://github.com/cirrus-geo/cirrus-geo/pull/263
 [#264]: https://github.com/cirrus-geo/cirrus-geo/pull/264
 [#266]: https://github.com/cirrus-geo/cirrus-geo/pull/266
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
