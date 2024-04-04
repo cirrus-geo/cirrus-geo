@@ -129,9 +129,9 @@ class WorkflowEventManager:
             extra_message={"error": message, "execution_arn": execution_arn},
         )
 
-    def succeeded(self, payload_id: str, execution_arn: str):
-        self.statedb.set_completed(payload_id, execution_arn=execution_arn)
-        self.announce("SUCCEEDED", payload_id=payload_id)
+    def succeeded(self, payload: dict, execution_arn: str):
+        self.statedb.set_completed(payload["id"], execution_arn=execution_arn)
+        self.announce("SUCCEEDED", payload)
 
     def invalid(self, payload: dict, error: str, execution_arn: str):
         self.statedb.set_invalid(payload["id"], error, execution_arn)
