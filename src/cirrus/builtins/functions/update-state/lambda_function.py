@@ -110,7 +110,7 @@ def workflow_completed(execution: Execution) -> None:
     # trying the sns publish, but I could see it the other
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
-    wf_event_manager.succeeded(execution.input["id"], execution_arn=execution.arn)
+    wf_event_manager.succeeded(execution.input, execution_arn=execution.arn)
     if execution.output:
         # TODO: add test of workflow chaining
         with SQSPublisher.get_handler(PROCESS_QUEUE_URL, logger=logger) as publisher:
