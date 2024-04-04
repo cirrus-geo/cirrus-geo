@@ -27,7 +27,7 @@ class WorkflowEventManager:
     ):
         self.logger = logger
         self._boto3_session = boto3_session if boto3_session else boto3.Session()
-        wf_event_topic_arn = os.getenv("CIRRUS_WORKFLOW_EVENT_TOPIC_ARN", None)
+        wf_event_topic_arn = os.getenv("CIRRUS_WORKFLOW_EVENT_TOPIC_ARN")
         self.event_publisher = (
             SNSPublisher(
                 wf_event_topic_arn,

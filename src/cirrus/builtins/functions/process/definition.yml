@@ -67,4 +67,4 @@ lambda:
     - Effect: "Allow"
       Action:
         - sns:Publish
-      Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:#{AWS::StackName}-workflow-event-topic
+      Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:#{AWS::StackName}-workflow-event
