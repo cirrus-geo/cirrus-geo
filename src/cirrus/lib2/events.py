@@ -15,7 +15,7 @@ logger = getLogger(__name__)
 
 class WorkflowEventManager:
     """A class for managing payload state change events, including storage of
-    state(dynamo), activity(timestream), and notifications of decisions and/or status
+    state (DynamoDB), activity (Timestream), and notifications of decisions and/or status
     changes (SNS)."""
 
     def __init__(
