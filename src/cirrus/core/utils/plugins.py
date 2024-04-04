@@ -3,7 +3,7 @@ from collections.abc import Iterator
 try:
     from importlib.metadata import EntryPoint, entry_points
 except ImportError:
-    from importlib_metadata import EntryPoint, entry_points
+    from importlib_metadata import EntryPoint, entry_points  # pragma: no cover
 
 PLUGIN_GROUP = "cirrus.plugins"
 COMMANDS_GROUP = "cirrus.commands"

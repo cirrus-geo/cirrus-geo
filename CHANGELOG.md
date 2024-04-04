@@ -9,13 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- `workflow-event-topic` SNS topic, and `WorkflowEventManager` class for
-  managing workflow event actions. ([#261]) The actions managed by this class
-  include:
+- `cirrus-<stage>-workflow-event` SNS topic, and
+  `WorkflowEventManager` class for managing workflow event actions. ([#261])
+  The actions managed by this class include:
 
   - updating state of workflows in `StateDB`
   - announcing interactions cirrus has with a payload to the
-    `workflow-event-topic`
+    `cirrus-<stage>-workflow-event`
     Note: To use this topic, existing deployments will need to add the following
     to their environment in both their `cirrus.yml` file:
 

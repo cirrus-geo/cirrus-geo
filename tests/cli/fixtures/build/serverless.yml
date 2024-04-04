@@ -236,7 +236,7 @@ functions:
         Action:
           - sns:Publish
         Resource:
-          Fn::Sub: arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}-workflow-event-topic
+          Fn::Sub: arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}-workflow-event
     description: Consumes Process Catalogs from queue and invokes workflow
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
