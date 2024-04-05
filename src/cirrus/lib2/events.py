@@ -107,7 +107,12 @@ class WorkflowEventManager:
                     + f"{','.join(message.keys())}."
                 )
             message.update(extra_message)
-        self.event_publisher.add(json.dumps(message))
+        self.event_publisher.add(
+            message=json.dumps(message),
+            message_attrs={
+                "event_type": {"DataType": "String", "StringValue": event_type}
+            },
+        )
 
     def claim_processing(self, payload: dict, isotimestamp: str = None):
         if not isotimestamp:
