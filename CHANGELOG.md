@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   and add the Topic to their `cloudformation/resources.yml` file:
 
   ```yaml
-  # SNS Topic for failed workflows
+  # SNS Topic for any cirrus interactions with a workflow
   WorkflowEventTopic:
     Type: "AWS::SNS::Topic"
     Properties:

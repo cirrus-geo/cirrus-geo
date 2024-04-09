@@ -14,7 +14,7 @@ Resources:
     Properties:
       TopicName: "#{AWS::StackName}-publish"
 
-  # SNS Topic for failed workflows
+  # SNS Topic for any cirrus interactions with a workflow
   WorkflowEventTopic:
     Type: "AWS::SNS::Topic"
     Properties:
