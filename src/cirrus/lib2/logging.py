@@ -49,6 +49,9 @@ class DynamicLoggerAdapter(logging.LoggerAdapter):
     def __init__(self, *args, keys=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.keys = keys
+        if self.logger.parent and self.logger.parent.name in config["loggers"]:
+            # this prevents double-logging in AWS Cloudwatch for cirrus loggers
+            self.logger.parent.propagate = False
 
     def process(self, msg, kwargs):
         if self.keys is not None:

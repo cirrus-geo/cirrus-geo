@@ -108,8 +108,8 @@
     "size": 2627
   },
   "cirrus/lib2/logging.py": {
-    "shasum": "bee855ad35595b58e26bb094e0e516eed2e98337a4817d6543e7d49e7cfa8a97",
-    "size": 2700
+    "shasum": "eccfdad4b87f655ea68fb993bd29067116aeb6e2043f2edeb17034fd5d4d895b",
+    "size": 2909
   },
   "cirrus/lib2/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
