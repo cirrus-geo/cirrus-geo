@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Prevent `cirrus.lib2.logging` logger messages from being duplicated by the
+  root logger. ([#264])
+
 ## [v0.13.0] - 2024-03-04
 
 ### Added
@@ -846,6 +853,7 @@ Initial release
 [#254]: https://github.com/cirrus-geo/cirrus-geo/pull/254
 [#256]: https://github.com/cirrus-geo/cirrus-geo/pull/256
 [#259]: https://github.com/cirrus-geo/cirrus-geo/pull/259
+[#264]: https://github.com/cirrus-geo/cirrus-geo/pull/264
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
