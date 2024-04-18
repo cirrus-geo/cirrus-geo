@@ -16,7 +16,7 @@ That input is called a Cirrus `ProcessPayload` (CPP).
 
 An input is run through a workflow that generates one or more output STAC Items.
 These output Items are added to the Cirrus static STAC catalog in S3,
-and are also broadcast via an SNS topic. Subscrptions to that topic can
+and are also broadcast via an SNS topic. Subscriptions to that topic can
 triggering additional workflows or external processes, such as indexing into a
 STAC API catalog (e.g.,
 [stac-server](https://github.com/stac-utils/stac-server)).
@@ -34,7 +34,7 @@ into Cirrus as a CPP.
 
 Because Cirrus output is published via SNS, a Feeder can be configured to
 subscribe to that SNS and thus workflows can be chained, such that the output
-of one workflow becomes the input to another workflow, createing multiple levels
+of one workflow becomes the input to another workflow, creating multiple levels
 of products all with published STAC metadata and clear links showing data
 provenance.
 
