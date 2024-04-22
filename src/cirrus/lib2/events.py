@@ -230,7 +230,12 @@ class WorkflowEventManager:
                 payload["id"], StateEnum.ABORTED, isotimestamp, execution_arn
             )
         self.announce(
-            WFEventType.ABORTED, payload, extra_message={"execution_arn": execution_arn}
+            WFEventType.ABORTED,
+            payload,
+            extra_message={
+                "error": "none, aborted by user",
+                "execution_arn": execution_arn,
+            },
         )
 
     def write_timeseries_record(

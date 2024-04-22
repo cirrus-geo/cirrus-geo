@@ -24,6 +24,9 @@ class SfnStatus(str, Enum):
     ABORTED = "ABORTED"
     TIMED_OUT = "TIMED_OUT"
 
+    def __str__(self):
+        return self.value
+
 
 @unique
 class WFEventType(str, Enum):
@@ -42,3 +45,6 @@ class WFEventType(str, Enum):
     ABORTED = "ABORTED"
     RECORD_EXTRACT_FAILED = "RECORD_EXTRACT_FAILED"
     NOT_A_PROCESS_PAYLOAD = "NOT_A_PROCESS_PAYLOAD"
+
+    def __str__(self):
+        return self.value
