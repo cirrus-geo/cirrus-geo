@@ -19,19 +19,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     Note: To use this topic, existing deployments will need to add the following
     to their environment in both their `cirrus.yml` file:
 
-  ```yaml
-  CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopic
-  ```
+    ```yaml
+    CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopic
+    ```
 
-  and add the Topic to their `cloudformation/resources.yml` file:
+    and add the Topic to their `cloudformation/resources.yml` file:
 
-  ```yaml
-  # SNS Topic for any cirrus interactions with a workflow
-  WorkflowEventTopic:
-    Type: "AWS::SNS::Topic"
-    Properties:
-    TopicName: "#{AWS::StackName}-workflow-event"
-  ```
+    ```yaml
+    # SNS Topic for any cirrus interactions with a workflow
+    WorkflowEventTopic:
+      Type: "AWS::SNS::Topic"
+      Properties:
+      TopicName: "#{AWS::StackName}-workflow-event"
+    ```
 
 - Testing of python 3.12. ([#261])
 - `SfnStatus` string enum added for StepFunctions execution status
