@@ -1,6 +1,5 @@
 import json
 import os
-from contextlib import AbstractContextManager, contextmanager
 from datetime import datetime, timezone
 from logging import Logger, getLogger
 from typing import Dict
@@ -52,16 +51,11 @@ class WorkflowEventManager:
         if self.event_publisher:
             self.event_publisher.execute()
 
-    @classmethod
-    @contextmanager
-    def handler(
-        cls: "WorkflowEventManager", *args, **kwargs
-    ) -> AbstractContextManager["WorkflowEventManager"]:
-        wfem = cls(*args, **kwargs)
-        try:
-            yield wfem
-        finally:
-            wfem.flush()
+    def __enter__(self):
+        return self
+
+    def __exit__(self, et, ev, tb):
+        self.flush()
 
     def announce(
         self,
@@ -92,7 +86,7 @@ class WorkflowEventManager:
 
         if payload is not None and payload["id"] != payload_id:
             raise ValueError(
-                "payload_id and payload['id'] must match if both supplied."
+                "payload_id and payload['id'] must match, if both supplied."
             )
         message = {
             "event_type": event_type,

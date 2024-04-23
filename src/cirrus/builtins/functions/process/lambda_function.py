@@ -26,10 +26,10 @@ def lambda_handler(event, context):
             payload = utils.extract_record(message)
         except Exception as exc:
             logger.exception("Failed to extract record: %s", message)
-            with WorkflowEventManager.handler(logger=logger) as wfem:
+            with WorkflowEventManager(logger=logger) as wfem:
                 wfem.announce(
                     WFEventType.RECORD_EXTRACT_FAILED,
-                    payload=message,
+                    payload={"id": "unknown", "message": message},
                     payload_id="unknown",
                     extra_message={"exception": str(exc)},
                 )
@@ -50,7 +50,7 @@ def lambda_handler(event, context):
             logger.exception(
                 "Failed to convert to ProcessPayload: %s", json.dumps(payload)
             )
-            with WorkflowEventManager.handler(logger=logger) as wfem:
+            with WorkflowEventManager(logger=logger) as wfem:
                 wfem.announce(
                     WFEventType.NOT_A_PROCESS_PAYLOAD,
                     payload=payload,
