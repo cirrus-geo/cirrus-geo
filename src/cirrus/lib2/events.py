@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime, timezone
 from logging import Logger, getLogger
-from typing import Dict
+from typing import Callable, Dict
 
 import boto3
 
@@ -56,6 +56,18 @@ class WorkflowEventManager:
 
     def __exit__(self, et, ev, tb):
         self.flush()
+
+    def with_wfem(self, function: Callable):
+        """decorator to inject WorkflowEvenManager into a function call, and flush upon exit"""
+
+        def wrap_function(*args, **kwargs):
+            kwargs["wfem"] = self
+            return function(*args, **kwargs)
+
+        try:
+            yield wrap_function
+        finally:
+            self.flush()
 
     def announce(
         self,
