@@ -29,8 +29,8 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
             logger.exception("Failed to extract record: %s", message)
             wfem.announce(
                 WFEventType.RECORD_EXTRACT_FAILED,
-                payload={"id": "unknown", "message": message},
                 payload_id="unknown",
+                payload_url=ProcessPayload.upload_to_s3(message),
                 extra_message={"exception": str(exc)},
             )
             failures.append(message)
@@ -52,8 +52,8 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
             )
             wfem.announce(
                 WFEventType.NOT_A_PROCESS_PAYLOAD,
-                payload=payload,
                 payload_id=payload.get("id", "unknown"),
+                payload_url=ProcessPayload.upload_to_s3(payload),
                 extra_message={"exception": str(exc)},
             )
             failures.append(payload)

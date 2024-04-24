@@ -6,28 +6,19 @@ from cirrus.lib2.events import WorkflowEventManager
 
 
 @pytest.mark.parametrize(
-    ("event_type", "payload", "payload_id", "extra_message", "error_message"),
+    ("event_type", "payload_id", "extra_message", "error_message"),
     (
-        ("blah", None, None, None, r"must specify payload_id or payload"),
+        ("blah", None, None, r"Must specify a payload_id"),
         (
             "blah",
-            {"id": "banana"},
-            "pancake",
-            None,
-            r".*must match, if both supplied\.",
-        ),
-        (
-            "blah",
-            None,
             "some_id",
-            {"payload": None},
+            {"payload_id": None},
             r"extra_message parameters must not.*",
         ),
     ),
 )
 def test_anounce_errors(
     event_type,
-    payload,
     payload_id,
     extra_message,
     error_message,
@@ -37,4 +28,4 @@ def test_anounce_errors(
     os.environ["CIRRUS_WORKFLOW_EVENT_TOPIC_ARN"] = "bleh"
     wfem = WorkflowEventManager()
     with pytest.raises(ValueError, match=error_message):
-        wfem.announce(event_type, payload, payload_id, extra_message)
+        wfem.announce(event_type, payload_id, extra_message=extra_message)

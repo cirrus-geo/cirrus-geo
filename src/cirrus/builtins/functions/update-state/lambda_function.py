@@ -39,6 +39,7 @@ INVALID_EXCEPTIONS = (
 class Execution:
     arn: str
     input: ProcessPayload
+    url: str
     output: ProcessPayload
     status: SfnStatus
     error: Optional[dict]
@@ -86,6 +87,11 @@ class Execution:
             return cls(
                 arn=arn,
                 input=_input,
+                url=(
+                    event["url"]
+                    if "url" in event
+                    else ProcessPayload.upload_to_s3(_input)
+                ),
                 output=output,
                 status=status,
                 error=error,
@@ -108,7 +114,7 @@ def workflow_completed(
     # trying the sns publish, but I could see it the other
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
-    wf_event_manager.succeeded(execution.input, execution_arn=execution.arn)
+    wf_event_manager.succeeded(execution.input["id"], execution_arn=execution.arn)
     if execution.output:
         # TODO: add test of workflow chaining
         with SQSPublisher.get_handler(PROCESS_QUEUE_URL, logger=logger) as publisher:
@@ -119,7 +125,7 @@ def workflow_completed(
 def workflow_aborted(
     execution: Execution, wf_event_manager: WorkflowEventManager
 ) -> None:
-    wf_event_manager.aborted(execution.input, execution_arn=execution.arn)
+    wf_event_manager.aborted(execution.input["id"], execution_arn=execution.arn)
 
 
 def workflow_failed(
@@ -144,16 +150,18 @@ def workflow_failed(
     try:
         if error_type in INVALID_EXCEPTIONS:
             wf_event_manager.invalid(
-                execution.input, error, execution_arn=execution.arn
+                execution.input["id"], error, execution_arn=execution.arn
             )
             notification_topic_arn = INVALID_TOPIC_ARN
         elif error_type == "TimedOutError":
             wf_event_manager.timed_out(
-                execution.input, error, execution_arn=execution.arn
+                execution.input["id"], error, execution_arn=execution.arn
             )
             notification_topic_arn = FAILED_TOPIC_ARN
         else:
-            wf_event_manager.failed(execution.input, error, execution_arn=execution.arn)
+            wf_event_manager.failed(
+                execution.input["id"], error, execution_arn=execution.arn
+            )
             notification_topic_arn = FAILED_TOPIC_ARN
     except Exception:
         logger.exception("Unable to update state")

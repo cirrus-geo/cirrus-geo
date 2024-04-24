@@ -88,8 +88,8 @@ class WorkflowEventManager:
     def announce(
         self: "WorkflowEventManager",
         event_type: WFEventType,
-        payload: dict = None,
-        payload_id: str = None,
+        payload_id: str,
+        payload_url: str = None,
         extra_message: dict = None,
     ) -> None:
         """
@@ -97,28 +97,19 @@ class WorkflowEventManager:
 
         Args:
             event_type (WFEventType): the type of event which occurred
-            payload (dict): The ProcessPayload which triggered the event.
-            payload_id (str): The ID of the payload.  Must match payload["id"] if that
-                              exists / is  provided.
+            payload_id (str): The ID of the payload.
+            payload_url (str): URL of the ProcessPayload which triggered the event.
             extra_message (dict): dictionary of additional items to be placed into the
                                   SNS message body.
         """
         if self.event_publisher is None:
             return
+        if payload_id is None:
+            raise ValueError("Must specify a payload_id")
 
-        if payload is None:
-            if payload_id is None:
-                raise ValueError("must specify payload_id or payload")
-        elif payload_id is None:
-            payload_id = payload["id"]
-
-        if payload is not None and payload["id"] != payload_id:
-            raise ValueError(
-                "payload_id and payload['id'] must match, if both supplied."
-            )
         message = {
             "event_type": event_type,
-            "payload": payload,
+            "payload_url": payload_url,
             "payload_id": payload_id,
         }
 
@@ -137,143 +128,166 @@ class WorkflowEventManager:
         )
 
     def claim_processing(
-        self: "WorkflowEventManager", payload: dict, isotimestamp: str = None
-    ):
-        if not isotimestamp:
-            isotimestamp = datetime.now(timezone.utc).isoformat()
-        self.statedb.claim_processing(
-            payload_id=payload["id"], isotimestamp=isotimestamp
-        )
-        self.announce(WFEventType.CLAIMED_PROCESSING, payload=payload)
-
-    def started_processing(
         self: "WorkflowEventManager",
-        payload: dict,
-        execution_arn: str,
+        payload_id: str,
+        payload_url: str = None,
         isotimestamp: str = None,
     ):
         if not isotimestamp:
             isotimestamp = datetime.now(timezone.utc).isoformat()
-        self.statedb.set_processing(payload["id"], execution_arn, isotimestamp)
+        self.statedb.claim_processing(payload_id=payload_id, isotimestamp=isotimestamp)
+        self.announce(
+            WFEventType.CLAIMED_PROCESSING,
+            payload_id=payload_id,
+            payload_url=payload_url,
+        )
+
+    def started_processing(
+        self: "WorkflowEventManager",
+        payload_id: str,
+        execution_arn: str,
+        isotimestamp: str = None,
+        payload_url: str = None,
+    ):
+        if not isotimestamp:
+            isotimestamp = datetime.now(timezone.utc).isoformat()
+        self.statedb.set_processing(payload_id, execution_arn, isotimestamp)
         self._write_timeseries_record(
-            payload["id"],
+            payload_id,
             state=StateEnum.PROCESSING,
             event_time=isotimestamp,
             execution_arn=execution_arn,
         )
         self.announce(
             WFEventType.STARTED_PROCESSING,
-            payload=payload,
+            payload_id=payload_id,
+            payload_url=payload_url,
             extra_message={"execution_arn": execution_arn},
         )
 
-    def skipping(self: "WorkflowEventManager", payload: dict, state: StateEnum):
-        self.logger.warning("already in %s state: ", payload["id"])
-        self.announce(WFEventType(f"ALREADY_{state}"), payload)
+    def skipping(
+        self: "WorkflowEventManager",
+        payload_id: str,
+        state: StateEnum,
+        payload_url: str = None,
+    ):
+        self.logger.warning("already in %s state: ", payload_id)
+        self.announce(WFEventType(f"ALREADY_{state}"), payload_id, payload_url)
 
-    def duplicated(self: "WorkflowEventManager", payload: dict):
-        self.logger.warning("duplicate payload_id dropped %s", payload["id"])
-        self.announce(WFEventType.DUPLICATE_ID_ENCOUNTERED, payload)
+    def duplicated(
+        self: "WorkflowEventManager", payload_id: str, payload_url: str = None
+    ):
+        self.logger.warning("duplicate payload_id dropped %s", payload_id)
+        self.announce(WFEventType.DUPLICATE_ID_ENCOUNTERED, payload_id, payload_url)
 
     def failed(
         self: "WorkflowEventManager",
-        payload: dict,
+        payload_id: str,
         message: str = "",
-        execution_arn=None,
+        payload_url: str = None,
+        execution_arn: str = None,
         isotimestamp: str = None,
     ):
         if not isotimestamp:
             isotimestamp = datetime.now(timezone.utc).isoformat()
-        self.statedb.set_failed(payload["id"], message, execution_arn=execution_arn)
+        self.statedb.set_failed(payload_id, message, execution_arn=execution_arn)
         if execution_arn:
             self._write_timeseries_record(
-                payload["id"], StateEnum.FAILED, isotimestamp, execution_arn
+                payload_id, StateEnum.FAILED, isotimestamp, execution_arn
             )
 
         self.announce(
             WFEventType.FAILED,
-            payload,
+            payload_id,
+            payload_url,
             extra_message={"error": message, "execution_arn": execution_arn},
         )
 
     def timed_out(
         self: "WorkflowEventManager",
-        payload: dict,
+        payload_id: str,
         message: str = "",
-        execution_arn=None,
+        payload_url: str = None,
+        execution_arn: str = None,
         isotimestamp: str = None,
     ):
         if not isotimestamp:
             isotimestamp = datetime.now(timezone.utc).isoformat()
         self.statedb.set_failed(
-            payload["id"],
+            payload_id,
             message,
             execution_arn=execution_arn,
             isotimestamp=isotimestamp,
         )
         if execution_arn:
             self._write_timeseries_record(
-                payload["id"], StateEnum.INVALID, isotimestamp, execution_arn
+                payload_id, StateEnum.INVALID, isotimestamp, execution_arn
             )
         self.announce(
             WFEventType.TIMED_OUT,
-            payload,
+            payload_id,
+            payload_url,
             extra_message={"error": message, "execution_arn": execution_arn},
         )
 
     def succeeded(
         self: "WorkflowEventManager",
-        payload: dict,
+        payload_id: str,
         execution_arn: str,
+        payload_url: str = None,
         isotimestamp: str = None,
     ):
         if not isotimestamp:
             isotimestamp = datetime.now(timezone.utc).isoformat()
         self.statedb.set_completed(
-            payload["id"], execution_arn=execution_arn, isotimestamp=isotimestamp
+            payload_id, execution_arn=execution_arn, isotimestamp=isotimestamp
         )
         self._write_timeseries_record(
-            payload["id"], StateEnum.COMPLETED, isotimestamp, execution_arn
+            payload_id, StateEnum.COMPLETED, isotimestamp, execution_arn
         )
-        self.announce(WFEventType.SUCCEEDED, payload)
+        self.announce(WFEventType.SUCCEEDED, payload_id, payload_url)
 
     def invalid(
         self: "WorkflowEventManager",
-        payload: dict,
+        payload_id: str,
         error: str,
         execution_arn: str,
+        payload_url: str = None,
         isotimestamp: str = None,
     ):
         if not isotimestamp:
             isotimestamp = datetime.now(timezone.utc).isoformat()
-        self.statedb.set_invalid(payload["id"], error, execution_arn, isotimestamp)
+        self.statedb.set_invalid(payload_id, error, execution_arn, isotimestamp)
         if execution_arn:
             self._write_timeseries_record(
-                payload["id"], StateEnum.INVALID, isotimestamp, execution_arn
+                payload_id, StateEnum.INVALID, isotimestamp, execution_arn
             )
 
         self.announce(
             WFEventType.INVALID,
-            payload,
+            payload_id,
+            payload_url,
             extra_message={"error": error, "execution_arn": execution_arn},
         )
 
     def aborted(
         self: "WorkflowEventManager",
-        payload: dict,
+        payload_id: str,
         execution_arn: str,
+        payload_url: str = None,
         isotimestamp: str = None,
     ):
         if not isotimestamp:
             isotimestamp = datetime.now(timezone.utc).isoformat()
-        self.statedb.set_aborted(payload["id"], execution_arn=execution_arn)
+        self.statedb.set_aborted(payload_id, execution_arn=execution_arn)
         if execution_arn:
             self._write_timeseries_record(
-                payload["id"], StateEnum.ABORTED, isotimestamp, execution_arn
+                payload_id, StateEnum.ABORTED, isotimestamp, execution_arn
             )
         self.announce(
             WFEventType.ABORTED,
-            payload,
+            payload_id,
+            payload_url,
             extra_message={
                 "error": "none, aborted by user",
                 "execution_arn": execution_arn,

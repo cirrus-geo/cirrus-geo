@@ -173,6 +173,17 @@ class ProcessPayload(dict):
             "id"
         ] = f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
 
+    @staticmethod
+    def upload_to_s3(payload, bucket: str = None) -> str:
+        # url-payloads do not need to be re-uploaded
+        if "url" in payload:
+            return payload["url"]
+        if bucket is None:
+            bucket = os.environ["CIRRUS_PAYLOAD_BUCKET"]
+        url = f"s3://{bucket}/payloads/{uuid.uuid1()}.json"
+        s3().upload_json(payload, url)
+        return url
+
     def get_payload(self) -> dict:
         """Get original payload for this ProcessPayload
 
@@ -181,9 +192,8 @@ class ProcessPayload(dict):
         """
         payload = json.dumps(self)
         payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
-        if payload_bucket and len(payload.encode("utf-8")) > 30000:
-            url = f"s3://{payload_bucket}/payloads/{uuid.uuid1()}.json"
-            s3().upload_json(self, url)
+        if payload_bucket and len(payload.encode("utf-8")) > 250000:
+            url = self.upload_to_s3(payload, payload_bucket)
             return {"url": url}
         else:
             return dict(self)
@@ -208,7 +218,7 @@ class ProcessPayload(dict):
             s3().upload_json(self, url)
 
             # create DynamoDB record - this overwrites existing states other than PROCESSING
-            wfem.claim_processing(self)
+            wfem.claim_processing(self["id"], payload_url=url)
 
             # invoke step function
             self.logger.debug("Running Step Function %s", arn)
@@ -218,20 +228,22 @@ class ProcessPayload(dict):
             )
 
             # add execution to DynamoDB record
-            wfem.started_processing(self, exe_response["executionArn"])
+            wfem.started_processing(
+                self["id"], exe_response["executionArn"], payload_url=url
+            )
 
             return self["id"]
         except (
             StateDB.get_singleton().db.meta.client.exceptions.ConditionalCheckFailedException
         ):
-            wfem.already_processing(self)
+            wfem.already_processing(self["id"], payload_url=url)
             return None
         except get_stepfunctions().exceptions.StateMachineDoesNotExist as e:
             # This failure is tracked in the DB and we raise an error
             # so we can handle it specifically, to keep the payload
             # falling through to the DLQ and alerting.
             logger.error(e)
-            wfem.failed(self, str(e))
+            wfem.failed(self["id"], str(e), payload_url=url)
             raise TerminalError()
         except Exception as err:
             # This case should be like the above, except we don't know
@@ -241,7 +253,7 @@ class ProcessPayload(dict):
             # here, we should add terminal exception handlers for them.
             msg = f"failed starting workflow ({err})"
             self.logger.exception(msg)
-            wfem.failed(self, msg)
+            wfem.failed(self.get("id", "missing"), msg, payload_url=url)
             raise
 
 
@@ -349,7 +361,7 @@ class ProcessPayloads:
                 or payload["id"] in payload_ids["skipped"]
                 or payload["id"] in payload_ids["failed"]
             ):
-                wfem.duplicated(payload)
+                wfem.duplicated(payload["id"])
                 payload_ids["dropped"].append(payload["id"])
             elif state in [StateEnum.FAILED, StateEnum.ABORTED, ""] or _replace:
                 try:
@@ -365,7 +377,10 @@ class ProcessPayloads:
                 logger.info(
                     "Skipping %s, input already in %s state", payload["id"], state
                 )
-                wfem.skipping(payload, state)
+                wfem.skipping(
+                    payload["id"],
+                    state,
+                )
                 payload_ids["skipped"].append(payload["id"])
                 continue
 
