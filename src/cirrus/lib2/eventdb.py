@@ -12,6 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 class EventDB:
+
+    _payload_id_re = re.compile(
+        r"(?P<collections>.+)/workflow-(?P<workflow>[^/]+)/(?P<itemids>.+)"
+    )
+
     def __init__(
         self,
         event_db_and_table_names: Optional[str] = None,
@@ -46,9 +51,7 @@ class EventDB:
 
     @classmethod
     def _payload_id_to_record_data(cls, payload_id: str) -> Tuple[str, str, str]:
-        pattern = r"(?P<collections>.+)/workflow-(?P<workflow>[^/]+)/(?P<itemids>.+)"
-        expr = re.compile(pattern)
-        if match := expr.match(payload_id):
+        if match := cls._payload_id_re.match(payload_id):
             return match.groups()
         raise ValueError("payload_id does not match expected pattern: " + payload_id)
 
