@@ -1,4 +1,3 @@
-import importlib
 import sys
 from itertools import product
 
@@ -73,10 +72,6 @@ def test_workflow_event_notification(
     else:
         expected_msg_count = 0
         monkeypatch.delenv("CIRRUS_WORKFLOW_EVENT_TOPIC_ARN", raising=False)
-    if "cirrus.builtins.functions.update-state.lambda_function" in sys.modules:
-        importlib.reload(
-            sys.modules["cirrus.builtins.functions.update-state.lambda_function"]
-        )
 
     event["detail"]["status"] = sfn_state
     run_function("update-state", event)

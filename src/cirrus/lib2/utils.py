@@ -65,9 +65,9 @@ def submit_batch_job(
             "memory": 512,
         },
     }
-    logger.debug(f"Submitted batch job with payload {url}")
+    logger.debug("Submitted batch job with payload %s", url)
     response = get_batch_client().submit_job(**kwargs)
-    logger.debug(f"Batch response: {response}")
+    logger.debug("Batch response: %s", response)
 
 
 def get_path(item: dict, template: str = "${collection}/${id}") -> str:
@@ -320,7 +320,7 @@ class BatchHandler:
         batch_param_name: str,
         batch_size: int = 10,
         dest_name: str = "default",
-        logger: logging.Logger = logger,
+        logger: logging.Logger = None,
         boto3_session: boto3.Session = None,
     ):
         """
@@ -343,7 +343,7 @@ class BatchHandler:
         self.batch_size = batch_size
         self.dest_name = dest_name
         self._batch = []
-        self.logger = logger
+        self.logger = logger if logger is not None else logging.getLogger(__name__)
         self.boto3_session = boto3_session if boto3_session else boto3.Session()
 
     def add(self, message: str):
@@ -373,7 +373,9 @@ class BatchHandler:
 
         try:
             self.fn(**params)
-            self.logger.debug(f"Published {len(params)} payloads to {self.dest_name}")
+            self.logger.debug(
+                "Published %s payloads to %s", len(self._batch), self.dest_name
+            )
         finally:
             self._batch = []
 

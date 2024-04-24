@@ -14,7 +14,8 @@ def is_sqs_message(message):
     return message.get("eventSource") == "aws:sqs"
 
 
-def lambda_handler(event, context):
+@WorkflowEventManager.with_wfem(logger=logger)
+def lambda_handler(event, context, *, wfem: WorkflowEventManager):
     logger.debug(json.dumps(event))
 
     payloads = []
@@ -26,13 +27,12 @@ def lambda_handler(event, context):
             payload = utils.extract_record(message)
         except Exception as exc:
             logger.exception("Failed to extract record: %s", message)
-            with WorkflowEventManager(logger=logger) as wfem:
-                wfem.announce(
-                    WFEventType.RECORD_EXTRACT_FAILED,
-                    payload={"id": "unknown", "message": message},
-                    payload_id="unknown",
-                    extra_message={"exception": str(exc)},
-                )
+            wfem.announce(
+                WFEventType.RECORD_EXTRACT_FAILED,
+                payload={"id": "unknown", "message": message},
+                payload_id="unknown",
+                extra_message={"exception": str(exc)},
+            )
             failures.append(message)
             continue
 
@@ -50,13 +50,12 @@ def lambda_handler(event, context):
             logger.exception(
                 "Failed to convert to ProcessPayload: %s", json.dumps(payload)
             )
-            with WorkflowEventManager(logger=logger) as wfem:
-                wfem.announce(
-                    WFEventType.NOT_A_PROCESS_PAYLOAD,
-                    payload=payload,
-                    payload_id=payload.get("id", "unknown"),
-                    extra_message={"exception": str(exc)},
-                )
+            wfem.announce(
+                WFEventType.NOT_A_PROCESS_PAYLOAD,
+                payload=payload,
+                payload_id=payload.get("id", "unknown"),
+                extra_message={"exception": str(exc)},
+            )
             failures.append(payload)
             continue
 
@@ -72,7 +71,7 @@ def lambda_handler(event, context):
     processed_ids = set()
     processed = {"started": []}
     if len(payloads) > 0:
-        processed = ProcessPayloads(payloads).process()
+        processed = ProcessPayloads(payloads).process(wfem)
         processed_ids = {pid for state in processed.keys() for pid in processed[state]}
 
     successful_sqs_messages = [

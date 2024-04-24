@@ -5,7 +5,6 @@ import logging
 import os
 import uuid
 import warnings
-from contextlib import ContextDecorator
 from copy import deepcopy
 
 import boto3
@@ -19,55 +18,16 @@ from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.statedb import StateDB
 from cirrus.lib2.utils import extract_event_records, payload_from_s3
 
-# logging
 logger = logging.getLogger(__name__)
 
-
-# clients
-_event_manager = None
-_statedb = None
-_stepfunctions = None
-
-
-def get_event_manager():
-    global _event_manager
-    if _event_manager is None:
-        _event_manager = WorkflowEventManager(logger=logger, statedb=get_statedb())
-    return _event_manager
-
-
-class EventManagerFlush(ContextDecorator):
-    """
-    Given that there are any number of exits from the functions in ProcessPayload and
-    ProcessPayloads, this decorator should be used on any function which calls
-    `get_event_manager` to logically put the entire function in a `with
-    WorkflowEventManager` block, and ensure the SNS messages are flushed after the
-    function exits.
-
-    This is different from the `WorkflowEventManager.handler` context manager in that
-    this relies on the module global `_event_manager`, instead of a self managed
-    instance.
-    """
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self, *exc):
-        get_event_manager().flush()
-
-
-def get_statedb():
-    global _statedb
-    if _statedb is None:
-        _statedb = StateDB()
-    return _statedb
+_STEPFUNCTIONS = None
 
 
 def get_stepfunctions():
-    global _stepfunctions
-    if _stepfunctions is None:
-        _stepfunctions = boto3.client("stepfunctions")
-    return _stepfunctions
+    global _STEPFUNCTIONS
+    if _STEPFUNCTIONS is None:
+        _STEPFUNCTIONS = boto3.client("stepfunctions")
+    return _STEPFUNCTIONS
 
 
 class TerminalError(Exception):
@@ -228,8 +188,7 @@ class ProcessPayload(dict):
         else:
             return dict(self)
 
-    @EventManagerFlush()
-    def __call__(self) -> str | None:
+    def __call__(self, wfem) -> str | None:
         """Add this ProcessPayload to Cirrus and start workflow
 
         Returns:
@@ -249,28 +208,30 @@ class ProcessPayload(dict):
             s3().upload_json(self, url)
 
             # create DynamoDB record - this overwrites existing states other than PROCESSING
-            get_event_manager().claim_processing(self)
+            wfem.claim_processing(self)
 
             # invoke step function
-            self.logger.debug(f"Running Step Function {arn}")
+            self.logger.debug("Running Step Function %s", arn)
             exe_response = get_stepfunctions().start_execution(
                 stateMachineArn=arn,
                 input=json.dumps(self.get_payload()),
             )
 
             # add execution to DynamoDB record
-            get_event_manager().started_processing(self, exe_response["executionArn"])
+            wfem.started_processing(self, exe_response["executionArn"])
 
             return self["id"]
-        except get_statedb().db.meta.client.exceptions.ConditionalCheckFailedException:
-            get_event_manager().already_processing(self)
+        except (
+            StateDB.get_singleton().db.meta.client.exceptions.ConditionalCheckFailedException
+        ):
+            wfem.already_processing(self)
             return None
         except get_stepfunctions().exceptions.StateMachineDoesNotExist as e:
             # This failure is tracked in the DB and we raise an error
             # so we can handle it specifically, to keep the payload
             # falling through to the DLQ and alerting.
             logger.error(e)
-            get_event_manager().failed(self, str(e))
+            wfem.failed(self, str(e))
             raise TerminalError()
         except Exception as err:
             # This case should be like the above, except we don't know
@@ -280,7 +241,7 @@ class ProcessPayload(dict):
             # here, we should add terminal exception handlers for them.
             msg = f"failed starting workflow ({err})"
             self.logger.exception(msg)
-            get_event_manager().failed(self, msg)
+            wfem.failed(self, msg)
             raise
 
 
@@ -313,15 +274,16 @@ class ProcessPayloads:
         Returns:
             ProcessPayloads: A ProcessPayloads instance
         """
+        statedb = StateDB.get_singleton()
         items = [
-            get_statedb().dbitem_to_item(get_statedb().get_dbitem(payload_id))
+            statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
             for payload_id in payload_ids
         ]
         payloads = []
         for item in items:
             payload = ProcessPayload(s3().read_json(item["payload"]))
             payloads.append(payload)
-        logger.debug(f"Retrieved {len(payloads)} from state db")
+        logger.debug("Retrieved %s from state db", len(payloads))
         return cls(payloads, state_items=items)
 
     @classmethod
@@ -345,27 +307,27 @@ class ProcessPayloads:
         Returns:
             ProcessPayloads: ProcessPayloads instance
         """
+        statedb = StateDB.get_singleton()
         payloads = []
-        items = get_statedb().get_items(collections, state, since, index, limit=limit)
-        logger.debug(f"Retrieved {len(items)} total items from statedb")
+        items = statedb.get_items(collections, state, since, index, limit=limit)
+        logger.debug("Retrieved %s total items from statedb", len(items))
         for item in items:
             payload = ProcessPayload(s3().read_json(item["payload"]))
             payloads.append(payload)
-        logger.debug(f"Retrieved {len(payloads)} process payloads")
+        logger.debug("Retrieved %s process payloads", len(payloads))
         return cls(payloads, state_items=items)
 
     def get_states(self) -> dict[str, StateEnum]:
         if self.state_items is None:
+            statedb = StateDB.get_singleton()
             items = [
-                get_statedb().dbitem_to_item(i)
-                for i in get_statedb().get_dbitems(self.payload_ids)
+                statedb.dbitem_to_item(i) for i in statedb.get_dbitems(self.payload_ids)
             ]
             self.state_items = items
         states = {c["payload_id"]: StateEnum(c["state"]) for c in self.state_items}
         return states
 
-    @EventManagerFlush()
-    def process(self, replace=False):
+    def process(self, wfem: WorkflowEventManager, replace=False):
         """Create Item in Cirrus State DB for each ProcessPayload and add to processing queue"""
         payload_ids = {
             "started": [],
@@ -387,11 +349,11 @@ class ProcessPayloads:
                 or payload["id"] in payload_ids["skipped"]
                 or payload["id"] in payload_ids["failed"]
             ):
-                get_event_manager().duplicated(payload)
+                wfem.duplicated(payload)
                 payload_ids["dropped"].append(payload["id"])
             elif state in [StateEnum.FAILED, StateEnum.ABORTED, ""] or _replace:
                 try:
-                    payload_id = payload()
+                    payload_id = payload(wfem)
                 except TerminalError:
                     payload_ids["failed"].append(payload["id"])
                 else:
@@ -400,8 +362,10 @@ class ProcessPayloads:
                     else:
                         payload_ids["skipped"].append(payload["id"])
             else:
-                logger.info(f"Skipping {payload['id']}, input already in {state} state")
-                get_event_manager().skipping(payload, state)
+                logger.info(
+                    "Skipping %s, input already in %s state", payload["id"], state
+                )
+                wfem.skipping(payload, state)
                 payload_ids["skipped"].append(payload["id"])
                 continue
 

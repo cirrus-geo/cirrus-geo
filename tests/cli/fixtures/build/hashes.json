@@ -40,8 +40,8 @@
     "size": 83
   },
   "lambdas/update-state/lambda_function.py": {
-    "shasum": "218f3fc803bd0279e0ae729bf24891182b09a95f6512d07e068a92441fea83d9",
-    "size": 7490
+    "shasum": "d8ef3a577c9ba3189aa3a677969b1133779343dbb20f4b60a924b7b62b60e8cb",
+    "size": 7617
   },
   "lambdas/publish/requirements.txt": {
     "shasum": "e5f05c7df535c6dfb7c9eab53bbb4bdebea7ee03f1894c58410795dfcb398538",
@@ -104,8 +104,8 @@
     "size": 26
   },
   "lambdas/process/lambda_function.py": {
-    "shasum": "abd0b6e22f488c602395bab42896bc07bb3a4594f292e496fbc1d55343c00dab",
-    "size": 3380
+    "shasum": "bc2df246e14e6e2757acd37ffd41f1f58e433f32358261c481e88b53095270e2",
+    "size": 3290
   },
   "cirrus/lib2/logging.py": {
     "shasum": "eccfdad4b87f655ea68fb993bd29067116aeb6e2043f2edeb17034fd5d4d895b",
@@ -116,8 +116,8 @@
     "size": 1154
   },
   "cirrus/lib2/events.py": {
-    "shasum": "3ee5e5d4af41baba4d729427fa1b46200e7a63c87d52b1c117098859160324b6",
-    "size": 8613
+    "shasum": "3710161359f0ea11611242da37af58e110715223debf0d1a17d50443cb5b580a",
+    "size": 9867
   },
   "cirrus/lib2/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -128,19 +128,19 @@
     "size": 6450
   },
   "cirrus/lib2/utils.py": {
-    "shasum": "bf46c603a21e9c2de4a132cb589712f50733823d053a70e45188cc088b4b32a6",
-    "size": 14235
+    "shasum": "c4923fe14bbe70deb9cafaeba28e47c7d525429e4d19d0f53bc09565b75ba91c",
+    "size": 14328
   },
   "cirrus/lib2/errors.py": {
     "shasum": "94ff1e0410118c41269067a37f3eeae6fd040fa5c727e054ebcb7df1a4583a59",
     "size": 237
   },
   "cirrus/lib2/statedb.py": {
-    "shasum": "0577ac169f890395c6d6f45f06b5a81961b97dcfa94947bc443e0992cff396dd",
-    "size": 24502
+    "shasum": "926f9f1ed06e475558a3f8c2fcb3263d43dbf635e934c2a7ea0bcf6bae0cff23",
+    "size": 24690
   },
   "cirrus/lib2/process_payload.py": {
-    "shasum": "d69ebf8b82e455db2bcedffed99e3e15a0897ac3349a2b2d293933f06e5c9c41",
-    "size": 14421
+    "shasum": "7d6621e4163aaa50cec8c4597242000459392e4ab4ac89eaba0fc5a234ad1f96",
+    "size": 13370
   }
 }

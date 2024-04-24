@@ -10,6 +10,7 @@ from cirrus.lib2.enums import SfnStatus
 from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload
+from cirrus.lib2.statedb import StateDB
 from cirrus.lib2.utils import SNSPublisher, SQSPublisher
 
 logger = get_task_logger("function.update-state", payload=tuple())
@@ -23,11 +24,6 @@ PROCESS_QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 SFN_CLIENT = boto3.client("stepfunctions")
 SQS_CLIENT = boto3.resource("sqs")
 QUEUE = SQS_CLIENT.Queue(PROCESS_QUEUE_URL)
-
-# Cirrus state database
-# and workflow event topic manager  (w/ batch_size = 1 becuase updates don't batch)
-wf_event_manager = WorkflowEventManager(logger=logger, batch_size=1)
-statedb = wf_event_manager.statedb
 
 # how many execution events to request/check
 # for an error cause in a FAILED state
@@ -47,7 +43,7 @@ class Execution:
     status: SfnStatus
     error: Optional[dict]
 
-    def update_state(self) -> None:
+    def update_state(self, wfem) -> None:
         status_update_map = {
             SfnStatus.SUCCEEDED: workflow_completed,
             SfnStatus.FAILED: workflow_failed,
@@ -58,7 +54,7 @@ class Execution:
         if self.status not in status_update_map:
             raise ValueError(f"Status does not support updates: {self.status}")
 
-        status_update_map[self.status](self)
+        status_update_map[self.status](self, wf_event_manager=wfem)
 
     @classmethod
     def from_event(cls, event: Dict[str, Any]) -> "Execution":
@@ -105,7 +101,9 @@ def mk_error(error: str, cause: str) -> Dict[str, str]:
     }
 
 
-def workflow_completed(execution: Execution) -> None:
+def workflow_completed(
+    execution: Execution, wf_event_manager: WorkflowEventManager
+) -> None:
     # I think changing the state should be done before
     # trying the sns publish, but I could see it the other
     # way too. If we have issues here we might want to consider
@@ -118,11 +116,15 @@ def workflow_completed(execution: Execution) -> None:
                 publisher.add(json.dumps(next_payload))
 
 
-def workflow_aborted(execution: Execution) -> None:
+def workflow_aborted(
+    execution: Execution, wf_event_manager: WorkflowEventManager
+) -> None:
     wf_event_manager.aborted(execution.input, execution_arn=execution.arn)
 
 
-def workflow_failed(execution: Execution) -> None:
+def workflow_failed(
+    execution: Execution, wf_event_manager: WorkflowEventManager
+) -> None:
     error_type = "unknown"
     error_msg = "unknown"
 
@@ -159,6 +161,7 @@ def workflow_failed(execution: Execution) -> None:
 
     if notification_topic_arn is not None:
         try:
+            statedb = StateDB.get_singleton()
             item = statedb.dbitem_to_item(statedb.get_dbitem(execution.input["id"]))
             attrs = {
                 "collections": {
@@ -216,6 +219,9 @@ def get_execution_error(arn: str) -> Dict[str, str]:
     return error
 
 
-def lambda_handler(event: Dict[str, Any], _context: Any) -> None:
+@WorkflowEventManager.with_wfem(logger=logger)
+def lambda_handler(
+    event: Dict[str, Any], context: Any, *, wfem: WorkflowEventManager
+) -> None:
     logger.debug(event)
-    Execution.from_event(event).update_state()
+    Execution.from_event(event).update_state(wfem)

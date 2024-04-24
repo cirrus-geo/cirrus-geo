@@ -68,6 +68,7 @@ def check_response_code(
 
 class StateDB:
     limit = None
+    _statedb = None
 
     def __init__(
         self,
@@ -91,6 +92,13 @@ class StateDB:
         self.db = session.resource("dynamodb")
         self.table_name = table_name
         self.table = self.db.Table(table_name)
+
+    @classmethod
+    def get_singleton(cls):
+        """DESCRIBE WHY"""
+        if cls._statedb is None:
+            cls._statedb = cls()
+        return cls._statedb
 
     def delete_item(self, payload_id: str):
         key = self.payload_id_to_key(payload_id)
@@ -147,7 +155,7 @@ class StateDB:
             items = []
             for r in resp["Responses"][self.table_name]:
                 items.append(r)
-            logger.debug(f"Fetched {len(items)} items")
+            logger.debug("Fetched %s items", len(items))
             return items
         except Exception:
             msg = "Error fetching items"
