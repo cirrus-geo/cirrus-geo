@@ -174,7 +174,8 @@ class ProcessPayload(dict):
         ] = f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
 
     @staticmethod
-    def upload_to_s3(payload, bucket: str = None) -> str:
+    def upload_to_s3(payload: dict, bucket: str = None) -> str:
+        """Helper function to upload a dict (not necessarily a ProcessPayload) to s3"""
         # url-payloads do not need to be re-uploaded
         if "url" in payload:
             return payload["url"]
@@ -361,7 +362,9 @@ class ProcessPayloads:
                 or payload["id"] in payload_ids["skipped"]
                 or payload["id"] in payload_ids["failed"]
             ):
-                wfem.duplicated(payload["id"])
+                wfem.duplicated(
+                    payload["id"], payload_url=StateDB.payload_id_to_url(payload["id"])
+                )
                 payload_ids["dropped"].append(payload["id"])
             elif state in [StateEnum.FAILED, StateEnum.ABORTED, ""] or _replace:
                 try:
@@ -380,6 +383,7 @@ class ProcessPayloads:
                 wfem.skipping(
                     payload["id"],
                     state,
+                    payload_url=StateDB.payload_id_to_url(payload["id"]),
                 )
                 payload_ids["skipped"].append(payload["id"])
                 continue
