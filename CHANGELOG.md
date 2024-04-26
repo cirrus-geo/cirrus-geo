@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Collections are not assigned by any of the built-in functions or tasks. ([#266])
+
+### Removed
+
+- `ProcessPayload.assign_collections()` removed in favor of having tasks assign
+  collections to items themselves (which happens automatically when using
+  stac-task. ([#266])
+
 ## [v0.10.1] - 2024-01-10
 
 ### Fixed
@@ -648,8 +660,7 @@ cleanup steps.
 
 Initial release
 
-<!-- [unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.0...main -->
-
+[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.1...main
 [v0.10.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.10.0...v0.10.1
 [v0.10.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.9.0...v0.10.0
 [v0.9.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.8.0...v0.9.0
@@ -718,7 +729,6 @@ Initial release
 [#173]: https://github.com/cirrus-geo/cirrus-geo/issues/173
 [#174]: https://github.com/cirrus-geo/cirrus-geo/issues/174
 [#177]: https://github.com/cirrus-geo/cirrus-geo/issues/177
-[#178]: https://github.com/cirrus-geo/cirrus-geo/issues/178
 [#180]: https://github.com/cirrus-geo/cirrus-geo/issues/180
 [#182]: https://github.com/cirrus-geo/cirrus-geo/issues/182
 [#193]: https://github.com/cirrus-geo/cirrus-geo/issues/193
@@ -734,10 +744,10 @@ Initial release
 [#160]: https://github.com/cirrus-geo/cirrus-geo/pull/160
 [#224]: https://github.com/cirrus-geo/cirrus-geo/pull/224
 [#231]: https://github.com/cirrus-geo/cirrus-geo/pull/231
-[f25acd4f]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
+[#266]: https://github.com/cirrus-geo/cirrus-geo/pull/266
+[f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
-[1e652f2]: https://github.com/cirrus-geo/cirrus-geo/commit/1e652f20ef38298f56ebc81aea0d61aaad135f67
 [9f56981]: https://github.com/cirrus-geo/cirrus-geo/commit/9f569819d1c4a59fc71f15642b3ea0b30058c885
 [44bebc5]: https://github.com/cirrus-geo/cirrus-geo/commit/44bebc5d1e2d802fc0e596be381fb3e1e1042170
 [ba3e04b]: https://github.com/cirrus-geo/cirrus-geo/commit/ba3e04ba2c2ae554fecf9b80e22c71690a9eb518
