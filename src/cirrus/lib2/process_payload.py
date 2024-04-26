@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 import uuid
 import warnings
 from copy import deepcopy
@@ -106,9 +105,6 @@ class ProcessPayload(dict):
             if "links" not in item:
                 item["links"] = []
 
-        # update collection IDs of member Items
-        self.assign_collections()
-
         self.state_item = state_item
 
     @classmethod
@@ -186,22 +182,6 @@ class ProcessPayload(dict):
             "id"
         ] = f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
 
-    # assign collections to Items given a mapping of Col ID: ID regex
-    def assign_collections(self):
-        """Assign new collections to all Items (features) in ProcessPayload
-        based on self.process['upload_options']['collections']
-        """
-        collections = self.process["upload_options"].get("collections", {})
-        # loop through all Items in ProcessPayload
-        for item in self.features:
-            # loop through all provided output collections regexs
-            for col in collections:
-                regex = re.compile(collections[col])
-                if regex.match(item["id"]):
-                    self.logger.debug(f"Setting collection to {col}")
-                    item["collection"] = col
-                    break
-
     def get_payload(self) -> dict:
         """Get original payload for this ProcessPayload
 
@@ -217,7 +197,7 @@ class ProcessPayload(dict):
         else:
             return dict(self)
 
-    def __call__(self) -> str:
+    def __call__(self) -> str | None:
         """Add this ProcessPayload to Cirrus and start workflow
 
         Returns:

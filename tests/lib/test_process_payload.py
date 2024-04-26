@@ -99,13 +99,6 @@ def test_from_event(sqs_event):
     )
 
 
-def test_assign_collections(base_payload):
-    payload = ProcessPayload(base_payload)
-    payload["process"]["upload_options"]["collections"] = {"test": ".*"}
-    payload.assign_collections()
-    assert payload["features"][0]["collection"] == "test"
-
-
 def test_next_payloads_no_list(base_payload):
     payloads = list(ProcessPayload.from_event(base_payload).next_payloads())
     assert len(payloads) == 0
