@@ -321,7 +321,6 @@ class BatchHandler:
         batch_size: int = 10,
         dest_name: str = "default",
         logger: logging.Logger = None,
-        boto3_session: boto3.Session = None,
     ):
         """
         Handles dispatch of messages to AWS functions which support batched operation.
@@ -344,7 +343,6 @@ class BatchHandler:
         self.dest_name = dest_name
         self._batch = []
         self.logger = logger if logger is not None else logging.getLogger(__name__)
-        self.boto3_session = boto3_session if boto3_session else boto3.Session()
 
     def add(self, message: str):
         """
