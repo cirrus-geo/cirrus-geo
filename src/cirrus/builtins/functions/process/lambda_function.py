@@ -3,7 +3,7 @@ import json
 from cirrus.lib2 import utils
 from cirrus.lib2.enums import WFEventType
 from cirrus.lib2.errors import NoUrlError
-from cirrus.lib2.events import WorkflowEventManager
+from cirrus.lib2.events import WorkflowEvent, WorkflowEventManager
 from cirrus.lib2.logging import defer, get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload, ProcessPayloads
 
@@ -28,10 +28,13 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
         except Exception as exc:
             logger.exception("Failed to extract record: %s", message)
             wfem.announce(
-                WFEventType.RECORD_EXTRACT_FAILED,
-                payload_id="unknown",
-                payload_url=ProcessPayload.upload_to_s3(message),
-                extra_message={"exception": str(exc)},
+                WorkflowEvent(
+                    event_type=WFEventType.RECORD_EXTRACT_FAILED,
+                    payload_id="unknown",
+                    isotimestamp=wfem.isotimestamp_now(),
+                    payload_url=ProcessPayload.upload_to_s3(message),
+                    error=str(exc),
+                ),
             )
             failures.append(message)
             continue
@@ -51,10 +54,13 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
                 "Failed to convert to ProcessPayload: %s", json.dumps(payload)
             )
             wfem.announce(
-                WFEventType.NOT_A_PROCESS_PAYLOAD,
-                payload_id=payload.get("id", "unknown"),
-                payload_url=ProcessPayload.upload_to_s3(payload),
-                extra_message={"exception": str(exc)},
+                WorkflowEvent(
+                    event_type=WFEventType.NOT_A_PROCESS_PAYLOAD,
+                    payload_id=payload.get("id", "unknown"),
+                    isotimestamp=wfem.isotimestamp_now(),
+                    payload_url=ProcessPayload.upload_to_s3(payload),
+                    error=str(exc),
+                ),
             )
             failures.append(payload)
             continue
