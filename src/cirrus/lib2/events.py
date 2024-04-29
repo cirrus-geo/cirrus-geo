@@ -11,7 +11,7 @@ import boto3
 from .enums import StateEnum, WFEventType
 from .eventdb import EventDB
 from .statedb import StateDB
-from .utils import SNSPublisher
+from .utils import PAYLOAD_ID_REGEX, SNSPublisher
 
 
 @dataclass
@@ -22,6 +22,29 @@ class WorkflowEvent:
     payload_url: Optional[str] = None
     execution_arn: Optional[str] = None
     error: Optional[Dict[str, Any]] = None
+
+    def serialize(self):
+        return json.dumps({x: y for (x, y) in vars(self).items() if y})
+
+    def sns_attributes(self):
+
+        attrs = {
+            "event_type": {
+                "DataType": "String",
+                "StringValue": self.event_type,
+            }
+        }
+
+        if match := PAYLOAD_ID_REGEX.match(self.payload_id):
+            attrs["workflow"] = {
+                "DataType": "String",
+                "StringValue": match.group("workflow"),
+            }
+            attrs["collections"] = {
+                "DataType": "String",
+                "StringValue": match.group("collections"),
+            }
+        return attrs
 
 
 class WorkflowEventManager:
@@ -110,13 +133,7 @@ class WorkflowEventManager:
             return
 
         self.event_publisher.add(
-            message=json.dumps({x: y for (x, y) in vars(message).items() if y}),
-            message_attrs={
-                "event_type": {
-                    "DataType": "String",
-                    "StringValue": message.event_type,
-                }
-            },
+            message=message.serialize(), message_attrs=message.sns_attributes()
         )
 
     def claim_processing(

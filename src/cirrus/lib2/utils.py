@@ -20,6 +20,10 @@ QUEUE_ARN_REGEX = re.compile(
     r"^arn:aws:sqs:(?P<region>[\-a-z0-9]+):(?P<account_id>\d+):(?P<name>[\-_a-zA-Z0-9]+)$",
 )
 
+PAYLOAD_ID_REGEX = re.compile(
+    r"(?P<collections>.+)/workflow-(?P<workflow>[^/]+)/(?P<itemids>.+)"
+)
+
 batch_client = None
 sqs_client = None
 
