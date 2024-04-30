@@ -1,10 +1,11 @@
 import json
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import wraps
 from logging import Logger, getLogger
-from typing import Any, Callable, Dict, Optional
+from typing import Optional
 
 import boto3
 
@@ -21,13 +22,12 @@ class WorkflowEvent:
     isotimestamp: str
     payload_url: Optional[str] = None
     execution_arn: Optional[str] = None
-    error: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
 
     def serialize(self):
         return json.dumps({x: y for (x, y) in vars(self).items() if y})
 
-    def sns_attributes(self):
-
+    def sns_attributes(self) -> dict[str, dict[str, str]]:
         attrs = {
             "event_type": {
                 "DataType": "String",
@@ -44,6 +44,8 @@ class WorkflowEvent:
                 "DataType": "String",
                 "StringValue": match.group("collections"),
             }
+        if self.error is not None:
+            attrs["error"] = {"DataType": "String", "StringValue": self.error}
         return attrs
 
 
@@ -344,7 +346,7 @@ class WorkflowEventManager:
 
     def _write_timeseries_record(
         self: "WorkflowEventManager",
-        key: Dict[str, str],
+        key: dict[str, str],
         state: StateEnum,
         event_time: str,
         execution_arn: str,

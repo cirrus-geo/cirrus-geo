@@ -1,3 +1,4 @@
+import json
 import sys
 from itertools import product
 
@@ -6,6 +7,7 @@ from moto.core import DEFAULT_ACCOUNT_ID
 from moto.sns import sns_backends
 
 from cirrus.lib2.enums import SfnStatus
+from cirrus.lib2.events import WorkflowEvent
 from cirrus.test import run_function
 
 EVENT_PAYLOAD_ID = "test-collection/workflow-test-workflow/test-id"
@@ -85,8 +87,14 @@ def test_workflow_event_notification(
 
     assert len(all_sent_notifications) == expected_msg_count
     if wf_event_enabled:
-        assert f'"event_type": "{sfn_state}"' in all_sent_notifications[0][1]
-        assert f'"payload_id": "{EVENT_PAYLOAD_ID}"' in all_sent_notifications[0][1]
+        wfevent = WorkflowEvent(**json.loads(all_sent_notifications[0][1]))
+        # This works because update-state WFEventTypes happen to
+        # have the same value as the associated SfnStatus.  If this changes, a
+        # SfnStatus_to_WFEventType mapping would be needed.
+        assert wfevent.event_type == sfn_state
+        assert wfevent.payload_id == EVENT_PAYLOAD_ID
+        if sfn_state == SfnStatus.FAILED:
+            assert wfevent.error is not None
 
 
 def test_success(event, statedb):

@@ -22,8 +22,6 @@ PROCESS_QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 
 # boto3 clients
 SFN_CLIENT = boto3.client("stepfunctions")
-SQS_CLIENT = boto3.resource("sqs")
-QUEUE = SQS_CLIENT.Queue(PROCESS_QUEUE_URL)
 
 # how many execution events to request/check
 # for an error cause in a FAILED state

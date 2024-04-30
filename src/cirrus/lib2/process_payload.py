@@ -362,6 +362,7 @@ class ProcessPayloads:
                 or payload["id"] in payload_ids["skipped"]
                 or payload["id"] in payload_ids["failed"]
             ):
+                logger.warning("Dropping duplicated payload %s", payload["id"])
                 wfem.duplicated(
                     payload["id"], payload_url=StateDB.payload_id_to_url(payload["id"])
                 )
