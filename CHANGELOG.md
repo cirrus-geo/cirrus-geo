@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### ⚠️ Deprecations
+
+- Both the `CIRRUS_FAILED_TOPIC_ARN` and `CIRRUS_INVALID_TOPIC_ARN` SNS Topics
+  have been deprecated, and the `CIRRUS_WORKFLOW_EVENT_TOPIC_ARN` Topic should
+  be used by subscriptions which need to act on failed or invalid workflows.
+
 ### Added
 
 - `cirrus-<stage>-workflow-event` SNS topic, and
