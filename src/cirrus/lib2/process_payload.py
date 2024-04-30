@@ -7,27 +7,18 @@ import uuid
 import warnings
 from copy import deepcopy
 
-import boto3
 import jsonpath_ng.ext as jsonpath
 from boto3utils import s3
+from botocore.exceptions import ClientError
 
 from cirrus.lib2.enums import StateEnum
 from cirrus.lib2.errors import NoUrlError
 from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import extract_event_records, payload_from_s3
+from cirrus.lib2.utils import extract_event_records, get_client, payload_from_s3
 
 logger = logging.getLogger(__name__)
-
-_STEPFUNCTIONS = None
-
-
-def get_stepfunctions():
-    global _STEPFUNCTIONS
-    if _STEPFUNCTIONS is None:
-        _STEPFUNCTIONS = boto3.client("stepfunctions")
-    return _STEPFUNCTIONS
 
 
 class TerminalError(Exception):
@@ -223,7 +214,7 @@ class ProcessPayload(dict):
 
             # invoke step function
             self.logger.debug("Running Step Function %s", arn)
-            exe_response = get_stepfunctions().start_execution(
+            exe_response = get_client("stepfunctions").start_execution(
                 stateMachineArn=arn,
                 input=json.dumps(self.get_payload()),
             )
@@ -234,18 +225,18 @@ class ProcessPayload(dict):
             )
 
             return self["id"]
-        except (
-            StateDB.get_singleton().db.meta.client.exceptions.ConditionalCheckFailedException
-        ):
-            wfem.already_processing(self["id"], payload_url=url)
-            return None
-        except get_stepfunctions().exceptions.StateMachineDoesNotExist as e:
-            # This failure is tracked in the DB and we raise an error
-            # so we can handle it specifically, to keep the payload
-            # falling through to the DLQ and alerting.
-            logger.error(e)
-            wfem.failed(self["id"], str(e), payload_url=url)
-            raise TerminalError()
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                wfem.already_processing(self["id"], payload_url=url)
+                return None
+            elif e.response["Error"]["Code"] == "StateMachineDoesNotExist":
+                # This failure is tracked in the DB and we raise an error
+                # so we can handle it specifically, to keep the payload
+                # falling through to the DLQ and alerting.
+                logger.error(e)
+                wfem.failed(self["id"], str(e), payload_url=url)
+                raise TerminalError()
+            raise
         except Exception as err:
             # This case should be like the above, except we don't know
             # why it happened. We'll be conservative and not raise a
@@ -259,8 +250,9 @@ class ProcessPayload(dict):
 
 
 class ProcessPayloads:
-    def __init__(self, process_payloads, state_items=None):
+    def __init__(self, process_payloads, statedb, state_items=None):
         self.payloads = process_payloads
+        self.statedb = statedb
         if state_items:
             assert len(state_items) == len(self.payloads)
         self.state_items = state_items
@@ -287,7 +279,7 @@ class ProcessPayloads:
         Returns:
             ProcessPayloads: A ProcessPayloads instance
         """
-        statedb = StateDB.get_singleton()
+        statedb = StateDB()
         items = [
             statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
             for payload_id in payload_ids
@@ -297,7 +289,7 @@ class ProcessPayloads:
             payload = ProcessPayload(s3().read_json(item["payload"]))
             payloads.append(payload)
         logger.debug("Retrieved %s from state db", len(payloads))
-        return cls(payloads, state_items=items)
+        return cls(payloads, statedb=statedb, state_items=items)
 
     @classmethod
     def from_statedb(
@@ -320,7 +312,7 @@ class ProcessPayloads:
         Returns:
             ProcessPayloads: ProcessPayloads instance
         """
-        statedb = StateDB.get_singleton()
+        statedb = StateDB()
         payloads = []
         items = statedb.get_items(collections, state, since, index, limit=limit)
         logger.debug("Retrieved %s total items from statedb", len(items))
@@ -328,13 +320,13 @@ class ProcessPayloads:
             payload = ProcessPayload(s3().read_json(item["payload"]))
             payloads.append(payload)
         logger.debug("Retrieved %s process payloads", len(payloads))
-        return cls(payloads, state_items=items)
+        return cls(payloads, statedb=statedb, state_items=items)
 
     def get_states(self) -> dict[str, StateEnum]:
         if self.state_items is None:
-            statedb = StateDB.get_singleton()
             items = [
-                statedb.dbitem_to_item(i) for i in statedb.get_dbitems(self.payload_ids)
+                self.statedb.dbitem_to_item(i)
+                for i in self.statedb.get_dbitems(self.payload_ids)
             ]
             self.state_items = items
         states = {c["payload_id"]: StateEnum(c["state"]) for c in self.state_items}

@@ -4,14 +4,12 @@ from dataclasses import dataclass
 from os import getenv
 from typing import Any, Dict, Optional
 
-import boto3
-
 from cirrus.lib2.enums import SfnStatus
 from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import SNSPublisher, SQSPublisher
+from cirrus.lib2.utils import SNSPublisher, SQSPublisher, get_client
 
 logger = get_task_logger("function.update-state", payload=tuple())
 
@@ -21,7 +19,7 @@ INVALID_TOPIC_ARN = getenv("CIRRUS_INVALID_TOPIC_ARN", None)
 PROCESS_QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 
 # boto3 clients
-SFN_CLIENT = boto3.client("stepfunctions")
+SFN_CLIENT = get_client("stepfunctions")
 
 # how many execution events to request/check
 # for an error cause in a FAILED state

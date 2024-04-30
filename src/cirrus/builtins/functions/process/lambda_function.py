@@ -6,6 +6,7 @@ from cirrus.lib2.errors import NoUrlError
 from cirrus.lib2.events import WorkflowEvent, WorkflowEventManager
 from cirrus.lib2.logging import defer, get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload, ProcessPayloads
+from cirrus.lib2.statedb import StateDB
 
 logger = get_task_logger("function.process", payload=tuple())
 
@@ -77,7 +78,7 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
     processed_ids = set()
     processed = {"started": []}
     if len(payloads) > 0:
-        processed = ProcessPayloads(payloads).process(wfem)
+        processed = ProcessPayloads(payloads, StateDB()).process(wfem)
         processed_ids = {pid for state in processed.keys() for pid in processed[state]}
 
     successful_sqs_messages = [

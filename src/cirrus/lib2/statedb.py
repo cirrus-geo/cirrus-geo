@@ -8,6 +8,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 
 from .enums import StateEnum
+from .utils import execution_url, get_resource
 
 # logging
 logger = logging.getLogger(__name__)
@@ -85,20 +86,10 @@ class StateDB:
         if not table_name:
             raise ValueError("env var CIRRUS_STATE_DB must be defined")
 
-        if not session:
-            session = boto3.Session()
-
         # initialize client
-        self.db = session.resource("dynamodb")
+        self.db = get_resource("dynamodb", session)
         self.table_name = table_name
         self.table = self.db.Table(table_name)
-
-    @classmethod
-    def get_singleton(cls):
-        """DESCRIBE WHY"""
-        if cls._statedb is None:
-            cls._statedb = cls()
-        return cls._statedb
 
     def delete_item(self, payload_id: str):
         key = self.payload_id_to_key(payload_id)
@@ -649,9 +640,7 @@ class StateDB:
         return resp
 
     @classmethod
-    def dbitem_to_item(
-        cls, dbitem: Dict, region: str = os.getenv("AWS_REGION", "us-west-2")
-    ) -> Dict:
+    def dbitem_to_item(cls, dbitem: Dict) -> Dict:
         state, updated = dbitem["state_updated"].split("_")
         collections, workflow = dbitem["collections_workflow"].rsplit("_", maxsplit=1)
         item = {
@@ -665,8 +654,7 @@ class StateDB:
             "payload": cls.payload_id_to_url(cls.key_to_payload_id(dbitem)),
         }
         if "executions" in dbitem:
-            base_url = f"https://{region}.console.aws.amazon.com/states/home?region={region}#/v2/executions/details/"
-            item["executions"] = [base_url + f"{e}" for e in dbitem["executions"]]
+            item["executions"] = [execution_url(e) for e in dbitem["executions"]]
         if "outputs" in dbitem:
             item["outputs"] = dbitem["outputs"]
         if "last_error" in dbitem:

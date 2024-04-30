@@ -7,12 +7,10 @@ from functools import wraps
 from logging import Logger, getLogger
 from typing import Optional
 
-import boto3
-
 from .enums import StateEnum, WFEventType
 from .eventdb import EventDB
 from .statedb import StateDB
-from .utils import PAYLOAD_ID_REGEX, SNSPublisher
+from .utils import PAYLOAD_ID_REGEX, SNSPublisher, execution_url
 
 
 @dataclass
@@ -25,7 +23,19 @@ class WorkflowEvent:
     error: Optional[str] = None
 
     def serialize(self):
-        return json.dumps({x: y for (x, y) in vars(self).items() if y})
+        response = {x: y for (x, y) in vars(self).items() if y}
+        if self.execution_arn:
+            response["execution"] = execution_url(self.execution_arn)
+            del response["execution_arn"]
+        return json.dumps(response)
+
+    @classmethod
+    def from_message(cls, message: str) -> "WorkflowEvent":
+        args = json.loads(message)
+        execution = args.pop("execution", None)
+        if execution is not None:
+            args["execution_arn"] = execution.split("/")[-1]
+        return cls(**args)
 
     def sns_attributes(self) -> dict[str, dict[str, str]]:
         attrs = {
@@ -72,7 +82,6 @@ class WorkflowEventManager:
         batch_size: int = 10,
     ):
         self.logger = logger if logger is not None else getLogger(__name__)
-        self._boto3_session = boto3.Session()
         wf_event_topic_arn = os.getenv("CIRRUS_WORKFLOW_EVENT_TOPIC_ARN")
         self.event_publisher = (
             SNSPublisher(
@@ -83,10 +92,8 @@ class WorkflowEventManager:
             if wf_event_topic_arn
             else None
         )
-        self.statedb = statedb if statedb is not None else StateDB.get_singleton()
-        self.eventdb = (
-            eventdb if eventdb is not None else EventDB(session=self._boto3_session)
-        )
+        self.statedb = statedb if statedb is not None else StateDB()
+        self.eventdb = eventdb if eventdb is not None else EventDB()
 
     def flush(self: "WorkflowEventManager"):
         """Ensure any messages remaining in the batch buffer are sent."""

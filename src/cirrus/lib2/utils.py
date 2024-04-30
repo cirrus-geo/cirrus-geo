@@ -4,6 +4,7 @@ import re
 import uuid
 from collections.abc import Callable
 from contextlib import AbstractContextManager, contextmanager
+from functools import cache
 from os import getenv
 from string import Formatter, Template
 from typing import Any, Optional
@@ -24,22 +25,30 @@ PAYLOAD_ID_REGEX = re.compile(
     r"(?P<collections>.+)/workflow-(?P<workflow>[^/]+)/(?P<itemids>.+)"
 )
 
-batch_client = None
-sqs_client = None
+
+def execution_url(execution_arn: str, region: Optional[str] = None) -> str:
+    if region is None:
+        region = getenv("AWS_REGION", "us-west-2")
+    return (
+        f"https://{region}.console.aws.amazon.com/states/"
+        f"home?region={region}#/v2/executions/details/{execution_arn}"
+    )
 
 
-def get_batch_client():
-    global batch_client
-    if batch_client is None:
-        batch_client = boto3.client("batch")
-    return batch_client
+@cache
+def get_client(service: str, session: Optional[boto3.Session] = None):
+    """Wrapper around boto3 which implements singleton pattern via @cache"""
+    if session is None:
+        session = boto3.Session()
+    return session.client(service)
 
 
-def get_sqs_client():
-    global sqs_client
-    if sqs_client is None:
-        sqs_client = boto3.client("sqs")
-    return sqs_client
+@cache
+def get_resource(service: str, session: Optional[boto3.Session] = None):
+    """Wrapper around boto3 which implements singleton pattern via @cache"""
+    if session is None:
+        session = boto3.Session()
+    return session.resource(service)
 
 
 def submit_batch_job(
@@ -70,7 +79,7 @@ def submit_batch_job(
         },
     }
     logger.debug("Submitted batch job with payload %s", url)
-    response = get_batch_client().submit_job(**kwargs)
+    response = get_client("batch").submit_job(**kwargs)
     logger.debug("Batch response: %s", response)
 
 
@@ -233,7 +242,7 @@ def get_queue_url(message: dict) -> str:
         pass
 
     queue_attrs = parse_queue_arn(arn)
-    queue_url = get_sqs_client().get_queue_url(
+    queue_url = get_client("sqs").get_queue_url(
         QueueName=queue_attrs["name"],
         QueueOwnerAWSAccountId=queue_attrs["account_id"],
     )["QueueUrl"]
@@ -250,7 +259,7 @@ def delete_from_queue(message: dict) -> None:
     else:
         raise ValueError("Message does not have a [rR]eceiptHandle: {message}")
 
-    get_sqs_client().delete_message(
+    get_client("sqs").delete_message(
         QueueUrl=get_queue_url(message),
         ReceiptHandle=receipt_handle,
     )
@@ -297,7 +306,7 @@ def delete_from_queue_batch(messages: list[dict]) -> dict:
                 }
             )
 
-    resp = get_sqs_client().delete_message_batch(
+    resp = get_client("sqs").delete_message_batch(
         QueueUrl=queue_url,
         Entries=_messages,
     )
@@ -410,7 +419,7 @@ class SNSPublisher(BatchHandler):
         """extend BatchHandler constructor to add topic_arn and setup SNS Client"""
         self.topic_arn = topic_arn
         self.dest_name = topic_arn.split(":")[-1]
-        self._sns_client = boto3.client("sns")
+        self._sns_client = get_client("sns")
         super().__init__(
             fn=self._sns_client.publish_batch,
             params={"TopicArn": self.topic_arn, "PublishBatchRequestEntries": []},
@@ -457,7 +466,7 @@ class SQSPublisher(BatchHandler):
         """extend BatchHandler constructor to add queue_url and setup SQS Queue"""
         self.queue_url = queue_url
         self.dest_name = queue_url.split("/")[-1]
-        self._sqs_client = boto3.resource("sqs")
+        self._sqs_client = get_resource("sqs")
         self._queue = self._sqs_client.Queue(self.queue_url)
         super().__init__(
             fn=self._queue.send_messages,

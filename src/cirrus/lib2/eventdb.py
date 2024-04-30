@@ -3,10 +3,8 @@ import os
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 
-import boto3
-
 from .enums import StateEnum
-from .utils import PAYLOAD_ID_REGEX
+from .utils import PAYLOAD_ID_REGEX, get_client
 
 logger = logging.getLogger(__name__)
 
@@ -15,13 +13,9 @@ class EventDB:
     def __init__(
         self,
         event_db_and_table_names: Optional[str] = None,
-        session: Optional[boto3.Session] = None,
     ):
-        if not session:
-            session = boto3.Session()
-
-        self.tsw_client = session.client("timestream-write")
-        self.tsq_client = session.client("timestream-query")
+        self.tsw_client = get_client("timestream-write")
+        self.tsq_client = get_client("timestream-query")
 
         if event_db_and_table_names is None:
             event_db_and_table_names = os.getenv("CIRRUS_EVENT_DB_AND_TABLE")

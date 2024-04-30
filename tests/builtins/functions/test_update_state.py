@@ -1,4 +1,3 @@
-import json
 import sys
 from itertools import product
 
@@ -87,7 +86,7 @@ def test_workflow_event_notification(
 
     assert len(all_sent_notifications) == expected_msg_count
     if wf_event_enabled:
-        wfevent = WorkflowEvent(**json.loads(all_sent_notifications[0][1]))
+        wfevent = WorkflowEvent.from_message(all_sent_notifications[0][1])
         # This works because update-state WFEventTypes happen to
         # have the same value as the associated SfnStatus.  If this changes, a
         # SfnStatus_to_WFEventType mapping would be needed.
