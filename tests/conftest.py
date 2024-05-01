@@ -70,4 +70,4 @@ def eventdb(timestream_write_client) -> EventDB:
 def statedb(dynamo, statedb_schema, eventdb) -> str:
     dynamo.create_table(**statedb_schema)
     table_name = statedb_schema["TableName"]
-    return StateDB(table_name=table_name, eventdb=eventdb)
+    return StateDB(table_name=table_name)

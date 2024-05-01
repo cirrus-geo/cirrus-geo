@@ -64,3 +64,7 @@ lambda:
       Action: secretsmanager:GetSecretValue
       Resource:
         - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*
+    - Effect: "Allow"
+      Action:
+        - sns:Publish
+      Resource: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:#{AWS::StackName}-workflow-event

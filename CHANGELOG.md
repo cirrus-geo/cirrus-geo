@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### ⚠️ Deprecations
+
+- Both the `CIRRUS_FAILED_TOPIC_ARN` and `CIRRUS_INVALID_TOPIC_ARN` SNS Topics
+  have been deprecated, and the `CIRRUS_WORKFLOW_EVENT_TOPIC_ARN` Topic should
+  be used by subscriptions which need to act on failed or invalid workflows.
+
+### Added
+
+- `cirrus-<stage>-workflow-event` SNS topic, and
+  `WorkflowEventManager` class for managing workflow event actions. ([#261])
+  The actions managed by this class include:
+
+  - updating state of workflows in `StateDB`
+  - announcing interactions cirrus has with a payload to the
+    `cirrus-<stage>-workflow-event`
+    Note: To use this topic, existing deployments will need to add the following
+    to their environment in both their `cirrus.yml` file:
+
+    ```yaml
+    CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopic
+    ```
+
+    and add the Topic to their `cloudformation/resources.yml` file:
+
+    ```yaml
+    # SNS Topic for any cirrus interactions with a workflow
+    WorkflowEventTopic:
+      Type: "AWS::SNS::Topic"
+      Properties:
+      TopicName: "#{AWS::StackName}-workflow-event"
+    ```
+
+- Testing of python 3.12. ([#261])
+- `SfnStatus` string enum added for StepFunctions execution status
+  strings. ([#261])
+- Added check of status returned from AWS calls to update the `StateDB` table,
+  which raises a `RuntimeError` including the response if the write fails.
+  This addresses Issue [#202]. ([#263])
+
+### Changed
+
+- Moved `StateEnum` to `cirrus.lib2.enums` module for use across `lib2` and
+  `builtins`. ([#261])
+- Migrated management of timeseries (`EventDB`) events from `StateDB` to
+  `WorkflowEventManager`. ([#263])
+- Provide option to pass in timestamp to `WorkflowEventManager` state-change
+  functions. ([#263])
+
 ## [v0.14.0] - 2024-04-26
 
 ### Changed
@@ -839,6 +887,7 @@ Initial release
 [#180]: https://github.com/cirrus-geo/cirrus-geo/issues/180
 [#182]: https://github.com/cirrus-geo/cirrus-geo/issues/182
 [#193]: https://github.com/cirrus-geo/cirrus-geo/issues/193
+[#202]: https://github.com/cirrus-geo/cirrus-geo/issues/202
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73
@@ -863,6 +912,8 @@ Initial release
 [#254]: https://github.com/cirrus-geo/cirrus-geo/pull/254
 [#256]: https://github.com/cirrus-geo/cirrus-geo/pull/256
 [#259]: https://github.com/cirrus-geo/cirrus-geo/pull/259
+[#261]: https://github.com/cirrus-geo/cirrus-geo/pull/261
+[#263]: https://github.com/cirrus-geo/cirrus-geo/pull/263
 [#264]: https://github.com/cirrus-geo/cirrus-geo/pull/264
 [#266]: https://github.com/cirrus-geo/cirrus-geo/pull/266
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2

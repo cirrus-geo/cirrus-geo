@@ -1,5 +1,12 @@
-import pytest
+import sys
+from itertools import product
 
+import pytest
+from moto.core import DEFAULT_ACCOUNT_ID
+from moto.sns import sns_backends
+
+from cirrus.lib2.enums import SfnStatus
+from cirrus.lib2.events import WorkflowEvent
 from cirrus.test import run_function
 
 EVENT_PAYLOAD_ID = "test-collection/workflow-test-workflow/test-id"
@@ -44,10 +51,55 @@ def test_empty_event():
         run_function("update-state", {})
 
 
-def test_success(event, statedb):
+@pytest.mark.parametrize(
+    "wf_event_enabled,sfn_state", product((True, False), SfnStatus._member_names_)
+)
+def test_workflow_event_notification(
+    event, statedb, workflow_event_topic, wf_event_enabled, sfn_state, monkeypatch
+):
+    """This tests that workflow events are properly published (if `wf_event_enabled`),
+    with the associated StepFunctions State.  It also verifies that the record is added
+    to the `statedb`.  The content of that record is validated in separate
+    `test_{StateEnum}` tests.
+
+    N.B. the tests end with `wf_event_enabled=False`, such that the loaded
+    lambda_function module does not have the SNS publishing enabled, and the other tests
+    do not require the `workflow_event_topic` fixture to create the topic (as it will
+    not be used).
+    """
+    if wf_event_enabled:
+        expected_msg_count = 1
+        monkeypatch.setenv("CIRRUS_WORKFLOW_EVENT_TOPIC_ARN", workflow_event_topic)
+    else:
+        expected_msg_count = 0
+        monkeypatch.delenv("CIRRUS_WORKFLOW_EVENT_TOPIC_ARN", raising=False)
+
+    event["detail"]["status"] = sfn_state
     run_function("update-state", event)
 
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
+    assert len(items) == 1
+    assert "state_updated" in items[0]
+
+    sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
+    all_sent_notifications = sns_backend.topics[workflow_event_topic].sent_notifications
+
+    assert len(all_sent_notifications) == expected_msg_count
+    if wf_event_enabled:
+        wfevent = WorkflowEvent.from_message(all_sent_notifications[0][1])
+        # This works because update-state WFEventTypes happen to
+        # have the same value as the associated SfnStatus.  If this changes, a
+        # SfnStatus_to_WFEventType mapping would be needed.
+        assert wfevent.event_type == sfn_state
+        assert wfevent.payload_id == EVENT_PAYLOAD_ID
+        if sfn_state == SfnStatus.FAILED:
+            assert wfevent.error is not None
+
+
+def test_success(event, statedb):
+    run_function("update-state", event)
+    items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
+
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("COMPLETED")
 
@@ -79,7 +131,30 @@ def test_aborted(event, statedb):
     assert items[0]["state_updated"].startswith("ABORTED")
 
 
-# TODO: test INVALID (requires get-execution-history to resolve InvalidError)
+def test_invalid(event, statedb, monkeypatch):
+    # special loading of the lambda_function as a module from the
+    # update-state, which is not a valid name for a package/module,
+    # so that we can monkeypatch it.
+    run_function("update-state", event)
+
+    lambda_function = sys.modules[
+        "cirrus.builtins.functions.update-state.lambda_function"
+    ]
+    monkeypatch.setattr(
+        lambda_function,
+        "get_execution_error",
+        lambda x: {"Error": "InvalidInput", "Cause": "banana in the tailpipe"},
+    )
+
+    # now run with a failed payload
+    event["detail"]["status"] = "FAILED"
+    run_function("update-state", event)
+
+    items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
+    assert len(items) == 1
+    assert items[0]["state_updated"].startswith("INVALID")
+
+
 # TODO: test URL input
 # TODO: test URL output
 # TODO: test bad payloads

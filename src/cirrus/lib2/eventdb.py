@@ -1,34 +1,21 @@
 import logging
 import os
 from datetime import datetime
-from enum import Enum, unique
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
-import boto3
+from .enums import StateEnum
+from .utils import PAYLOAD_ID_REGEX, get_client
 
 logger = logging.getLogger(__name__)
-
-
-@unique
-class StateEnum(Enum):
-    PROCESSING = "PROCESSING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    INVALID = "INVALID"
-    ABORTED = "ABORTED"
 
 
 class EventDB:
     def __init__(
         self,
         event_db_and_table_names: Optional[str] = None,
-        session: Optional[boto3.Session] = None,
     ):
-        if not session:
-            session = boto3.Session()
-
-        self.tsw_client = session.client("timestream-write")
-        self.tsq_client = session.client("timestream-query")
+        self.tsw_client = get_client("timestream-write")
+        self.tsq_client = get_client("timestream-query")
 
         if event_db_and_table_names is None:
             event_db_and_table_names = os.getenv("CIRRUS_EVENT_DB_AND_TABLE")
@@ -51,9 +38,15 @@ class EventDB:
     def enabled(self) -> bool:
         return bool(self.event_db_name and self.event_table_name)
 
+    @classmethod
+    def _payload_id_to_record_data(cls, payload_id: str) -> Tuple[str, str, str]:
+        if match := PAYLOAD_ID_REGEX.match(payload_id):
+            return match.groups()
+        raise ValueError("payload_id does not match expected pattern: " + payload_id)
+
     def write_timeseries_record(
         self,
-        key: Dict[str, str],
+        payload_id: str,
         state: StateEnum,
         event_time: str,
         execution_arn: str,
@@ -61,27 +54,7 @@ class EventDB:
         if not self.enabled():
             return None
 
-        parts = key.get("collections_workflow", "").rsplit("_", 1)
-        if not len(parts) == 2:
-            logger.error(
-                f"Event could not be recorded, key value collections_workflow was not an underscore-separated value: {key.get('collections_workflow')}"
-            )
-            raise ValueError(
-                "In key dict, value for collections_workflow was not an underscore-separated string"
-            )
-
-        collections = parts[0]
-        workflow = parts[1]
-
-        itemids = key.get("itemids")
-
-        if not all((collections, workflow, itemids)):
-            logger.error(
-                f"Event could not be recorded, key {key} missing values to populate 'workflow', 'collections' or 'itemids'"
-            )
-            raise ValueError(
-                "At least one of 'workflow', 'collections' or 'itemids' could not be determined from key"
-            )
+        collections, workflow, itemids = self._payload_id_to_record_data(payload_id)
 
         event_time_dt = datetime.fromisoformat(event_time)
 
@@ -111,18 +84,18 @@ class EventDB:
             )
             return result
         except self.tsw_client.exceptions.RejectedRecordsException as err:
-            logger.error(f"For {key} Timestream RejectedRecords: {err}")
+            logger.error(f"For {payload_id} Timestream RejectedRecords: {err}")
             for rr in err.response["RejectedRecords"]:
                 logger.error(
-                    f"For {key} Rejected Index {rr['RecordIndex']} : {rr['Reason']}"
+                    f"For {payload_id} Rejected Index {rr['RecordIndex']} : {rr['Reason']}"
                 )
                 if "ExistingVersion" in rr:
                     logger.error(
-                        f"For {key} Rejected record existing version: {rr['ExistingVersion']}"
+                        f"For {payload_id} Rejected record existing version: {rr['ExistingVersion']}"
                     )
             raise err
         except Exception as err:
-            logger.error(f"For {key} Error: {err}")
+            logger.error(f"For {payload_id} Error: {err}")
             raise err
 
     @staticmethod

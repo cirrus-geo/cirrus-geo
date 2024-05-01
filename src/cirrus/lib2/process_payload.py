@@ -7,36 +7,18 @@ import uuid
 import warnings
 from copy import deepcopy
 
-import boto3
 import jsonpath_ng.ext as jsonpath
 from boto3utils import s3
+from botocore.exceptions import ClientError
 
+from cirrus.lib2.enums import StateEnum
 from cirrus.lib2.errors import NoUrlError
+from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import extract_event_records, payload_from_s3
+from cirrus.lib2.utils import extract_event_records, get_client, payload_from_s3
 
-# logging
 logger = logging.getLogger(__name__)
-
-
-# clients
-_statedb = None
-_stepfunctions = None
-
-
-def get_statedb():
-    global _statedb
-    if _statedb is None:
-        _statedb = StateDB()
-    return _statedb
-
-
-def get_stepfunctions():
-    global _stepfunctions
-    if _stepfunctions is None:
-        _stepfunctions = boto3.client("stepfunctions")
-    return _stepfunctions
 
 
 class TerminalError(Exception):
@@ -182,6 +164,18 @@ class ProcessPayload(dict):
             "id"
         ] = f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
 
+    @staticmethod
+    def upload_to_s3(payload: dict, bucket: str = None) -> str:
+        """Helper function to upload a dict (not necessarily a ProcessPayload) to s3"""
+        # url-payloads do not need to be re-uploaded
+        if "url" in payload:
+            return payload["url"]
+        if bucket is None:
+            bucket = os.environ["CIRRUS_PAYLOAD_BUCKET"]
+        url = f"s3://{bucket}/payloads/{uuid.uuid1()}.json"
+        s3().upload_json(payload, url)
+        return url
+
     def get_payload(self) -> dict:
         """Get original payload for this ProcessPayload
 
@@ -190,14 +184,13 @@ class ProcessPayload(dict):
         """
         payload = json.dumps(self)
         payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
-        if payload_bucket and len(payload.encode("utf-8")) > 30000:
-            url = f"s3://{payload_bucket}/payloads/{uuid.uuid1()}.json"
-            s3().upload_json(self, url)
+        if payload_bucket and len(payload.encode("utf-8")) > 250000:
+            url = self.upload_to_s3(payload, payload_bucket)
             return {"url": url}
         else:
             return dict(self)
 
-    def __call__(self) -> str | None:
+    def __call__(self, wfem) -> str | None:
         """Add this ProcessPayload to Cirrus and start workflow
 
         Returns:
@@ -217,29 +210,33 @@ class ProcessPayload(dict):
             s3().upload_json(self, url)
 
             # create DynamoDB record - this overwrites existing states other than PROCESSING
-            get_statedb().claim_processing(self["id"])
+            wfem.claim_processing(self["id"], payload_url=url)
 
             # invoke step function
-            self.logger.debug(f"Running Step Function {arn}")
-            exe_response = get_stepfunctions().start_execution(
+            self.logger.debug("Running Step Function %s", arn)
+            exe_response = get_client("stepfunctions").start_execution(
                 stateMachineArn=arn,
                 input=json.dumps(self.get_payload()),
             )
 
             # add execution to DynamoDB record
-            get_statedb().set_processing(self["id"], exe_response["executionArn"])
+            wfem.started_processing(
+                self["id"], exe_response["executionArn"], payload_url=url
+            )
 
             return self["id"]
-        except get_statedb().db.meta.client.exceptions.ConditionalCheckFailedException:
-            self.logger.warning("Already in PROCESSING state")
-            return None
-        except get_stepfunctions().exceptions.StateMachineDoesNotExist as e:
-            # This failure is tracked in the DB and we raise an error
-            # so we can handle it specifically, to keep the payload
-            # falling through to the DLQ and alerting.
-            logger.error(e)
-            get_statedb().set_failed(self["id"], str(e))
-            raise TerminalError()
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                wfem.already_processing(self["id"], payload_url=url)
+                return None
+            elif e.response["Error"]["Code"] == "StateMachineDoesNotExist":
+                # This failure is tracked in the DB and we raise an error
+                # so we can handle it specifically, to keep the payload
+                # falling through to the DLQ and alerting.
+                logger.error(e)
+                wfem.failed(self["id"], str(e), payload_url=url)
+                raise TerminalError()
+            raise
         except Exception as err:
             # This case should be like the above, except we don't know
             # why it happened. We'll be conservative and not raise a
@@ -248,13 +245,14 @@ class ProcessPayload(dict):
             # here, we should add terminal exception handlers for them.
             msg = f"failed starting workflow ({err})"
             self.logger.exception(msg)
-            get_statedb().set_failed(self["id"], msg)
+            wfem.failed(self.get("id", "missing"), msg, payload_url=url)
             raise
 
 
 class ProcessPayloads:
-    def __init__(self, process_payloads, state_items=None):
+    def __init__(self, process_payloads, statedb, state_items=None):
         self.payloads = process_payloads
+        self.statedb = statedb
         if state_items:
             assert len(state_items) == len(self.payloads)
         self.state_items = state_items
@@ -281,16 +279,17 @@ class ProcessPayloads:
         Returns:
             ProcessPayloads: A ProcessPayloads instance
         """
+        statedb = StateDB()
         items = [
-            get_statedb().dbitem_to_item(get_statedb().get_dbitem(payload_id))
+            statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
             for payload_id in payload_ids
         ]
         payloads = []
         for item in items:
             payload = ProcessPayload(s3().read_json(item["payload"]))
             payloads.append(payload)
-        logger.debug(f"Retrieved {len(payloads)} from state db")
-        return cls(payloads, state_items=items)
+        logger.debug("Retrieved %s from state db", len(payloads))
+        return cls(payloads, statedb=statedb, state_items=items)
 
     @classmethod
     def from_statedb(
@@ -313,26 +312,27 @@ class ProcessPayloads:
         Returns:
             ProcessPayloads: ProcessPayloads instance
         """
+        statedb = StateDB()
         payloads = []
-        items = get_statedb().get_items(collections, state, since, index, limit=limit)
-        logger.debug(f"Retrieved {len(items)} total items from statedb")
+        items = statedb.get_items(collections, state, since, index, limit=limit)
+        logger.debug("Retrieved %s total items from statedb", len(items))
         for item in items:
             payload = ProcessPayload(s3().read_json(item["payload"]))
             payloads.append(payload)
-        logger.debug(f"Retrieved {len(payloads)} process payloads")
-        return cls(payloads, state_items=items)
+        logger.debug("Retrieved %s process payloads", len(payloads))
+        return cls(payloads, statedb=statedb, state_items=items)
 
-    def get_states(self):
+    def get_states(self) -> dict[str, StateEnum]:
         if self.state_items is None:
             items = [
-                get_statedb().dbitem_to_item(i)
-                for i in get_statedb().get_dbitems(self.payload_ids)
+                self.statedb.dbitem_to_item(i)
+                for i in self.statedb.get_dbitems(self.payload_ids)
             ]
             self.state_items = items
-        states = {c["payload_id"]: c["state"] for c in self.state_items}
+        states = {c["payload_id"]: StateEnum(c["state"]) for c in self.state_items}
         return states
 
-    def process(self, replace=False):
+    def process(self, wfem: WorkflowEventManager, replace=False):
         """Create Item in Cirrus State DB for each ProcessPayload and add to processing queue"""
         payload_ids = {
             "started": [],
@@ -354,11 +354,14 @@ class ProcessPayloads:
                 or payload["id"] in payload_ids["skipped"]
                 or payload["id"] in payload_ids["failed"]
             ):
-                logger.warning(f"Dropping duplicated payload {payload['id']}")
+                logger.warning("Dropping duplicated payload %s", payload["id"])
+                wfem.duplicated(
+                    payload["id"], payload_url=StateDB.payload_id_to_url(payload["id"])
+                )
                 payload_ids["dropped"].append(payload["id"])
-            elif state in ["FAILED", "ABORTED", ""] or _replace:
+            elif state in [StateEnum.FAILED, StateEnum.ABORTED, ""] or _replace:
                 try:
-                    payload_id = payload()
+                    payload_id = payload(wfem)
                 except TerminalError:
                     payload_ids["failed"].append(payload["id"])
                 else:
@@ -367,7 +370,14 @@ class ProcessPayloads:
                     else:
                         payload_ids["skipped"].append(payload["id"])
             else:
-                logger.info(f"Skipping {payload['id']}, input already in {state} state")
+                logger.info(
+                    "Skipping %s, input already in %s state", payload["id"], state
+                )
+                wfem.skipping(
+                    payload["id"],
+                    state,
+                    payload_url=StateDB.payload_id_to_url(payload["id"]),
+                )
                 payload_ids["skipped"].append(payload["id"])
                 continue
 

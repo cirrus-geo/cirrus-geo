@@ -31,6 +31,8 @@ provider:
       Ref: FailedTopic
     CIRRUS_INVALID_TOPIC_ARN:
       Ref: FailedTopic
+    CIRRUS_WORKFLOW_EVENT_TOPIC_ARN:
+      Ref: WorkflowEventTopic
 custom:
   batch:
     SecurityGroupIds:
@@ -146,6 +148,8 @@ functions:
         Ref: FailedTopic
       CIRRUS_INVALID_TOPIC_ARN:
         Ref: FailedTopic
+      CIRRUS_WORKFLOW_EVENT_TOPIC_ARN:
+        Ref: WorkflowEventTopic
     package:
       include:
         - ./lambdas/api/**
@@ -228,6 +232,11 @@ functions:
         Action: secretsmanager:GetSecretValue
         Resource:
           - Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:cirrus-creds-*
+      - Effect: Allow
+        Action:
+          - sns:Publish
+        Resource:
+          Fn::Sub: arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}-workflow-event
     description: Consumes Process Catalogs from queue and invokes workflow
     environment:
       CIRRUS_LOG_LEVEL: DEBUG
@@ -249,6 +258,8 @@ functions:
         Ref: FailedTopic
       CIRRUS_INVALID_TOPIC_ARN:
         Ref: FailedTopic
+      CIRRUS_WORKFLOW_EVENT_TOPIC_ARN:
+        Ref: WorkflowEventTopic
       CIRRUS_BASE_WORKFLOW_ARN:
         Fn::Sub: arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-
     package:
@@ -361,6 +372,8 @@ functions:
         Ref: FailedTopic
       CIRRUS_INVALID_TOPIC_ARN:
         Ref: FailedTopic
+      CIRRUS_WORKFLOW_EVENT_TOPIC_ARN:
+        Ref: WorkflowEventTopic
     package:
       include:
         - ./lambdas/update-state/**
@@ -429,6 +442,8 @@ functions:
         Ref: FailedTopic
       CIRRUS_INVALID_TOPIC_ARN:
         Ref: FailedTopic
+      CIRRUS_WORKFLOW_EVENT_TOPIC_ARN:
+        Ref: WorkflowEventTopic
     package:
       include:
         - ./lambdas/feed-rerun/**
@@ -483,6 +498,8 @@ functions:
         Ref: FailedTopic
       CIRRUS_INVALID_TOPIC_ARN:
         Ref: FailedTopic
+      CIRRUS_WORKFLOW_EVENT_TOPIC_ARN:
+        Ref: WorkflowEventTopic
     package:
       include:
         - ./lambdas/post-batch/**
@@ -532,6 +549,8 @@ functions:
         Ref: FailedTopic
       CIRRUS_INVALID_TOPIC_ARN:
         Ref: FailedTopic
+      CIRRUS_WORKFLOW_EVENT_TOPIC_ARN:
+        Ref: WorkflowEventTopic
     package:
       include:
         - ./lambdas/pre-batch/**
@@ -594,6 +613,8 @@ functions:
         Ref: FailedTopic
       CIRRUS_INVALID_TOPIC_ARN:
         Ref: FailedTopic
+      CIRRUS_WORKFLOW_EVENT_TOPIC_ARN:
+        Ref: WorkflowEventTopic
     package:
       include:
         - ./lambdas/publish/**
@@ -749,6 +770,9 @@ resources:
             - Name: CIRRUS_INVALID_TOPIC_ARN
               Value:
                 Ref: FailedTopic
+            - Name: CIRRUS_WORKFLOW_EVENT_TOPIC_ARN
+              Value:
+                Ref: WorkflowEventTopic
             - Name: AWS_DEFAULT_REGION
               Value:
                 Fn::Sub: ${AWS::Region}
@@ -808,6 +832,9 @@ resources:
             - Name: CIRRUS_INVALID_TOPIC_ARN
               Value:
                 Ref: FailedTopic
+            - Name: CIRRUS_WORKFLOW_EVENT_TOPIC_ARN
+              Value:
+                Ref: WorkflowEventTopic
             - Name: AWS_DEFAULT_REGION
               Value:
                 Fn::Sub: ${AWS::Region}
@@ -824,6 +851,11 @@ resources:
       Properties:
         TopicName:
           Fn::Sub: ${AWS::StackName}-publish
+    WorkflowEventTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName:
+          Fn::Sub: ${AWS::StackName}-workflow-event
     FailedTopic:
       Type: AWS::SNS::Topic
       Properties:
@@ -1235,6 +1267,9 @@ resources:
             - Name: CIRRUS_INVALID_TOPIC_ARN
               Value:
                 Ref: FailedTopic
+            - Name: CIRRUS_WORKFLOW_EVENT_TOPIC_ARN
+              Value:
+                Ref: WorkflowEventTopic
             - Name: GDAL_DATA
               Value: /opt/share/gdal
             - Name: PROJ_LIB

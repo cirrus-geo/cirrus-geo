@@ -4,12 +4,12 @@ from dataclasses import dataclass
 from os import getenv
 from typing import Any, Dict, Optional
 
-import boto3
-
+from cirrus.lib2.enums import SfnStatus
+from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import SNSPublisher, SQSPublisher
+from cirrus.lib2.utils import SNSPublisher, SQSPublisher, get_client
 
 logger = get_task_logger("function.update-state", payload=tuple())
 
@@ -19,21 +19,11 @@ INVALID_TOPIC_ARN = getenv("CIRRUS_INVALID_TOPIC_ARN", None)
 PROCESS_QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 
 # boto3 clients
-SFN_CLIENT = boto3.client("stepfunctions")
-SQS_CLIENT = boto3.resource("sqs")
-QUEUE = SQS_CLIENT.Queue(PROCESS_QUEUE_URL)
-
-# Cirrus state database
-statedb = StateDB()
+SFN_CLIENT = get_client("stepfunctions")
 
 # how many execution events to request/check
 # for an error cause in a FAILED state
 MAX_EXECUTION_EVENTS = 10
-
-SUCCEEDED = "SUCCEEDED"
-FAILED = "FAILED"
-ABORTED = "ABORTED"
-TIMED_OUT = "TIMED_OUT"
 
 INVALID_EXCEPTIONS = (
     "InvalidInput",
@@ -45,22 +35,23 @@ INVALID_EXCEPTIONS = (
 class Execution:
     arn: str
     input: ProcessPayload
+    url: str
     output: ProcessPayload
-    status: str
+    status: SfnStatus
     error: Optional[dict]
 
-    def update_state(self) -> None:
+    def update_state(self, wfem) -> None:
         status_update_map = {
-            SUCCEEDED: workflow_completed,
-            FAILED: workflow_failed,
-            ABORTED: workflow_aborted,
-            TIMED_OUT: workflow_failed,
+            SfnStatus.SUCCEEDED: workflow_completed,
+            SfnStatus.FAILED: workflow_failed,
+            SfnStatus.ABORTED: workflow_aborted,
+            SfnStatus.TIMED_OUT: workflow_failed,
         }
 
         if self.status not in status_update_map:
             raise ValueError(f"Status does not support updates: {self.status}")
 
-        status_update_map[self.status](self)
+        status_update_map[self.status](self, wf_event_manager=wfem)
 
     @classmethod
     def from_event(cls, event: Dict[str, Any]) -> "Execution":
@@ -75,13 +66,13 @@ class Execution:
             status = event["detail"]["status"]
             error = None
 
-            if status == SUCCEEDED:
+            if status == SfnStatus.SUCCEEDED:
                 pass
-            elif status == FAILED:
+            elif status == SfnStatus.FAILED:
                 error = get_execution_error(arn)
-            elif status == ABORTED:
+            elif status == SfnStatus.ABORTED:
                 pass
-            elif status == TIMED_OUT:
+            elif status == SfnStatus.TIMED_OUT:
                 error = mk_error(
                     "TimedOutError",
                     "The step function execution timed out.",
@@ -92,6 +83,11 @@ class Execution:
             return cls(
                 arn=arn,
                 input=_input,
+                url=(
+                    event["url"]
+                    if "url" in event
+                    else ProcessPayload.upload_to_s3(_input)
+                ),
                 output=output,
                 status=status,
                 error=error,
@@ -107,23 +103,30 @@ def mk_error(error: str, cause: str) -> Dict[str, str]:
     }
 
 
-def workflow_completed(execution: Execution) -> None:
+def workflow_completed(
+    execution: Execution, wf_event_manager: WorkflowEventManager
+) -> None:
     # I think changing the state should be done before
     # trying the sns publish, but I could see it the other
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
-    statedb.set_completed(execution.input["id"], execution_arn=execution.arn)
+    wf_event_manager.succeeded(execution.input["id"], execution_arn=execution.arn)
     if execution.output:
+        # TODO: add test of workflow chaining
         with SQSPublisher.get_handler(PROCESS_QUEUE_URL, logger=logger) as publisher:
             for next_payload in execution.output.next_payloads():
                 publisher.add(json.dumps(next_payload))
 
 
-def workflow_aborted(execution: Execution) -> None:
-    statedb.set_aborted(execution.input["id"], execution_arn=execution.arn)
+def workflow_aborted(
+    execution: Execution, wf_event_manager: WorkflowEventManager
+) -> None:
+    wf_event_manager.aborted(execution.input["id"], execution_arn=execution.arn)
 
 
-def workflow_failed(execution: Execution) -> None:
+def workflow_failed(
+    execution: Execution, wf_event_manager: WorkflowEventManager
+) -> None:
     error_type = "unknown"
     error_msg = "unknown"
 
@@ -142,12 +145,17 @@ def workflow_failed(execution: Execution) -> None:
 
     try:
         if error_type in INVALID_EXCEPTIONS:
-            statedb.set_invalid(
+            wf_event_manager.invalid(
                 execution.input["id"], error, execution_arn=execution.arn
             )
             notification_topic_arn = INVALID_TOPIC_ARN
+        elif error_type == "TimedOutError":
+            wf_event_manager.timed_out(
+                execution.input["id"], error, execution_arn=execution.arn
+            )
+            notification_topic_arn = FAILED_TOPIC_ARN
         else:
-            statedb.set_failed(
+            wf_event_manager.failed(
                 execution.input["id"], error, execution_arn=execution.arn
             )
             notification_topic_arn = FAILED_TOPIC_ARN
@@ -157,6 +165,7 @@ def workflow_failed(execution: Execution) -> None:
 
     if notification_topic_arn is not None:
         try:
+            statedb = StateDB.get_singleton()
             item = statedb.dbitem_to_item(statedb.get_dbitem(execution.input["id"]))
             attrs = {
                 "collections": {
@@ -214,6 +223,9 @@ def get_execution_error(arn: str) -> Dict[str, str]:
     return error
 
 
-def lambda_handler(event: Dict[str, Any], _context: Any) -> None:
+@WorkflowEventManager.with_wfem(logger=logger)
+def lambda_handler(
+    event: Dict[str, Any], context: Any, *, wfem: WorkflowEventManager
+) -> None:
     logger.debug(event)
-    Execution.from_event(event).update_state()
+    Execution.from_event(event).update_state(wfem)
