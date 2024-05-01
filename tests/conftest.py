@@ -7,8 +7,8 @@ import boto3
 import moto
 import pytest
 
-from cirrus.lib2.eventdb import EventDB
-from cirrus.lib2.statedb import StateDB
+from cirrus.lib.eventdb import EventDB
+from cirrus.lib.statedb import StateDB
 
 
 def set_fake_creds():
@@ -67,7 +67,7 @@ def eventdb(timestream_write_client) -> EventDB:
 
 
 @pytest.fixture
-def statedb(dynamo, statedb_schema, eventdb) -> str:
+def statedb(dynamo, statedb_schema, eventdb) -> StateDB:
     dynamo.create_table(**statedb_schema)
     table_name = statedb_schema["TableName"]
     return StateDB(table_name=table_name)

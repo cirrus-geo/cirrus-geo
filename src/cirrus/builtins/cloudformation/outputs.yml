@@ -1,3 +1,0 @@
-Outputs:
-  CirrusProcessQueue:
-    Value: !Ref ProcessQueue

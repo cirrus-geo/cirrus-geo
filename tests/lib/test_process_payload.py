@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from cirrus.lib2.process_payload import ProcessPayload
-from cirrus.lib2.utils import recursive_compare
+from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib.utils import recursive_compare
 
 fixtures = Path(__file__).parent.joinpath("fixtures")
 
