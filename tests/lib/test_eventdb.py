@@ -3,7 +3,7 @@ import uuid
 
 import pytest
 
-from cirrus.lib2.eventdb import EventDB, StateEnum
+from cirrus.lib.eventdb import EventDB, StateEnum
 
 
 @pytest.fixture

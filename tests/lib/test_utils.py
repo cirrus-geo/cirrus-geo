@@ -2,10 +2,10 @@ import json
 from pathlib import Path
 
 import pytest
-from moto.core import DEFAULT_ACCOUNT_ID
-from moto.sns import sns_backends
+from moto.core.models import DEFAULT_ACCOUNT_ID
+from moto.sns.models import sns_backends
 
-from cirrus.lib2 import utils
+from cirrus.lib import utils
 
 fixtures = Path(__file__).parent.joinpath("fixtures")
 event_dir = fixtures.joinpath("events")
@@ -112,7 +112,9 @@ def test_delete_from_queue(sqs, queue):
         QueueUrl=queue,
         MessageBody="test",
     )
-    msg = sqs.receive_message(QueueUrl=queue,)[
+    msg = sqs.receive_message(
+        QueueUrl=queue,
+    )[
         "Messages"
     ][0]
     msg["eventSourceARN"] = arn
@@ -125,7 +127,9 @@ def test_delete_from_queue_lowercase(sqs, queue):
         QueueUrl=queue,
         MessageBody="test",
     )
-    msg = sqs.receive_message(QueueUrl=queue,)[
+    msg = sqs.receive_message(
+        QueueUrl=queue,
+    )[
         "Messages"
     ][0]
     msg["receiptHandle"] = msg.pop("ReceiptHandle")
@@ -139,7 +143,9 @@ def test_delete_from_queue_bad_message(sqs, queue):
         QueueUrl=queue,
         MessageBody="test",
     )
-    msg = sqs.receive_message(QueueUrl=queue,)[
+    msg = sqs.receive_message(
+        QueueUrl=queue,
+    )[
         "Messages"
     ][0]
     del msg["ReceiptHandle"]

@@ -4,8 +4,8 @@ from datetime import datetime
 
 import pytest
 
-from cirrus.lib2.enums import StateEnum
-from cirrus.lib2.statedb import StateDB
+from cirrus.lib.enums import StateEnum
+from cirrus.lib.statedb import StateDB
 
 os.environ["CIRRUS_PAYLOAD_BUCKET"] = "test"
 
