@@ -1,11 +1,13 @@
 import functools
 import logging
 import os
-from datetime import datetime, timedelta, timezone
+
+from datetime import UTC, datetime, timedelta
 from types import MethodType
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import boto3
+
 from boto3.dynamodb.conditions import Attr, Key
 
 from .enums import StateEnum
@@ -50,7 +52,7 @@ class ValidStateChange:
         return MethodType(self.f, obj)
 
 
-def check_timestamp(timestamp: str = None) -> None:
+def check_timestamp(timestamp: str | None = None) -> None:
     if timestamp is None:
         return
     stamp = datetime.fromisoformat(timestamp)
@@ -59,7 +61,9 @@ def check_timestamp(timestamp: str = None) -> None:
 
 
 def check_response_code(
-    response: dict, msg_prefix: str = "statedb updated", extra: dict = None
+    response: dict,
+    msg_prefix: str = "statedb updated",
+    extra: dict | None = None,
 ):
     """Check dynamodb response code, log appropriately, and raise RuntimeError if not
     successful
@@ -86,8 +90,8 @@ class StateDB:
 
     def __init__(
         self,
-        table_name: Optional[str] = None,
-        session: Optional[boto3.Session] = None,
+        table_name: str | None = None,
+        session: boto3.Session | None = None,
     ):
         """Initialize a StateDB instance using the Cirrus State DB table
 
@@ -115,7 +119,7 @@ class StateDB:
         self.table.delete()
         self.table.wait_until_not_exists()
 
-    def get_dbitem(self, payload_id: str) -> Dict:
+    def get_dbitem(self, payload_id: str) -> dict:
         """Get a DynamoDB item
 
         Args:
@@ -136,7 +140,7 @@ class StateDB:
             logger.error(msg, extra=key.update({"error": err}), exc_info=True)
             raise Exception(msg)
 
-    def get_dbitems(self, payload_ids: List[str]) -> List[Dict]:
+    def get_dbitems(self, payload_ids: list[str]) -> list[dict]:
         """Get multiple DynamoDB Items
 
         Args:
@@ -152,9 +156,9 @@ class StateDB:
             resp = self.db.meta.client.batch_get_item(
                 RequestItems={
                     self.table_name: {
-                        "Keys": [self.payload_id_to_key(x) for x in set(payload_ids)]
-                    }
-                }
+                        "Keys": [self.payload_id_to_key(x) for x in set(payload_ids)],
+                    },
+                },
             )
             items = []
             for r in resp["Responses"][self.table_name]:
@@ -167,8 +171,11 @@ class StateDB:
             raise Exception(msg)
 
     def get_counts(
-        self, collections_workflow: str, limit: int = None, **query_kwargs
-    ) -> Dict:
+        self,
+        collections_workflow: str,
+        limit: int | None = None,
+        **query_kwargs,
+    ) -> dict:
         """Get counts by query
 
         Args:
@@ -202,9 +209,9 @@ class StateDB:
         self,
         collections_workflow: str,
         limit=100,
-        nextkey: str = None,
+        nextkey: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get Items by query
 
         Args:
@@ -217,12 +224,12 @@ class StateDB:
         Returns:
             Dict: List of Items
         """
-        items: Dict[str, Any] = {"items": []}
+        items: dict[str, Any] = {"items": []}
         kwargs.update(
             {
                 "collections_workflow": collections_workflow,
                 "Limit": limit,
-            }
+            },
         )
 
         if nextkey:
@@ -248,7 +255,7 @@ class StateDB:
 
         return items
 
-    def get_items(self, *args, limit=None, **kwargs) -> Dict:
+    def get_items(self, *args, limit=None, **kwargs) -> dict:
         """Get items from database
 
         Args:
@@ -280,7 +287,7 @@ class StateDB:
             # assuming no such item in database
             return ""
 
-    def get_states(self, payload_ids: List[str]) -> Dict[str, StateEnum]:
+    def get_states(self, payload_ids: list[str]) -> dict[str, StateEnum]:
         """Get current state of items
         Args:
             payload_ids (List[str]): List of Payload IDs
@@ -294,7 +301,7 @@ class StateDB:
         return states
 
     @ValidStateChange
-    def claim_processing(self, payload_id: str, isotimestamp: str = None):
+    def claim_processing(self, payload_id: str, isotimestamp: str | None = None):
         """Sets payload_id to PROCESSING to claim it (preventing other runs)
         Args:
             payload_id (str): The Cirrus Payload
@@ -305,7 +312,7 @@ class StateDB:
             ValueError: if isotimestamp is not ISO and UTC
             RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(UTC).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -328,8 +335,11 @@ class StateDB:
 
     @ValidStateChange
     def set_processing(
-        self, payload_id: str, execution_arn: str, isotimestamp: str = None
-    ) -> Dict[str, Any]:
+        self,
+        payload_id: str,
+        execution_arn: str,
+        isotimestamp: str | None = None,
+    ) -> dict[str, Any]:
         """Adds execution to existing item or creates new.
         Args:
             payload_id (str): The Cirrus Payload
@@ -340,7 +350,7 @@ class StateDB:
             ValueError: if isotimestamp is not ISO and UTC
             RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(UTC).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -365,8 +375,11 @@ class StateDB:
 
     @ValidStateChange
     def set_outputs(
-        self, payload_id: str, outputs: List[str], isotimestamp: str = None
-    ) -> Dict:
+        self,
+        payload_id: str,
+        outputs: list[str],
+        isotimestamp: str | None = None,
+    ) -> dict:
         """Set this item's outputs
 
         Args:
@@ -378,7 +391,7 @@ class StateDB:
             ValueError: if isotimestamp is not ISO and UTC
             RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(UTC).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -403,10 +416,10 @@ class StateDB:
     def set_completed(
         self,
         payload_id: str,
-        outputs: Optional[List[str]] = None,
-        execution_arn: Optional[str] = None,
-        isotimestamp: str = None,
-    ) -> Dict:
+        outputs: list[str] | None = None,
+        execution_arn: str | None = None,
+        isotimestamp: str | None = None,
+    ) -> dict:
         """Set this item as COMPLETED
 
         Args:
@@ -419,7 +432,7 @@ class StateDB:
             ValueError: if isotimestamp is not ISO and UTC
             RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(UTC).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -450,9 +463,9 @@ class StateDB:
         self,
         payload_id,
         msg,
-        execution_arn: Optional[str] = None,
-        isotimestamp: str = None,
-    ) -> Dict:
+        execution_arn: str | None = None,
+        isotimestamp: str | None = None,
+    ) -> dict:
         """Adds/updates item with stepfunction execution
         Args:
             payload_id (str): The Cirrus Payload
@@ -465,7 +478,7 @@ class StateDB:
             RuntimeError: if dynamo response HTTPStatusCode not 2xx
 
         """
-        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(UTC).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -492,9 +505,9 @@ class StateDB:
         self,
         payload_id: str,
         msg: str,
-        execution_arn: Optional[str] = None,
-        isotimestamp: str = None,
-    ) -> Dict:
+        execution_arn: str | None = None,
+        isotimestamp: str | None = None,
+    ) -> dict:
         """Set this item as INVALID
 
         Args:
@@ -507,7 +520,7 @@ class StateDB:
             ValueError: if isotimestamp is not ISO and UTC
             RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(UTC).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -533,9 +546,9 @@ class StateDB:
     def set_aborted(
         self,
         payload_id: str,
-        execution_arn: Optional[str] = None,
-        isotimestamp: str = None,
-    ) -> Dict:
+        execution_arn: str | None = None,
+        isotimestamp: str | None = None,
+    ) -> dict:
         """Set this item as ABORTED
 
         Args:
@@ -547,7 +560,7 @@ class StateDB:
             ValueError: if isotimestamp is not ISO and UTC
             RuntimeError: if dynamo response HTTPStatusCode not 2xx
         """
-        now = isotimestamp if isotimestamp else datetime.now(timezone.utc).isoformat()
+        now = isotimestamp if isotimestamp else datetime.now(UTC).isoformat()
         key = self.payload_id_to_key(payload_id)
 
         expr = (
@@ -570,14 +583,14 @@ class StateDB:
     def query(
         self,
         collections_workflow: str,
-        state: str = None,
-        since: str = None,
+        state: str | None = None,
+        since: str | None = None,
         select: str = "ALL_ATTRIBUTES",
         sort_ascending: bool = False,
         sort_index: str = "updated",
-        error_begins_with: str = None,
+        error_begins_with: str | None = None,
         **kwargs,
-    ) -> Dict:
+    ) -> dict:
         """Perform a single Query on a DynamoDB index
 
         Args:
@@ -604,15 +617,15 @@ class StateDB:
 
         if error_begins_with:
             kwargs["FilterExpression"] = Attr("last_error").begins_with(
-                error_begins_with
+                error_begins_with,
             )
 
         # always use the hash of the table which is same in all Global Secondary Indices
         expr = Key("collections_workflow").eq(collections_workflow)
         if since:
-            start = datetime.now(timezone.utc) - self.since_to_timedelta(since)
+            start = datetime.now(UTC) - self.since_to_timedelta(since)
             begin = f"{start.isoformat()}"
-            end = f"{datetime.now(timezone.utc).isoformat()}"
+            end = f"{datetime.now(UTC).isoformat()}"
 
             if state:
                 index = "state_updated"
@@ -641,7 +654,7 @@ class StateDB:
                 "KeyConditionExpression": expr,
                 "Select": select,
                 "ScanIndexForward": sort_ascending,
-            }
+            },
         )
 
         if self.limit and ("Limit" not in kwargs or self.limit < kwargs["Limit"]):
@@ -653,7 +666,7 @@ class StateDB:
         return resp
 
     @classmethod
-    def dbitem_to_item(cls, dbitem: Dict) -> Dict:
+    def dbitem_to_item(cls, dbitem: dict) -> dict:
         state, updated = dbitem["state_updated"].split("_")
         collections, workflow = dbitem["collections_workflow"].rsplit("_", maxsplit=1)
         item = {
@@ -675,7 +688,7 @@ class StateDB:
         return item
 
     @staticmethod
-    def payload_id_to_key(payload_id: str) -> Dict:
+    def payload_id_to_key(payload_id: str) -> dict:
         """Create DynamoDB Key from Payload ID
 
         Args:
@@ -693,7 +706,7 @@ class StateDB:
         return key
 
     @staticmethod
-    def key_to_payload_id(key: Dict) -> str:
+    def key_to_payload_id(key: dict) -> str:
         """Get Payload ID given a DynamoDB Key
 
         Args:

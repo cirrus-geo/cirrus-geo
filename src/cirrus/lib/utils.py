@@ -1,14 +1,16 @@
 import json
 import logging
 import re
+
 from collections.abc import Callable
 from contextlib import AbstractContextManager, contextmanager
 from functools import cache
 from os import getenv
 from string import Formatter, Template
-from typing import Any, Optional
+from typing import Any
 
 import boto3
+
 from boto3utils import s3
 from dateutil.parser import parse as dateparse
 
@@ -21,11 +23,11 @@ QUEUE_ARN_REGEX = re.compile(
 )
 
 PAYLOAD_ID_REGEX = re.compile(
-    r"(?P<collections>.+)/workflow-(?P<workflow>[^/]+)/(?P<itemids>.+)"
+    r"(?P<collections>.+)/workflow-(?P<workflow>[^/]+)/(?P<itemids>.+)",
 )
 
 
-def execution_url(execution_arn: str, region: Optional[str] = None) -> str:
+def execution_url(execution_arn: str, region: str | None = None) -> str:
     if region is None:
         region = getenv("AWS_REGION", "us-west-2")
     return (
@@ -58,8 +60,8 @@ def cold_start(
 @cache
 def get_client(
     service: str,
-    session: Optional[boto3.Session] = None,
-    region: Optional[str] = None,
+    session: boto3.Session | None = None,
+    region: str | None = None,
 ):
     """Wrapper around boto3 which implements singleton pattern via @cache"""
     if session is None:
@@ -73,8 +75,8 @@ def get_client(
 @cache
 def get_resource(
     service: str,
-    session: Optional[boto3.Session] = None,
-    region: Optional[str] = None,
+    session: boto3.Session | None = None,
+    region: str | None = None,
 ):
     """Wrapper around boto3 which implements singleton pattern via @cache"""
     if session is None:
@@ -118,7 +120,10 @@ def get_path(item: dict, template: str = "${collection}/${id}") -> str:
 
 
 def recursive_compare(
-    d1: dict, d2: dict, level: str = "root", print: Callable = print
+    d1: dict,
+    d2: dict,
+    level: str = "root",
+    print: Callable = print,
 ) -> bool:
     import difflib
 
@@ -218,7 +223,7 @@ def payload_from_s3(record: dict) -> dict:
         payload = s3().read_json(record["url"])
     except KeyError:
         raise NoUrlError(
-            "Item does not have a URL and therefore cannot be retrieved from S3"
+            "Item does not have a URL and therefore cannot be retrieved from S3",
         )
     return payload
 
@@ -279,7 +284,7 @@ def delete_from_queue_batch(messages: list[dict]) -> dict:
             queue_url = _queue_url
         elif _queue_url != queue_url:
             raise ValueError(
-                f"Not all messages from same queue: {queue_url} != {_queue_url}"
+                f"Not all messages from same queue: {queue_url} != {_queue_url}",
             )
 
         receipt_handle = None
@@ -295,7 +300,7 @@ def delete_from_queue_batch(messages: list[dict]) -> dict:
                     {
                         "Id": message_id,
                         "ReceiptHandle": receipt_handle,
-                    }
+                    },
                 )
                 break
         else:
@@ -305,7 +310,7 @@ def delete_from_queue_batch(messages: list[dict]) -> dict:
                     "SenderFault": True,
                     "Code": "BadMessageFormat",
                     "Message": json.dumps(message),
-                }
+                },
             )
 
     resp = get_client("sqs").delete_message_batch(
@@ -335,7 +340,7 @@ class BatchHandler:
         batch_param_name: str,
         batch_size: int = 10,
         dest_name: str = "default",
-        logger: logging.Logger = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Handles dispatch of messages to AWS functions which support batched operation.
@@ -387,7 +392,9 @@ class BatchHandler:
         try:
             self.fn(**params)
             self.logger.debug(
-                "Published %s payloads to %s", len(self._batch), self.dest_name
+                "Published %s payloads to %s",
+                len(self._batch),
+                self.dest_name,
             )
         finally:
             self._batch = []
@@ -395,7 +402,9 @@ class BatchHandler:
     @classmethod
     @contextmanager
     def get_handler(
-        cls: "BatchHandler", *args, **kwargs
+        cls: "BatchHandler",
+        *args,
+        **kwargs,
     ) -> AbstractContextManager["BatchHandler"]:
         publisher = cls(*args, **kwargs)
         try:
@@ -429,7 +438,7 @@ class SNSPublisher(BatchHandler):
             **kwargs,
         )
 
-    def add(self, message: str, message_attrs: Optional[dict] = None):
+    def add(self, message: str, message_attrs: dict | None = None):
         """
         Add the given messages to the `_batch`, and ship them if there are more than
         `batch_size`. Override of `BatchHandler.add` to add message attribute support.
@@ -443,7 +452,7 @@ class SNSPublisher(BatchHandler):
                 self.logger.error(
                     "sns to sqs relay only supports 10 attributes: "
                     "https://docs.aws.amazon.com/sns/latest/dg/"
-                    "sns-message-attributes.html"
+                    "sns-message-attributes.html",
                 )
                 raise ValueError(f"message_attrs too long: {len(message_attrs)}")
             message_params.update({"MessageAttributes": message_attrs})

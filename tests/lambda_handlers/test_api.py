@@ -12,10 +12,10 @@ def test_empty_event():
 
 def test_daily_results(env, fixtures):
     eventdb_daily_input = json.loads(
-        fixtures.joinpath("eventdb-daily-input.json").read_text()
+        fixtures.joinpath("eventdb-daily-input.json").read_text(),
     )
     expected_output = json.loads(
-        fixtures.joinpath("eventdb-daily-expected.json").read_text()
+        fixtures.joinpath("eventdb-daily-expected.json").read_text(),
     )
     actual_output = api.daily(eventdb_daily_input)
     assert actual_output == expected_output
@@ -23,10 +23,10 @@ def test_daily_results(env, fixtures):
 
 def test_hourly_results(env, fixtures):
     eventdb_hourly_input = json.loads(
-        fixtures.joinpath("eventdb-hourly-input.json").read_text()
+        fixtures.joinpath("eventdb-hourly-input.json").read_text(),
     )
     expected_output = json.loads(
-        fixtures.joinpath("eventdb-hourly-expected.json").read_text()
+        fixtures.joinpath("eventdb-hourly-expected.json").read_text(),
     )
     actual_output = api.hourly(eventdb_hourly_input)
     assert actual_output == expected_output
@@ -43,11 +43,11 @@ class MockEventDB:
     def query_by_bin_and_duration(self, x, y):
         if x == "1d":
             return json.loads(
-                self.fixtures.joinpath("eventdb-daily-input.json").read_text()
+                self.fixtures.joinpath("eventdb-daily-input.json").read_text(),
             )
         if x == "1h":
             return json.loads(
-                self.fixtures.joinpath("eventdb-hourly-input.json").read_text()
+                self.fixtures.joinpath("eventdb-hourly-input.json").read_text(),
             )
         raise Exception(f"bin size {x} unexpected")
 
@@ -60,13 +60,13 @@ def test_api_stats_output(fixtures):
     expected_result = {
         "state_transitions": {
             "daily": json.loads(
-                fixtures.joinpath("eventdb-daily-expected.json").read_text()
+                fixtures.joinpath("eventdb-daily-expected.json").read_text(),
             ),
             "hourly": json.loads(
-                fixtures.joinpath("eventdb-hourly-expected.json").read_text()
+                fixtures.joinpath("eventdb-hourly-expected.json").read_text(),
             ),
             "hourly_rolling": [],
-        }
+        },
     }
     assert actual_result == expected_result
 

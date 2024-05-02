@@ -6,19 +6,19 @@ import moto
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture()
 def s3(aws_credentials):
     with moto.mock_s3():
         yield boto3.client("s3", region_name="us-east-1")
 
 
-@pytest.fixture
+@pytest.fixture()
 def sqs(aws_credentials):
     with moto.mock_sqs():
         yield boto3.client("sqs", region_name="us-east-1")
 
 
-@pytest.fixture
+@pytest.fixture()
 def sns(aws_credentials):
     with moto.mock_sns():
         yield boto3.client("sns", region_name="us-east-1")
@@ -29,33 +29,33 @@ def workflow_event_topic(sns):
     return sns.create_topic(Name="app-cirrus-workflow-event")["TopicArn"]
 
 
-@pytest.fixture
+@pytest.fixture()
 def stepfunctions(aws_credentials):
     with moto.mock_stepfunctions():
         yield boto3.client("stepfunctions", region_name="us-east-1")
 
 
-@pytest.fixture
+@pytest.fixture()
 def iam(aws_credentials):
     with moto.mock_iam():
         yield boto3.client("iam", region_name="us-east-1")
 
 
-@pytest.fixture
+@pytest.fixture()
 def payloads(s3):
     name = "payloads"
     s3.create_bucket(Bucket=name)
     return name
 
 
-@pytest.fixture
+@pytest.fixture()
 def queue(sqs):
     q = sqs.create_queue(QueueName="test-queue")
     q["Arn"] = "arn:aws:sqs:us-east-1:123456789012:test-queue"
     return q
 
 
-@pytest.fixture
+@pytest.fixture()
 def workflow(stepfunctions, iam):
     defn = {
         "StartAt": "FirstState",
@@ -75,7 +75,7 @@ def workflow(stepfunctions, iam):
                     "Service": "states.us-east-1.amazonaws.com",
                 },
                 "Action": "sts:AssumeRole",
-            }
+            },
         ],
     }
     role = iam.create_role(

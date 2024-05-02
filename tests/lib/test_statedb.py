@@ -1,4 +1,5 @@
 import os
+
 from copy import deepcopy
 from datetime import datetime
 
@@ -70,7 +71,7 @@ def test_since_to_timedelta():
     assert td.seconds == 600
 
 
-@pytest.fixture
+@pytest.fixture()
 def state_table(statedb):
     statedb.limit = RECORD_LIMIT
     statedb.set_processing(

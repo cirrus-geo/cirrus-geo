@@ -1,18 +1,19 @@
 import sys
+
 from itertools import product
 
 import pytest
-from moto.core.models import DEFAULT_ACCOUNT_ID
-from moto.sns.models import sns_backends
 
 from cirrus.lambda_handlers.update_state import lambda_handler as update_state
 from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEvent
+from moto.core.models import DEFAULT_ACCOUNT_ID
+from moto.sns.models import sns_backends
 
 EVENT_PAYLOAD_ID = "test-collection/workflow-test-workflow/test-id"
 
 
-@pytest.fixture
+@pytest.fixture()
 def event():
     return {
         "asctime": "2022-11-09T00:18:35+0000",
@@ -27,7 +28,7 @@ def event():
         "time": "2022-11-09T00:17:18Z",
         "region": "us-east-1",
         "resources": [
-            "arn:aws:states:us-east-1:123456789012:execution:test-workflow1:ef3ace61-4231-4488-9f55-17956ede0de7"
+            "arn:aws:states:us-east-1:123456789012:execution:test-workflow1:ef3ace61-4231-4488-9f55-17956ede0de7",
         ],
         "detail": {
             "executionArn": "arn:aws:states:us-east-1:123456789012:execution:test-workflow1:ef3ace61-4231-4488-9f55-17956ede0de7",
@@ -52,10 +53,16 @@ def test_empty_event():
 
 
 @pytest.mark.parametrize(
-    "wf_event_enabled,sfn_state", product((True, False), SfnStatus._member_names_)
+    "wf_event_enabled,sfn_state",
+    product((True, False), SfnStatus._member_names_),
 )
 def test_workflow_event_notification(
-    event, statedb, workflow_event_topic, wf_event_enabled, sfn_state, monkeypatch
+    event,
+    statedb,
+    workflow_event_topic,
+    wf_event_enabled,
+    sfn_state,
+    monkeypatch,
 ):
     """This tests that workflow events are properly published (if `wf_event_enabled`),
     with the associated StepFunctions State.  It also verifies that the record is added

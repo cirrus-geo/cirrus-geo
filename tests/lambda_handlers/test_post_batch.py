@@ -1,9 +1,9 @@
 import json
 
 import pytest
-from moto import mock_logs
 
 from cirrus.lambda_handlers.post_batch import lambda_handler as post_batch
+from moto import mock_logs
 
 
 def test_empty_event():
@@ -14,7 +14,8 @@ def test_empty_event():
 @mock_logs
 def test_error_handling():
     with pytest.raises(
-        Exception, match=r"Unable to get error log: Cause is not defined"
+        Exception,
+        match=r"Unable to get error log: Cause is not defined",
     ):
         post_batch({"error": {}}, {})
 
@@ -47,9 +48,9 @@ def test_error_handling():
             {
                 "error": {
                     "Cause": json.dumps(
-                        {"Attempts": [{"Container": {"LogStreamName": ""}}]}
-                    )
-                }
+                        {"Attempts": [{"Container": {"LogStreamName": ""}}]},
+                    ),
+                },
             },
             {},
         )
@@ -62,9 +63,9 @@ def test_error_handling():
             {
                 "error": {
                     "Cause": json.dumps(
-                        {"Attempts": [{"Container": {"LogStreamName": "foobar"}}]}
-                    )
-                }
+                        {"Attempts": [{"Container": {"LogStreamName": "foobar"}}]},
+                    ),
+                },
             },
             {},
         )
@@ -85,11 +86,11 @@ def test_error_handling():
                                         "Reason": "DockerTimeoutError: Could not transition to created; timed out after waiting 4m0s",
                                     },
                                     "StatusReason": "Task failed to start",
-                                }
-                            ]
-                        }
-                    )
-                }
+                                },
+                            ],
+                        },
+                    ),
+                },
             },
             {},
         )
