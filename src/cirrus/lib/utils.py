@@ -57,19 +57,33 @@ def cold_start(
 
 
 @cache
-def get_client(service: str, session: Optional[boto3.Session] = None):
+def get_client(
+    service: str,
+    session: Optional[boto3.Session] = None,
+    region: Optional[str] = None,
+):
     """Wrapper around boto3 which implements singleton pattern via @cache"""
     if session is None:
         session = boto3.Session()
-    return session.client(service)
+    return session.client(
+        service_name=service,
+        region_name=region,
+    )
 
 
 @cache
-def get_resource(service: str, session: Optional[boto3.Session] = None):
+def get_resource(
+    service: str,
+    session: Optional[boto3.Session] = None,
+    region: Optional[str] = None,
+):
     """Wrapper around boto3 which implements singleton pattern via @cache"""
     if session is None:
         session = boto3.Session()
-    return session.resource(service)
+    return session.resource(
+        service_name=service,
+        region_name=region,
+    )
 
 
 def submit_batch_job(
