@@ -2,6 +2,7 @@ import io
 import json
 import os
 
+import botocore
 import pytest
 from moto.core import DEFAULT_ACCOUNT_ID
 from moto.sns import sns_backends
@@ -124,6 +125,42 @@ def test_rerun_in_process(
     assert exec_count == 1
     assert_sns_message_sequence(
         ["CLAIMED_PROCESSING", "STARTED_PROCESSING", "ALREADY_PROCESSING"],
+        workflow_event_topic,
+    )
+
+
+def test_simulate_race_to_in_process_client_error(
+    payload, stepfunctions, workflow, eventdb, workflow_event_topic, mocker
+):
+    def raises_client_error(*args, **kwargs):
+        raise botocore.exceptions.ClientError(
+            error_response={"Error": {"Code": "ConditionalCheckFailedException"}},
+            operation_name="monkeying aroudn",
+        )
+
+    wfem_claim = mocker.patch(
+        "cirrus.lib2.events.WorkflowEventManager.claim_processing"
+    )
+    wfem_claim.side_effect = raises_client_error
+
+    result = run_function("process", payload)
+    # the second time it is skipped as PROCESSING
+    assert result == 0
+
+    # we should see only the one step function
+    # execution from the first payload instance
+    exec_count = len(
+        stepfunctions.list_executions(
+            stateMachineArn=workflow["stateMachineArn"],
+        )["executions"]
+    )
+
+    # because we faked the payload already getting to PROCESSING,
+    # and thus not starting an exection
+    assert exec_count == 0
+
+    assert_sns_message_sequence(
+        ["ALREADY_PROCESSING"],
         workflow_event_topic,
     )
 
