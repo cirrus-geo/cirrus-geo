@@ -1,0 +1,12 @@
+-c requirements.txt
+darglint
+pytest
+pytest-cov
+pytest-mock
+moto<5.0
+mypy
+pip-tools
+pre-commit
+pre-commit-hooks
+ruff
+types-python-dateutil

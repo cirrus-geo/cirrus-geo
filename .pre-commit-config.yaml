@@ -1,11 +1,19 @@
 repos:
   - repo: local
     hooks:
-      - id: black
-        name: black
-        entry: black
-        language: system
-        types: [python]
+      - id: ruff_check
+        name: ruff check
+        entry: ruff check --force-exclude
+        language: python
+        'types_or': [python, pyi]
+        args: [--fix, --exit-non-zero-on-fix]
+        require_serial: true
+      - id: ruff_format
+        name: ruff format
+        entry: ruff format --force-exclude
+        language: python
+        'types_or': [python, pyi]
+        args: []
         require_serial: true
       - id: check-added-large-files
         name: Check for added large files
@@ -16,62 +24,27 @@ repos:
         entry: check-toml
         language: system
         types: [toml]
-      #      - id: check-yaml
-      #        name: Check Yaml
-      #        entry: check-yaml
-      #        language: system
-      #        types: [yaml]
-      - id: darglint
-        name: darglint
-        entry: darglint
+      - id: check-yaml
+        name: Check Yaml
+        entry: check-yaml
         language: system
-        types: [python]
-        stages: [manual]
+        types: [yaml]
       - id: end-of-file-fixer
         name: Fix End of Files
         entry: end-of-file-fixer
         language: system
         types: [text]
         stages: [commit, push, manual]
-      - id: flake8
-        name: flake8
-        entry: flake8
-        language: system
-        types: [python]
-        require_serial: true
-        args: [--darglint-ignore-regex, .*]
-      - id: isort
-        name: isort
-        entry: isort
-        require_serial: true
-        language: system
-        types_or: [cython, pyi, python]
-        args: ["--filter-files"]
-      - id: pyupgrade
-        name: pyupgrade
-        description: Automatically upgrade syntax for newer versions.
-        entry: pyupgrade
-        language: system
-        types: [python]
-        args: [--py37-plus]
       - id: trailing-whitespace
         name: Trim Trailing Whitespace
         entry: trailing-whitespace-fixer
         language: system
         types: [text]
         stages: [commit, push, manual]
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.6.0
-    hooks:
-      - id: prettier
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.38.0
-    hooks:
-      - id: markdownlint
-#  - repo: https://github.com/pre-commit/mirrors-mypy
-#    rev: v0.981
-#    hooks:
-#      - id: mypy
-#        exclude: '(test_.*|noxfile)\.py'
-#        additional_dependencies:
-#          ["types-requests", "types-click", "types-PyYAML"]
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: python
+        'types_or': [python, pyi]
+        args: []
+        require_serial: true
