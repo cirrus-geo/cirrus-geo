@@ -227,7 +227,7 @@ class ProcessPayload(dict):
             return self["id"]
         except ClientError as e:
             if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                wfem.already_processing(self["id"], payload_url=url)
+                wfem.skipping(self["id"], state=StateEnum.PROCESSING, payload_url=url)
                 return None
             elif e.response["Error"]["Code"] == "StateMachineDoesNotExist":
                 # This failure is tracked in the DB and we raise an error
