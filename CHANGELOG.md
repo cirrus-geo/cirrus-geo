@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   have been deprecated, and the `CIRRUS_WORKFLOW_EVENT_TOPIC_ARN` Topic should
   be used by subscriptions which need to act on failed or invalid workflows.
 
+### Fixed
+
+- Incorrect function `already_processing` corrected to
+  `skipping(state="PROCESSING",...)`. ([#267])
+
 ### Added
 
 - `cirrus-<stage>-workflow-event` SNS topic, and
@@ -916,6 +921,7 @@ Initial release
 [#263]: https://github.com/cirrus-geo/cirrus-geo/pull/263
 [#264]: https://github.com/cirrus-geo/cirrus-geo/pull/264
 [#266]: https://github.com/cirrus-geo/cirrus-geo/pull/266
+[#267]: https://github.com/cirrus-geo/cirrus-geo/pull/267
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
