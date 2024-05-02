@@ -1,0 +1,66 @@
+{
+  "TableName": "cirrus-test-state",
+  "BillingMode": "PAY_PER_REQUEST",
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "collections_workflow",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "itemids",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "state_updated",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "updated",
+      "AttributeType": "S"
+    }
+  ],
+  "KeySchema": [
+    {
+      "AttributeName": "collections_workflow",
+      "KeyType": "HASH"
+    },
+    {
+      "AttributeName": "itemids",
+      "KeyType": "RANGE"
+    }
+  ],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "state_updated",
+      "KeySchema": [
+        {
+          "AttributeName": "collections_workflow",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "state_updated",
+          "KeyType": "RANGE"
+        }
+      ],
+      "Projection": {
+        "ProjectionType": "ALL"
+      }
+    },
+    {
+      "IndexName": "updated",
+      "KeySchema": [
+        {
+          "AttributeName": "collections_workflow",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "updated",
+          "KeyType": "RANGE"
+        }
+      ],
+      "Projection": {
+        "ProjectionType": "ALL"
+      }
+    }
+  ]
+}

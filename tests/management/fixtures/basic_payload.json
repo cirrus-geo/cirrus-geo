@@ -1,0 +1,41 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "stac_version": "1.0.0",
+            "id": "dummy-item",
+            "properties": {
+                "datetime": "1970-01-01T00:00:00Z",
+                "created": "1970-01-01T00:00:00Z",
+                "updated": "1970-01-01T00:00:00Z"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": []
+            },
+            "links": [],
+            "assets": {},
+            "bbox": [],
+            "stac_extensions": [],
+            "collection": "dummy-collection"
+        }
+    ],
+    "process": {
+        "workflow": "workflow1",
+        "replace": true,
+        "upload_options": {
+            "path_template": "${collection}/${year}/${id}",
+            "collections": {
+                "mycollection": ".*"
+},
+            "s3_urls": true
+        },
+        "tasks": {
+            "task1": {
+                "param1": true
+            }
+        }
+    },
+    "id": "test/workflow-workflow1/test-item"
+}
