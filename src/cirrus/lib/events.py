@@ -1,11 +1,11 @@
 import json
 import os
+
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import wraps
 from logging import Logger, getLogger
-from typing import Optional
 
 from .enums import StateEnum, WFEventType
 from .eventdb import EventDB
@@ -18,9 +18,9 @@ class WorkflowEvent:
     event_type: WFEventType
     payload_id: str
     isotimestamp: str
-    payload_url: Optional[str] = None
-    execution_arn: Optional[str] = None
-    error: Optional[str] = None
+    payload_url: str | None = None
+    execution_arn: str | None = None
+    error: str | None = None
 
     def serialize(self):
         response = {x: y for (x, y) in vars(self).items() if y}
@@ -42,7 +42,7 @@ class WorkflowEvent:
             "event_type": {
                 "DataType": "String",
                 "StringValue": self.event_type,
-            }
+            },
         }
 
         if match := PAYLOAD_ID_REGEX.match(self.payload_id):
@@ -72,13 +72,13 @@ class WorkflowEventManager:
 
     @staticmethod
     def isotimestamp_now():
-        return datetime.now(timezone.utc).isoformat()
+        return datetime.now(UTC).isoformat()
 
     def __init__(
         self: "WorkflowEventManager",
-        logger: Logger = None,
-        statedb: StateDB = None,
-        eventdb: EventDB = None,
+        logger: Logger | None = None,
+        statedb: StateDB | None = None,
+        eventdb: EventDB | None = None,
         batch_size: int = 10,
     ):
         self.logger = logger if logger is not None else getLogger(__name__)
@@ -142,14 +142,15 @@ class WorkflowEventManager:
             return
 
         self.event_publisher.add(
-            message=message.serialize(), message_attrs=message.sns_attributes()
+            message=message.serialize(),
+            message_attrs=message.sns_attributes(),
         )
 
     def claim_processing(
         self: "WorkflowEventManager",
         payload_id: str,
-        payload_url: str = None,
-        isotimestamp: str = None,
+        payload_url: str | None = None,
+        isotimestamp: str | None = None,
     ):
         if not isotimestamp:
             isotimestamp = self.isotimestamp_now()
@@ -160,15 +161,15 @@ class WorkflowEventManager:
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
                 payload_url=payload_url,
-            )
+            ),
         )
 
     def started_processing(
         self: "WorkflowEventManager",
         payload_id: str,
         execution_arn: str,
-        isotimestamp: str = None,
-        payload_url: str = None,
+        isotimestamp: str | None = None,
+        payload_url: str | None = None,
     ):
         if not isotimestamp:
             isotimestamp = self.isotimestamp_now()
@@ -186,27 +187,29 @@ class WorkflowEventManager:
                 isotimestamp=isotimestamp,
                 payload_url=payload_url,
                 execution_arn=execution_arn,
-            )
+            ),
         )
 
     def skipping(
         self: "WorkflowEventManager",
         payload_id: str,
         state: StateEnum,
-        payload_url: str = None,
+        payload_url: str | None = None,
     ):
         self.logger.info("Skipping %s already in %s state: ", payload_id, state)
         self.announce(
             WorkflowEvent(
                 event_type=WFEventType(f"ALREADY_{state}"),
                 payload_id=payload_id,
-                isotimestamp=datetime.now(timezone.utc).isoformat(),
+                isotimestamp=datetime.now(UTC).isoformat(),
                 payload_url=payload_url,
-            )
+            ),
         )
 
     def duplicated(
-        self: "WorkflowEventManager", payload_id: str, payload_url: str = None
+        self: "WorkflowEventManager",
+        payload_id: str,
+        payload_url: str | None = None,
     ):
         self.logger.warning("duplicate payload_id dropped %s", payload_id)
         self.announce(
@@ -215,23 +218,26 @@ class WorkflowEventManager:
                 payload_id=payload_id,
                 isotimestamp=self.isotimestamp_now(),
                 payload_url=payload_url,
-            )
+            ),
         )
 
     def failed(
         self: "WorkflowEventManager",
         payload_id: str,
         message: str = "",
-        payload_url: str = None,
-        execution_arn: str = None,
-        isotimestamp: str = None,
+        payload_url: str | None = None,
+        execution_arn: str | None = None,
+        isotimestamp: str | None = None,
     ):
         if not isotimestamp:
             isotimestamp = self.isotimestamp_now()
         self.statedb.set_failed(payload_id, message, execution_arn=execution_arn)
         if execution_arn:
             self._write_timeseries_record(
-                payload_id, StateEnum.FAILED, isotimestamp, execution_arn
+                payload_id,
+                StateEnum.FAILED,
+                isotimestamp,
+                execution_arn,
             )
 
         self.announce(
@@ -242,16 +248,16 @@ class WorkflowEventManager:
                 payload_url=payload_url,
                 error=message,
                 execution_arn=execution_arn,
-            )
+            ),
         )
 
     def timed_out(
         self: "WorkflowEventManager",
         payload_id: str,
         message: str = "",
-        payload_url: str = None,
-        execution_arn: str = None,
-        isotimestamp: str = None,
+        payload_url: str | None = None,
+        execution_arn: str | None = None,
+        isotimestamp: str | None = None,
     ):
         if not isotimestamp:
             isotimestamp = self.isotimestamp_now()
@@ -263,7 +269,10 @@ class WorkflowEventManager:
         )
         if execution_arn:
             self._write_timeseries_record(
-                payload_id, StateEnum.INVALID, isotimestamp, execution_arn
+                payload_id,
+                StateEnum.INVALID,
+                isotimestamp,
+                execution_arn,
             )
         self.announce(
             WorkflowEvent(
@@ -273,23 +282,28 @@ class WorkflowEventManager:
                 payload_url=payload_url,
                 error=message,
                 execution_arn=execution_arn,
-            )
+            ),
         )
 
     def succeeded(
         self: "WorkflowEventManager",
         payload_id: str,
         execution_arn: str,
-        payload_url: str = None,
-        isotimestamp: str = None,
+        payload_url: str | None = None,
+        isotimestamp: str | None = None,
     ):
         if not isotimestamp:
             isotimestamp = self.isotimestamp_now()
         self.statedb.set_completed(
-            payload_id, execution_arn=execution_arn, isotimestamp=isotimestamp
+            payload_id,
+            execution_arn=execution_arn,
+            isotimestamp=isotimestamp,
         )
         self._write_timeseries_record(
-            payload_id, StateEnum.COMPLETED, isotimestamp, execution_arn
+            payload_id,
+            StateEnum.COMPLETED,
+            isotimestamp,
+            execution_arn,
         )
         self.announce(
             WorkflowEvent(
@@ -297,7 +311,7 @@ class WorkflowEventManager:
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
                 payload_url=payload_url,
-            )
+            ),
         )
 
     def invalid(
@@ -305,15 +319,18 @@ class WorkflowEventManager:
         payload_id: str,
         error: str,
         execution_arn: str,
-        payload_url: str = None,
-        isotimestamp: str = None,
+        payload_url: str | None = None,
+        isotimestamp: str | None = None,
     ):
         if not isotimestamp:
             isotimestamp = self.isotimestamp_now()
         self.statedb.set_invalid(payload_id, error, execution_arn, isotimestamp)
         if execution_arn:
             self._write_timeseries_record(
-                payload_id, StateEnum.INVALID, isotimestamp, execution_arn
+                payload_id,
+                StateEnum.INVALID,
+                isotimestamp,
+                execution_arn,
             )
 
         self.announce(
@@ -324,22 +341,25 @@ class WorkflowEventManager:
                 payload_url=payload_url,
                 error=error,
                 execution_arn=execution_arn,
-            )
+            ),
         )
 
     def aborted(
         self: "WorkflowEventManager",
         payload_id: str,
         execution_arn: str,
-        payload_url: str = None,
-        isotimestamp: str = None,
+        payload_url: str | None = None,
+        isotimestamp: str | None = None,
     ):
         if not isotimestamp:
             isotimestamp = self.isotimestamp_now()
         self.statedb.set_aborted(payload_id, execution_arn=execution_arn)
         if execution_arn:
             self._write_timeseries_record(
-                payload_id, StateEnum.ABORTED, isotimestamp, execution_arn
+                payload_id,
+                StateEnum.ABORTED,
+                isotimestamp,
+                execution_arn,
             )
         self.announce(
             WorkflowEvent(
@@ -348,7 +368,7 @@ class WorkflowEventManager:
                 isotimestamp=isotimestamp,
                 payload_url=payload_url,
                 execution_arn=execution_arn,
-            )
+            ),
         )
 
     def _write_timeseries_record(

@@ -1,7 +1,8 @@
 import logging
 import os
+
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from .enums import StateEnum
 from .utils import PAYLOAD_ID_REGEX, get_client
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class EventDB:
     def __init__(
         self,
-        event_db_and_table_names: Optional[str] = None,
+        event_db_and_table_names: str | None = None,
     ):
         self.tsw_client = get_client("timestream-write")
         self.tsq_client = get_client("timestream-query")
@@ -24,13 +25,13 @@ class EventDB:
             db_and_table_names_array = event_db_and_table_names.split("|")
             if len(db_and_table_names_array) != 2:
                 raise Exception(
-                    "Event DB and table name not configured correctly, must be a pipe-separated value of the database and table names."
+                    "Event DB and table name not configured correctly, must be a pipe-separated value of the database and table names.",
                 )
-            self.event_db_name: Optional[str] = db_and_table_names_array[0]
-            self.event_table_name: Optional[str] = db_and_table_names_array[1]
+            self.event_db_name: str | None = db_and_table_names_array[0]
+            self.event_table_name: str | None = db_and_table_names_array[1]
         else:
             logger.info(
-                "Event database is not configured, workflow state change events will not be recorded"
+                "Event database is not configured, workflow state change events will not be recorded",
             )
             self.event_db_name = None
             self.event_table_name = None
@@ -39,7 +40,7 @@ class EventDB:
         return bool(self.event_db_name and self.event_table_name)
 
     @classmethod
-    def _payload_id_to_record_data(cls, payload_id: str) -> Tuple[str, str, str]:
+    def _payload_id_to_record_data(cls, payload_id: str) -> tuple[str, str, str]:
         if match := PAYLOAD_ID_REGEX.match(payload_id):
             return match.groups()
         raise ValueError("payload_id does not match expected pattern: " + payload_id)
@@ -50,7 +51,7 @@ class EventDB:
         state: StateEnum,
         event_time: str,
         execution_arn: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         if not self.enabled():
             return None
 
@@ -80,18 +81,18 @@ class EventDB:
                 Records=[record],
             )
             logger.info(
-                f"Timestream WriteRecords Status for first time: [{result['ResponseMetadata']['HTTPStatusCode']}]"
+                f"Timestream WriteRecords Status for first time: [{result['ResponseMetadata']['HTTPStatusCode']}]",
             )
             return result
         except self.tsw_client.exceptions.RejectedRecordsException as err:
             logger.error(f"For {payload_id} Timestream RejectedRecords: {err}")
             for rr in err.response["RejectedRecords"]:
                 logger.error(
-                    f"For {payload_id} Rejected Index {rr['RecordIndex']} : {rr['Reason']}"
+                    f"For {payload_id} Rejected Index {rr['RecordIndex']} : {rr['Reason']}",
                 )
                 if "ExistingVersion" in rr:
                     logger.error(
-                        f"For {payload_id} Rejected record existing version: {rr['ExistingVersion']}"
+                        f"For {payload_id} Rejected record existing version: {rr['ExistingVersion']}",
                     )
             raise err
         except Exception as err:
@@ -102,9 +103,9 @@ class EventDB:
     def _mk_query_by_bin_and_duration(
         bin_size: str,
         duration: str,
-        event_db_name: Optional[str],
-        event_table_name: Optional[str],
-    ) -> Optional[str]:
+        event_db_name: str | None,
+        event_table_name: str | None,
+    ) -> str | None:
         """bin_size is like '1d' '1h'
         duration is like '356d' '60d'
         """
@@ -128,9 +129,9 @@ class EventDB:
     def _mk_hour_query(
         start: int,
         end: int,
-        event_db_name: Optional[str],
-        event_table_name: Optional[str],
-    ) -> Optional[str]:
+        event_db_name: str | None,
+        event_table_name: str | None,
+    ) -> str | None:
         if not event_db_name or not event_table_name:
             return None
         else:
@@ -147,19 +148,24 @@ class EventDB:
                 ORDER BY t, state
             """
 
-    def _query(self, q: Optional[str]) -> Optional[Dict[str, Any]]:
+    def _query(self, q: str | None) -> dict[str, Any] | None:
         return self.tsq_client.query(QueryString=q) if self.enabled() and q else None
 
-    def query_hour(self, start: int, end: int) -> Optional[Dict[str, Any]]:
+    def query_hour(self, start: int, end: int) -> dict[str, Any] | None:
         return self._query(
-            self._mk_hour_query(start, end, self.event_db_name, self.event_table_name)
+            self._mk_hour_query(start, end, self.event_db_name, self.event_table_name),
         )
 
     def query_by_bin_and_duration(
-        self, bin_size: str, duration: str
-    ) -> Optional[Dict[str, Any]]:
+        self,
+        bin_size: str,
+        duration: str,
+    ) -> dict[str, Any] | None:
         return self._query(
             self._mk_query_by_bin_and_duration(
-                bin_size, duration, self.event_db_name, self.event_table_name
-            )
+                bin_size,
+                duration,
+                self.event_db_name,
+                self.event_table_name,
+            ),
         )

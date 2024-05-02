@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import json
+
 from dataclasses import dataclass
 from os import getenv
-from typing import Any, Dict, Optional
+from typing import Any
 
 from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEventManager
@@ -40,7 +41,7 @@ class Execution:
     url: str
     output: ProcessPayload
     status: SfnStatus
-    error: Optional[dict]
+    error: dict | None
 
     def update_state(self, wfem) -> None:
         status_update_map = {
@@ -56,7 +57,7 @@ class Execution:
         status_update_map[self.status](self, wf_event_manager=wfem)
 
     @classmethod
-    def from_event(cls, event: Dict[str, Any]) -> "Execution":
+    def from_event(cls, event: dict[str, Any]) -> "Execution":
         try:
             arn = event["detail"]["executionArn"]
 
@@ -98,7 +99,7 @@ class Execution:
             raise Exception(f"Unknown event: {json.dumps(event)}")
 
 
-def mk_error(error: str, cause: str) -> Dict[str, str]:
+def mk_error(error: str, cause: str) -> dict[str, str]:
     return {
         "Error": error,
         "Cause": cause,
@@ -106,7 +107,8 @@ def mk_error(error: str, cause: str) -> Dict[str, str]:
 
 
 def workflow_completed(
-    execution: Execution, wf_event_manager: WorkflowEventManager
+    execution: Execution,
+    wf_event_manager: WorkflowEventManager,
 ) -> None:
     # I think changing the state should be done before
     # trying the sns publish, but I could see it the other
@@ -121,13 +123,15 @@ def workflow_completed(
 
 
 def workflow_aborted(
-    execution: Execution, wf_event_manager: WorkflowEventManager
+    execution: Execution,
+    wf_event_manager: WorkflowEventManager,
 ) -> None:
     wf_event_manager.aborted(execution.input["id"], execution_arn=execution.arn)
 
 
 def workflow_failed(
-    execution: Execution, wf_event_manager: WorkflowEventManager
+    execution: Execution,
+    wf_event_manager: WorkflowEventManager,
 ) -> None:
     error_type = "unknown"
     error_msg = "unknown"
@@ -148,17 +152,23 @@ def workflow_failed(
     try:
         if error_type in INVALID_EXCEPTIONS:
             wf_event_manager.invalid(
-                execution.input["id"], error, execution_arn=execution.arn
+                execution.input["id"],
+                error,
+                execution_arn=execution.arn,
             )
             notification_topic_arn = INVALID_TOPIC_ARN
         elif error_type == "TimedOutError":
             wf_event_manager.timed_out(
-                execution.input["id"], error, execution_arn=execution.arn
+                execution.input["id"],
+                error,
+                execution_arn=execution.arn,
             )
             notification_topic_arn = FAILED_TOPIC_ARN
         else:
             wf_event_manager.failed(
-                execution.input["id"], error, execution_arn=execution.arn
+                execution.input["id"],
+                error,
+                execution_arn=execution.arn,
             )
             notification_topic_arn = FAILED_TOPIC_ARN
     except Exception:
@@ -185,7 +195,7 @@ def workflow_failed(
             raise
 
 
-def get_execution_error(arn: str) -> Dict[str, str]:
+def get_execution_error(arn: str) -> dict[str, str]:
     error = None
 
     try:
@@ -227,7 +237,10 @@ def get_execution_error(arn: str) -> Dict[str, str]:
 
 @WorkflowEventManager.with_wfem(logger=logger)
 def lambda_handler(
-    event: Dict[str, Any], context: Any, *, wfem: WorkflowEventManager
+    event: dict[str, Any],
+    context: Any,
+    *,
+    wfem: WorkflowEventManager,
 ) -> None:
     logger.debug(event)
     Execution.from_event(event).update_state(wfem)

@@ -1,5 +1,6 @@
 import copy
 import json
+
 from pathlib import Path
 
 import pytest
@@ -34,9 +35,9 @@ def sqs_event():
 def chain_payload(base_payload):
     # need to convert process and add filter
     base_payload["process"] = [base_payload["process"]] * 2
-    base_payload["process"][1][
-        "chain_filter"
-    ] = "@.id =~ 'fake*' & @.properties.gsd <= 0"
+    base_payload["process"][1]["chain_filter"] = (
+        "@.id =~ 'fake*' & @.properties.gsd <= 0"
+    )
 
     # then add "fake" items
     new_item_count = 3
@@ -72,7 +73,7 @@ def test_open_payload(base_payload):
 
 def test_open_payload_output_options(base_payload):
     base_payload["process"]["output_options"] = base_payload["process"].pop(
-        "upload_options"
+        "upload_options",
     )
     payload = ProcessPayload(**base_payload)
     assert (
@@ -159,7 +160,7 @@ def test_next_payloads_list_of_four_fork(base_payload):
 
 def test_next_payloads_chain_filter(chain_payload, chain_filter_payload):
     payloads = list(
-        ProcessPayload(chain_payload, set_id_if_missing=True).next_payloads()
+        ProcessPayload(chain_payload, set_id_if_missing=True).next_payloads(),
     )
     assert len(payloads) == 1
     assert not recursive_compare(payloads[0], chain_payload)

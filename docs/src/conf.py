@@ -7,6 +7,7 @@
 
 # inherit defaults from base cirrus config
 import os
+
 from pathlib import Path
 
 from cirrus.plugins.docs.base_conf import *

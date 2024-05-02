@@ -6,13 +6,13 @@ import pytest
 from cirrus.lib.eventdb import EventDB, StateEnum
 
 
-@pytest.fixture
+@pytest.fixture()
 def event_kwargs():
     return {
         "payload_id": "sentinel2/workflow-cogification/xxxaaaa",
         "state": StateEnum.PROCESSING,
         "event_time": "2011-11-04T00:05:23+00:00",
-        "execution_arn": f"arn:aws:states:us-west-2:1667831315:execution:pvarner-cirrus-dev-fake:{str(uuid.uuid4())}",
+        "execution_arn": f"arn:aws:states:us-west-2:1667831315:execution:pvarner-cirrus-dev-fake:{uuid.uuid4()!s}",
     }
 
 

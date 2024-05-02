@@ -5,9 +5,11 @@ import logging
 import os
 import uuid
 import warnings
+
 from copy import deepcopy
 
 import jsonpath_ng.ext as jsonpath
+
 from boto3utils import s3
 from botocore.exceptions import ClientError
 
@@ -62,12 +64,12 @@ class ProcessPayload(dict):
         # are creating this exact situation.
         if "upload_options" not in self.process:
             raise ValueError(
-                "ProcessPayload.process must have `upload_options` defined"
+                "ProcessPayload.process must have `upload_options` defined",
             )
 
         if "workflow" not in self.process:
             raise ValueError(
-                "ProcessPayload.process must have `workflow` specifying workflow name"
+                "ProcessPayload.process must have `workflow` specifying workflow name",
             )
 
         # convert old functions field to tasks
@@ -145,7 +147,7 @@ class ProcessPayload(dict):
 
         if not self.features:
             raise ValueError(
-                "ProcessPayload has no `id` specified and one cannot be constructed without `features`."
+                "ProcessPayload has no `id` specified and one cannot be constructed without `features`.",
             )
 
         if "collections" in self.process:
@@ -154,7 +156,7 @@ class ProcessPayload(dict):
         else:
             # otherwise, get from items
             cols = sorted(
-                list({i["collection"] for i in self.features if "collection" in i})
+                list({i["collection"] for i in self.features if "collection" in i}),
             )
             input_collections = cols if len(cols) != 0 else "none"
             collections_str = "/".join(input_collections)
@@ -165,7 +167,7 @@ class ProcessPayload(dict):
         )
 
     @staticmethod
-    def upload_to_s3(payload: dict, bucket: str = None) -> str:
+    def upload_to_s3(payload: dict, bucket: str | None = None) -> str:
         """Helper function to upload a dict (not necessarily a ProcessPayload) to s3"""
         # url-payloads do not need to be re-uploaded
         if "url" in payload:
@@ -221,7 +223,9 @@ class ProcessPayload(dict):
 
             # add execution to DynamoDB record
             wfem.started_processing(
-                self["id"], exe_response["executionArn"], payload_url=url
+                self["id"],
+                exe_response["executionArn"],
+                payload_url=url,
             )
 
             return self["id"]
@@ -296,7 +300,7 @@ class ProcessPayloads:
         cls,
         collections,
         state,
-        since: str = None,
+        since: str | None = None,
         index: str = "input_state",
         limit=None,
     ) -> ProcessPayloads:
@@ -356,7 +360,8 @@ class ProcessPayloads:
             ):
                 logger.warning("Dropping duplicated payload %s", payload["id"])
                 wfem.duplicated(
-                    payload["id"], payload_url=StateDB.payload_id_to_url(payload["id"])
+                    payload["id"],
+                    payload_url=StateDB.payload_id_to_url(payload["id"]),
                 )
                 payload_ids["dropped"].append(payload["id"])
             elif state in [StateEnum.FAILED, StateEnum.ABORTED, ""] or _replace:
@@ -371,7 +376,9 @@ class ProcessPayloads:
                         payload_ids["skipped"].append(payload["id"])
             else:
                 logger.info(
-                    "Skipping %s, input already in %s state", payload["id"], state
+                    "Skipping %s, input already in %s state",
+                    payload["id"],
+                    state,
                 )
                 wfem.skipping(
                     payload["id"],

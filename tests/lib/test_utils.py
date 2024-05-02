@@ -1,27 +1,28 @@
 import json
+
 from pathlib import Path
 
 import pytest
-from moto.core.models import DEFAULT_ACCOUNT_ID
-from moto.sns.models import sns_backends
 
 from cirrus.lib import utils
+from moto.core.models import DEFAULT_ACCOUNT_ID
+from moto.sns.models import sns_backends
 
 fixtures = Path(__file__).parent.joinpath("fixtures")
 event_dir = fixtures.joinpath("events")
 
 
-@pytest.fixture
+@pytest.fixture()
 def payloads(boto3utils_s3):
     boto3utils_s3.s3.create_bucket(Bucket="payloads")
 
 
-@pytest.fixture
+@pytest.fixture()
 def queue(sqs):
     return sqs.create_queue(QueueName="test-queue")["QueueUrl"]
 
 
-@pytest.fixture
+@pytest.fixture()
 def topic(sns):
     return sns.create_topic(Name="some-topic")["TopicArn"]
 
@@ -114,9 +115,7 @@ def test_delete_from_queue(sqs, queue):
     )
     msg = sqs.receive_message(
         QueueUrl=queue,
-    )[
-        "Messages"
-    ][0]
+    )["Messages"][0]
     msg["eventSourceARN"] = arn
     utils.delete_from_queue(msg)
 
@@ -129,9 +128,7 @@ def test_delete_from_queue_lowercase(sqs, queue):
     )
     msg = sqs.receive_message(
         QueueUrl=queue,
-    )[
-        "Messages"
-    ][0]
+    )["Messages"][0]
     msg["receiptHandle"] = msg.pop("ReceiptHandle")
     msg["eventSourceARN"] = arn
     utils.delete_from_queue(msg)
@@ -145,16 +142,14 @@ def test_delete_from_queue_bad_message(sqs, queue):
     )
     msg = sqs.receive_message(
         QueueUrl=queue,
-    )[
-        "Messages"
-    ][0]
+    )["Messages"][0]
     del msg["ReceiptHandle"]
     msg["eventSourceARN"] = arn
     with pytest.raises(ValueError):
         utils.delete_from_queue(msg)
 
 
-@pytest.fixture
+@pytest.fixture()
 def batch_tester():
     class BatchTester:
         def __init__(self):

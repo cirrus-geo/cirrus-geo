@@ -1,8 +1,10 @@
 import json
 import os
+
 from collections import defaultdict
+from collections.abc import Callable
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
 from urllib.parse import urljoin
 
 from boto3utils import s3
@@ -16,9 +18,9 @@ logger = get_task_logger("function.api", payload=tuple())
 
 
 def response(
-    body: Union[str, Dict[str, Any]],
+    body: str | dict[str, Any],
     status_code: int = 200,
-    headers: Optional[Dict[str, str]] = None,
+    headers: dict[str, str] | None = None,
 ):
     if headers is None:
         _headers = {}
@@ -27,7 +29,10 @@ def response(
 
     # CORS headers
     _headers.update(
-        {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Credentials": "true"}
+        {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": "true",
+        },
     )
     return {"statusCode": status_code, "headers": _headers, "body": json.dumps(body)}
 
@@ -68,7 +73,7 @@ def get_root(root_url, data_bucket):
     return root
 
 
-def get_stats(_eventdb: EventDB) -> Optional[Dict[str, Any]]:
+def get_stats(_eventdb: EventDB) -> dict[str, Any] | None:
     logger.debug("Get stats")
 
     if _eventdb.enabled():
@@ -77,18 +82,21 @@ def get_stats(_eventdb: EventDB) -> Optional[Dict[str, Any]]:
                 "daily": daily(_eventdb.query_by_bin_and_duration("1d", "60d")),
                 "hourly": hourly(_eventdb.query_by_bin_and_duration("1h", "36h")),
                 "hourly_rolling": hourly(
-                    _eventdb.query_hour(1, 0), _eventdb.query_hour(2, 1)
+                    _eventdb.query_hour(1, 0),
+                    _eventdb.query_hour(2, 1),
                 ),
-            }
+            },
         }
     else:
         return None
 
 
 def _results_transform(
-    results: Dict[str, Any], timestamp_function: Callable[[str], str], interval: str
-) -> List[Dict[str, Any]]:
-    intervals: Dict[str, Dict[str, Tuple[int, int]]] = defaultdict(dict)
+    results: dict[str, Any],
+    timestamp_function: Callable[[str], str],
+    interval: str,
+) -> list[dict[str, Any]]:
+    intervals: dict[str, dict[str, tuple[int, int]]] = defaultdict(dict)
 
     for row in results["Rows"]:
         ts = timestamp_function(row["Data"][0]["ScalarValue"])
@@ -111,16 +119,18 @@ def _results_transform(
     ]
 
 
-def daily(results: Dict[str, Any]) -> List[Dict[str, Any]]:
+def daily(results: dict[str, Any]) -> list[dict[str, Any]]:
     return _results_transform(results, lambda x: x.split(" ")[0], "day")
 
 
-def hourly(r1: Dict[str, Any], *rs: Dict[str, Any]) -> List[Dict[str, Any]]:
+def hourly(r1: dict[str, Any], *rs: dict[str, Any]) -> list[dict[str, Any]]:
     combined_results = deepcopy(r1)
     for result in rs:
         combined_results["Rows"].extend(result.get("Rows", []))
     return _results_transform(
-        combined_results, lambda x: x.replace(" ", "T").split(".")[0] + "Z", "hour"
+        combined_results,
+        lambda x: x.replace(" ", "T").split(".")[0] + "Z",
+        "hour",
     )
 
 
@@ -198,7 +208,7 @@ def lambda_handler(event, _context):
         else:
             return response(
                 {
-                    "error": "Endpoint /stats is not enabled because timeseries database is not configured"
+                    "error": "Endpoint /stats is not enabled because timeseries database is not configured",
                 },
                 404,
             )
@@ -216,7 +226,7 @@ def lambda_handler(event, _context):
                 since=since,
                 limit=limit,
                 statedb=statedb,
-            )
+            ),
         )
     elif key["itemids"] == "items":
         # get items

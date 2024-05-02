@@ -8,14 +8,17 @@ First arg is the Timestream DB, second arg is the Timestream table, third is the
 
 Write to Magnetic store must be enabled manually for this to work.
 """
+
 import logging
 import random
 import sys
 import uuid
-from datetime import datetime, timezone
+
+from datetime import UTC, datetime
 from enum import Enum, unique
 
 import boto3
+
 from faker import Faker
 
 logger = logging.getLogger(__name__)
@@ -64,7 +67,7 @@ def write_timeseries_record(
             Records=[record],
         )
         logger.info(
-            f"Timestream WriteRecords Status for first time: [{result['ResponseMetadata']['HTTPStatusCode']}]"
+            f"Timestream WriteRecords Status for first time: [{result['ResponseMetadata']['HTTPStatusCode']}]",
         )
     except tsw_client.exceptions.RejectedRecordsException as err:
         logger.error(f"Timestream RejectedRecords: {err}")
@@ -72,7 +75,7 @@ def write_timeseries_record(
             logger.error(f"Rejected Index {rr['RecordIndex']} : {rr['Reason']}")
             if "ExistingVersion" in rr:
                 logger.error(
-                    f"Rejected record existing version: {rr['ExistingVersion']}"
+                    f"Rejected record existing version: {rr['ExistingVersion']}",
                 )
     except Exception as err:
         logger.error(f"Error: {err}")
@@ -118,7 +121,7 @@ fake = Faker()
 def generate_item_events(between_val: str):
     state = None
     timestamp = fake.date_time_between(between_val)
-    execution_arn = f"arn:aws:states:us-west-2:1667831315:execution:pvarner-cirrus-dev-fake:{str(uuid.uuid4())}"
+    execution_arn = f"arn:aws:states:us-west-2:1667831315:execution:pvarner-cirrus-dev-fake:{uuid.uuid4()!s}"
 
     while state not in [StateEnum.COMPLETED, StateEnum.INVALID, StateEnum.TERMINAL]:
         if state is None:
@@ -127,9 +130,16 @@ def generate_item_events(between_val: str):
             state = random.choice(state_transitions[state])
 
         if state != StateEnum.TERMINAL:
-            yield "workflow1", "sentinel-2-l2a", str(
-                uuid.uuid4()
-            ), state, timestamp.astimezone(timezone.utc).isoformat(), execution_arn
+            yield (
+                "workflow1",
+                "sentinel-2-l2a",
+                str(
+                    uuid.uuid4(),
+                ),
+                state,
+                timestamp.astimezone(UTC).isoformat(),
+                execution_arn,
+            )
 
             timestamp = fake.date_time_between(timestamp, "+2h")
             if timestamp > datetime.now():

@@ -25,7 +25,6 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
     failures = []
     messages = {}
     for message in utils.normalize_event(event):
-
         try:
             payload = utils.extract_record(message)
         except Exception as exc:
@@ -54,7 +53,8 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
             payload = ProcessPayload(payload, set_id_if_missing=True)
         except Exception as exc:
             logger.exception(
-                "Failed to convert to ProcessPayload: %s", json.dumps(payload)
+                "Failed to convert to ProcessPayload: %s",
+                json.dumps(payload),
             )
             wfem.announce(
                 WorkflowEvent(

@@ -1,6 +1,7 @@
 import json
 import re
-from typing import Any, Optional, Tuple
+
+from typing import Any
 
 import boto3
 
@@ -35,14 +36,14 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     if container is None:
         logger.exception(f"Original error: {json.dumps(error)}")
         raise Exception(
-            "Unable to get error log: Container for last Attempt is missing"
+            "Unable to get error log: Container for last Attempt is missing",
         )
 
     logname = container.get("LogStreamName")
     if not logname:
         logger.exception(f"Original error: {json.dumps(error)}")
         raise Exception(
-            "Unable to get error log: LogStreamName for last Attempt is missing"
+            "Unable to get error log: LogStreamName for last Attempt is missing",
         )
 
     error_from_batch = None
@@ -52,7 +53,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         # lambda does not currently support exeception chaining,
         # so we have to log the original exception separately
         logger.exception(
-            f"Unable to get error log '{BATCH_LOG_GROUP}/{logname}' because {e}, original error: {json.dumps(error)}"
+            f"Unable to get error log '{BATCH_LOG_GROUP}/{logname}' because {e}, original error: {json.dumps(error)}",
         )
 
     if error_from_batch:
@@ -63,16 +64,16 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         # if the cloudwatch error log cannot be retrieved, it's likely that the container
         # didn't start and nothing was logged anyway, so we log the reason for that instead
         container_reason = container.get(
-            "Reason"
+            "Reason",
         )  # e.g., "DockerTimeoutError: Could not transition to created; timed out after waiting 4m0s"
         status_reason = attempt.get("StatusReason")  # e.g., "Task failed to start"
         raise Exception(
             "Unable to get error log, container likely never ran. "
-            f"Container Reason: {container_reason}; Status Reason: {status_reason}"
+            f"Container Reason: {container_reason}; Status Reason: {status_reason}",
         )
 
 
-def get_error_from_batch(logname: str) -> Optional[Tuple[str, str]]:
+def get_error_from_batch(logname: str) -> tuple[str, str] | None:
     logger.info("Getting error from %s/%s", BATCH_LOG_GROUP, logname)
     logs = LOG_CLIENT.get_log_events(
         logGroupName=BATCH_LOG_GROUP,
