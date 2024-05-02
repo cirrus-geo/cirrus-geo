@@ -42,7 +42,7 @@ main () {
 
     local compile="pip-compile --strip-extras --allow-unsafe"
 
-    $compile pyproject.toml "$@"
+    $compile pyproject.toml --all-extras "$@"
 
     local infile
     for infile in *.in; do

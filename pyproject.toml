@@ -40,6 +40,16 @@ dynamic = [
 [project.urls]
 Repository = 'https://github.com/cirrus-geo/cirrus-geo'
 
+[project.optional-dependencies]
+cli = [
+    'backoff',
+    'click',
+    'click-option-group',
+]
+
+[project.scripts]
+cirrus = 'cirrus.management.__main__:main'
+
 [tool.setuptools_scm]
 
 [tool.setuptools.dynamic]

@@ -25,7 +25,9 @@ cfgv==3.4.0
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
-    # via pip-tools
+    # via
+    #   -c requirements.txt
+    #   pip-tools
 coverage==7.5.0
     # via pytest-cov
 cryptography==42.0.5
