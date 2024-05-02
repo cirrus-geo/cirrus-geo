@@ -1,0 +1,87 @@
+[build-system]
+requires = [
+    'setuptools',
+    'setuptools-scm',
+]
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'cirrus-geo'
+authors = [
+    {name = "Matthew Hanson (matthewhanson)"},
+    {name = "Jarrett Keifer", email = "jkeifer@element84.com"},
+]
+description = "AWS-native STAC-based processing pipeline"
+requires-python = ">=3.12"
+keywords = [
+    "cirrus",
+    "stac",
+    "workflow",
+    "geospatial",
+]
+license = {text = "Apache License 2.0"}
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    'boto3',
+    'boto3-utils',
+    'jsonpath-ng',
+    'python-dateutil',
+    'python-json-logger',
+]
+dynamic = [
+  'version',
+  'readme',
+]
+
+[project.urls]
+Repository = 'https://github.com/cirrus-geo/cirrus-geo'
+
+[tool.setuptools_scm]
+
+[tool.setuptools.dynamic]
+readme = {file = "README.md"}
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules/
+select = [
+    'B',
+    'BLE',
+    'C4',
+    'C90',
+    'COM',
+    'DTZ',
+    'E',
+    'ERA',
+    'F',
+    'FA',
+    'G',
+    'I',
+    'INP',
+    'N',
+    'NPY',
+    'PT',
+    'PTH',
+    'RET',
+    'RUF',
+    'S',
+    'SIM',
+    'T20',
+    'UP',
+    'W',
+
+]
+
+[tool.ruff.lint.per-file-ignores]
+'__init__.py' = ['E402']
+'tests/**/*' = ['T201', 'S101']
+
+[tool.ruff.lint.isort]
+lines-between-types = 1
+
+[tool.mypy]
+ignore_missing_imports = true
+scripts_are_modules = true
