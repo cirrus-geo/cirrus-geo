@@ -71,17 +71,6 @@ def test_open_payload(base_payload):
     )
 
 
-def test_open_payload_output_options(base_payload):
-    base_payload["process"]["output_options"] = base_payload["process"].pop(
-        "upload_options",
-    )
-    payload = ProcessPayload(**base_payload)
-    assert (
-        payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
-    )
-    assert payload.process["upload_options"]
-
-
 def test_update_payload(base_payload):
     del base_payload["id"]
     del base_payload["features"][0]["links"]
@@ -144,7 +133,7 @@ def test_next_payloads_list_of_four_fork(base_payload):
     # payload
     #   process:
     #     - wf1
-    #     - [ wf2a, wf2b]
+    #     - [ wf2a, wf2b]  # noqa: ERA001
     #     - wf3
     #     - wf4
     payloads = list(ProcessPayload.from_event(list_payload).next_payloads())

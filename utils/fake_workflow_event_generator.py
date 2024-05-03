@@ -1,3 +1,4 @@
+# ruff: noqa
 """Fake workflow event generator.
 
 pip install -r requirements.txt

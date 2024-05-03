@@ -1,4 +1,7 @@
+import contextlib
 import json
+
+from typing import Any
 
 from cirrus.lib import utils
 from cirrus.lib.enums import WFEventType
@@ -10,7 +13,7 @@ from cirrus.lib.statedb import StateDB
 
 utils.cold_start()
 
-logger = get_task_logger("function.process", payload=tuple())
+logger = get_task_logger("function.process", payload=())
 
 
 def is_sqs_message(message):
@@ -21,9 +24,9 @@ def is_sqs_message(message):
 def lambda_handler(event, context, *, wfem: WorkflowEventManager):
     logger.debug(json.dumps(event))
 
-    payloads = []
-    failures = []
-    messages = {}
+    payloads: list[ProcessPayload] = []
+    failures: list[Any] = []
+    messages: dict[str, list[dict[str, Any]]] = {}
     for message in utils.normalize_event(event):
         try:
             payload = utils.extract_record(message)
@@ -42,10 +45,8 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
             continue
 
         # if the payload has a URL in it then we'll fetch it from S3
-        try:
+        with contextlib.suppress(NoUrlError):
             payload = utils.payload_from_s3(payload)
-        except NoUrlError:
-            pass
 
         logger.debug("payload: %s", defer(json.dumps, payload))
 
@@ -77,16 +78,16 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
             except KeyError:
                 messages[payload_id] = [message]
 
-    processed_ids = set()
-    processed = {"started": []}
+    processed_ids: set[str] = set()
+    processed: dict[str, list[str]] = {"started": []}
     if len(payloads) > 0:
         processed = ProcessPayloads(payloads, StateDB()).process(wfem)
-        processed_ids = {pid for state in processed.keys() for pid in processed[state]}
+        processed_ids = {pid for state in processed for pid in processed[state]}
 
     successful_sqs_messages = [
         message for _id in processed_ids for message in messages.pop(_id, [])
     ]
-    failures += list(messages.values())
+    failures.extend(messages.values())
 
     if failures:
         # If we have partial failure, then we want to delete all

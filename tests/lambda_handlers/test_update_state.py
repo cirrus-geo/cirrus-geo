@@ -31,15 +31,15 @@ def event():
             "arn:aws:states:us-east-1:123456789012:execution:test-workflow1:ef3ace61-4231-4488-9f55-17956ede0de7",
         ],
         "detail": {
-            "executionArn": "arn:aws:states:us-east-1:123456789012:execution:test-workflow1:ef3ace61-4231-4488-9f55-17956ede0de7",
-            "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:test-workflow1",
+            "executionArn": "arn:aws:states:us-east-1:123456789012:execution:test-workflow1:ef3ace61-4231-4488-9f55-17956ede0de7",  # noqa: E501
+            "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:test-workflow1",  # noqa: E501
             "name": "ef3ace61-4231-4488-9f55-17956ede0de7",
             "status": "SUCCEEDED",
             "startDate": 1667953034792,
             "stopDate": 1667953037547,
             "input": '{"id": "'
             + EVENT_PAYLOAD_ID
-            + '", "metadata_href": "s3://sentinel-s2-l2a/tiles/31/T/DG/2017/9/10/0/tileInfo.json", "process": {"workflow": "sentinel2-to-stac", "input_collections": ["roda-sentinel2"], "upload_options": {"path_template": "${earthsearch:s3_path}", "public_assets": "ALL"}, "tasks": {"sentinel2-to-stac": {}}}}',
+            + '", "metadata_href": "s3://sentinel-s2-l2a/tiles/31/T/DG/2017/9/10/0/tileInfo.json", "process": {"workflow": "sentinel2-to-stac", "input_collections": ["roda-sentinel2"], "upload_options": {"path_template": "${earthsearch:s3_path}", "public_assets": "ALL"}, "tasks": {"sentinel2-to-stac": {}}}}',  # noqa: E501
             "output": None,
             "inputDetails": {"included": True},
             "outputDetails": None,
@@ -53,7 +53,7 @@ def test_empty_event():
 
 
 @pytest.mark.parametrize(
-    "wf_event_enabled,sfn_state",
+    ("wf_event_enabled", "sfn_state"),
     product((True, False), SfnStatus._member_names_),
 )
 def test_workflow_event_notification(
@@ -148,7 +148,7 @@ def test_invalid(event, statedb, monkeypatch):
     monkeypatch.setattr(
         lambda_function,
         "get_execution_error",
-        lambda x: {"Error": "InvalidInput", "Cause": "banana in the tailpipe"},
+        lambda _: {"Error": "InvalidInput", "Cause": "banana in the tailpipe"},
     )
 
     # now run with a failed payload

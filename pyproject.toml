@@ -90,7 +90,15 @@ exclude = [
 
 [tool.ruff.lint.per-file-ignores]
 '__init__.py' = ['E402']
-'tests/**/*' = ['T201', 'S101']
+'tests/**/*' = [
+    'T201',
+    'S101',
+    # TODO: B017 and PT011 _should not_ be ignored, they are serious
+    # but it will take some work to get them straightened out
+    # https://github.com/cirrus-geo/cirrus-geo/issues/271
+    'B017',
+    'PT011',
+]
 
 [tool.ruff.lint.isort]
 lines-between-types = 1

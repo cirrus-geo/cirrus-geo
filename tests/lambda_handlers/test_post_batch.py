@@ -57,7 +57,10 @@ def test_error_handling():
 
     with pytest.raises(
         Exception,
-        match=r"Unable to get error log, container likely never ran. Container Reason: None; Status Reason: None",
+        match=(
+            r"Unable to get error log, container likely never ran. "
+            r"Container Reason: None; Status Reason: None"
+        ),
     ):
         post_batch(
             {
@@ -72,7 +75,11 @@ def test_error_handling():
 
     with pytest.raises(
         Exception,
-        match=r"Unable to get error log, container likely never ran. Container Reason: DockerTimeoutError: Could not transition to created; timed out after waiting 4m0s; Status Reason: Task failed to start",
+        match=(
+            r"Unable to get error log, container likely never ran. "
+            r"Container Reason: DockerTimeoutError: Could not transition to created; "
+            r"timed out after waiting 4m0s; Status Reason: Task failed to start"
+        ),
     ):
         post_batch(
             {
@@ -82,8 +89,14 @@ def test_error_handling():
                             "Attempts": [
                                 {
                                     "Container": {
-                                        "LogStreamName": "cirrus-es-prod-Sentinel2/default/a6768fc4fce04b809905ff65e71a9b38",
-                                        "Reason": "DockerTimeoutError: Could not transition to created; timed out after waiting 4m0s",
+                                        "LogStreamName": (
+                                            "cirrus-es-prod-Sentinel2/default/"
+                                            "a6768fc4fce04b809905ff65e71a9b38"
+                                        ),
+                                        "Reason": (
+                                            "DockerTimeoutError: Could not transition "
+                                            "to created; timed out after waiting 4m0s"
+                                        ),
                                     },
                                     "StatusReason": "Task failed to start",
                                 },

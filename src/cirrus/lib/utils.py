@@ -2,12 +2,12 @@ import json
 import logging
 import re
 
-from collections.abc import Callable
-from contextlib import AbstractContextManager, contextmanager
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from functools import cache
 from os import getenv
 from string import Formatter, Template
-from typing import Any
+from typing import Any, Self
 
 import boto3
 
@@ -92,7 +92,8 @@ def get_path(item: dict, template: str = "${collection}/${id}") -> str:
 
     Args:
         item (dict): A STAC Item.
-        template (str, optional): Path template using variables referencing Item fields. Defaults to'${collection}/${id}'.
+        template (str, optional): Path template using variables referencing
+            Item fields. Defaults to'${collection}/${id}'.
 
     Returns:
         [str]: A path name
@@ -119,7 +120,7 @@ def get_path(item: dict, template: str = "${collection}/${id}") -> str:
     return Template(_template).substitute(**subs).replace("__colon__", ":")
 
 
-def recursive_compare(
+def recursive_compare(  # noqa: C901
     d1: dict,
     d2: dict,
     level: str = "root",
@@ -196,24 +197,23 @@ def extract_record(record: dict):
     if "Message" in record:
         record = json.loads(record["Message"])
 
-    if "url" not in record and "Parameters" in record:
+    if (
+        "url" not in record
+        and "Parameters" in record
+        and "url_out" in record["Parameters"]
+    ):
         # this is Batch, get the output payload
-        if "url_out" in record["Parameters"]:
-            record = {"url": record["Parameters"]["url_out"]}
+        record = {"url": record["Parameters"]["url_out"]}
 
     return record
 
 
 def normalize_event(event: dict):
-    if "Records" not in event:
-        # not from SQS or SNS
-        records = [event]
-    else:
-        records = event["Records"]
-    return records
+    # if Records in event then from SQS or SNS
+    return event.get("Records", [event])
 
 
-def extract_event_records(event: dict, convertfn=None):
+def extract_event_records(event: dict):
     for record in normalize_event(event):
         yield extract_record(record)
 
@@ -221,10 +221,10 @@ def extract_event_records(event: dict, convertfn=None):
 def payload_from_s3(record: dict) -> dict:
     try:
         payload = s3().read_json(record["url"])
-    except KeyError:
+    except KeyError as e:
         raise NoUrlError(
             "Item does not have a URL and therefore cannot be retrieved from S3",
-        )
+        ) from e
     return payload
 
 
@@ -237,7 +237,7 @@ def parse_queue_arn(queue_arn: str) -> dict:
     return parsed.groupdict()
 
 
-QUEUE_URLS = {}
+QUEUE_URLS: dict[str, str] = {}
 
 
 def get_queue_url(message: dict) -> str:
@@ -352,7 +352,8 @@ class BatchHandler:
           params (dict): dictionary of the named parameters which `fn` takes.
           batch_param_name (str): key to be populated with the messages in `params`
           batch_size (int): size of batches to be sent (defaults to 10)
-          dest_name (str): common name of location message is being sent (default is "default")
+          dest_name (str): common name of location message is being sent
+              (default is "default")
           logger (logging.Logger): logger class to use (defaults to cirrus.utils.logger)
         """
 
@@ -361,15 +362,15 @@ class BatchHandler:
         self.batch_param_name = batch_param_name
         self.batch_size = batch_size
         self.dest_name = dest_name
-        self._batch = []
+        self._batch: list[Any] = []
         self.logger = logger if logger is not None else logging.getLogger(__name__)
 
-    def add(self, message: str):
+    def add(self, message: Any):
         """
         Add the given messages to the `_batch`, and ship them if there are more than
         `batch_size`.
         Args:
-          message (str): message to be handled by `fn`
+          message (Any): message to be handled by `fn`
         """
         self._batch.append(message)
 
@@ -402,10 +403,10 @@ class BatchHandler:
     @classmethod
     @contextmanager
     def get_handler(
-        cls: "BatchHandler",
+        cls: type[Self],
         *args,
         **kwargs,
-    ) -> AbstractContextManager["BatchHandler"]:
+    ) -> Iterator[Self]:
         publisher = cls(*args, **kwargs)
         try:
             yield publisher
@@ -414,7 +415,7 @@ class BatchHandler:
 
 
 @contextmanager
-def batch_handler(*args, **kwargs) -> AbstractContextManager[BatchHandler]:
+def batch_handler(*args, **kwargs) -> Iterator[BatchHandler]:
     # TODO: Deprecate this in favor of managed classes
     handler = BatchHandler(*args, **kwargs)
     try:
@@ -446,7 +447,7 @@ class SNSPublisher(BatchHandler):
           messages (str): message to be handled by `fn`
           message_attrs (Optional[dict]): attributes to be added to the message.
         """
-        message_params = {"Message": message}
+        message_params: dict[str, Any] = {"Message": message}
         if message_attrs:
             if len(message_attrs) > 10:
                 self.logger.error(

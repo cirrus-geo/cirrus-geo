@@ -14,7 +14,7 @@ from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start, get_client
 
 cold_start()
 
-logger = get_task_logger("function.update-state", payload=tuple())
+logger = get_task_logger("function.update-state", payload=())
 
 # envvars
 FAILED_TOPIC_ARN = getenv("CIRRUS_FAILED_TOPIC_ARN", None)
@@ -39,7 +39,7 @@ class Execution:
     arn: str
     input: ProcessPayload
     url: str
-    output: ProcessPayload
+    output: ProcessPayload | None
     status: SfnStatus
     error: dict | None
 
@@ -95,8 +95,8 @@ class Execution:
                 status=status,
                 error=error,
             )
-        except Exception:
-            raise Exception(f"Unknown event: {json.dumps(event)}")
+        except Exception as e:
+            raise Exception(f"Unknown event: {json.dumps(event)}") from e
 
 
 def mk_error(error: str, cause: str) -> dict[str, str]:
@@ -143,7 +143,7 @@ def workflow_failed(
             cause = json.loads(execution.error["Cause"])
             if "errorMessage" in cause:
                 error_msg = cause.get("errorMessage", "unknown")
-        except Exception:
+        except Exception:  # noqa: BLE001
             error_msg = execution.error["Cause"]
 
     error = f"{error_type}: {error_msg}"
@@ -177,7 +177,7 @@ def workflow_failed(
 
     if notification_topic_arn is not None:
         try:
-            statedb = StateDB.get_singleton()
+            statedb = StateDB()
             item = statedb.dbitem_to_item(statedb.get_dbitem(execution.input["id"]))
             attrs = {
                 "collections": {
@@ -187,11 +187,11 @@ def workflow_failed(
                 "workflow": {"DataType": "String", "StringValue": item["workflow"]},
                 "error": {"DataType": "String", "StringValue": error},
             }
-            logger.debug(f"Publishing item to {notification_topic_arn}")
+            logger.debug("Publishing item to %s", notification_topic_arn)
             with SNSPublisher.get_handler(notification_topic_arn) as publisher:
                 publisher.add(json.dumps(item), attrs)
         except Exception:
-            logger.exception(f"Failed publishing to {notification_topic_arn}")
+            logger.exception("Failed publishing to %s", notification_topic_arn)
             raise
 
 
@@ -210,7 +210,8 @@ def get_execution_error(arn: str) -> dict[str, str]:
                     details = event["stateEnteredEventDetails"]
                     error = json.loads(details["input"])["error"]
                     break
-                elif "lambdaFunctionFailedEventDetails" in event:
+
+                if "lambdaFunctionFailedEventDetails" in event:
                     error = event["lambdaFunctionFailedEventDetails"]
                     # for some dumb reason these errors have lowercase key names
                     error = {key.capitalize(): val for key, val in error.items()}

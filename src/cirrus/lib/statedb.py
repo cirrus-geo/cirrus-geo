@@ -4,7 +4,7 @@ import os
 
 from datetime import UTC, datetime, timedelta
 from types import MethodType
-from typing import Any
+from typing import Any, Self
 
 import boto3
 
@@ -85,8 +85,7 @@ def check_response_code(
 
 
 class StateDB:
-    limit = None
-    _statedb = None
+    limit: int | None = None
 
     def __init__(
         self,
@@ -96,7 +95,8 @@ class StateDB:
         """Initialize a StateDB instance using the Cirrus State DB table
 
         Args:
-            table_name (str, optional): The Cirrus StateDB Table name. Defaults to os.getenv('CIRRUS_STATE_DB', None).
+            table_name (str, optional): The Cirrus StateDB Table name.
+                Defaults to os.getenv('CIRRUS_STATE_DB', None).
         """
         table_name = table_name if table_name else get_state_db()
 
@@ -135,10 +135,10 @@ class StateDB:
         try:
             response = self.table.get_item(Key=key)
             return response.get("Item", None)
-        except Exception as err:
+        except Exception as e:
             msg = "Error fetching item"
-            logger.error(msg, extra=key.update({"error": err}), exc_info=True)
-            raise Exception(msg)
+            logger.exception(msg)
+            raise Exception(msg) from e
 
     def get_dbitems(self, payload_ids: list[str]) -> list[dict]:
         """Get multiple DynamoDB Items
@@ -165,17 +165,17 @@ class StateDB:
                 items.append(r)
             logger.debug("Fetched %s items", len(items))
             return items
-        except Exception:
+        except Exception as e:
             msg = "Error fetching items"
-            logger.error(msg, exc_info=True)
-            raise Exception(msg)
+            logger.exception(msg)
+            raise Exception(msg) from e
 
     def get_counts(
         self,
         collections_workflow: str,
         limit: int | None = None,
         **query_kwargs,
-    ) -> dict:
+    ) -> int | str:
         """Get counts by query
 
         Args:
@@ -206,9 +206,9 @@ class StateDB:
         return counts
 
     def get_items_page(
-        self,
+        self: Self,
         collections_workflow: str,
-        limit=100,
+        limit: int = 100,
         nextkey: str | None = None,
         **kwargs,
     ) -> dict[str, Any]:
@@ -255,7 +255,13 @@ class StateDB:
 
         return items
 
-    def get_items(self, *args, limit=None, **kwargs) -> dict:
+    def get_items(
+        self: Self,
+        collections_workflow: str,
+        limit: int | None = None,
+        nextkey: str | None = None,
+        **kwargs,
+    ) -> dict:
         """Get items from database
 
         Args:
@@ -264,16 +270,24 @@ class StateDB:
         Returns:
             Dict: StateDB Items
         """
-        resp = self.get_items_page(*args, **kwargs)
+        resp = self.get_items_page(
+            collections_workflow,
+            nextkey=nextkey,
+            **kwargs,
+        )
         items = resp["items"]
         while "nextkey" in resp and (limit is None or len(items) < limit):
-            resp = self.get_items_page(*args, nextkey=resp["nextkey"], **kwargs)
+            resp = self.get_items_page(
+                collections_workflow,
+                nextkey=resp["nextkey"],
+                **kwargs,
+            )
             items += resp["items"]
         if limit is None or len(items) < limit:
             return items
         return items[:limit]
 
-    def get_state(self, payload_id: str) -> StateEnum:
+    def get_state(self, payload_id: str) -> StateEnum | None:
         """Get current state of Item
         Args:
             payload_id (str): The Payload ID
@@ -283,9 +297,8 @@ class StateDB:
         response = self.table.get_item(Key=self.payload_id_to_key(payload_id))
         if "Item" in response:
             return StateEnum(response["Item"]["state_updated"].split("_")[0])
-        else:
-            # assuming no such item in database
-            return ""
+        # assuming no such item in database
+        return None
 
     def get_states(self, payload_ids: list[str]) -> dict[str, StateEnum]:
         """Get current state of items
@@ -294,10 +307,11 @@ class StateDB:
         Returns:
             Dict[str, str]: Dictionary of Payload IDs to state
         """
+        # Should states have all payload_ids in it? None state for those not found?
         states = {}
         for dbitem in self.get_dbitems(payload_ids):
             item = self.dbitem_to_item(dbitem)
-            states[item["payload_id"]] = item["state"]
+            states[item["payload_id"]] = StateEnum(item["state"])
         return states
 
     @ValidStateChange
@@ -320,7 +334,7 @@ class StateDB:
             "created = if_not_exists(created, :created), "
             "state_updated=:state_updated, updated=:updated"
         )
-        response = self.table.update_item(
+        return self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ConditionExpression="NOT begins_with(state_updated, :proc)",
@@ -331,7 +345,6 @@ class StateDB:
                 ":proc": "PROCESSING",
             },
         )
-        return response
 
     @ValidStateChange
     def set_processing(
@@ -359,7 +372,7 @@ class StateDB:
             "state_updated=:state_updated, updated=:updated, "
             "executions = list_append(if_not_exists(executions, :empty_list), :exes)"
         )
-        response = self.table.update_item(
+        return self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues={
@@ -370,8 +383,6 @@ class StateDB:
                 ":exes": [execution_arn],
             },
         )
-
-        return response
 
     @ValidStateChange
     def set_outputs(
@@ -400,7 +411,7 @@ class StateDB:
             "updated=:updated, "
             "outputs=:outputs"
         )
-        response = self.table.update_item(
+        return self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues={
@@ -410,21 +421,19 @@ class StateDB:
             },
         )
 
-        return response
-
     @ValidStateChange
     def set_completed(
         self,
         payload_id: str,
         outputs: list[str] | None = None,
-        execution_arn: str | None = None,
         isotimestamp: str | None = None,
     ) -> dict:
         """Set this item as COMPLETED
 
         Args:
             payload_id (str): The Cirrus Payload
-            outputs (Optional[[str]], optional): List of URLs to output Items. Defaults to None.
+            outputs (Optional[[str]], optional): List of URLs to output Items.
+                Defaults to None.
             execution_arn (Optional[str]): The Step Function execution ARN.
             isotimestamp (str): ISO format UTC timestamp for this action.
 
@@ -440,7 +449,7 @@ class StateDB:
             "created = if_not_exists(created, :created), "
             "state_updated=:state_updated, updated=:updated"
         )
-        expr_attrs = {
+        expr_attrs: dict[str, Any] = {
             ":created": now,
             ":state_updated": f"{StateEnum.COMPLETED}_{now}",
             ":updated": now,
@@ -450,20 +459,17 @@ class StateDB:
             expr += ", outputs=:outputs"
             expr_attrs[":outputs"] = outputs
 
-        response = self.table.update_item(
+        return self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues=expr_attrs,
         )
-
-        return response
 
     @ValidStateChange
     def set_failed(
         self,
         payload_id,
         msg,
-        execution_arn: str | None = None,
         isotimestamp: str | None = None,
     ) -> dict:
         """Adds/updates item with stepfunction execution
@@ -487,7 +493,7 @@ class StateDB:
             "state_updated=:state_updated, updated=:updated, "
             "last_error=:last_error"
         )
-        response = self.table.update_item(
+        return self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues={
@@ -498,14 +504,11 @@ class StateDB:
             },
         )
 
-        return response
-
     @ValidStateChange
     def set_invalid(
         self,
         payload_id: str,
         msg: str,
-        execution_arn: str | None = None,
         isotimestamp: str | None = None,
     ) -> dict:
         """Set this item as INVALID
@@ -529,7 +532,7 @@ class StateDB:
             "state_updated=:state_updated, updated=:updated, "
             "last_error=:last_error"
         )
-        response = self.table.update_item(
+        return self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues={
@@ -540,13 +543,10 @@ class StateDB:
             },
         )
 
-        return response
-
     @ValidStateChange
     def set_aborted(
         self,
         payload_id: str,
-        execution_arn: str | None = None,
         isotimestamp: str | None = None,
     ) -> dict:
         """Set this item as ABORTED
@@ -568,7 +568,7 @@ class StateDB:
             "created = if_not_exists(created, :created), "
             "state_updated=:state_updated, updated=:updated"
         )
-        response = self.table.update_item(
+        return self.table.update_item(
             Key=key,
             UpdateExpression=expr,
             ExpressionAttributeValues={
@@ -577,8 +577,6 @@ class StateDB:
                 ":updated": now,
             },
         )
-
-        return response
 
     def query(
         self,
@@ -661,13 +659,11 @@ class StateDB:
             kwargs["Limit"] = self.limit
 
         logger.debug(kwargs)
-        resp = self.table.query(**kwargs)
-
-        return resp
+        return self.table.query(**kwargs)
 
     @classmethod
     def dbitem_to_item(cls, dbitem: dict) -> dict:
-        state, updated = dbitem["state_updated"].split("_")
+        state, _ = dbitem["state_updated"].split("_")
         collections, workflow = dbitem["collections_workflow"].rsplit("_", maxsplit=1)
         item = {
             "payload_id": cls.key_to_payload_id(dbitem),
@@ -699,11 +695,10 @@ class StateDB:
         """
         parts1 = payload_id.split("/workflow-")
         parts2 = parts1[1].split("/", maxsplit=1)
-        key = {
+        return {
             "collections_workflow": parts1[0] + f"_{parts2[0]}",
             "itemids": "" if len(parts2) == 1 else parts2[1],
         }
-        return key
 
     @staticmethod
     def key_to_payload_id(key: dict) -> str:
@@ -744,14 +739,18 @@ class StateDB:
         """Convert a `since` field to a timedelta.
 
         Args:
-            since (str): Contains an integer followed by a unit letter: 'd' for days, 'h' for hours, 'm' for minutes
+            since (str): Contains an integer followed by a unit letter:
+                'd' for days, 'h' for hours, 'm' for minutes
 
         Returns:
             timedelta: [description]
         """
         unit = since[-1]
+
         # days, hours, or minutes
-        assert unit in ["d", "h", "m"]
+        if unit not in ["d", "h", "m"]:
+            raise ValueError(f"Unit must be 'd', 'h', or 'm'; got '{unit}'")
+
         days = int(since[0:-1]) if unit == "d" else 0
         hours = int(since[0:-1]) if unit == "h" else 0
         minutes = int(since[0:-1]) if unit == "m" else 0

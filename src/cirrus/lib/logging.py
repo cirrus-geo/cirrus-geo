@@ -62,8 +62,7 @@ class DynamicLoggerAdapter(logging.LoggerAdapter):
 
 def get_task_logger(*args, payload, **kwargs):
     _logger = logging.getLogger(*args, **kwargs)
-    logger = DynamicLoggerAdapter(_logger, payload, keys=["id", "stac_version"])
-    return logger
+    return DynamicLoggerAdapter(_logger, payload, keys=["id", "stac_version"])
 
 
 class defer:  # noqa: N801
