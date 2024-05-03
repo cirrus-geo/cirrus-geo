@@ -1,7 +1,8 @@
+import functools
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from functools import wraps
+from types import MethodType
 from typing import Any, Dict, List, Optional
 
 import boto3
@@ -22,19 +23,31 @@ def get_state_db():
     return os.getenv("CIRRUS_STATE_DB")
 
 
-def successful_state_change(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        check_timestamp(kwargs.get("isotimestamp"))
-        resp = f(*args, **kwargs)
-        check_response_code(
-            response=resp,
-            msg_prefix=f.__name__,
-            extra={"payload_id": kwargs.get("payload_id")},
-        )
-        return resp
+class ValidStateChange:
+    """Handle pre- and post- tasks which are common to all state-change functions in a
+    wrapper.
+    """
 
-    return wrapper
+    def __init__(self, f, *largs, **lkwargs):
+        def successful_state_change(fn):
+            @functools.wraps(fn)
+            def wrapper(obj, payload_id, *args, **kwargs):
+                check_timestamp(kwargs.get("isotimestamp"))
+                resp = fn(obj, payload_id, *args, **kwargs)
+                check_response_code(
+                    response=resp,
+                    msg_prefix=fn.__name__,
+                    extra={"payload_id": payload_id},
+                )
+                return resp
+
+            return wrapper
+
+        self.f = successful_state_change(f)
+        functools.update_wrapper(self, f)
+
+    def __get__(self, obj, cls=None):
+        return MethodType(self.f, obj)
 
 
 def check_timestamp(timestamp: str = None) -> None:
@@ -280,7 +293,7 @@ class StateDB:
             states[item["payload_id"]] = item["state"]
         return states
 
-    @successful_state_change
+    @ValidStateChange
     def claim_processing(self, payload_id: str, isotimestamp: str = None):
         """Sets payload_id to PROCESSING to claim it (preventing other runs)
         Args:
@@ -313,7 +326,7 @@ class StateDB:
         )
         return response
 
-    @successful_state_change
+    @ValidStateChange
     def set_processing(
         self, payload_id: str, execution_arn: str, isotimestamp: str = None
     ) -> Dict[str, Any]:
@@ -350,7 +363,7 @@ class StateDB:
 
         return response
 
-    @successful_state_change
+    @ValidStateChange
     def set_outputs(
         self, payload_id: str, outputs: List[str], isotimestamp: str = None
     ) -> Dict:
@@ -386,7 +399,7 @@ class StateDB:
 
         return response
 
-    @successful_state_change
+    @ValidStateChange
     def set_completed(
         self,
         payload_id: str,
@@ -432,7 +445,7 @@ class StateDB:
 
         return response
 
-    @successful_state_change
+    @ValidStateChange
     def set_failed(
         self,
         payload_id,
@@ -474,7 +487,7 @@ class StateDB:
 
         return response
 
-    @successful_state_change
+    @ValidStateChange
     def set_invalid(
         self,
         payload_id: str,
@@ -516,7 +529,7 @@ class StateDB:
 
         return response
 
-    @successful_state_change
+    @ValidStateChange
     def set_aborted(
         self,
         payload_id: str,
