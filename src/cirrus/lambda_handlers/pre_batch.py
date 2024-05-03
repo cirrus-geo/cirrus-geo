@@ -22,9 +22,9 @@ def lambda_handler(event, context):
         # copy payload to s3
         s3().upload_json(payload, url)
 
-        logger.debug(f"Uploaded payload to {url}")
+        logger.debug("Uploaded payload to %s", url)
         return {"url": url, "url_out": url_out}
     except Exception as err:
         msg = f"pre-batch: failed pre processing batch job for ({err})"
-        logger.error(msg, exc_info=True)
+        logger.exception(msg)
         raise Exception(msg) from err

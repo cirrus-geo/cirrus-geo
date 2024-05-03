@@ -38,7 +38,7 @@ def sqs_to_event(sqs_resp, sqs_arn):
 
 
 @pytest.fixture(autouse=True)
-def process_env(workflow, workflow_event_topic):
+def _process_env(_environment, workflow, workflow_event_topic):
     workflow_prefix = workflow["stateMachineArn"].rsplit(":", 1)[0] + ":"
     os.environ["CIRRUS_BASE_WORKFLOW_ARN"] = workflow_prefix
     os.environ["CIRRUS_WORKFLOW_EVENT_TOPIC_ARN"] = workflow_event_topic
@@ -608,7 +608,7 @@ def test_double_payload_sqs(
 
     items = statedb.get_dbitems(payload_ids=[first_id, second_id])
     assert len(items) == 2
-    assert all([item["state_updated"].startswith("PROCESSING") for item in items])
+    assert all(item["state_updated"].startswith("PROCESSING") for item in items)
 
     messages = sqs.receive_message(
         QueueUrl=queue["QueueUrl"],

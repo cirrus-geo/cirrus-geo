@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
 import uuid
-import warnings
 
 from copy import deepcopy
+from typing import Self
 
 import jsonpath_ng.ext as jsonpath
 
@@ -22,6 +23,8 @@ from cirrus.lib.utils import extract_event_records, get_client, payload_from_s3
 
 logger = logging.getLogger(__name__)
 
+MAX_PAYLOAD_LENGTH = 250000
+
 
 class TerminalError(Exception):
     pass
@@ -32,7 +35,8 @@ class ProcessPayload(dict):
         """Initialize a ProcessPayload, verify required fields, and assign an ID
 
         Args:
-            state_item (Dict, optional): Dictionary of entry in StateDB. Defaults to None.
+            state_item (Dict, optional): Dictionary of entry in StateDB.
+                Defaults to None.
         """
         super().__init__(*args, **kwargs)
 
@@ -50,18 +54,6 @@ class ProcessPayload(dict):
         if "id" not in self and set_id_if_missing:
             self.set_id()
 
-        if "output_options" in self.process and "upload_options" not in self.process:
-            self.process["upload_options"] = self.process["output_options"]
-            warnings.warn(
-                "Deprecated: process 'output_options' has been renamed to 'upload_options'",
-            )
-
-        # We could explicitly handle the situation where both output and upload
-        # options are provided, but I think it reasonable for us to expect some
-        # people might continue using it where they had been (ab)using it for
-        # custom needs, which is why we don't just pop it above. In fact,
-        # because we are copying and not moving the values to that new key, we
-        # are creating this exact situation.
         if "upload_options" not in self.process:
             raise ValueError(
                 "ProcessPayload.process must have `upload_options` defined",
@@ -71,11 +63,6 @@ class ProcessPayload(dict):
             raise ValueError(
                 "ProcessPayload.process must have `workflow` specifying workflow name",
             )
-
-        # convert old functions field to tasks
-        if "functions" in self.process:
-            warnings.warn("Deprecated: process 'functions' has been renamed to 'tasks'")
-            self.process["tasks"] = self.process.pop("functions")
 
         if "tasks" not in self.process:
             raise ValueError("ProcessPayload.process must have `tasks` defined")
@@ -105,16 +92,14 @@ class ProcessPayload(dict):
 
         if len(records) == 0:
             raise ValueError("Failed to extract record: %s", json.dumps(event))
-        elif len(records) > 1:
+        if len(records) > 1:
             raise ValueError("Multiple payloads are not supported")
 
         payload = records[0]
 
         # if the payload has a URL in it then we'll fetch it from S3
-        try:
+        with contextlib.suppress(NoUrlError):
             payload = payload_from_s3(payload)
-        except NoUrlError:
-            pass
 
         return cls(payload, **kwargs)
 
@@ -147,7 +132,8 @@ class ProcessPayload(dict):
 
         if not self.features:
             raise ValueError(
-                "ProcessPayload has no `id` specified and one cannot be constructed without `features`.",
+                "ProcessPayload has no `id` specified and one "
+                "cannot be constructed without `features`.",
             )
 
         if "collections" in self.process:
@@ -156,12 +142,12 @@ class ProcessPayload(dict):
         else:
             # otherwise, get from items
             cols = sorted(
-                list({i["collection"] for i in self.features if "collection" in i}),
+                {i["collection"] for i in self.features if "collection" in i},
             )
             input_collections = cols if len(cols) != 0 else "none"
             collections_str = "/".join(input_collections)
 
-        items_str = "/".join(sorted(list([i["id"] for i in self.features])))
+        items_str = "/".join(sorted([i["id"] for i in self.features]))
         self["id"] = (
             f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
         )
@@ -184,13 +170,20 @@ class ProcessPayload(dict):
         Returns:
             Dict: Cirrus Input ProcessPayload
         """
-        payload = json.dumps(self)
-        payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
-        if payload_bucket and len(payload.encode("utf-8")) > 250000:
-            url = self.upload_to_s3(payload, payload_bucket)
-            return {"url": url}
-        else:
+        payload_length = len(json.dumps(self).encode())
+        if payload_length <= MAX_PAYLOAD_LENGTH:
             return dict(self)
+
+        payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
+        if not payload_bucket:
+            raise RuntimeError(
+                "No payload bucket defined and payload too large: "
+                f"length {payload_length} (max {MAX_PAYLOAD_LENGTH}). "
+                "To enable uploads oversized payloads define `CIRRUS_PAYLOAD_BUCKET`.",
+            )
+
+        url = self.upload_to_s3(self, payload_bucket)
+        return {"url": url}
 
     def __call__(self, wfem) -> str | None:
         """Add this ProcessPayload to Cirrus and start workflow
@@ -204,14 +197,15 @@ class ProcessPayload(dict):
             raise ValueError("env var CIRRUS_PAYLOAD_BUCKET must be defined")
 
         arn = os.getenv("CIRRUS_BASE_WORKFLOW_ARN") + self.process["workflow"]
+        url = f"s3://{payload_bucket}/{self['id']}/input.json"
 
         # start workflow
         try:
             # add input payload to s3
-            url = f"s3://{payload_bucket}/{self['id']}/input.json"
             s3().upload_json(self, url)
 
-            # create DynamoDB record - this overwrites existing states other than PROCESSING
+            # create DynamoDB record
+            # -> this overwrites existing states other than PROCESSING
             wfem.claim_processing(self["id"], payload_url=url)
 
             # invoke step function
@@ -233,32 +227,40 @@ class ProcessPayload(dict):
             if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
                 wfem.skipping(self["id"], state=StateEnum.PROCESSING, payload_url=url)
                 return None
-            elif e.response["Error"]["Code"] == "StateMachineDoesNotExist":
+            if e.response["Error"]["Code"] == "StateMachineDoesNotExist":
                 # This failure is tracked in the DB and we raise an error
                 # so we can handle it specifically, to keep the payload
                 # falling through to the DLQ and alerting.
                 logger.error(e)
                 wfem.failed(self["id"], str(e), payload_url=url)
-                raise TerminalError()
+                raise TerminalError() from e
             raise
-        except Exception as err:
+        except Exception as e:
             # This case should be like the above, except we don't know
             # why it happened. We'll be conservative and not raise a
             # terminal failure, so it will get retried in case it was
             # a transient failure. If we find terminal failures handled
             # here, we should add terminal exception handlers for them.
-            msg = f"failed starting workflow ({err})"
+            msg = f"failed starting workflow ({e})"
             self.logger.exception(msg)
             wfem.failed(self.get("id", "missing"), msg, payload_url=url)
             raise
 
 
 class ProcessPayloads:
-    def __init__(self, process_payloads, statedb, state_items=None):
+    def __init__(
+        self: Self,
+        process_payloads: list[ProcessPayload],
+        statedb: StateDB,
+        state_items=None,
+    ) -> None:
         self.payloads = process_payloads
         self.statedb = statedb
-        if state_items:
-            assert len(state_items) == len(self.payloads)
+        if state_items and len(state_items) != len(self.payloads):
+            raise ValueError(
+                "The number of state items does not match the number of payloads: "
+                f"{len(state_items)} != {len(self.payloads)}.",
+            )
         self.state_items = state_items
 
     def __getitem__(self, index):
@@ -273,59 +275,6 @@ class ProcessPayloads:
         """
         return [c["id"] for c in self.payloads]
 
-    @classmethod
-    def from_payload_ids(cls, payload_ids: list[str], **kwargs) -> ProcessPayloads:
-        """Create ProcessPayloads from list of Payload IDs
-
-        Args:
-            payload_ids (List[str]): List of Payload IDs
-
-        Returns:
-            ProcessPayloads: A ProcessPayloads instance
-        """
-        statedb = StateDB()
-        items = [
-            statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
-            for payload_id in payload_ids
-        ]
-        payloads = []
-        for item in items:
-            payload = ProcessPayload(s3().read_json(item["payload"]))
-            payloads.append(payload)
-        logger.debug("Retrieved %s from state db", len(payloads))
-        return cls(payloads, statedb=statedb, state_items=items)
-
-    @classmethod
-    def from_statedb(
-        cls,
-        collections,
-        state,
-        since: str | None = None,
-        index: str = "input_state",
-        limit=None,
-    ) -> ProcessPayloads:
-        """Create ProcessPayloads object from set of StateDB Items
-
-        Args:
-            collections (str): String of collections (input or output depending on `index`)
-            state (str): The state (QUEUED, PROCESSING, COMPLETED, FAILED, INVALID, ABORTED) of StateDB Items to get
-            since (str, optional): Get Items since this duration ago (e.g., 10m, 8h, 1w). Defaults to None.
-            index (str, optional): 'input_state' or 'output_state' Defaults to 'input_state'.
-            limit ([type], optional): Max number of Items to return. Defaults to None.
-
-        Returns:
-            ProcessPayloads: ProcessPayloads instance
-        """
-        statedb = StateDB()
-        payloads = []
-        items = statedb.get_items(collections, state, since, index, limit=limit)
-        logger.debug("Retrieved %s total items from statedb", len(items))
-        for item in items:
-            payload = ProcessPayload(s3().read_json(item["payload"]))
-            payloads.append(payload)
-        logger.debug("Retrieved %s process payloads", len(payloads))
-        return cls(payloads, statedb=statedb, state_items=items)
-
     def get_states(self) -> dict[str, StateEnum]:
         if self.state_items is None:
             items = [
@@ -333,12 +282,16 @@ class ProcessPayloads:
                 for i in self.statedb.get_dbitems(self.payload_ids)
             ]
             self.state_items = items
-        states = {c["payload_id"]: StateEnum(c["state"]) for c in self.state_items}
-        return states
+        return {c["payload_id"]: StateEnum(c["state"]) for c in self.state_items}
 
-    def process(self, wfem: WorkflowEventManager, replace=False):
-        """Create Item in Cirrus State DB for each ProcessPayload and add to processing queue"""
-        payload_ids = {
+    def process(
+        self: Self,
+        wfem: WorkflowEventManager,
+        replace: bool = False,
+    ) -> dict[str, list[str]]:
+        """Create Item in Cirrus State DB for each ProcessPayload and add to
+        processing queue"""
+        payload_ids: dict[str, list[str]] = {
             "started": [],
             "skipped": [],
             "dropped": [],
@@ -351,7 +304,7 @@ class ProcessPayloads:
             _replace = replace or payload.process.get("replace", False)
 
             # check existing state for Item, if any
-            state = states.get(payload["id"], "")
+            state = states.get(payload["id"], None)
 
             if (
                 payload["id"] in payload_ids["started"]
@@ -364,7 +317,12 @@ class ProcessPayloads:
                     payload_url=StateDB.payload_id_to_url(payload["id"]),
                 )
                 payload_ids["dropped"].append(payload["id"])
-            elif state in [StateEnum.FAILED, StateEnum.ABORTED, ""] or _replace:
+            elif (
+                state == StateEnum.FAILED
+                or state == StateEnum.ABORTED
+                or state is None
+                or _replace
+            ):
                 try:
                     payload_id = payload(wfem)
                 except TerminalError:

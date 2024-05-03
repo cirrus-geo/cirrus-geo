@@ -10,7 +10,8 @@ def test_empty_event():
         api.lambda_handler({}, {})
 
 
-def test_daily_results(env, fixtures):
+@pytest.mark.usefixtures("_env")
+def test_daily_results(fixtures):
     eventdb_daily_input = json.loads(
         fixtures.joinpath("eventdb-daily-input.json").read_text(),
     )
@@ -21,7 +22,8 @@ def test_daily_results(env, fixtures):
     assert actual_output == expected_output
 
 
-def test_hourly_results(env, fixtures):
+@pytest.mark.usefixtures("_env")
+def test_hourly_results(fixtures):
     eventdb_hourly_input = json.loads(
         fixtures.joinpath("eventdb-hourly-input.json").read_text(),
     )

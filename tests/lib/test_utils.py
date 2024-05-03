@@ -13,11 +13,6 @@ event_dir = fixtures.joinpath("events")
 
 
 @pytest.fixture()
-def payloads(boto3utils_s3):
-    boto3utils_s3.s3.create_bucket(Bucket="payloads")
-
-
-@pytest.fixture()
 def queue(sqs):
     return sqs.create_queue(QueueName="test-queue")["QueueUrl"]
 
@@ -160,7 +155,7 @@ def batch_tester():
             self.calls.append(kwargs)
             batch = kwargs.get("batch", [])
             self.items.extend(batch)
-            return all(map(lambda x: isinstance(x, int), batch))
+            return all(isinstance(x, int) for x in batch)
 
     return BatchTester()
 
@@ -218,7 +213,7 @@ def test_sqspublisher_batch(sqs, queue):
             publisher.add(str(item))
 
     msgs = []
-    for item in items:
+    for _ in items:
         msg = int(sqs.receive_message(QueueUrl=queue)["Messages"][0]["Body"])
         msgs.append(msg)
     assert msgs == items
@@ -250,15 +245,17 @@ def test_snspublisher_mesg_attrs(sns, topic):
 
 
 def test_snspublisher_too_many_mesg_attrs(sns, topic):
-    with utils.SNSPublisher.get_handler(topic_arn=topic, batch_size=3) as publisher:
-        with pytest.raises(ValueError):
-            publisher.add(
-                "too many attrs",
-                {
-                    f"status{i}": {
-                        "DataType": "String",
-                        "StringValue": "succeeded",
-                    }
-                    for i in range(11)
-                },
-            )
+    with (
+        utils.SNSPublisher.get_handler(topic_arn=topic, batch_size=3) as publisher,
+        pytest.raises(ValueError),
+    ):
+        publisher.add(
+            "too many attrs",
+            {
+                f"status{i}": {
+                    "DataType": "String",
+                    "StringValue": "succeeded",
+                }
+                for i in range(11)
+            },
+        )

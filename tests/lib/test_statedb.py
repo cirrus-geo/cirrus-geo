@@ -1,7 +1,8 @@
 import os
 
 from copy import deepcopy
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 
@@ -11,14 +12,14 @@ from cirrus.lib.statedb import StateDB
 os.environ["CIRRUS_PAYLOAD_BUCKET"] = "test"
 
 # fixtures
-test_dbitem = {
+test_dbitem: dict[str, Any] = {
     "collections_workflow": "col1_wf1",
     "itemids": "item1/item2",
-    "state_updated": f"QUEUED_{datetime.now()}",
-    "created": datetime.now(),
-    "updated": datetime.now(),
+    "state_updated": f"QUEUED_{datetime.now(tz=UTC)}",
+    "created": datetime.now(tz=UTC),
+    "updated": datetime.now(tz=UTC),
 }
-test_item = {
+test_item: dict[str, Any] = {
     "id": "col1/workflow-wf1/item1/item2",
     "process": {"upload_options": {"collections": {"output-collection": ".*"}}},
 }
@@ -72,7 +73,7 @@ def test_since_to_timedelta():
 
 
 @pytest.fixture()
-def state_table(statedb):
+def state_table(statedb: StateDB):
     statedb.limit = RECORD_LIMIT
     statedb.set_processing(
         f'{test_item["id"]}_processing',
@@ -97,7 +98,7 @@ def state_table(statedb):
     statedb.delete()
 
 
-def test_get_items(state_table):
+def test_get_items(state_table: StateDB):
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
@@ -106,7 +107,7 @@ def test_get_items(state_table):
     assert len(items) == 1
 
 
-def test_get_items_bulk(state_table):
+def test_get_items_bulk(state_table: StateDB):
     _count = 25
     create_items_bulk(_count, state_table.set_processing, execution_arn="arn::test")
     items = state_table.get_items(
@@ -117,7 +118,7 @@ def test_get_items_bulk(state_table):
     assert len(items) == _count + 1
 
 
-def test_get_items_limit_1(state_table):
+def test_get_items_limit_1(state_table: StateDB):
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
@@ -127,7 +128,7 @@ def test_get_items_limit_1(state_table):
     assert len(items) == 1
 
 
-def test_get_items_limit_1_bulk(state_table):
+def test_get_items_limit_1_bulk(state_table: StateDB):
     create_items_bulk(20, state_table.set_processing, execution_arn="arn::test")
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
@@ -138,7 +139,7 @@ def test_get_items_limit_1_bulk(state_table):
     assert len(items) == 1
 
 
-def test_get_items_error(state_table):
+def test_get_items_error(state_table: StateDB):
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         error_begins_with="failed",
@@ -146,7 +147,7 @@ def test_get_items_error(state_table):
     assert len(items) == 1
 
 
-def test_get_items_error_with_state(state_table):
+def test_get_items_error_with_state(state_table: StateDB):
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="FAILED",
@@ -155,7 +156,7 @@ def test_get_items_error_with_state(state_table):
     assert len(items) == 1
 
 
-def test_get_items_error_no_items(state_table):
+def test_get_items_error_no_items(state_table: StateDB):
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         error_begins_with="nonsense-prefix",
@@ -163,19 +164,19 @@ def test_get_items_error_no_items(state_table):
     assert len(items) == 0
 
 
-def test_get_dbitem(state_table):
+def test_get_dbitem(state_table: StateDB):
     dbitem = state_table.get_dbitem(test_item["id"] + "_processing")
     assert dbitem["itemids"] == test_dbitem["itemids"] + "_processing"
     assert dbitem["collections_workflow"] == test_dbitem["collections_workflow"]
     assert dbitem["state_updated"].startswith("PROCESSING")
 
 
-def test_get_dbitem_noitem(state_table):
+def test_get_dbitem_noitem(state_table: StateDB):
     dbitem = state_table.get_dbitem("no-collection/workflow-none/fake-id")
     assert dbitem is None
 
 
-def test_get_dbitems(state_table):
+def test_get_dbitems(state_table: StateDB):
     count = 5
     create_items_bulk(count, state_table.set_processing, execution_arn="arn::test")
     ids = [test_item["id"] + str(i) for i in range(count)]
@@ -185,7 +186,7 @@ def test_get_dbitems(state_table):
         assert state_table.key_to_payload_id(dbitem) in ids
 
 
-def test_get_dbitems_duplicates(state_table):
+def test_get_dbitems_duplicates(state_table: StateDB):
     count = 5
     create_items_bulk(count, state_table.set_processing, execution_arn="arn::test")
     ids = [test_item["id"] + str(i) for i in range(count)]
@@ -195,19 +196,20 @@ def test_get_dbitems_duplicates(state_table):
         assert state_table.key_to_payload_id(dbitem) in ids
 
 
-def test_get_dbitems_noitems(state_table):
+def test_get_dbitems_noitems(state_table: StateDB):
     dbitems = state_table.get_dbitems(["no-collection/workflow-none/fake-id"])
     assert len(dbitems) == 0
 
 
-def test_get_state(state_table):
+def test_get_state(state_table: StateDB):
     for s in STATES:
         state = state_table.get_state(test_item["id"] + f"_{s.lower()}")
         assert state == s
     state = state_table.get_state(test_item["id"] + "nosuchitem")
+    assert state is None
 
 
-def test_get_states(state_table):
+def test_get_states(state_table: StateDB):
     ids = [test_item["id"] + f"_{s.lower()}" for s in STATES]
     states = state_table.get_states(ids)
     assert len(ids) == len(states)
@@ -215,7 +217,7 @@ def test_get_states(state_table):
         assert states[id] == STATES[i]
 
 
-def test_get_counts(state_table):
+def test_get_counts(state_table: StateDB):
     _count = 3
     create_items_bulk(_count, state_table.set_processing, execution_arn="arn::test")
     count = state_table.get_counts(test_dbitem["collections_workflow"])
@@ -229,7 +231,7 @@ def test_get_counts(state_table):
     count = state_table.get_counts(test_dbitem["collections_workflow"], since="1h")
 
 
-def test_get_counts_error(state_table):
+def test_get_counts_error(state_table: StateDB):
     _count = 25
     create_items_bulk(_count, state_table.set_failed, msg="failed")
     count = state_table.get_counts(
@@ -239,7 +241,7 @@ def test_get_counts_error(state_table):
     assert count == _count + 1
 
 
-def test_get_counts_state(state_table):
+def test_get_counts_state(state_table: StateDB):
     _count = 25
     create_items_bulk(_count, state_table.set_failed, msg="failed")
     count = state_table.get_counts(
@@ -249,7 +251,7 @@ def test_get_counts_state(state_table):
     assert count == _count + 1
 
 
-def test_get_counts_state_limit(state_table):
+def test_get_counts_state_limit(state_table: StateDB):
     _count = 25
     create_items_bulk(_count, state_table.set_failed, msg="failed")
     count = state_table.get_counts(
@@ -260,7 +262,7 @@ def test_get_counts_state_limit(state_table):
     assert count == "15+"
 
 
-def test_get_counts_since_limit_under(state_table):
+def test_get_counts_since_limit_under(state_table: StateDB):
     _count = 20
     create_items_bulk(_count, state_table.set_failed, msg="failed")
     count = state_table.get_counts(
@@ -271,7 +273,7 @@ def test_get_counts_since_limit_under(state_table):
     assert count == _count + len(STATES)
 
 
-def test_get_counts_since(state_table):
+def test_get_counts_since(state_table: StateDB):
     _count = 25
     create_items_bulk(_count, state_table.set_failed, msg="failed")
     count = state_table.get_counts(
@@ -281,7 +283,7 @@ def test_get_counts_since(state_table):
     assert count == _count + len(STATES)
 
 
-def test_get_counts_since_state(state_table):
+def test_get_counts_since_state(state_table: StateDB):
     _count = 25
     create_items_bulk(_count, state_table.set_failed, msg="failed")
     count = state_table.get_counts(
@@ -292,14 +294,14 @@ def test_get_counts_since_state(state_table):
     assert count == _count + 1
 
 
-def test_set_processing(state_table):
+def test_set_processing(state_table: StateDB):
     state_table.set_processing(test_item["id"], execution_arn="arn::test1")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert StateDB.key_to_payload_id(dbitem) == test_item["id"]
     assert dbitem["executions"] == ["arn::test1"]
 
 
-def test_second_execution(state_table):
+def test_second_execution(state_table: StateDB):
     # check that processing adds new execution to list
     state_table.set_processing(test_item["id"], execution_arn="arn::test1")
     state_table.set_processing(test_item["id"], execution_arn="arn::test2")
@@ -308,58 +310,58 @@ def test_second_execution(state_table):
     assert dbitem["executions"][-1] == "arn::test2"
 
 
-def test_set_outputs_(state_table):
+def test_set_outputs_(state_table: StateDB):
     state_table.set_outputs(test_item["id"], outputs=["output-item"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["outputs"][0] == "output-item"
 
 
-def test_set_outputs_completed(state_table):
+def test_set_outputs_completed(state_table: StateDB):
     state_table.set_completed(test_item["id"], outputs=["output-item"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["outputs"][0] == "output-item"
 
 
-def test_set_completed(state_table):
+def test_set_completed(state_table: StateDB):
     state_table.set_completed(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("COMPLETED")
 
 
-def test_set_failed(state_table):
+def test_set_failed(state_table: StateDB):
     state_table.set_failed(test_item["id"], msg="test failure")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("FAILED")
     assert dbitem["last_error"] == "test failure"
 
 
-def test_set_completed_with_outputs(state_table):
+def test_set_completed_with_outputs(state_table: StateDB):
     state_table.set_completed(test_item["id"], outputs=["output-item2"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("COMPLETED")
     assert dbitem["outputs"][0] == "output-item2"
 
 
-def test_set_invalid(state_table):
+def test_set_invalid(state_table: StateDB):
     state_table.set_invalid(test_item["id"], msg="test failure")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("INVALID")
     assert dbitem["last_error"] == "test failure"
 
 
-def test_set_aborted(state_table):
+def test_set_aborted(state_table: StateDB):
     state_table.set_aborted(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("ABORTED")
 
 
-def test_delete_item(state_table):
+def test_delete_item(state_table: StateDB):
     state_table.delete_item(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem is None
 
 
-def test_claim_processing(state_table):
+def test_claim_processing(state_table: StateDB):
     state_table.claim_processing(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("PROCESSING")
