@@ -25,13 +25,15 @@ class EventDB:
             db_and_table_names_array = event_db_and_table_names.split("|")
             if len(db_and_table_names_array) != 2:
                 raise Exception(
-                    "Event DB and table name not configured correctly, must be a pipe-separated value of the database and table names.",
+                    "Event DB and table name not configured correctly, "
+                    "must be a pipe-separated value of the database and table names.",
                 )
             self.event_db_name: str | None = db_and_table_names_array[0]
             self.event_table_name: str | None = db_and_table_names_array[1]
         else:
             logger.info(
-                "Event database is not configured, workflow state change events will not be recorded",
+                "Event database is not configured, "
+                "workflow state change events will not be recorded",
             )
             self.event_db_name = None
             self.event_table_name = None
@@ -42,7 +44,9 @@ class EventDB:
     @classmethod
     def _payload_id_to_record_data(cls, payload_id: str) -> tuple[str, str, str]:
         if match := PAYLOAD_ID_REGEX.match(payload_id):
-            return match.groups()
+            # type returned from match is tuple[str | Any, ...], but we know
+            # if our pattern matches we will get tuple[str, str, str]
+            return match.groups()  # type: ignore
         raise ValueError("payload_id does not match expected pattern: " + payload_id)
 
     def write_timeseries_record(
@@ -81,22 +85,28 @@ class EventDB:
                 Records=[record],
             )
             logger.info(
-                f"Timestream WriteRecords Status for first time: [{result['ResponseMetadata']['HTTPStatusCode']}]",
+                "Timestream WriteRecords Status for first time: [%s]",
+                result["ResponseMetadata"]["HTTPStatusCode"],
             )
             return result
         except self.tsw_client.exceptions.RejectedRecordsException as err:
-            logger.error(f"For {payload_id} Timestream RejectedRecords: {err}")
+            logger.error("For %s Timestream RejectedRecords: %s", payload_id, err)
             for rr in err.response["RejectedRecords"]:
                 logger.error(
-                    f"For {payload_id} Rejected Index {rr['RecordIndex']} : {rr['Reason']}",
+                    "For %s Rejected Index %s : %s",
+                    payload_id,
+                    rr["RecordIndex"],
+                    rr["Reason"],
                 )
                 if "ExistingVersion" in rr:
                     logger.error(
-                        f"For {payload_id} Rejected record existing version: {rr['ExistingVersion']}",
+                        "For %s Rejected record existing version: %s",
+                        payload_id,
+                        rr["ExistingVersion"],
                     )
             raise err
         except Exception as err:
-            logger.error(f"For {payload_id} Error: {err}")
+            logger.error("For %s Error: %s", payload_id, err)
             raise err
 
     @staticmethod
@@ -111,19 +121,24 @@ class EventDB:
         """
         if not event_db_name or not event_table_name:
             return None
-        else:
-            return f"""
-                WITH data AS (
-                    SELECT BIN(time, {bin_size}) as t, measure_value::varchar as state, item_ids, count(*) as count
-                    FROM "{event_db_name}"."{event_table_name}"
-                    WHERE measure_name = 'execution_state' AND time BETWEEN ago({duration}) AND now()
-                    GROUP BY BIN(time, {bin_size}), measure_value::varchar, item_ids
-                    )
-                SELECT t, state, count(*) as unique_count, sum(count) as count
-                FROM data
-                GROUP BY t, state
-                ORDER BY t, state
-            """
+        return f"""
+            WITH data AS (
+                SELECT
+                    BIN(time, {bin_size}) as t,
+                    measure_value::varchar as state,
+                    item_ids,
+                    count(*) as count
+                FROM "{event_db_name}"."{event_table_name}"
+                WHERE
+                    measure_name = 'execution_state'
+                    AND time BETWEEN ago({duration}) AND now()
+                GROUP BY BIN(time, {bin_size}), measure_value::varchar, item_ids
+                )
+            SELECT t, state, count(*) as unique_count, sum(count) as count
+            FROM data
+            GROUP BY t, state
+            ORDER BY t, state
+        """  # noqa: S608
 
     @staticmethod
     def _mk_hour_query(
@@ -134,19 +149,24 @@ class EventDB:
     ) -> str | None:
         if not event_db_name or not event_table_name:
             return None
-        else:
-            return f"""
-                WITH data AS (
-                    SELECT ago({start}h) as t, measure_value::varchar as state, item_ids, count(*) as count
-                    FROM "{event_db_name}"."{event_table_name}"
-                    WHERE measure_name = 'execution_state' AND time BETWEEN ago({start}h) AND ago({end}h)
-                    GROUP BY measure_value::varchar, item_ids
-                )
-                SELECT t, state, count(*) as unique_count, sum(count) as count
-                FROM data
-                GROUP BY t, state
-                ORDER BY t, state
-            """
+        return f"""
+            WITH data AS (
+                SELECT
+                    ago({start}h) as t,
+                    measure_value::varchar as state,
+                    item_ids,
+                    count(*) as count
+                FROM "{event_db_name}"."{event_table_name}"
+                WHERE
+                    measure_name = 'execution_state'
+                    AND time BETWEEN ago({start}h) AND ago({end}h)
+                GROUP BY measure_value::varchar, item_ids
+            )
+            SELECT t, state, count(*) as unique_count, sum(count) as count
+            FROM data
+            GROUP BY t, state
+            ORDER BY t, state
+        """  # noqa: S608
 
     def _query(self, q: str | None) -> dict[str, Any] | None:
         return self.tsq_client.query(QueryString=q) if self.enabled() and q else None

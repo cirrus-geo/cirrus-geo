@@ -14,7 +14,7 @@ from cirrus.lib.eventdb import EventDB
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.statedb import StateDB
 
-logger = get_task_logger("function.api", payload=tuple())
+logger = get_task_logger("function.api", payload=())
 
 
 def response(
@@ -22,10 +22,7 @@ def response(
     status_code: int = 200,
     headers: dict[str, str] | None = None,
 ):
-    if headers is None:
-        _headers = {}
-    else:
-        _headers = deepcopy(headers)
+    _headers = {} if headers is None else deepcopy(headers)
 
     # CORS headers
     _headers.update(
@@ -64,13 +61,11 @@ def get_root(root_url, data_bucket):
     links.insert(0, create_link(root_url, "home", "self"))
     links.append(create_link(cat_url, "STAC", "stac"))
 
-    root = {
+    return {
         "id": f"{cat['id']}-state-api",
         "description": f"{cat['description']} State API",
         "links": links,
     }
-
-    return root
 
 
 def get_stats(_eventdb: EventDB) -> dict[str, Any] | None:
@@ -87,16 +82,19 @@ def get_stats(_eventdb: EventDB) -> dict[str, Any] | None:
                 ),
             },
         }
-    else:
-        return None
+
+    return None
 
 
 def _results_transform(
-    results: dict[str, Any],
+    results: dict[str, Any] | None,
     timestamp_function: Callable[[str], str],
     interval: str,
 ) -> list[dict[str, Any]]:
     intervals: dict[str, dict[str, tuple[int, int]]] = defaultdict(dict)
+
+    if not results:
+        return []
 
     for row in results["Rows"]:
         ts = timestamp_function(row["Data"][0]["ScalarValue"])
@@ -119,14 +117,22 @@ def _results_transform(
     ]
 
 
-def daily(results: dict[str, Any]) -> list[dict[str, Any]]:
+def daily(results: dict[str, Any] | None) -> list[dict[str, Any]]:
     return _results_transform(results, lambda x: x.split(" ")[0], "day")
 
 
-def hourly(r1: dict[str, Any], *rs: dict[str, Any]) -> list[dict[str, Any]]:
+def hourly(
+    r1: dict[str, Any] | None,
+    *rs: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
     combined_results = deepcopy(r1)
     for result in rs:
-        combined_results["Rows"].extend(result.get("Rows", []))
+        if not result:
+            continue
+        if not combined_results:
+            combined_results = result
+        else:
+            combined_results["Rows"].extend(result.get("Rows", []))
     return _results_transform(
         combined_results,
         lambda x: x.replace(" ", "T").split(".")[0] + "Z",
@@ -148,7 +154,7 @@ def summary(collections_workflow, since, limit, statedb):
     return {"collections": parts[0], "workflow": parts[1], "counts": counts}
 
 
-def lambda_handler(event, _context):
+def lambda_handler(event, _context):  # noqa: C901
     logger.debug("Event: %s", json.dumps(event))
     data_bucket = os.getenv("CIRRUS_DATA_BUCKET", None)
 
@@ -195,8 +201,6 @@ def lambda_handler(event, _context):
     limit = int(qparams.get("limit", 100000))
     sort_ascending = bool(int(qparams.get("sort_ascending", 0)))
     sort_index = qparams.get("sort_index", "updated")
-    # count_limit = int(qparams.get('count_limit', 100000))
-    # legacy = qparams.get('legacy', False)
 
     # root endpoint
     if payload_id == "":
@@ -205,13 +209,15 @@ def lambda_handler(event, _context):
     if payload_id == "stats":
         if stats := get_stats(eventdb):
             return response(stats)
-        else:
-            return response(
-                {
-                    "error": "Endpoint /stats is not enabled because timeseries database is not configured",
-                },
-                404,
-            )
+        return response(
+            {
+                "error": (
+                    "Endpoint /stats is not enabled because "
+                    "timeseries database is not configured",
+                ),
+            },
+            404,
+        )
 
     if "/workflow-" not in payload_id:
         return response(f"{path} not found", status_code=400)
@@ -228,7 +234,8 @@ def lambda_handler(event, _context):
                 statedb=statedb,
             ),
         )
-    elif key["itemids"] == "items":
+
+    if key["itemids"] == "items":
         # get items
         logger.debug(
             "Getting items for %s, state=%s, since=%s",
@@ -246,10 +253,10 @@ def lambda_handler(event, _context):
             sort_index=sort_index,
         )
         return response({"items": [transform(item) for item in items["items"]]})
-    else:
-        # get individual item
-        item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
-        return response(transform(item))
+
+    # get individual item
+    item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
+    return response(transform(item))
 
 
 def to_current(item):
