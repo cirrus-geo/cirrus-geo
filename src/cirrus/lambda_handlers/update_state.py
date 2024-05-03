@@ -29,7 +29,7 @@ SFN_CLIENT = get_client("stepfunctions")
 MAX_EXECUTION_EVENTS = 10
 
 INVALID_EXCEPTIONS = (
-    "InvalidInput",
+    "cirrus.lib.errors.InvalidInput",
     "stactask.exceptions.InvalidInput",
 )
 

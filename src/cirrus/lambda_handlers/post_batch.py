@@ -13,7 +13,7 @@ logger = get_task_logger("task.post-batch", payload=())
 BATCH_LOG_GROUP = "/aws/batch/job"
 LOG_CLIENT = boto3.client("logs")
 DEFAULT_ERROR = "UnknownError"
-ERROR_REGEX = re.compile(r"^(?:cirrus\.?lib\.errors\.)?(?:([\.\w]+):)?\s*(.*)")
+ERROR_REGEX = re.compile(r"^(?:([\.\w]+):)?\s*(.*)")
 
 
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
