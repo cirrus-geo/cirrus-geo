@@ -103,9 +103,6 @@ class ProcessPayload(dict):
 
         return cls(payload, **kwargs)
 
-    def get_task(self, task_name, *args, **kwargs):
-        return self.tasks.get(task_name, *args, **kwargs)
-
     def next_payloads(self):
         if isinstance(self["process"], dict) or len(self["process"]) <= 1:
             return None

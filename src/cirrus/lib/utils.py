@@ -6,13 +6,11 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from functools import cache
 from os import getenv
-from string import Formatter, Template
 from typing import Any, Self
 
 import boto3
 
 from boto3utils import s3
-from dateutil.parser import parse as dateparse
 
 from cirrus.lib.errors import NoUrlError
 
@@ -85,39 +83,6 @@ def get_resource(
         service_name=service,
         region_name=region,
     )
-
-
-def get_path(item: dict, template: str = "${collection}/${id}") -> str:
-    """Get path name based on STAC Item and template string
-
-    Args:
-        item (dict): A STAC Item.
-        template (str, optional): Path template using variables referencing
-            Item fields. Defaults to'${collection}/${id}'.
-
-    Returns:
-        [str]: A path name
-    """
-    _template = template.replace(":", "__colon__")
-    subs = {}
-    for key in [
-        i[1] for i in Formatter().parse(_template.rstrip("/")) if i[1] is not None
-    ]:
-        # collection
-        if key == "collection":
-            subs[key] = item["collection"]
-        # ID
-        elif key == "id":
-            subs[key] = item["id"]
-        # derived from date
-        elif key in ["year", "month", "day"]:
-            dt = dateparse(item["properties"]["datetime"])
-            vals = {"year": dt.year, "month": dt.month, "day": dt.day}
-            subs[key] = vals[key]
-        # Item property
-        else:
-            subs[key] = item["properties"][key.replace("__colon__", ":")]
-    return Template(_template).substitute(**subs).replace("__colon__", ":")
 
 
 def recursive_compare(  # noqa: C901

@@ -31,9 +31,7 @@ jsonpath-ng==1.6.1
 ply==3.11
     # via jsonpath-ng
 python-dateutil==2.9.0.post0
-    # via
-    #   botocore
-    #   cirrus-geo (pyproject.toml)
+    # via botocore
 python-json-logger==2.0.7
     # via cirrus-geo (pyproject.toml)
 s3transfer==0.10.1

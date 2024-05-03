@@ -29,7 +29,6 @@ dependencies = [
     'boto3',
     'boto3-utils',
     'jsonpath-ng',
-    'python-dateutil',
     'python-json-logger',
 ]
 dynamic = [
