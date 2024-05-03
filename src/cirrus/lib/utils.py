@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-import uuid
 from collections.abc import Callable
 from contextlib import AbstractContextManager, contextmanager
 from functools import cache
@@ -84,38 +83,6 @@ def get_resource(
         service_name=service,
         region_name=region,
     )
-
-
-def submit_batch_job(
-    payload: dict,
-    arn: str,
-    queue: str = "basic-ondemand",
-    definition: str = "geolambda-as-batch",
-    name: str = None,
-) -> None:
-    # envvars
-    stack_prefix = getenv("CIRRUS_STACK")
-    payload_bucket = getenv("CIRRUS_PAYLOAD_BUCKET")
-
-    if name is None:
-        name = arn.split(":")[-1]
-
-    # upload payload to s3
-    url = f"s3://{payload_bucket}/batch/{uuid.uuid1()}.json"
-    s3().upload_json(payload, url)
-    kwargs = {
-        "jobName": name,
-        "jobQueue": f"{stack_prefix}-{queue}",
-        "jobDefinition": f"{stack_prefix}-{definition}",
-        "parameters": {"lambda_function": arn, "url": url},
-        "containerOverrides": {
-            "vcpus": 1,
-            "memory": 512,
-        },
-    }
-    logger.debug("Submitted batch job with payload %s", url)
-    response = get_client("batch").submit_job(**kwargs)
-    logger.debug("Batch response: %s", response)
 
 
 def get_path(item: dict, template: str = "${collection}/${id}") -> str:
