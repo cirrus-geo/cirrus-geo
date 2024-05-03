@@ -1,6 +1,6 @@
 HTTP_PORT= 8000
-STAGEDIR = _src
-BUILDDIR = _build
+STAGEDIR = src
+BUILDDIR = build
 CONFFILE = src/conf.py
 INCLUDE  = src/index.include
 export CIRRUS_VERSION := $(or $(CIRRUS_VERSION),$(shell git rev-parse --abbrev-ref HEAD))
@@ -31,28 +31,11 @@ gh-pages-update: clean build gh-pages-copy gh-pages-versions-update
 
 .PHONY: clean
 clean:
-	cirrus docs clean \
-		--staging-dir $(STAGEDIR) \
-		--output-dir $(BUILDDIR) \
-
-
-.PHONY: stage
-stage:
-	cirrus docs stage \
-		--staging-dir $(STAGEDIR) \
-		--conf-file $(CONFFILE) \
-		--custom-index-include $(INCLUDE) \
-		--exclude-project-docs \
-		--exclude-lib-docs \
-		--exclude-plugin-docs \
-
+	rm -rf $(BUILDDIR)/*
 
 .PHONY: build
-build: stage
-	cirrus docs build \
-		--staging-dir $(STAGEDIR) \
-		--output-dir $(BUILDDIR) \
-
+build: clean
+	sphinx-build -M html $(STAGEDIR) $(BUILDDIR)
 
 .PHONY: serve
 serve: gh-pages
