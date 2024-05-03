@@ -9,16 +9,13 @@ from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.statedb import StateDB
-from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start, get_client
+from cirrus.lib.utils import SQSPublisher, cold_start, get_client
 
 cold_start()
 
 logger = get_task_logger("function.update-state", payload=())
 
 # envvars
-FAILED_TOPIC_ARN = getenv("CIRRUS_FAILED_TOPIC_ARN", None)
-INVALID_TOPIC_ARN = getenv("CIRRUS_INVALID_TOPIC_ARN", None)
 PROCESS_QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 
 # boto3 clients
@@ -156,43 +153,21 @@ def workflow_failed(
                 error,
                 execution_arn=execution.arn,
             )
-            notification_topic_arn = INVALID_TOPIC_ARN
         elif error_type == "TimedOutError":
             wf_event_manager.timed_out(
                 execution.input["id"],
                 error,
                 execution_arn=execution.arn,
             )
-            notification_topic_arn = FAILED_TOPIC_ARN
         else:
             wf_event_manager.failed(
                 execution.input["id"],
                 error,
                 execution_arn=execution.arn,
             )
-            notification_topic_arn = FAILED_TOPIC_ARN
     except Exception:
         logger.exception("Unable to update state")
         raise
-
-    if notification_topic_arn is not None:
-        try:
-            statedb = StateDB()
-            item = statedb.dbitem_to_item(statedb.get_dbitem(execution.input["id"]))
-            attrs = {
-                "collections": {
-                    "DataType": "String",
-                    "StringValue": item["collections"],
-                },
-                "workflow": {"DataType": "String", "StringValue": item["workflow"]},
-                "error": {"DataType": "String", "StringValue": error},
-            }
-            logger.debug("Publishing item to %s", notification_topic_arn)
-            with SNSPublisher.get_handler(notification_topic_arn) as publisher:
-                publisher.add(json.dumps(item), attrs)
-        except Exception:
-            logger.exception("Failed publishing to %s", notification_topic_arn)
-            raise
 
 
 def get_execution_error(arn: str) -> dict[str, str]:
