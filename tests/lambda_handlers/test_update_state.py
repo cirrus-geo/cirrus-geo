@@ -138,7 +138,15 @@ def test_aborted(event, statedb):
     assert items[0]["state_updated"].startswith("ABORTED")
 
 
-def test_invalid(event, statedb, monkeypatch):
+@pytest.mark.parametrize(
+    ("error", "expected_state"),
+    [
+        ("stactask.exceptions.InvalidInput", "INVALID"),
+        ("cirrus.lib.errors.InvalidInput", "INVALID"),
+        ("unknown", "FAILED"),
+    ],
+)
+def test_invalid(event, statedb, monkeypatch, error, expected_state) -> None:
     # special loading of the lambda_function as a module from the
     # update-state, which is not a valid name for a package/module,
     # so that we can monkeypatch it.
@@ -148,7 +156,10 @@ def test_invalid(event, statedb, monkeypatch):
     monkeypatch.setattr(
         lambda_function,
         "get_execution_error",
-        lambda _: {"Error": "InvalidInput", "Cause": "banana in the tailpipe"},
+        lambda _: {
+            "Error": error,
+            "Cause": "banana in the tailpipe",
+        },
     )
 
     # now run with a failed payload
@@ -157,7 +168,7 @@ def test_invalid(event, statedb, monkeypatch):
 
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
     assert len(items) == 1
-    assert items[0]["state_updated"].startswith("INVALID")
+    assert items[0]["state_updated"].startswith(expected_state)
 
 
 # TODO: test URL input
