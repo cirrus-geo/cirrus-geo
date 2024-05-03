@@ -154,7 +154,7 @@ def summary(collections_workflow, since, limit, statedb):
     return {"collections": parts[0], "workflow": parts[1], "counts": counts}
 
 
-def lambda_handler(event, _context):  # noqa: C901
+def lambda_handler(event, _context):
     logger.debug("Event: %s", json.dumps(event))
     data_bucket = os.getenv("CIRRUS_DATA_BUCKET", None)
 
@@ -178,17 +178,7 @@ def lambda_handler(event, _context):  # noqa: C901
     if len(parts) > 0 and parts[0] == stage:
         parts = parts[1:]
     payload_id = "/".join(parts)
-
-    legacy = False
-    if payload_id.startswith("item"):
-        legacy = True
-        payload_id = payload_id.replace("item/", "", 1)
-    if payload_id.startswith("collections"):
-        legacy = True
-        payload_id = payload_id.replace("collections/", "", 1)
     logger.info("Path parameters: %s", payload_id)
-
-    transform = to_legacy if legacy else to_current
 
     # get query parameters
     qparams = (
@@ -252,34 +242,14 @@ def lambda_handler(event, _context):  # noqa: C901
             sort_ascending=sort_ascending,
             sort_index=sort_index,
         )
-        return response({"items": [transform(item) for item in items["items"]]})
+        return response({"items": [to_current(item) for item in items["items"]]})
 
     # get individual item
     item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
-    return response(transform(item))
+    return response(to_current(item))
 
 
 def to_current(item):
     item["catid"] = item["payload_id"]
     item["catalog"] = item["payload"]
     return item
-
-
-def to_legacy(item):
-    _item = {
-        "id": item["payload_id"],
-        "catid": item["payload_id"],
-        "input_collections": item["collections"],
-        "current_state": f"{item['state']}_{item['updated']}",
-        "state": item["state"],
-        "created_at": item["created"],
-        "updated_at": item["updated"],
-        "input_catalog": item["payload"],
-    }
-    if "executions" in item:
-        _item["execution"] = item["executions"][-1]
-    if "outputs" in item:
-        _item["items"] = item["outputs"]
-    if "last_error" in item:
-        _item["error_message"] = item["last_error"]
-    return _item
