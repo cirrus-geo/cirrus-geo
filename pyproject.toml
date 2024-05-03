@@ -84,6 +84,9 @@ select = [
     'W',
 
 ]
+exclude = [
+  'docs/**/*',
+]
 
 [tool.ruff.lint.per-file-ignores]
 '__init__.py' = ['E402']
