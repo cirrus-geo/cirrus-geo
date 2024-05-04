@@ -95,10 +95,8 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
         # won't be reprocessed again. We don't need to do this if
         # we have no failures, as SQS will delete the messages for
         # us if we exit successfully.
-        with utils.batch_handler(
+        with utils.BatchHandler(
             utils.delete_from_queue_batch,
-            {},
-            "messages",
             batch_size=10,
         ) as handler:
             for message in successful_sqs_messages:
