@@ -112,9 +112,9 @@ def workflow_completed(
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
     wf_event_manager.succeeded(execution.input["id"], execution_arn=execution.arn)
-    if execution.output:
+    if execution.output and PROCESS_QUEUE_URL:
         # TODO: add test of workflow chaining
-        with SQSPublisher.get_handler(PROCESS_QUEUE_URL, logger=logger) as publisher:
+        with SQSPublisher(PROCESS_QUEUE_URL, logger=logger) as publisher:
             for next_payload in execution.output.next_payloads():
                 publisher.add(json.dumps(next_payload))
 

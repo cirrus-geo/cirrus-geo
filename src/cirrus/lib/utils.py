@@ -2,11 +2,10 @@ import json
 import logging
 import re
 
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from collections.abc import Callable
 from functools import cache
 from os import getenv
-from typing import Any, Self
+from typing import Any, Generic, Protocol, Self, TypeVar
 
 import boto3
 
@@ -297,168 +296,157 @@ def delete_from_queue_batch(messages: list[dict]) -> dict:
     return resp
 
 
-class BatchHandler:
+T = TypeVar("T")
+
+
+class BatchHandler(Generic[T]):
     def __init__(
-        self,
-        fn: Callable,
-        params: dict,
-        batch_param_name: str,
+        self: Self,
+        batchable: Callable[[list[T]], Any],
         batch_size: int = 10,
-        dest_name: str = "default",
-        logger: logging.Logger | None = None,
-    ):
+    ) -> None:
         """
-        Handles dispatch of messages to AWS functions which support batched operation.
-        Provides a context manager (via `get_handler`) to ensure complete dispatch of
+        Handles dispatch of messages to AWS functions which support batched
+        operation. Provides a context manager to ensure complete dispatch of
         all messages (flushing any fractional batch on exit).
 
         Args:
-          fn (Callable): function to be passed message batches.
-          params (dict): dictionary of the named parameters which `fn` takes.
-          batch_param_name (str): key to be populated with the messages in `params`
+          batchable (Callable): function to be passed message batches.
           batch_size (int): size of batches to be sent (defaults to 10)
-          dest_name (str): common name of location message is being sent
-              (default is "default")
-          logger (logging.Logger): logger class to use (defaults to cirrus.utils.logger)
         """
 
-        self.fn = fn
-        self.params = params
-        self.batch_param_name = batch_param_name
+        self.batchable = batchable
         self.batch_size = batch_size
-        self.dest_name = dest_name
-        self._batch: list[Any] = []
-        self.logger = logger if logger is not None else logging.getLogger(__name__)
+        self._batch: list[T] = []
 
-    def add(self, message: Any):
+    def __enter__(self: Self) -> Self:
+        return self
+
+    def __exit__(self: Self, *_, **__) -> None:
+        self.execute()
+
+    def add(self: Self, item: T) -> None:
         """
         Add the given messages to the `_batch`, and ship them if there are more than
         `batch_size`.
         Args:
-          message (Any): message to be handled by `fn`
+          message (str): message to be handled by `fn`
         """
-        self._batch.append(message)
+        self._batch.append(item)
 
         if len(self._batch) >= self.batch_size:
             self.execute()
 
-    def _prepare_batch(self) -> list[dict[str, Any]]:
-        """Identity function suffices in this base class.  Overriden in subclass, if
-        messages need to be massaged before publication.
-        """
-        return self._batch
-
-    def execute(self):
+    def execute(self: Self) -> Any:
         if not self._batch:
-            return
-
-        params = self.params.copy()
-        params[self.batch_param_name] = self._prepare_batch()
+            return None
 
         try:
-            self.fn(**params)
-            self.logger.debug(
-                "Published %s payloads to %s",
-                len(self._batch),
-                self.dest_name,
-            )
+            return self.batchable(self._batch)
         finally:
             self._batch = []
 
-    @classmethod
-    @contextmanager
-    def get_handler(
-        cls: type[Self],
-        *args,
-        **kwargs,
-    ) -> Iterator[Self]:
-        publisher = cls(*args, **kwargs)
-        try:
-            yield publisher
-        finally:
-            publisher.execute()
+
+class SNSMessage:
+    def __init__(
+        self: Self,
+        body: str,
+        attributes: dict[str, Any] | None = None,
+    ) -> None:
+        self._body = body
+        self._attrs = attributes if attributes else {}
+        self.check_attrs(self._attrs)
+
+    @staticmethod
+    def check_attrs(attrs) -> None:
+        if len(attrs) > 10:
+            raise ValueError(
+                f"message_attrs too long: {len(attrs)}. "
+                "sns to sqs relay only supports 10 attributes: "
+                "https://docs.aws.amazon.com/sns/latest/dg/"
+                "sns-message-attributes.html.",
+            )
+
+    def render(self: Self) -> dict[str, Any]:
+        # we check again just to make sure
+        self.check_attrs(self._attrs)
+        return {
+            "Message": self._body,
+            "MessageAttributes": self._attrs,
+        }
 
 
-@contextmanager
-def batch_handler(*args, **kwargs) -> Iterator[BatchHandler]:
-    # TODO: Deprecate this in favor of managed classes
-    handler = BatchHandler(*args, **kwargs)
-    try:
-        yield handler
-    finally:
-        handler.execute()
+class DebugLogger(Protocol):  # pragma: no cover
+    def debug(self, msg, *args, **kwargs) -> None: ...
 
 
-class SNSPublisher(BatchHandler):
+class SNSPublisher(BatchHandler[SNSMessage]):
     """Handles publication of SNS messages via batched interface."""
 
-    def __init__(self, topic_arn: str, **kwargs):
+    def __init__(
+        self: Self,
+        topic_arn: str,
+        batch_size: int = 10,
+        logger: DebugLogger | None = None,
+    ) -> None:
         """extend BatchHandler constructor to add topic_arn and setup SNS Client"""
+        super().__init__(batchable=self.send, batch_size=batch_size)
         self.topic_arn = topic_arn
         self.dest_name = topic_arn.split(":")[-1]
-        self._sns_client = get_client("sns")
-        super().__init__(
-            fn=self._sns_client.publish_batch,
-            params={"TopicArn": self.topic_arn, "PublishBatchRequestEntries": []},
-            batch_param_name="PublishBatchRequestEntries",
-            **kwargs,
+        self._sns_client = boto3.client("sns")
+        self._logger = logger
+
+    def send(self: Self, batch: list[SNSMessage]) -> dict[str, Any]:
+        resp = self._sns_client.publish_batch(
+            TopicArn=self.topic_arn,
+            PublishBatchRequestEntries=self.prepare_batch(batch),
         )
+        if self._logger:
+            self._logger.debug(
+                "Published %s messages to %s",
+                len(batch),
+                self.dest_name,
+            )
+        return resp
 
-    def add(self, message: str, message_attrs: dict | None = None):
-        """
-        Add the given messages to the `_batch`, and ship them if there are more than
-        `batch_size`. Override of `BatchHandler.add` to add message attribute support.
-        Args:
-          messages (str): message to be handled by `fn`
-          message_attrs (Optional[dict]): attributes to be added to the message.
-        """
-        message_params: dict[str, Any] = {"Message": message}
-        if message_attrs:
-            if len(message_attrs) > 10:
-                self.logger.error(
-                    "sns to sqs relay only supports 10 attributes: "
-                    "https://docs.aws.amazon.com/sns/latest/dg/"
-                    "sns-message-attributes.html",
-                )
-                raise ValueError(f"message_attrs too long: {len(message_attrs)}")
-            message_params.update({"MessageAttributes": message_attrs})
-        self._batch.append(message_params)
-
-        if len(self._batch) >= self.batch_size:
-            self.execute()
-
-    def _prepare_batch(self) -> list[dict[str, Any]]:
-        """override of `BatchHandler._prepare_batch` that is consistent with how
-        parameters are added to `SNSPublisher._batch`."""
+    def prepare_batch(self: Self, batch: list[SNSMessage]) -> list[dict[str, Any]]:
         return [
-            dict(Id=str(idx), **message_params)
-            for idx, message_params in enumerate(self._batch)
+            dict(Id=str(idx), **message.render()) for idx, message in enumerate(batch)
         ]
 
 
-class SQSPublisher(BatchHandler):
+class SQSPublisher(BatchHandler[str]):
     """Handles publication of SQS messages via batched interface."""
 
-    def __init__(self, queue_url: str, **kwargs):
+    def __init__(
+        self: Self,
+        queue_url: str,
+        batch_size: int = 10,
+        logger: DebugLogger | None = None,
+    ) -> None:
         """extend BatchHandler constructor to add queue_url and setup SQS Queue"""
+        super().__init__(batchable=self.send, batch_size=batch_size)
         self.queue_url = queue_url
         self.dest_name = queue_url.split("/")[-1]
         self._sqs_client = get_resource("sqs")
         self._queue = self._sqs_client.Queue(self.queue_url)
-        super().__init__(
-            fn=self._queue.send_messages,
-            params={},
-            batch_param_name="Entries",
-            **kwargs,
-        )
+        self._logger = logger
 
-    def _prepare_batch(self) -> list[dict[str, Any]]:
-        """override of `BatchHandler._prepare_batch` that is consistent with how
-        parameters are added to `SQSPublisher._batch`."""
+    def send(self: Self, batch: list[str]) -> dict[str, Any]:
+        resp = self._queue.send_messages(Entries=self.prepare_batch(batch))
+        if self._logger:
+            self._logger.debug(
+                "Published %s messages to %s",
+                len(batch),
+                self.dest_name,
+            )
+        return resp
+
+    def prepare_batch(self: Self, batch: list[str]) -> list[dict[str, Any]]:
         return [
             {
                 "Id": str(idx),
                 "MessageBody": msg,
             }
-            for idx, msg in enumerate(self._batch)
+            for idx, msg in enumerate(batch)
         ]

@@ -151,9 +151,8 @@ def batch_tester():
             self.calls = []
             self.items = []
 
-        def __call__(self, **kwargs):
-            self.calls.append(kwargs)
-            batch = kwargs.get("batch", [])
+        def __call__(self, batch):
+            self.calls.append(batch)
             self.items.extend(batch)
             return all(isinstance(x, int) for x in batch)
 
@@ -161,36 +160,27 @@ def batch_tester():
 
 
 def test_batch_handler(batch_tester):
-    handler = utils.BatchHandler(batch_tester, {}, "batch")
+    handler = utils.BatchHandler(batch_tester)
     handler.add(1)
     handler.execute()
     assert len(batch_tester.calls) == 1
-    assert batch_tester.calls[0] == {"batch": [1]}
+    assert batch_tester.calls[0] == [1]
     assert len(batch_tester.items) == 1
     assert batch_tester.items[0] == 1
 
 
 def test_batchhandler_context_mgr(batch_tester):
-    with utils.BatchHandler.get_handler(batch_tester, {}, "batch") as handler:
+    with utils.BatchHandler(batch_tester) as handler:
         handler.add(1)
         handler.execute()
     assert len(batch_tester.calls) == 1
-    assert batch_tester.calls[0] == {"batch": [1]}
+    assert batch_tester.calls[0] == [1]
     assert len(batch_tester.items) == 1
     assert batch_tester.items[0] == 1
 
 
-def test_batch_handler_extra_args(batch_tester):
-    handler = utils.BatchHandler(batch_tester, {"arg": "value"}, "batch")
-    handler.add(1)
-    handler.execute()
-    assert len(batch_tester.calls) == 1
-    assert batch_tester.calls[0] == {"arg": "value", "batch": [1]}
-    assert len(batch_tester.items) == 1
-
-
 def test_batch_handler_no_items(batch_tester):
-    handler = utils.BatchHandler(batch_tester, {}, "batch")
+    handler = utils.BatchHandler(batch_tester)
     handler.execute()
     assert len(batch_tester.calls) == 0
     assert len(batch_tester.items) == 0
@@ -198,7 +188,7 @@ def test_batch_handler_no_items(batch_tester):
 
 def test_batch_handler_batch(batch_tester):
     items = list(range(10))
-    with utils.batch_handler(batch_tester, {}, "batch", batch_size=3) as handler:
+    with utils.BatchHandler(batch_tester, batch_size=3) as handler:
         for item in items:
             handler.add(item)
 
@@ -208,7 +198,7 @@ def test_batch_handler_batch(batch_tester):
 
 def test_sqspublisher_batch(sqs, queue):
     items = list(range(10))
-    with utils.SQSPublisher.get_handler(queue_url=queue, batch_size=3) as publisher:
+    with utils.SQSPublisher(queue_url=queue, batch_size=3) as publisher:
         for item in items:
             publisher.add(str(item))
 
@@ -221,9 +211,9 @@ def test_sqspublisher_batch(sqs, queue):
 
 def test_snspublisher_batch(sns, topic):
     items = [str(x) for x in range(10)]
-    with utils.SNSPublisher.get_handler(topic_arn=topic, batch_size=3) as publisher:
+    with utils.SNSPublisher(topic_arn=topic, batch_size=3) as publisher:
         for item in items:
-            publisher.add(str(item))
+            publisher.add(utils.SNSMessage(body=str(item)))
 
     sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
     all_send_notifications = sns_backend.topics[topic].sent_notifications
@@ -232,11 +222,13 @@ def test_snspublisher_batch(sns, topic):
 
 def test_snspublisher_mesg_attrs(sns, topic):
     items = [str(x) for x in range(10)]
-    with utils.SNSPublisher.get_handler(topic_arn=topic, batch_size=3) as publisher:
+    with utils.SNSPublisher(topic_arn=topic, batch_size=3) as publisher:
         for item in items:
             publisher.add(
-                str(item),
-                {"status": {"DataType": "String", "StringValue": "succeeded"}},
+                utils.SNSMessage(
+                    str(item),
+                    {"status": {"DataType": "String", "StringValue": "succeeded"}},
+                ),
             )
 
     sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
@@ -244,14 +236,11 @@ def test_snspublisher_mesg_attrs(sns, topic):
     assert {e[1] for e in all_send_notifications} == set(items)
 
 
-def test_snspublisher_too_many_mesg_attrs(sns, topic):
-    with (
-        utils.SNSPublisher.get_handler(topic_arn=topic, batch_size=3) as publisher,
-        pytest.raises(ValueError),
-    ):
-        publisher.add(
-            "too many attrs",
-            {
+def test_snsmessage_too_many_mesg_attrs() -> None:
+    with pytest.raises(ValueError):
+        utils.SNSMessage(
+            body="too many attrs",
+            attributes={
                 f"status{i}": {
                     "DataType": "String",
                     "StringValue": "succeeded",

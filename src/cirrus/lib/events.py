@@ -11,7 +11,7 @@ from typing import Self
 from .enums import StateEnum, WFEventType
 from .eventdb import EventDB
 from .statedb import StateDB
-from .utils import PAYLOAD_ID_REGEX, SNSPublisher, execution_url
+from .utils import PAYLOAD_ID_REGEX, SNSMessage, SNSPublisher, execution_url
 
 
 @dataclass
@@ -23,7 +23,7 @@ class WorkflowEvent:
     execution_arn: str | None = None
     error: str | None = None
 
-    def serialize(self):
+    def serialize(self: Self) -> str:
         response = {x: y for (x, y) in vars(self).items() if y}
         if self.execution_arn:
             response["execution"] = execution_url(self.execution_arn)
@@ -31,14 +31,20 @@ class WorkflowEvent:
         return json.dumps(response)
 
     @classmethod
-    def from_message(cls, message: str) -> "WorkflowEvent":
+    def from_message_str(cls: type[Self], message: str) -> Self:
         args = json.loads(message)
         execution = args.pop("execution", None)
         if execution is not None:
             args["execution_arn"] = execution.split("/")[-1]
         return cls(**args)
 
-    def sns_attributes(self) -> dict[str, dict[str, str]]:
+    def to_message(self: Self) -> SNSMessage:
+        return SNSMessage(
+            body=self.serialize(),
+            attributes=self.sns_attributes(),
+        )
+
+    def sns_attributes(self: Self) -> dict[str, dict[str, str]]:
         attrs = {
             "event_type": {
                 "DataType": "String",
@@ -132,20 +138,17 @@ class WorkflowEventManager:
 
         return decorator
 
-    def announce(self: Self, message: WorkflowEvent) -> None:
+    def announce(self: Self, event: WorkflowEvent) -> None:
         """
         Construct message payload and publish to WorkflowEventTopic.
 
         Args:
-            message (WorkflowEvent):
+            event (WorkflowEvent):
         """
         if self.event_publisher is None:
             return
 
-        self.event_publisher.add(
-            message=message.serialize(),
-            message_attrs=message.sns_attributes(),
-        )
+        self.event_publisher.add(event.to_message())
 
     def claim_processing(
         self: Self,
