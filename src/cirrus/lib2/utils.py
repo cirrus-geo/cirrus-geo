@@ -35,6 +35,27 @@ def execution_url(execution_arn: str, region: Optional[str] = None) -> str:
     )
 
 
+def cold_start(
+    clients=(
+        "batch",
+        "s3",
+        "sns",
+        "sqs",
+        "stepfunctions",
+        "timestream-query",
+        "timestream-write",
+    ),
+    resources=("dynamodb", "sqs"),
+):
+    """Used in lambda functions to populate the cache of boto clients/resoures.  Default
+    values cover core cirrus usages."""
+    for client in clients:
+        get_client(client)
+
+    for resource in resources:
+        get_resource(resource)
+
+
 @cache
 def get_client(service: str, session: Optional[boto3.Session] = None):
     """Wrapper around boto3 which implements singleton pattern via @cache"""

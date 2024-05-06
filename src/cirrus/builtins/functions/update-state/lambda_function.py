@@ -9,7 +9,9 @@ from cirrus.lib2.events import WorkflowEventManager
 from cirrus.lib2.logging import get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload
 from cirrus.lib2.statedb import StateDB
-from cirrus.lib2.utils import SNSPublisher, SQSPublisher, get_client
+from cirrus.lib2.utils import SNSPublisher, SQSPublisher, cold_start, get_client
+
+cold_start()
 
 logger = get_task_logger("function.update-state", payload=tuple())
 
