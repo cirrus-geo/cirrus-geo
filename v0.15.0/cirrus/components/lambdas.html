@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lambda-based components &mdash; cirrus-geo  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/js/versions-loader.js?v=d43487cb"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Feeders" href="feeders.html" />
+    <link rel="prev" title="Cirrus Components" href="../60_components.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            cirrus-geo
+          </a>
+              <div class="version">
+                v0.15.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../30_payload.html">Cirrus Process Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../60_components.html">Cirrus Components</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Lambda-based components</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#required-files">Required files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#definition-file">Definition file</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#description">Description</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#enabled-state">Enabled state</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#environment-variables">Environment variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iam-permissions">IAM permissions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#python-dependencies">Python dependencies</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#different-module-handler-names">Different module/handler names</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="feeders.html">Feeders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks/index.html">Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflows/index.html">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functions.html">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../90_examples.html">Cirrus Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../components/feeders/index.html">Feeders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../components/tasks/index.html">Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../components/workflows/index.html">Workflows</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">cirrus-geo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../60_components.html">Cirrus Components</a></li>
+      <li class="breadcrumb-item active">Lambda-based components</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/cirrus/components/lambdas.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="lambda-based-components">
+<h1>Lambda-based components<a class="headerlink" href="#lambda-based-components" title="Link to this heading"></a></h1>
+<p>Components that use Lambda (feeders, functions, and some tasks) share a common
+set of required files and <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> format.</p>
+<section id="required-files">
+<h2>Required files<a class="headerlink" href="#required-files" title="Link to this heading"></a></h2>
+<p>In addition to the <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> and <code class="docutils literal notranslate"><span class="pre">README.md</span></code> files required by all
+components, Lambda-based components also require a <code class="docutils literal notranslate"><span class="pre">lambda_function.py</span></code> Python
+file implementing a <code class="docutils literal notranslate"><span class="pre">lambda_handler</span></code> function, which serves as the Lambda
+execution entry point. Like all components, these files are contained within a
+directory named for the component within its component type’s directory.</p>
+<p>For example, if we have a Lambda task component named <code class="docutils literal notranslate"><span class="pre">reproject</span></code>, we would
+end up with a directory structure that looks like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">project_dir</span><span class="o">&gt;/</span>
+    <span class="n">tasks</span><span class="o">/</span>
+        <span class="n">reproject</span><span class="o">/</span>
+            <span class="n">definition</span><span class="o">.</span><span class="n">yml</span>
+            <span class="n">README</span><span class="o">.</span><span class="n">md</span>
+            <span class="n">lambda_function</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>The contents of a Lambda-based component’s directory–minus the
+<code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> file–will be packaged into a Lambda deployment zip file and
+uploaded to AWS on project deploy. Any additional files added by the user will
+also be included in the Lambda zip.</p>
+</section>
+<section id="definition-file">
+<h2>Definition file<a class="headerlink" href="#definition-file" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> contains a Lambda component’s configuration. The format
+is similar to that used by the Serverless Framework, which underlies cirrus’s
+deployment mechanism, but is subtly different.</p>
+<p>Here is an example <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> file for a Lambda component:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>description: A sample lambda description string
+environment:
+  COMPONENT_LEVEL_VAR: some value
+  OVERRIDDEN_VAR: another_value
+enabled: true
+lambda:
+  enabled: true
+  memorySize: 1024
+  timeout: 60
+  runtime: python3.7
+  environment:
+    LAMBDA_LEVEL_VAR: 13
+    OVERRIDDEN_VAR: new_value
+  layers:
+    - arn:aws:lambda:${self:provider.region}:552188055668:layer:geolambda:2
+  pythonRequirements:
+    include:
+      - rasterio==1.2.8
+      - rio-cogeo~=1.1.10
+  iamRoleStatements:
+    - Effect: &quot;Allow&quot;
+      Action:
+        - &quot;s3:PutObject&quot;
+      Resource:
+        - !Join
+          - &#39;&#39;
+          - - &#39;arn:aws:s3:::&#39;
+            - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+            - &#39;*&#39;
+    - Effect: &quot;Allow&quot;
+      Action:
+        - &quot;s3:ListBucket&quot;
+        - &quot;s3:GetObject&quot;
+        - &quot;s3:GetBucketLocation&quot;
+      Resource: &quot;*&quot;
+    - Effect: &quot;Allow&quot;
+      Action: secretsmanager:GetSecretValue
+      Resource:
+        - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*
+</pre></div>
+</div>
+<p>Generally speaking, the <code class="docutils literal notranslate"><span class="pre">lambda</span></code> key’s value supports the same configuration
+parameters as <a class="reference external" href="https://www.serverless.com/framework/docs/providers/aws/guide/functions">Serverless Functions</a>, with a few key differences. Consult that
+Serverless documentation for a full list of supported parameters, along with
+the following list of Cirrus-specific properties/behaviors.</p>
+<section id="description">
+<h3>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h3>
+<p>The top-level <code class="docutils literal notranslate"><span class="pre">description</span></code> value is used for the component’s description
+within Cirrus, as is also added to the <code class="docutils literal notranslate"><span class="pre">lambda</span></code> configuration during the
+<code class="docutils literal notranslate"><span class="pre">cirrus</span> <span class="pre">build</span></code> configuration compiliation process. So there’s no need to
+specify it twice.</p>
+</section>
+<section id="enabled-state">
+<h3>Enabled state<a class="headerlink" href="#enabled-state" title="Link to this heading"></a></h3>
+<p>Components can be disabled within Cirrus, which will exclude them from the
+compiled configuration. All components support a top-level <code class="docutils literal notranslate"><span class="pre">enabled</span></code> parameter
+to completely enable/disable the component. Lambda-based components also support
+an <code class="docutils literal notranslate"><span class="pre">enabled</span></code> parameter under the <code class="docutils literal notranslate"><span class="pre">lambda</span></code> key, which will enable/disable
+just the Lambda portion of the component.</p>
+<p>For Lambda-only components these <code class="docutils literal notranslate"><span class="pre">enabled</span></code> controls function more or less
+identically. For components that support additional modes of operation (such as
+tasks, which also support Batch), the specific <code class="docutils literal notranslate"><span class="pre">lambda.enabled</span></code> parameter can
+be more useful.</p>
+</section>
+<section id="environment-variables">
+<h3>Environment variables<a class="headerlink" href="#environment-variables" title="Link to this heading"></a></h3>
+<p>Lambda-based components support top-level <code class="docutils literal notranslate"><span class="pre">environment</span></code> variable
+specifications, which they inherit, along with any environment variables defined
+globally in the <code class="docutils literal notranslate"><span class="pre">cirrus.yml</span></code> file under the <code class="docutils literal notranslate"><span class="pre">provider.environment</span></code> key. In
+the case of conflicts, inheritence will perfer a value in the Lambda environment
+varaibles over one from the task, and one from the task varaibles over that from
+the globals.</p>
+<p>If, along with the example <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> above, we had a <code class="docutils literal notranslate"><span class="pre">cirrus.yml</span></code>
+defining:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">provider</span><span class="p">:</span>
+  <span class="n">environment</span><span class="p">:</span>
+    <span class="n">GLOBAL_LEVEL_VAR</span><span class="p">:</span> <span class="n">global_value</span>
+    <span class="n">OVERRIDDEN_VAR</span><span class="p">:</span> <span class="n">first_value</span>
+</pre></div>
+</div>
+<p>we would end up with the following environment variables/values defined for the
+Lambda function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">GLOBAL_LEVEL_VAR</span><span class="p">:</span> <span class="n">global_value</span>
+<span class="n">COMPONENT_LEVEL_VAR</span><span class="p">:</span> <span class="n">some</span> <span class="n">value</span>
+<span class="n">LAMBDA_LEVEL_VAR</span><span class="p">:</span> <span class="mi">13</span>
+<span class="n">OVERRIDDEN_VAR</span><span class="p">:</span> <span class="n">new_value</span>
+</pre></div>
+</div>
+<p>Generally, we recommend using the top-level environment variables for all
+variable definitions whenever possible. Global variables in the <code class="docutils literal notranslate"><span class="pre">cirrus.yml</span></code>
+are useful for values shared amongst most or all Lambda or Batch components,
+allowing a single place for updates. Values used by only one or a handful of
+components, however, are best specified in those respective component
+definitions.</p>
+<p>We recommend using the top-level variable specification over the <code class="docutils literal notranslate"><span class="pre">lambda</span></code>
+level for consistency, as that is also preferred for tasks that use Batch (both
+to allow sharing the environment values between Batch and Lambda, where
+required, and because the Batch environment specification uses a different and
+more verbose format).</p>
+<p>If ever in doubt about the final environment variables/values (or the values of
+any other parameters) used in a Lambda definition, the <code class="docutils literal notranslate"><span class="pre">cirrus</span></code> cli provides
+a <code class="docutils literal notranslate"><span class="pre">show</span></code> command that runs the full configuration interpolation to generate
+the “complete” definition as it appears in the compiled configuration generated
+by the <code class="docutils literal notranslate"><span class="pre">build</span></code> command.  Run it like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus show task &lt;TaskName&gt;
+</pre></div>
+</div>
+</section>
+<section id="iam-permissions">
+<h3>IAM permissions<a class="headerlink" href="#iam-permissions" title="Link to this heading"></a></h3>
+<p>Lambda’s each get a unique role created via the <a class="reference external" href="https://github.com/functionalone/serverless-iam-roles-per-function">serverless-iam-roles-per-function
+plugin</a>. While this plugin supports the specification of global permissions in
+the <code class="docutils literal notranslate"><span class="pre">cirrus.yml</span></code> file under <code class="docutils literal notranslate"><span class="pre">provider.iamRoleStatments</span></code> or
+<code class="docutils literal notranslate"><span class="pre">provider.iam.role.statements</span></code> (depending on serverless version), using global
+permissions is highly discourgaed.</p>
+<p>Instead, each function should have a specific set of IAM permissions listed in
+its <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code>, limited to most restrictive set possible. The default
+set of permissions, as shown in the example, may or may not be that set,
+depending on the functionality of the Lambda components. Let’s break each of
+those default permissions down to see what they do.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- Effect: &quot;Allow&quot;
+  Action:
+    - &quot;s3:PutObject&quot;
+  Resource:
+    - !Join
+      - &#39;&#39;
+      - - &#39;arn:aws:s3:::&#39;
+        - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+        - &#39;*&#39;
+</pre></div>
+</div>
+<p>This first action allows the Lambda to add/update an object in a the bucket
+referenced by the S3 bucket ARN provided via the global environment variable
+<code class="docutils literal notranslate"><span class="pre">CIRRUS_DATA_BUCKET</span></code>. This permission is useful for all tasks that need to
+write assets/items to the data bucket.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">Effect</span><span class="p">:</span> <span class="s2">&quot;Allow&quot;</span>
+  <span class="n">Action</span><span class="p">:</span>
+    <span class="o">-</span> <span class="s2">&quot;s3:ListBucket&quot;</span>
+    <span class="o">-</span> <span class="s2">&quot;s3:GetObject&quot;</span>
+    <span class="o">-</span> <span class="s2">&quot;s3:GetBucketLocation&quot;</span>
+  <span class="n">Resource</span><span class="p">:</span> <span class="s2">&quot;*&quot;</span>
+</pre></div>
+</div>
+<p>This next action allow Cirrus components to retrieve data from any S3 bucket
+that allows access. Task and other components that need to access assets or
+other files across a potentially unknown set of S3 buckets should get this
+permsission.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">Effect</span><span class="p">:</span> <span class="s2">&quot;Allow&quot;</span>
+  <span class="n">Action</span><span class="p">:</span> <span class="n">secretsmanager</span><span class="p">:</span><span class="n">GetSecretValue</span>
+  <span class="n">Resource</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">arn</span><span class="p">:</span><span class="n">aws</span><span class="p">:</span><span class="n">secretsmanager</span><span class="p">:</span><span class="c1">#{AWS::Region}:#{AWS::AccountId}:secret:cirrus-creds-*</span>
+</pre></div>
+</div>
+<p>Some buckets require credentials for access (such as those using KMS
+encryption). The underlying <code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code> utility functions for accessing S3
+objects implicitly supports accessing all secrets named like
+<code class="docutils literal notranslate"><span class="pre">cirrus-creds-&lt;bucket_name&gt;</span></code> to get and use credentials as requred for
+accessing such buckets. An IAM statement like this one allows this Cirrus
+component access to any such secrets as needed.</p>
+</section>
+<section id="python-dependencies">
+<h3>Python dependencies<a class="headerlink" href="#python-dependencies" title="Link to this heading"></a></h3>
+<p>Cirrus uses a Serverless plugin <a class="reference external" href="https://www.serverless.com/plugins/serverless-python-requirements">serverless-python-requirements</a> to bundle any
+necessary Python dependencies into the Lambda deployment zip file when
+packaging. Unlike the stock plugin, however, Cirrus does not use a
+<code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> file for dependency specifiction. Instead, Cirrus supports
+a list of all requirements under <code class="docutils literal notranslate"><span class="pre">lambda.pythonRequirements.include</span></code>.</p>
+<p>The items in that list support the normal <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> file format and
+all version specification operators/options.</p>
+<p>Global requirements supported by all Lambda components are supported via
+configuration in the <code class="docutils literal notranslate"><span class="pre">cirrus.yml</span></code> file under
+<code class="docutils literal notranslate"><span class="pre">custom.pythonRequirements.include</span></code>, but using this mechanism is highly
+discouraged in favor of explicitly listing pinned requirements for every Lambda
+component, as required.</p>
+<p>Note that a dependency specification for <code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code> is injected into every
+Lambda. Cirrus does this by updating each Lambda component’s requirements list
+with the <code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code> requirements. <code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code> itself is copied into each
+Lambda deployment zip from the version installed to the current Python
+environment.</p>
+</section>
+<section id="different-module-handler-names">
+<h3>Different module/handler names<a class="headerlink" href="#different-module-handler-names" title="Link to this heading"></a></h3>
+<p>Serverless function definitions require the specification of a <code class="docutils literal notranslate"><span class="pre">handler</span></code>
+property to set the Lambda entry point module and function. Indeed, if
+<code class="docutils literal notranslate"><span class="pre">lambda.handler</span></code> is set, that value will be used to set the Lambda entry point.</p>
+<p>However, Cirrus does not require this parameter to be specified, and will
+instead default it to <code class="docutils literal notranslate"><span class="pre">lambda_function.lambda_handler</span></code>, in line with AWS
+convention and the expected handler file name.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../60_components.html" class="btn btn-neutral float-left" title="Cirrus Components" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="feeders.html" class="btn btn-neutral float-right" title="Feeders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: v0.15.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
