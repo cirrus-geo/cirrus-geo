@@ -195,7 +195,7 @@ class WorkflowEventManager:
         state: StateEnum,
         payload_url: str = None,
     ):
-        self.logger.warning("already in %s state: ", payload_id)
+        self.logger.info("Skipping %s already in %s state: ", payload_id, state)
         self.announce(
             WorkflowEvent(
                 event_type=WFEventType(f"ALREADY_{state}"),
