@@ -8,6 +8,8 @@ from cirrus.lib2.logging import defer, get_task_logger
 from cirrus.lib2.process_payload import ProcessPayload, ProcessPayloads
 from cirrus.lib2.statedb import StateDB
 
+utils.cold_start()
+
 logger = get_task_logger("function.process", payload=tuple())
 
 

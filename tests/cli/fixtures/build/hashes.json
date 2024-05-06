@@ -40,8 +40,8 @@
     "size": 83
   },
   "lambdas/update-state/lambda_function.py": {
-    "shasum": "58df7e132110c09121a8ef18c372176578f0402ebe4904572f94adb507a1a1de",
-    "size": 7780
+    "shasum": "8b790fe4905b02310248813b685374b6bfc2dfdac62ad19f7213eb6b15d86c96",
+    "size": 7806
   },
   "lambdas/publish/requirements.txt": {
     "shasum": "e5f05c7df535c6dfb7c9eab53bbb4bdebea7ee03f1894c58410795dfcb398538",
@@ -104,8 +104,8 @@
     "size": 26
   },
   "lambdas/process/lambda_function.py": {
-    "shasum": "00e190c1a667495225983c94f6762dfc4b161272b7b91483a7f17bea571cf7f0",
-    "size": 3616
+    "shasum": "93a5e192e6e305338bac7af5c12f331010a634b14c24da57c0fae60fdc6f11a3",
+    "size": 3636
   },
   "cirrus/lib2/logging.py": {
     "shasum": "eccfdad4b87f655ea68fb993bd29067116aeb6e2043f2edeb17034fd5d4d895b",
@@ -128,8 +128,8 @@
     "size": 6245
   },
   "cirrus/lib2/utils.py": {
-    "shasum": "b7e38592ed39ce32f9650b78f96c75f91e0b5a4f43972c872a8f29f6492a70c5",
-    "size": 14818
+    "shasum": "d50ea09a6cf1a0dce42ff3bef673cbac4adf836b3cf31422cce28a3a11f7067c",
+    "size": 15283
   },
   "cirrus/lib2/errors.py": {
     "shasum": "94ff1e0410118c41269067a37f3eeae6fd040fa5c727e054ebcb7df1a4583a59",
