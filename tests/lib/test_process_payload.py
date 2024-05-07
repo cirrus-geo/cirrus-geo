@@ -22,11 +22,6 @@ def base_payload():
 
 
 @pytest.fixture()
-def capella_payload():
-    return read_json_fixture("capella-fixture-2.json")
-
-
-@pytest.fixture()
 def sqs_event():
     return read_json_fixture("sqs-event.json")
 
@@ -34,7 +29,7 @@ def sqs_event():
 @pytest.fixture()
 def chain_payload(base_payload):
     # need to convert process and add filter
-    base_payload["process"] = [base_payload["process"]] * 2
+    base_payload["process"] = base_payload["process"] * 2
     base_payload["process"][1]["chain_filter"] = (
         "@.id =~ 'fake*' & @.properties.gsd <= 0"
     )
@@ -95,7 +90,6 @@ def test_next_payloads_no_list(base_payload):
 
 
 def test_next_payloads_list_of_one(base_payload):
-    base_payload["process"] = [base_payload["process"]]
     payloads = list(ProcessPayload.from_event(base_payload).next_payloads())
     assert len(payloads) == 0
 
@@ -103,7 +97,7 @@ def test_next_payloads_list_of_one(base_payload):
 def test_next_payloads_list_of_four(base_payload):
     length = 4
     list_payload = copy.deepcopy(base_payload)
-    list_payload["process"] = [base_payload["process"]] * length
+    list_payload["process"] = base_payload["process"] * length
 
     # We should now have something like this:
     #
@@ -119,14 +113,14 @@ def test_next_payloads_list_of_four(base_payload):
     # with two to follow. So the length of the list returned should be
     # one, a process payload with a process array of length 3.
     assert len(payloads) == 1
-    assert payloads[0]["process"] == [base_payload["process"]] * (length - 1)
+    assert payloads[0]["process"] == base_payload["process"] * (length - 1)
 
 
 def test_next_payloads_list_of_four_fork(base_payload):
     length = 3
     list_payload = copy.deepcopy(base_payload)
-    list_payload["process"] = [base_payload["process"]] * length
-    list_payload["process"][1] = [base_payload["process"]] * 2
+    list_payload["process"] = base_payload["process"] * length
+    list_payload["process"][1] = base_payload["process"] * 2
 
     # We should now have something like this:
     #
@@ -143,8 +137,8 @@ def test_next_payloads_list_of_four_fork(base_payload):
     # the list returned should be two, each a process payload
     # with a process array of length 3.
     assert len(payloads) == 2
-    assert payloads[0]["process"] == [base_payload["process"]] * (length - 1)
-    assert payloads[1]["process"] == [base_payload["process"]] * (length - 1)
+    assert payloads[0]["process"] == base_payload["process"] * (length - 1)
+    assert payloads[1]["process"] == base_payload["process"] * (length - 1)
 
 
 def test_next_payloads_chain_filter(chain_payload, chain_filter_payload):
@@ -154,3 +148,30 @@ def test_next_payloads_chain_filter(chain_payload, chain_filter_payload):
     assert len(payloads) == 1
     assert not recursive_compare(payloads[0], chain_payload)
     assert recursive_compare(payloads[0], chain_filter_payload)
+
+
+def test_payload_no_process(base_payload):
+    del base_payload["process"]
+    expected = "ProcessPayload must have a `process` array of process definintions"
+    with pytest.raises(ValueError, match=expected):
+        ProcessPayload.from_event(base_payload)
+
+
+def test_payload_empty_process_array(base_payload):
+    base_payload["process"] = []
+    expected = (
+        "ProcessPayload `process` must be an array "
+        "with at least one process definition"
+    )
+    with pytest.raises(TypeError, match=expected):
+        ProcessPayload.from_event(base_payload)
+
+
+def test_payload_process_not_an_array(base_payload):
+    base_payload["process"] = base_payload["process"][0]
+    expected = (
+        "ProcessPayload `process` must be an array "
+        "with at least one process definition"
+    )
+    with pytest.raises(TypeError, match=expected):
+        ProcessPayload.from_event(base_payload)

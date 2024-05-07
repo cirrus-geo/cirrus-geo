@@ -58,16 +58,18 @@ def payload():
                 "links": [],
             },
         ],
-        "process": {
-            "workflow": "test-workflow1",
-            "upload_options": {
-                "path_template": "/${collection}/${year}/${month}/${day}/${id}",
-                "collections": {
-                    "test-collection-output": ".*",
+        "process": [
+            {
+                "workflow": "test-workflow1",
+                "upload_options": {
+                    "path_template": "/${collection}/${year}/${month}/${day}/${id}",
+                    "collections": {
+                        "test-collection-output": ".*",
+                    },
                 },
+                "tasks": {},
             },
-            "tasks": {},
-        },
+        ],
         "id": "test-collection-input1/workflow-test-workflow1/test-id1",
     }
 
@@ -215,7 +217,7 @@ def test_rerun_completed_replace(
     statedb,
     workflow_event_topic,
 ):
-    payload["process"]["replace"] = True
+    payload["process"][0]["replace"] = True
 
     # create payload state record in COMPLETED state
     items = statedb.set_completed(payload["id"])
@@ -312,7 +314,7 @@ def test_rerun_invalid_replace(
     statedb,
     workflow_event_topic,
 ):
-    payload["process"]["replace"] = True
+    payload["process"][0]["replace"] = True
 
     # create payload state record in INVALID state
     items = statedb.set_invalid(payload["id"], "invalid")
@@ -691,7 +693,7 @@ def test_double_payload_sqs_with_bad_workflow(
         MessageBody=json.dumps(payload),
     )
     second_id = payload["id"] = payload["id"][:-1] + "2"
-    payload["process"]["workflow"] = bad_workflow
+    payload["process"][0]["workflow"] = bad_workflow
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
         MessageBody=json.dumps(payload),
@@ -745,7 +747,7 @@ def test_payload_bad_workflow_no_id(
     workflow_event_topic,
 ):
     bad_workflow = "unknown-workflow"
-    payload["process"]["workflow"] = bad_workflow
+    payload["process"][0]["workflow"] = bad_workflow
     del payload["id"]
     result = process(payload, {})
     assert result == 0
