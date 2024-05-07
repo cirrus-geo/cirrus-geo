@@ -1,0 +1,4 @@
+boto3
+boto3-utils
+jsonpath-ng
+python-json-logger

@@ -42,12 +42,12 @@ main () {
 
     local compile="pip-compile --strip-extras --allow-unsafe"
 
-    $compile pyproject.toml --all-extras "$@"
-
-    local infile
-    for infile in *.in; do
-        [ "$infile" == 'MANIFEST.in' ] && continue
-        $compile -o "${infile%.*}.txt" "${infile}" "$@"
+    local infile outfile
+    for infile in requirements-in/*.in; do
+        outfile="$(basename "${infile}")"
+        outfile="${outfile%.*}.txt"
+        outfile="${outfile#*_}"
+        $compile -o "${outfile}" "${infile}" "$@"
     done
 }
 

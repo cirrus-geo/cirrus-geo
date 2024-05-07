@@ -25,26 +25,16 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
 ]
-dependencies = [
-    'boto3',
-    'boto3-utils',
-    'jsonpath-ng',
-    'python-json-logger',
-]
 dynamic = [
   'version',
   'readme',
+  'dependencies',
+  'optional-dependencies',
 ]
 
 [project.urls]
 Repository = 'https://github.com/cirrus-geo/cirrus-geo'
 
-[project.optional-dependencies]
-cli = [
-    'backoff',
-    'click',
-    'click-option-group',
-]
 
 [project.scripts]
 cirrus = 'cirrus.management.__main__:main'
@@ -53,6 +43,8 @@ cirrus = 'cirrus.management.__main__:main'
 
 [tool.setuptools.dynamic]
 readme = {file = "README.md"}
+dependencies = {file = "requirements.txt"}
+optional-dependencies = {cli = {file = "requirements-cli.txt"}}
 
 [tool.ruff.lint]
 # https://docs.astral.sh/ruff/rules/
