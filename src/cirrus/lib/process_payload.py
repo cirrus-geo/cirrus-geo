@@ -43,11 +43,17 @@ class ProcessPayload(dict):
         self.logger = get_task_logger(__name__, payload=self)
 
         if "process" not in self:
-            raise ValueError("ProcessPayload must have a `process` definintion")
+            raise ValueError(
+                "ProcessPayload must have a `process` array of process definintions",
+            )
 
-        self.process = (
-            self["process"][0] if isinstance(self["process"], list) else self["process"]
-        )
+        if not isinstance(self["process"], list) or len(self["process"]) == 0:
+            raise TypeError(
+                "ProcessPayload `process` must be an array "
+                "with at least one process definition",
+            )
+
+        self.process = self["process"][0]
 
         self.features = self.get("features", [])
 
@@ -104,7 +110,7 @@ class ProcessPayload(dict):
         return cls(payload, **kwargs)
 
     def next_payloads(self):
-        if isinstance(self["process"], dict) or len(self["process"]) <= 1:
+        if len(self["process"]) <= 1:
             return None
         next_processes = (
             [self["process"][1]]
