@@ -301,7 +301,7 @@ class ProcessPayloads:
             _replace = replace or payload.process.get("replace", False)
 
             # check existing state for Item, if any
-            state = states.get(payload["id"], None)
+            state = states.get(payload["id"])
 
             if (
                 payload["id"] in payload_ids["started"]
