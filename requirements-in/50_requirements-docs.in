@@ -1,5 +1,5 @@
--c requirements.txt
--c requirements-dev.txt
+-c ../requirements.txt
+-c ../requirements-dev.txt
 sphinx
 myst_parser
 sphinxcontrib-mermaid

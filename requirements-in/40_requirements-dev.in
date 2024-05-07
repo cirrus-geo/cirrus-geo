@@ -1,4 +1,5 @@
--c requirements.txt
+-c ../requirements.txt
+-c ../requirements-cli.txt
 darglint
 pytest
 pytest-cov
