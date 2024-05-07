@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from cirrus.lambda_handlers import api
+from cirrus.lambda_functions import api
 
 
 def test_empty_event():

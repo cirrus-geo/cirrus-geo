@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from cirrus.lambda_handlers.post_batch import lambda_handler as post_batch
+from cirrus.lambda_functions.post_batch import lambda_handler as post_batch
 from moto import mock_logs
 
 

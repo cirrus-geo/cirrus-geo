@@ -4,7 +4,7 @@ from itertools import product
 
 import pytest
 
-from cirrus.lambda_handlers.update_state import lambda_handler as update_state
+from cirrus.lambda_functions.update_state import lambda_handler as update_state
 from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEvent
 from moto.core.models import DEFAULT_ACCOUNT_ID
@@ -152,7 +152,7 @@ def test_invalid(event, statedb, monkeypatch, error, expected_state) -> None:
     # so that we can monkeypatch it.
     update_state(event, {})
 
-    lambda_function = sys.modules["cirrus.lambda_handlers.update_state"]
+    lambda_function = sys.modules["cirrus.lambda_functions.update_state"]
     monkeypatch.setattr(
         lambda_function,
         "get_execution_error",

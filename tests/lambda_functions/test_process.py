@@ -5,7 +5,7 @@ import os
 import botocore.exceptions
 import pytest
 
-from cirrus.lambda_handlers.process import lambda_handler as process
+from cirrus.lambda_functions.process import lambda_handler as process
 from moto.core.models import DEFAULT_ACCOUNT_ID
 from moto.sns.models import sns_backends
 
