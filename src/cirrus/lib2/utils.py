@@ -439,12 +439,12 @@ class SNSPublisher(BatchHandler):
     def __init__(self, topic_arn: str, **kwargs):
         """extend BatchHandler constructor to add topic_arn and setup SNS Client"""
         self.topic_arn = topic_arn
-        self.dest_name = topic_arn.split(":")[-1]
         self._sns_client = get_client("sns")
         super().__init__(
             fn=self._sns_client.publish_batch,
             params={"TopicArn": self.topic_arn, "PublishBatchRequestEntries": []},
             batch_param_name="PublishBatchRequestEntries",
+            dest_name=topic_arn.split(":")[-1],
             **kwargs,
         )
 
