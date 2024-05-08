@@ -3,6 +3,7 @@ import uuid
 
 import pytest
 
+from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, StateEnum
 
 
@@ -54,5 +55,9 @@ def test_eventdb_without_configuration(event_kwargs):
     eventdb = EventDB(None)
     assert not eventdb.enabled()
     assert eventdb.write_timeseries_record(**event_kwargs) is None
-    assert eventdb.query_hour(1, 2) is None
-    assert eventdb.query_by_bin_and_duration("", "") is None
+
+    with pytest.raises(EventsDisabledError):
+        eventdb.query_hour(1, 2)
+
+    with pytest.raises(EventsDisabledError):
+        eventdb.query_by_bin_and_duration("", "")

@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 from boto3utils import s3
 
 from cirrus.lib.enums import StateEnum
+from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.statedb import StateDB
@@ -71,7 +72,7 @@ def get_root(root_url, data_bucket):
 def get_stats(_eventdb: EventDB) -> dict[str, Any] | None:
     logger.debug("Get stats")
 
-    if _eventdb.enabled():
+    try:
         return {
             "state_transitions": {
                 "daily": daily(_eventdb.query_by_bin_and_duration("1d", "60d")),
@@ -82,19 +83,16 @@ def get_stats(_eventdb: EventDB) -> dict[str, Any] | None:
                 ),
             },
         }
-
-    return None
+    except EventsDisabledError:
+        return None
 
 
 def _results_transform(
-    results: dict[str, Any] | None,
+    results: dict[str, Any],
     timestamp_function: Callable[[str], str],
     interval: str,
 ) -> list[dict[str, Any]]:
     intervals: dict[str, dict[str, tuple[int, int]]] = defaultdict(dict)
-
-    if not results:
-        return []
 
     for row in results["Rows"]:
         ts = timestamp_function(row["Data"][0]["ScalarValue"])
@@ -117,22 +115,14 @@ def _results_transform(
     ]
 
 
-def daily(results: dict[str, Any] | None) -> list[dict[str, Any]]:
+def daily(results: dict[str, Any]) -> list[dict[str, Any]]:
     return _results_transform(results, lambda x: x.split(" ")[0], "day")
 
 
-def hourly(
-    r1: dict[str, Any] | None,
-    *rs: dict[str, Any] | None,
-) -> list[dict[str, Any]]:
-    combined_results = deepcopy(r1)
+def hourly(*rs: dict[str, Any]) -> list[dict[str, Any]]:
+    combined_results: dict[str, Any] = {"Rows": []}
     for result in rs:
-        if not result:
-            continue
-        if not combined_results:
-            combined_results = result
-        else:
-            combined_results["Rows"].extend(result.get("Rows", []))
+        combined_results["Rows"].extend(result.get("Rows", []))
     return _results_transform(
         combined_results,
         lambda x: x.replace(" ", "T").split(".")[0] + "Z",
