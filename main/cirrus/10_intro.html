@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getting started with Cirrus &mdash; cirrus-geo  documentation</title>
+  <title>Getting started with Cirrus &mdash; Cirrus  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
@@ -16,7 +16,7 @@
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script src="../_static/js/versions-loader.js?v=d43487cb"></script>
     <script src="../_static/js/theme.js"></script>
@@ -35,7 +35,7 @@
           
           
           <a href="../index.html" class="icon icon-home">
-            cirrus-geo
+            Cirrus
           </a>
               <div class="version">
                 main
@@ -60,7 +60,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#relationship-with-stac-server">Relationship with stac-server</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#example-use-cases">Example use cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-earth-search-use-case">Example Earth Search use case</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#aws-services-used">AWS services used</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#where-to-go-next">Where to go next?</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#infrastructure-engineers">Infrastructure Engineers</a></li>
@@ -79,6 +79,7 @@
 <li class="toctree-l1"><a class="reference internal" href="70_statedb.html">State Database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="95_tips_and_tricks.html">Tips and Tricks</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
@@ -94,7 +95,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">cirrus-geo</a>
+          <a href="../index.html">Cirrus</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -116,14 +117,17 @@
 <h1>Getting started with Cirrus<a class="headerlink" href="#getting-started-with-cirrus" title="Link to this heading"></a></h1>
 <section id="what-is-cirrus">
 <h2>What is Cirrus?<a class="headerlink" href="#what-is-cirrus" title="Link to this heading"></a></h2>
-<p>Cirrus is a <a class="reference external" href="https://stacspec.org/">STAC</a>-based geospatial processing pipeline built using a serverless
-and scalable architecture. Cirrus can scale from tiny workloads of tens of items
+<p>Cirrus is a <a class="reference external" href="https://stacspec.org/">STAC</a>-based geospatial processing pipeline platform, built using a serverless
+and scalable architecture deployed on AWS. Cirrus can scale from tiny workloads of tens of items
 to massive workloads of millions of items in both a cost-efficient and
-performance-efficient manner, regardless if your pipeline processing takes
+performance-efficient manner, regardless if processing takes
 seconds, hours, or longer.</p>
-<p>Cirrus is made up of <a class="reference external" href="https://cirrus-geo.github.com/cirrus-geo">cirrus-geo</a>, a cli-based project management and deploy tool, as
-well as <a class="reference external" href="https://cirrus-geo.github.com/cirrus-lib">cirrus-lib</a>, a Python library providing a number of useful
+<p>Cirrus consists of two primary pieces:
+- <cite>cirrus</cite>, a CLI-based project management and deploy tool, and
+- <cite>cirrus-lib</cite>, a Python library providing a number of useful
 abstractions solving common needs for users writing their own Cirrus components.</p>
+<p>The <cite>cirrus</cite> CLI is used to create a Cirrus Project that can be customized and deployed to AWS as
+a running Cirrus system.</p>
 </section>
 <section id="why-cirrus">
 <h2>Why Cirrus?<a class="headerlink" href="#why-cirrus" title="Link to this heading"></a></h2>
@@ -132,29 +136,34 @@ abstractions solving common needs for users writing their own Cirrus components.
 <h2>Concepts<a class="headerlink" href="#concepts" title="Link to this heading"></a></h2>
 <section id="stac-based-workflows">
 <h3>STAC-based workflows<a class="headerlink" href="#stac-based-workflows" title="Link to this heading"></a></h3>
-<p>A key principal of Cirrus is the use of the <a class="reference external" href="https://stacspec.org/">STAC</a> metadata specification as a
-central tenant of the <a class="reference internal" href="30_payload.html"><span class="doc">Cirrus Process Payload</span></a> format. In this
-way Cirrus encourages a highly-interoperable, metadata-first focus for both
-pipeline operators and end-users alike.</p>
+<p>A core design aspect of Cirrus is the use of the <a class="reference external" href="https://stacspec.org/">STAC</a> metadata specification as a
+basis for the <a class="reference internal" href="30_payload.html"><span class="doc">Cirrus Process Payload</span></a> format. In this
+way Cirrus, encourages a highly-interoperable, metadata-first approach for both
+pipeline operators and end users alike.</p>
 <p>Cirrus pipelines are, ideally, STAC-in and STAC-out, ensuring compatibility with
 the full range of tooling and services available in the STAC ecosystem. Though
 opinionated in this respect, Cirrus remains flexible to accommodate varied
-use-cases and data sources, such that input format requirements can be relaxed as
+use cases and data sources, such that input format requirements can be relaxed as
 needed for a given workflow.</p>
 </section>
 <section id="cirrus-components">
 <h3>Cirrus Components<a class="headerlink" href="#cirrus-components" title="Link to this heading"></a></h3>
-<p>Cirrus is organized into reusable blocks called <a class="reference internal" href="60_components.html"><span class="doc">Components</span></a>, which can be broken down into three main types:</p>
+<p>Cirrus is organized into reusable blocks called <a class="reference internal" href="60_components.html"><span class="doc">Components</span></a>. There are four types of Components:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="components/feeders.html"><span class="doc">Feeders</span></a>: take arbitrary input in and create a
-Cirrus Process Payload, which is enqueue for processing</p></li>
-<li><p><a class="reference internal" href="components/tasks/index.html"><span class="doc">Tasks</span></a>: the basic unit of work in a Workflow, uses a
-Cirrus Process Payload for both input and output</p></li>
-<li><p><a class="reference internal" href="components/workflows/index.html"><span class="doc">Workflows</span></a>: a set of Tasks implementing a
-processing pipeline to transform a given input into one or more output STAC
-items</p></li>
+<li><p><a class="reference internal" href="components/feeders.html"><span class="doc">Feeders</span></a> accept arbitrary input, and output a
+Cirrus Process Payload, which is enqueued for processing. These can be used to initiate
+processing from any source, for example, an SNS topic message indicating a new scene is
+available or an S3 Inventory of existing scenes.</p></li>
+<li><p><a class="reference internal" href="components/tasks/index.html"><span class="doc">Tasks</span></a> are the basic unit of work in a Workflow and use a
+Cirrus Process Payload for both input and output. This is where specific processing,
+for example, transforming data to data (e.g., JPEG200 to COG), data to metadata
+(e.g., COG to STAC), or metadata to metadata (e.g., MTL to STAC).</p></li>
+<li><p><a class="reference internal" href="components/workflows/index.html"><span class="doc">Workflows</span></a> are a composition of one or more Tasks
+implementing a processing pipeline that coordinate transforming a given input into one
+or more output STAC items</p></li>
+<li><p><a class="reference internal" href="components/functions.html"><span class="doc">Functions</span></a> provide internal services that are used by
+Feeders, Tasks, and Workflows, and are less commonly extended by users.</p></li>
 </ul>
-<p>An additional component type is that of a <a class="reference internal" href="components/functions.html"><span class="doc">Function</span></a>, though they are less commonly extended by end users.</p>
 </section>
 <section id="horizontal-and-vertical-scaling">
 <h3>Horizontal and vertical scaling<a class="headerlink" href="#horizontal-and-vertical-scaling" title="Link to this heading"></a></h3>
@@ -164,8 +173,8 @@ diverse workloads.</p>
 expensive capacity reservations to support peak demands. This scaling can
 accommodate anything from highly intermittent one-off executions to massively
 parallel processing across hundreds of thousands of simultaneous workflow
-executions (or more).</p>
-<p>Vertical scaling support also allow compute resources to matched to different
+executions.</p>
+<p>Vertical scaling support allows compute resources to matched to different
 workloads/requirements within a workflow execution. In other words, executions
 are not tied to a specific instance for their duration, but can instead utilize
 optimal instance sizes/types on a per-task basis.</p>
@@ -175,29 +184,49 @@ optimal instance sizes/types on a per-task basis.</p>
 <h2>Relationship with stac-server<a class="headerlink" href="#relationship-with-stac-server" title="Link to this heading"></a></h2>
 <p>Cirrus Workflows create STAC items, which are stored in S3 for persistence and
 can be published to <a class="reference external" href="https://github.com/stac-utils/stac-server">stac-server</a> (or any other STAC API) for indexing/search.
-In other words, Cirrus generates the data, stac-server makes it easily
-accessible to end-users and the whole world of STAC tooling.</p>
+In other words, Cirrus generates the data, stac-server makes it
+accessible to end-users through the robust ecosystem of STAC tooling.</p>
 </section>
-<section id="example-use-cases">
-<h2>Example use cases<a class="headerlink" href="#example-use-cases" title="Link to this heading"></a></h2>
+<section id="example-earth-search-use-case">
+<h2>Example Earth Search use case<a class="headerlink" href="#example-earth-search-use-case" title="Link to this heading"></a></h2>
+<p>One prominent use case of Cirrus is as the processing pipeline for <a class="reference external" href="https://www.element84.com/earth-search/">Earth Search</a>.</p>
+<ul class="simple">
+<li><p>Landsat scenes are processed via Lambda Functions, triggered notifications from
+the USGS SNS topic.</p></li>
+<li><p>Sentinel-2 Collection 1 Level-2A scenes are processed via Batch, triggered by
+notifications from the ESA/Singergize SNS topic.</p></li>
+<li><p>Sentinel-1 GRD scenes are processed via Lambda, triggered by
+notifications from an SNS topic.</p></li>
+<li><p>NAIP scenes are processed using Lambda, and triggered manually
+once a year when released</p></li>
+<li><p>Copernicus DEM - Global and European Digital Elevation Model (COP-DEM) was
+processed with Lambda, and triggered once manually.</p></li>
+</ul>
+<p>While triggering from SNS notifications is best practice, this is not always possible,
+and there are numerous other ways to initiate ingest.  Previously, the Landsat
+collection was populated by running a daily search against the LandsatLook
+API and ingesting any new scenes. Similarly, the older Sentinel-2 Level-2A collection
+is populated by receiving SNS messages from an older Cirrus pipeline that supported the
+now-deprecated Earth Search v0 deployment.</p>
 </section>
 <section id="aws-services-used">
 <h2>AWS services used<a class="headerlink" href="#aws-services-used" title="Link to this heading"></a></h2>
 <p>Cirrus is built on top of a number of AWS services that allow its serverless and
 scalable architecture, including:</p>
 <ul class="simple">
-<li><p>Lambda: underlays tasks, feeders, and functions</p></li>
-<li><p>Batch: supports longer runtimes and/or custom resource requirements for
+<li><p>Step Functions: workflow implementation</p></li>
+<li><p>Lambda: scalable compute for tasks, feeders, and functions</p></li>
+<li><p>Batch, ECS, and EC2 (spot or on-demand): supports longer runtimes and/or custom resource requirements for
 feeders and tasks</p></li>
-<li><p>SNS: messages to multiple subscribers</p></li>
+<li><p>DynamoDB: Payload state-tracking database</p></li>
 <li><p>SQS: message queuing for reliability</p></li>
-<li><p>DynamoDB: State-tracking database</p></li>
-<li><p>Step Functions: multi-step functions underlying workflows</p></li>
-<li><p>ECR: image hosting for batch and lambda containers</p></li>
-<li><p>IAM: function roles and associated permissions/access policies</p></li>
+<li><p>SNS: messages to multiple subscribers</p></li>
 <li><p>S3: persistent storage for input payloads and generated items and their assets</p></li>
+<li><p>Timestream: event history</p></li>
+<li><p>ECR: image hosting for batch and lambda containers</p></li>
 <li><p>CloudFormation: infrastructure-as-code and deployment automation</p></li>
 <li><p>EventBridge: trigger processing on specific events, like workflow completion</p></li>
+<li><p>IAM: function roles and associated permissions/access policies</p></li>
 </ul>
 </section>
 <section id="where-to-go-next">
@@ -239,7 +268,7 @@ necessary.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, Element 84.</p>
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
@@ -252,22 +281,7 @@ necessary.</p>
       </div>
     </section>
   </div>
-  <div
-  class="rst-versions"
-  data-toggle="rst-versions"
-  role="note"
-  aria-label="Versions"
->
-  <span class="rst-current-version" data-toggle="rst-current-version">
-    v: main
-    <span class="fa fa-caret-down"></span>
-  </span>
-  <div class="rst-other-versions">
-    <dl id="versions-list">
-      <dt>Versions</dt>
-    </dl>
-  </div>
-</div><script>
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });

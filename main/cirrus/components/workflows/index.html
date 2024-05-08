@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workflows &mdash; cirrus-geo  documentation</title>
+  <title>Workflows &mdash; Cirrus  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
 
@@ -16,7 +16,7 @@
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script src="../../../_static/js/versions-loader.js?v=d43487cb"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -35,7 +35,7 @@
           
           
           <a href="../../../index.html" class="icon icon-home">
-            cirrus-geo
+            Cirrus
           </a>
               <div class="version">
                 main
@@ -73,6 +73,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../70_statedb.html">State Database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../95_tips_and_tricks.html">Tips and Tricks</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
@@ -88,7 +89,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">cirrus-geo</a>
+          <a href="../../../index.html">Cirrus</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -123,6 +124,7 @@ the workflow level.</p>
 <li class="toctree-l2"><a class="reference internal" href="definitions.html#simple-example">Simple example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="definitions.html#basic-step-function-structure">Basic step function structure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="definitions.html#triggering-workflows-off-one-another">Triggering workflows off one another</a></li>
+<li class="toctree-l2"><a class="reference internal" href="definitions.html#error-handling">Error handling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="definitions.html#workflow-best-practices">Workflow best practices</a></li>
 </ul>
 </li>
@@ -130,6 +132,7 @@ the workflow level.</p>
 <li class="toctree-l2"><a class="reference internal" href="batch.html#pre-batch-and-post-batch"><code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">post-batch</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="batch.html#put-it-all-together-with-a-parallel-block">Put it all together with a <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block</a></li>
 <li class="toctree-l2"><a class="reference internal" href="batch.html#batch-retries-vs-step-function-retries">Batch retries vs step function retries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch.html#conditionally-using-batch-or-lambda">Conditionally Using Batch or Lambda</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chaining.html">Workflow chaining</a><ul>
@@ -152,7 +155,7 @@ the workflow level.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, Element 84.</p>
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
@@ -165,22 +168,7 @@ the workflow level.</p>
       </div>
     </section>
   </div>
-  <div
-  class="rst-versions"
-  data-toggle="rst-versions"
-  role="note"
-  aria-label="Versions"
->
-  <span class="rst-current-version" data-toggle="rst-current-version">
-    v: main
-    <span class="fa fa-caret-down"></span>
-  </span>
-  <div class="rst-other-versions">
-    <dl id="versions-list">
-      <dt>Versions</dt>
-    </dl>
-  </div>
-</div><script>
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Batch tasks in workflows &mdash; cirrus-geo  documentation</title>
+  <title>Batch tasks in workflows &mdash; Cirrus  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
 
@@ -16,7 +16,7 @@
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script src="../../../_static/js/versions-loader.js?v=d43487cb"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -35,7 +35,7 @@
           
           
           <a href="../../../index.html" class="icon icon-home">
-            cirrus-geo
+            Cirrus
           </a>
               <div class="version">
                 main
@@ -65,6 +65,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#pre-batch-and-post-batch"><code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">post-batch</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#put-it-all-together-with-a-parallel-block">Put it all together with a <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#batch-retries-vs-step-function-retries">Batch retries vs step function retries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#conditionally-using-batch-or-lambda">Conditionally Using Batch or Lambda</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="chaining.html">Workflow chaining</a></li>
@@ -78,6 +79,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../70_statedb.html">State Database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../95_tips_and_tricks.html">Tips and Tricks</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
@@ -93,7 +95,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">cirrus-geo</a>
+          <a href="../../../index.html">Cirrus</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -115,10 +117,10 @@
              
   <section id="batch-tasks-in-workflows">
 <h1>Batch tasks in workflows<a class="headerlink" href="#batch-tasks-in-workflows" title="Link to this heading"></a></h1>
-<p>Using Batch tasks in workflows is a little more involved than with Lambda tasks.
-Lambdas integrate a more natively with step functions than batch, which has
-additional layer of infrastructure between. As a result, users must keep a few
-more things in mind when wanting to use Batch tasks.</p>
+<p>Using Batch tasks in workflows requires a few additional steps than using Lambda tasks.
+Lambdas integrate more directly with Step Functions than Batch, which has
+additional layer of infrastructure in-between. As a result, users must keep a few
+more things in mind when using to Batch tasks.</p>
 <section id="pre-batch-and-post-batch">
 <h2><code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">post-batch</span></code><a class="headerlink" href="#pre-batch-and-post-batch" title="Link to this heading"></a></h2>
 <p>Because Batch tasks cannot take the input payload natively like Lambda and must
@@ -142,7 +144,7 @@ follow a Batch task step.</p>
 </section>
 <section id="put-it-all-together-with-a-parallel-block">
 <h2>Put it all together with a <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block<a class="headerlink" href="#put-it-all-together-with-a-parallel-block" title="Link to this heading"></a></h2>
-<p>Now, instead of simply being able to have a single step in a step function for a
+<p>Instead of simply being able to have a single step in a step function for a
 Batch task, we end up with three steps. Because of the way they operate
 together, we can think of the <code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> -&gt; Batch task -&gt; <code class="docutils literal notranslate"><span class="pre">post-batch</span></code>
 triad as a single step from the perspective of error handling and retries. That
@@ -153,11 +155,49 @@ primative to allow users to define one or more branches in a workflow that can
 execute in parallel. Interestly for us, <code class="docutils literal notranslate"><span class="pre">parallel</span></code> supports both <code class="docutils literal notranslate"><span class="pre">Catch</span></code> and
 <code class="docutils literal notranslate"><span class="pre">Retry</span></code> policies for error handling, which provides us with the control we
 need for Batch.</p>
+<section id="error-handling">
+<h3>Error handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h3>
+<p>It is essential that workflows properly handle errors when using Batch, as there are
+more things that can go wrong than when using Lambda. For example, when too many Step
+Functions are trying to create a new Batch Job, a AWSBatchException is thrown. When the
+EC2 instance that a Batch Job is running on is reclaimed, as happens frequently with Spot
+instances at scale, a retry should occur so the Batch Job is attempted again. This is why
+it is recommended to use a Parallel block with retry to wrap the Batch steps.</p>
+</section>
+<section id="additional-considerations">
+<h3>Additional considerations<a class="headerlink" href="#additional-considerations" title="Link to this heading"></a></h3>
+<p>Batch does not perform well when there are many jobs that run quickly. For example, if
+a task filters out a significant number of payloads quickly, the overhead of placing the jobs
+onto compute resources will dominate the runtime, and will result in a slow and inefficient
+pipeline. A few examples in Earth Search are:</p>
+<ul class="simple">
+<li><p>Landsat SNS topic (public-c2-notify-v2) that initiates ingest includes many “Real-Time” (RT)
+scenes that are ignored. These result in a runtime of only a few seconds. If these were run
+with Batch, there would be a few minute overhead for job placement (incurring the cost of
+the EC2 instances for that time) for only a few seconds of actual use.</p></li>
+<li><p>Even without the aforementioned RT scenes, Landsat ingest uses Lambda instead of Batch
+because the task is only performing a metadata-to-metadata conversion that takes tens of seconds
+per scene. The overhead for Batch is far greater than the actual runtime, and the task runtime
+is both low (much less than the Lambda maximum of 15 minutes) and consistent.</p></li>
+<li><p>The Sentinel-2 Collection 1 Level-L2A collection only includes items with a “processing baseline”
+value of 05.00 or higher. All newly-acquired scenes have this processing baseline, but when
+back-processing the catalog, about half of the scenes have an older baseline and are immediately
+ignored. This meant that half of the Batch Jobs ran for seconds and half ran for 5-10 minutes.
+The batch jobs that ran for seconds caused a signficant increase in cost and decrease in throughput.
+A better solution would have been to have an initial Lambda that checked only if the processing
+baseline was appropriate, and only allowed the Batch job to run if it was.</p></li>
+</ul>
+<p>Another consideration is with error handing and InvalidInputs. Tasks that raise InvalidInput exceptions
+are indicating that the payload can never be processed correctly. I trivial example of this would be a
+process payload with only an ID value and no other information. This is contrasted with a valid payload
+that fails because of something that can be corrected, such as a code bug or a</p>
+</section>
 <section id="minimal-example">
 <h3>Minimal example<a class="headerlink" href="#minimal-example" title="Link to this heading"></a></h3>
-<p>Let’s see an example of a workflow using <code class="docutils literal notranslate"><span class="pre">parallel</span></code> to group the set of Batch
+<p>Let’s see an example of a workflow using a <code class="docutils literal notranslate"><span class="pre">Parallel</span></code> block to group the set of Batch
 operations together. Notice how the example uses <code class="docutils literal notranslate"><span class="pre">parallel</span></code> with only a single
 branch defined, but that fits the Batch use-case perfectly.</p>
+<p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>name: &#39;#{AWS::StackName}-batch-example
 definition:
   Comment: &quot;Example workflow using parallel to make a &#39;batch group&#39;&quot;
@@ -174,9 +214,11 @@ definition:
               Next: batch-task
               Retry:
                 - ErrorEquals: [&quot;Lambda.TooManyRequestsException&quot;, &quot;Lambda.Unknown&quot;]
-                  IntervalSeconds: 1
+                  IntervalSeconds: 10
+                  MaxDelaySeconds: 86400
                   BackoffRate: 2.0
-                  MaxAttempts: 5
+                  MaxAttempts: 20
+                  JitterStrategy: FULL
             batch-task:
               Type: Task
               Resource: arn:aws:states:::batch:submitJob.sync
@@ -189,6 +231,13 @@ definition:
                 Parameters:
                   url.$: &quot;$.url&quot;
               Next: post-batch
+              Retry:
+                - ErrorEquals: [&quot;Batch.AWSBatchException&quot;]
+                  IntervalSeconds: 600
+                  MaxDelaySeconds: 86400
+                  BackoffRate: 2.0
+                  MaxAttempts: 20
+                  JitterStrategy: FULL
               Catch:
                 # Ensures we always go to post-batch to pull errors
                 - ErrorEquals: [&quot;States.ALL&quot;]
@@ -201,9 +250,11 @@ definition:
               End: True
               Retry:
                 - ErrorEquals: [&quot;Lambda.TooManyRequestsException&quot;, &quot;Lambda.Unknown&quot;]
-                  IntervalSeconds: 1
+                  IntervalSeconds: 10
+                  MaxDelaySeconds: 86400
                   BackoffRate: 2.0
-                  MaxAttempts: 5
+                  MaxAttempts: 20
+                  JitterStrategy: FULL
       Next: publish
       # Parallel output is always an array of the outputs from each branch.
       # We can use the OutputPath selector to get output index 0 as we only
@@ -211,10 +262,13 @@ definition:
       # next task.
       OutputPath: $[0]
       Retry:
-        # This policy will retry any errors a second time
+        # This policy will retry multiple times after any errors
         - ErrorEquals: [&quot;States.ALL&quot;]
-          IntervalSeconds: 3
-          MaxAttempts: 2
+          MaxAttempts: 3
+          IntervalSeconds: 1200
+          MaxDelaySeconds: 86400
+          BackoffRate: 2.0
+          JitterStrategy: FULL
       Catch:
         # If the branch fails more than twice we fail the workflow
         - ErrorEquals: [&quot;States.ALL&quot;]
@@ -226,9 +280,11 @@ definition:
       End: True
       Retry:
         - ErrorEquals: [&quot;Lambda.TooManyRequestsException&quot;, &quot;Lambda.Unknown&quot;]
-          IntervalSeconds: 1
+          IntervalSeconds: 10
+          MaxDelaySeconds: 86400
           BackoffRate: 2.0
-          MaxAttempts: 5
+          MaxAttempts: 20
+          JitterStrategy: FULL
       Catch:
         - ErrorEquals: [&quot;States.ALL&quot;]
           ResultPath: $.error
@@ -253,6 +309,42 @@ are more or less hidden from the step functions.</p>
 <p>For these reasons, the overhead of the <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block is worth the
 investment.</p>
 </section>
+<section id="conditionally-using-batch-or-lambda">
+<h2>Conditionally Using Batch or Lambda<a class="headerlink" href="#conditionally-using-batch-or-lambda" title="Link to this heading"></a></h2>
+<p>Tasks can be configured to use either Batch or Lambda, and then the specific
+one to use can be specified in the payload and selected by the workflow.</p>
+<p>The payload should include a field like <cite>batch</cite> with a boolean indicating
+if it’s Batch or not (meaning Lambda):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;process&quot;</span><span class="p">:</span> <span class="p">{</span>
+  <span class="o">...</span>
+  <span class="s2">&quot;tasks&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;foo-to-stac&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;batch&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">}},</span>
+  <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Then in the workflow, this field can be used to drive a Choice block that selects either the
+Batch or Lambda path:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">definition</span><span class="p">:</span>
+  <span class="n">StartAt</span><span class="p">:</span> <span class="n">batch</span><span class="o">-</span><span class="ow">or</span><span class="o">-</span><span class="k">lambda</span>
+  <span class="n">States</span><span class="p">:</span>
+    <span class="n">batch</span><span class="o">-</span><span class="ow">or</span><span class="o">-</span><span class="k">lambda</span><span class="p">:</span>
+      <span class="n">Type</span><span class="p">:</span> <span class="n">Choice</span>
+      <span class="n">Choices</span><span class="p">:</span>
+        <span class="o">-</span> <span class="n">Variable</span><span class="p">:</span> <span class="s2">&quot;$.process.tasks.foo-to-stac.batch&quot;</span>
+          <span class="n">IsPresent</span><span class="p">:</span> <span class="n">false</span>
+          <span class="n">Next</span><span class="p">:</span> <span class="n">foo</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">stac</span><span class="o">-</span><span class="k">lambda</span>
+        <span class="o">-</span> <span class="n">Variable</span><span class="p">:</span> <span class="s2">&quot;$.process.tasks.foo-to-stac.batch&quot;</span>
+          <span class="n">BooleanEquals</span><span class="p">:</span> <span class="n">false</span>
+          <span class="n">Next</span><span class="p">:</span> <span class="n">foo</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">stac</span><span class="o">-</span><span class="k">lambda</span>
+        <span class="o">-</span> <span class="n">Variable</span><span class="p">:</span> <span class="s2">&quot;$.process.tasks.foo-to-stac.batch&quot;</span>
+          <span class="n">BooleanEquals</span><span class="p">:</span> <span class="n">true</span>
+          <span class="n">Next</span><span class="p">:</span> <span class="n">batch</span><span class="o">-</span><span class="n">group</span>
+</pre></div>
+</div>
+<p>In this case, <cite>foo-to-stac-lambda</cite> is a Task block that defines the Lambda path
+and <cite>batch-group</cite> is a Task or Parallel block that defines the Batch path.</p>
+</section>
 </section>
 
 
@@ -266,7 +358,7 @@ investment.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, Element 84.</p>
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
@@ -279,22 +371,7 @@ investment.</p>
       </div>
     </section>
   </div>
-  <div
-  class="rst-versions"
-  data-toggle="rst-versions"
-  role="note"
-  aria-label="Versions"
->
-  <span class="rst-current-version" data-toggle="rst-current-version">
-    v: main
-    <span class="fa fa-caret-down"></span>
-  </span>
-  <div class="rst-other-versions">
-    <dl id="versions-list">
-      <dt>Versions</dt>
-    </dl>
-  </div>
-</div><script>
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });

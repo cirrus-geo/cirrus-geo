@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Writing workflow definitions &mdash; cirrus-geo  documentation</title>
+  <title>Writing workflow definitions &mdash; Cirrus  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
 
@@ -16,7 +16,7 @@
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script src="../../../_static/js/versions-loader.js?v=d43487cb"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -35,7 +35,7 @@
           
           
           <a href="../../../index.html" class="icon icon-home">
-            cirrus-geo
+            Cirrus
           </a>
               <div class="version">
                 main
@@ -64,6 +64,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#simple-example">Simple example</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#basic-step-function-structure">Basic step function structure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#triggering-workflows-off-one-another">Triggering workflows off one another</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#error-handling">Error handling</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#workflow-best-practices">Workflow best practices</a></li>
 </ul>
 </li>
@@ -79,6 +80,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../70_statedb.html">State Database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../95_tips_and_tricks.html">Tips and Tricks</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
@@ -94,7 +96,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">cirrus-geo</a>
+          <a href="../../../index.html">Cirrus</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -237,6 +239,40 @@ conditions don’t quite fit with the in-the-box approaches.</p>
 </li>
 </ul>
 </section>
+<section id="error-handling">
+<h2>Error handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h2>
+<p>A critical aspect of scalable workflows is the ability to tolerate and properly recover
+from errors.</p>
+<p>Some errors can occur prior to even executing a task, for example,
+a Lambda.TooManyRequestsException occurs when too many Lambda requests are being made
+(a quota that defaults to 1,000 and can be set to tens of thousands) or an AWSBatchException
+can occur when the AWS Batch API SubmitJob quota of 50/sec is breached. In both cases, these
+steps should be retried; however, they are likely to fail again if retried immediately, and
+the accumulating load will result in an increased failure rate.</p>
+<p>Because of this, it is important
+to have a well-designed retry definition for each task in a workflow.</p>
+<p>A robust retry definition looks like the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">IntervalSeconds</span><span class="p">:</span> <span class="mi">600</span>
+<span class="n">MaxDelaySeconds</span><span class="p">:</span> <span class="mi">86400</span>
+<span class="n">BackoffRate</span><span class="p">:</span> <span class="mf">2.0</span>
+<span class="n">MaxAttempts</span><span class="p">:</span> <span class="mi">20</span>
+<span class="n">JitterStrategy</span><span class="p">:</span> <span class="n">FULL</span>
+</pre></div>
+</div>
+<p>The <cite>JitterStrategy</cite> setting of <cite>FULL</cite> indicates that the next retry should be a random
+amount of time between 0 and the current delay interval. The <cite>JitterStrategy</cite> of <cite>NONE</cite>
+(which is also the default if undefined) simply multiplies the current delay interval by
+the <cite>BackoffRate</cite> parameter on each attempt. <cite>IntervalSeconds</cite> defines what the first
+delay period should be, and then for each retry, this is multiplied by the <cite>BackoffRate</cite>.
+Without jitter, in our example above, the retry would simply wait 600 seconds, then 1200,
+then 2400, etc. With jitter, retry will wait a random amount of time between 0 and 600,
+0 and 1200, 0 and 2400, etc. This randomness means that sudden spike of requests that results
+in errors won’t continue to create a periodic spike of errors as they all retry on exactly
+the same cycle. <cite>MaxAttempts</cite> defines the total number of attempts to run the task, and
+<cite>MaxDelaySeconds`</cite> puts a reasonable cap on the delay period, for example, making the
+maximum delay one 1 day instead of 10 years (600 * 2 ^ 19 seconds).</p>
+<p>Also see the AWS documentation for <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html">error handling in Step Functions</a>.</p>
+</section>
 <section id="workflow-best-practices">
 <h2>Workflow best practices<a class="headerlink" href="#workflow-best-practices" title="Link to this heading"></a></h2>
 <p>Cirrus has a few guardrails, but generally aims to stay out of the way and
@@ -326,7 +362,7 @@ different event-based solution.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, Element 84.</p>
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
@@ -339,22 +375,7 @@ different event-based solution.</p>
       </div>
     </section>
   </div>
-  <div
-  class="rst-versions"
-  data-toggle="rst-versions"
-  role="note"
-  aria-label="Versions"
->
-  <span class="rst-current-version" data-toggle="rst-current-version">
-    v: main
-    <span class="fa fa-caret-down"></span>
-  </span>
-  <div class="rst-other-versions">
-    <dl id="versions-list">
-      <dt>Versions</dt>
-    </dl>
-  </div>
-</div><script>
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to the Cirrus docs! &mdash; cirrus-geo  documentation</title>
+  <title>Welcome to the Cirrus docs! &mdash; Cirrus  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -16,7 +16,7 @@
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script src="_static/js/versions-loader.js?v=d43487cb"></script>
     <script src="_static/js/theme.js"></script>
@@ -34,7 +34,7 @@
           
           
           <a href="#" class="icon icon-home">
-            cirrus-geo
+            Cirrus
           </a>
               <div class="version">
                 main
@@ -59,6 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="cirrus/70_statedb.html">State Database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cirrus/80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cirrus/90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cirrus/95_tips_and_tricks.html">Tips and Tricks</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
@@ -74,7 +75,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">cirrus-geo</a>
+          <a href="#">Cirrus</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -102,7 +103,7 @@
 <li class="toctree-l2"><a class="reference internal" href="cirrus/10_intro.html#why-cirrus">Why Cirrus?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/10_intro.html#concepts">Concepts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/10_intro.html#relationship-with-stac-server">Relationship with stac-server</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cirrus/10_intro.html#example-use-cases">Example use cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cirrus/10_intro.html#example-earth-search-use-case">Example Earth Search use case</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/10_intro.html#aws-services-used">AWS services used</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/10_intro.html#where-to-go-next">Where to go next?</a></li>
 </ul>
@@ -124,6 +125,7 @@
 <li class="toctree-l2"><a class="reference internal" href="cirrus/40_config-deploy.html#using-the-cirrus-cli-to-create-new-project">Using the Cirrus CLI to create new project</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/40_config-deploy.html#naming-your-deployment">Naming your deployment</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/40_config-deploy.html#required-aws-deploy-permissions">Required AWS deploy permissions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cirrus/40_config-deploy.html#aws-service-quotas-and-limits">AWS Service Quotas and Limits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/40_config-deploy.html#build-and-deploy">Build and deploy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/40_config-deploy.html#test-basic-publish-workflow">Test basic publish workflow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/40_config-deploy.html#required-resources">Required resources</a></li>
@@ -133,12 +135,13 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="cirrus/50_operation.html">Basic Operation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/50_operation.html#process-definition">Process definition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cirrus/50_operation.html#id1">Process definition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/50_operation.html#managing-secrets-for-bucket-access">Managing Secrets for Bucket access</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/50_operation.html#submit-a-job-for-processing">Submit a job for processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/50_operation.html#check-statedb">Check statedb</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/50_operation.html#go-to-workflow-step-function-execution">Go to workflow (Step Function execution)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/50_operation.html#inspect-output-stac-items">Inspect output STAC Items</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cirrus/50_operation.html#rerun-a-job">Rerun a job</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cirrus/50_operation.html#rerun-tasks">Rerun tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/50_operation.html#using-the-stac-api-feeder">Using the stac-api feeder</a></li>
 </ul>
 </li>
@@ -165,6 +168,10 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="cirrus/90_examples.html">Cirrus Examples</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="cirrus/examples/e2e-notebook.html">Example End-to-End Notebook</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cirrus/95_tips_and_tricks.html">Tips and Tricks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cirrus/95_tips_and_tricks.html#processing-queue-priority">Processing Queue Priority</a></li>
 </ul>
 </li>
 </ul>
@@ -206,7 +213,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, Element 84.</p>
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
@@ -219,22 +226,7 @@
       </div>
     </section>
   </div>
-  <div
-  class="rst-versions"
-  data-toggle="rst-versions"
-  role="note"
-  aria-label="Versions"
->
-  <span class="rst-current-version" data-toggle="rst-current-version">
-    v: main
-    <span class="fa fa-caret-down"></span>
-  </span>
-  <div class="rst-other-versions">
-    <dl id="versions-list">
-      <dt>Versions</dt>
-    </dl>
-  </div>
-</div><script>
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
