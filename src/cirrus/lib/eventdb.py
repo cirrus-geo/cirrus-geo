@@ -4,8 +4,9 @@ import os
 from datetime import datetime
 from typing import Any
 
-from .enums import StateEnum
-from .utils import PAYLOAD_ID_REGEX, get_client
+from cirrus.lib.enums import StateEnum
+from cirrus.lib.errors import EventsDisabledError
+from cirrus.lib.utils import PAYLOAD_ID_REGEX, get_client
 
 logger = logging.getLogger(__name__)
 
@@ -168,10 +169,12 @@ class EventDB:
             ORDER BY t, state
         """  # noqa: S608
 
-    def _query(self, q: str | None) -> dict[str, Any] | None:
-        return self.tsq_client.query(QueryString=q) if self.enabled() and q else None
+    def _query(self, q: str | None) -> dict[str, Any]:
+        if not self.enabled():
+            raise EventsDisabledError
+        return self.tsq_client.query(QueryString=q)
 
-    def query_hour(self, start: int, end: int) -> dict[str, Any] | None:
+    def query_hour(self, start: int, end: int) -> dict[str, Any]:
         return self._query(
             self._mk_hour_query(start, end, self.event_db_name, self.event_table_name),
         )
@@ -180,7 +183,7 @@ class EventDB:
         self,
         bin_size: str,
         duration: str,
-    ) -> dict[str, Any] | None:
+    ) -> dict[str, Any]:
         return self._query(
             self._mk_query_by_bin_and_duration(
                 bin_size,

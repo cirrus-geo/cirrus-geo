@@ -3,6 +3,7 @@ import json
 import pytest
 
 from cirrus.lambda_functions import api
+from cirrus.lib.errors import EventsDisabledError
 
 
 def test_empty_event():
@@ -43,6 +44,9 @@ class MockEventDB:
         return self._enabled
 
     def query_by_bin_and_duration(self, x, y):
+        if not self.enabled():
+            raise EventsDisabledError
+
         if x == "1d":
             return json.loads(
                 self.fixtures.joinpath("eventdb-daily-input.json").read_text(),
@@ -54,6 +58,9 @@ class MockEventDB:
         raise Exception(f"bin size {x} unexpected")
 
     def query_hour(self, x, y):
+        if not self.enabled():
+            raise EventsDisabledError
+
         return {"Rows": []}
 
 
