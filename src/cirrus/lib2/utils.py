@@ -439,12 +439,12 @@ class SNSPublisher(BatchHandler):
     def __init__(self, topic_arn: str, **kwargs):
         """extend BatchHandler constructor to add topic_arn and setup SNS Client"""
         self.topic_arn = topic_arn
-        self.dest_name = topic_arn.split(":")[-1]
         self._sns_client = get_client("sns")
         super().__init__(
             fn=self._sns_client.publish_batch,
             params={"TopicArn": self.topic_arn, "PublishBatchRequestEntries": []},
             batch_param_name="PublishBatchRequestEntries",
+            dest_name=topic_arn.split(":")[-1],
             **kwargs,
         )
 
@@ -486,13 +486,13 @@ class SQSPublisher(BatchHandler):
     def __init__(self, queue_url: str, **kwargs):
         """extend BatchHandler constructor to add queue_url and setup SQS Queue"""
         self.queue_url = queue_url
-        self.dest_name = queue_url.split("/")[-1]
         self._sqs_client = get_resource("sqs")
         self._queue = self._sqs_client.Queue(self.queue_url)
         super().__init__(
             fn=self._queue.send_messages,
             params={},
             batch_param_name="Entries",
+            dest_name=queue_url.split("/")[-1],
             **kwargs,
         )
 
