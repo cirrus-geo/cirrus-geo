@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Batch tasks &mdash; cirrus-geo  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/js/versions-loader.js?v=d43487cb"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Workflows" href="../workflows/index.html" />
+    <link rel="prev" title="Tasks" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            cirrus-geo
+          </a>
+              <div class="version">
+                v0.15.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../30_payload.html">Cirrus Process Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../60_components.html">Cirrus Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lambdas.html">Lambda-based components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../feeders.html">Feeders</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tasks</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Batch tasks</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#required-files">Required files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#definition-file">Definition file</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#other-considerations">Other considerations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#batch-cloudformation-resources-in-the-cli">Batch CloudFormation resources in the cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#batch-quotas">Batch Quotas</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#managing-changes-to-batch-resources">Managing changes to Batch resources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#anatomy-of-a-task">Anatomy of a task</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#lambda-vs-batch">Lambda vs Batch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#creating-a-new-task">Creating a new task</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#task-parameters">Task parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#running-tasks-locally">Running tasks locally</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../workflows/index.html">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../functions.html">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/feeders/index.html">Feeders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/tasks/index.html">Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/workflows/index.html">Workflows</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">cirrus-geo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../60_components.html">Cirrus Components</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Tasks</a></li>
+      <li class="breadcrumb-item active">Batch tasks</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/cirrus/components/tasks/batch.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="batch-tasks">
+<h1>Batch tasks<a class="headerlink" href="#batch-tasks" title="Link to this heading"></a></h1>
+<section id="required-files">
+<h2>Required files<a class="headerlink" href="#required-files" title="Link to this heading"></a></h2>
+<p>Tasks that support Batch-only operation need just the standard
+<code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> and <code class="docutils literal notranslate"><span class="pre">README.md</span></code> files. Tasks that support both Batch and
+Lambda will additionally need all files required for <a class="reference internal" href="../lambdas.html"><span class="doc">Lambda-based
+components</span></a>. In the Batch-only case specifically, the task
+directory structure looks very similar to Lambda-based tasks:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">project_dir</span><span class="o">&gt;/</span>
+    <span class="n">tasks</span><span class="o">/</span>
+        <span class="n">BatchTask</span><span class="o">/</span>
+            <span class="n">definition</span><span class="o">.</span><span class="n">yml</span>
+            <span class="n">README</span><span class="o">.</span><span class="n">md</span>
+</pre></div>
+</div>
+</section>
+<section id="definition-file">
+<h2>Definition file<a class="headerlink" href="#definition-file" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> contains a Lambda component’s configuration. The format
+is similar to that used by the Serverless Framework, which underlies cirrus’s
+deployment mechanism, but is subtly different.</p>
+<p>Batch tasks include CloudFormation resource declarations in the
+<code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> file for all resources required for the Batch execution
+environment. At minimum, a Batch job definition resource is required, which
+should specify a link to an ECR image managed/built via an external source.
+Often Batch tasks include dedicated compute environment and job queue
+resources. Other common resources found in Batch task definitions include
+launch templates, IAM roles and profiles, and ECR repositories.</p>
+<p>Here is an example <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> file for a fairly complex Batch-only task
+named <code class="docutils literal notranslate"><span class="pre">Reproject</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>description: A sample Batch-only task definition
+environment:
+  BATCH_VAR_1: some value
+  OVERRIDDEN_VAR: another_value
+enabled: true
+batch:
+  enabled: true
+  resources:
+      Resources:
+
+        ReprojectBatchJob:
+          Type: &quot;AWS::Batch::JobDefinition&quot;
+          Properties:
+            JobDefinitionName: &#39;#{AWS::StackName}-Reproject&#39;
+            Type: Container
+            Parameters:
+              url: &quot;&quot;
+            ContainerProperties:
+              Command:
+                - cirrus-batch.py
+                - process
+                - Ref::url
+              Environment:
+                - Name: JOB_DEF_VAR
+                  Value: 1234
+                - Name: OVERRIDDEN_VAR
+                  Value: last_value
+              ResourceRequirements:
+                - Type: VCPU
+                  Value: 32
+                - Type: MEMORY
+                  Value: 240000
+                - Type: GPU
+                  Value: 4
+              Image: &#39;123456789012.dkr.ecr.#{AWS::Region}.amazonaws.com/some-image-name:${opt:stage}&#39;
+
+        ReprojectLaunchTemplate500GB:
+          Type: AWS::EC2::LaunchTemplate
+          Properties:
+            LaunchTemplateName: &#39;#{AWS::StackName}-Reproject-500GB&#39;
+            LaunchTemplateData:
+              BlockDeviceMappings:
+                - Ebs:
+                    VolumeSize: 500
+                    VolumeType: gp3
+                    DeleteOnTermination: true
+                    Encrypted: true
+                  DeviceName: /dev/xvda
+
+        ReprojectComputeEnvironment500GB:
+          Type: AWS::Batch::ComputeEnvironment
+          Properties:
+            ComputeEnvironmentName: &#39;#{AWS::StackName}-Reproject-500GB&#39;
+            Type: MANAGED
+            ServiceRole: !GetAtt BatchServiceRole.Arn
+            ComputeResources:
+              MaxvCpus: 2000
+              SecurityGroupIds: ${self:custom.batch.SecurityGroupIds}
+              Subnets: ${self:custom.batch.Subnets}
+              Type: EC2
+              AllocationStrategy: BEST_FIT_PROGRESSIVE
+              MinvCpus: 0
+              InstanceRole: !GetAtt ReprojectInstanceProfile.Arn
+              LaunchTemplate:
+                LaunchTemplateId: !Ref ReprojectLaunchTemplate500GB
+                Version: $Latest
+              Tags: {&quot;Name&quot;: &quot;Batch Instance - #{AWS::StackName}&quot;}
+              DesiredvCpus: 0
+            State: ENABLED
+
+        ReprojectJobQueue500GB:
+          Type: AWS::Batch::JobQueue
+          Properties:
+            JobQueueName: &#39;#{AWS::StackName}-Reproject-500GB&#39;
+            ComputeEnvironmentOrder:
+              - Order: 1
+                ComputeEnvironment: !Ref ReprojectComputeEnvironment500GB
+            State: ENABLED
+            Priority: 1
+
+        ReprojectInstanceRole:
+          Type: AWS::IAM::Role
+          Properties:
+            AssumeRolePolicyDocument:
+              Version: &#39;2012-10-17&#39;
+              Statement:
+                - Effect: Allow
+                  Principal:
+                    Service:
+                      - ec2.amazonaws.com
+                  Action:
+                    - sts:AssumeRole
+            Path: /
+            ManagedPolicyArns:
+              - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+            Policies:
+              - PolicyName: Cirrus
+                PolicyDocument:
+                  Version: &#39;2012-10-17&#39;
+                  Statement:
+                    - Effect: Allow
+                      Action:
+                        - s3:PutObject
+                      Resource:
+                        - Fn::Join:
+                            - &#39;&#39;
+                            - - &#39;arn:aws:s3:::&#39;
+                              - ${self:provider.environment.CIRRUS_DATA_BUCKET}
+                              - &#39;*&#39;
+                        - Fn::Join:
+                            - &#39;&#39;
+                            - - &#39;arn:aws:s3:::&#39;
+                              - ${self:provider.environment.CIRRUS_PAYLOAD_BUCKET}
+                              - &#39;*&#39;
+                    - Effect: Allow
+                      Action:
+                        - s3:ListBucket
+                        - s3:GetObject
+                        - s3:GetBucketLocation
+                      Resource: &#39;*&#39;
+                    - Effect: Allow
+                      Action: secretsmanager:GetSecretValue
+                      Resource:
+                        - arn:aws:secretsmanager:#{AWS::Region}:#{AWS::AccountId}:secret:cirrus*
+                    - Effect: Allow
+                      Action:
+                        - lambda:GetFunction
+                      Resource:
+                        - arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:#{AWS::StackName}-*
+
+        ReprojectInstanceProfile:
+          Type: AWS::IAM::InstanceProfile
+          Properties:
+            Path: /
+            Roles:
+              - Ref: ReprojectInstanceRole
+</pre></div>
+</div>
+<p>Let’s break down the resources at play in this Batch example.</p>
+<section id="description">
+<h3>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h3>
+<p>The top-level <code class="docutils literal notranslate"><span class="pre">description</span></code> value is used for the component’s description
+within Cirrus. It has no further purpose in the case of Batch.</p>
+</section>
+<section id="enabled-state">
+<h3>Enabled state<a class="headerlink" href="#enabled-state" title="Link to this heading"></a></h3>
+<p>Components can be disabled within Cirrus, which will exclude them from the
+compiled configuration. All components support a top-level <code class="docutils literal notranslate"><span class="pre">enabled</span></code> parameter
+to completely enable/disable the component. Batch tasks also support
+an <code class="docutils literal notranslate"><span class="pre">enabled</span></code> parameter under the <code class="docutils literal notranslate"><span class="pre">batch</span></code> key, which will enable/disable
+just the Batch portion of the component.</p>
+<p>For Batch-only components these <code class="docutils literal notranslate"><span class="pre">enabled</span></code> controls function more or less
+identically. For tasks that support both Batch and Lambda, the
+<code class="docutils literal notranslate"><span class="pre">lambda.enabled</span></code> and <code class="docutils literal notranslate"><span class="pre">batch.enabled</span></code> paramters can prove useful in certain
+circumstances. However, note that if the Lambda component of a dual
+Lambda/Batch task is disabled, the Lambda deployment zip will not be
+packaged/deployed and the Lambda will be deleted from AWS. This can leave the
+Batch task unable to execute due to the missing code package.</p>
+</section>
+<section id="job-definition">
+<h3>Job definition<a class="headerlink" href="#job-definition" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">ReprojectBatchJob</span></code> resource defines a CloudFormation resouce of job
+definition type, and represents the job configuration used when running our
+<code class="docutils literal notranslate"><span class="pre">Reproject</span></code> job. The job definition includes such configuration settings as
+the container image to run, the command to run inside that container, and the
+resource requirements of the container. See the <a class="reference external" href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-batch-jobdefinition.html">AWS Job Definition
+CloudFormation reference</a> for the full list of supported settings.</p>
+<p>It is worth highlighting a few aspects of job definition resources.</p>
+<section id="job-parameters">
+<h4>Job parameters<a class="headerlink" href="#job-parameters" title="Link to this heading"></a></h4>
+<p>The job definition <code class="docutils literal notranslate"><span class="pre">Parameters</span></code> key defines a list of parameter and optional
+default values that can be passed in to a job instance when run. In the example
+above, the <code class="docutils literal notranslate"><span class="pre">url</span></code> parameter is used to pass an S3 URL of the process payload
+in to the executed command.</p>
+<p>This is an important note: Batch has a rather low limit on the size of a job
+sent to the SubmitJob API (<a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/service_limits.html">30KiB at current</a>). To mitigate impacts from this
+limit, use the <code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> task immediately prior to any batch tasks to upload
+the payload to S3 and return a <code class="docutils literal notranslate"><span class="pre">url</span></code> to that payload, which can then be
+referenced when calling the batch job as the value to the <code class="docutils literal notranslate"><span class="pre">url</span></code> parameter.</p>
+<p>In the <code class="docutils literal notranslate"><span class="pre">ReprojectBatchJob</span></code> example resource above, we can see that the <code class="docutils literal notranslate"><span class="pre">url</span></code>
+parameter is referenced in the executed command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Command</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">cirrus</span><span class="o">-</span><span class="n">batch</span><span class="o">.</span><span class="n">py</span>
+  <span class="o">-</span> <span class="n">process</span>
+  <span class="o">-</span> <span class="n">Ref</span><span class="p">::</span><span class="n">url</span>
+</pre></div>
+</div>
+<p>which tells Batch to run a command like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus-batch.py process &lt;contents_of_url_parameter&gt;
+</pre></div>
+</div>
+<p>Exactly what command should be specified for a job definition is dependent on
+the appropriate entry point inside the specified container image. Regardless,
+that entry point should be expecting an S3 URL to a process payload, specified
+in some manner. <code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code> provides convenince classes/methods to help with
+this common need.</p>
+<p>The Batch tasks should replace the payload in S3 at the end of execution after
+any modifications. Follow the Batch task with the <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> task to resolve
+that S3 URL into a JSON payload to pass to successive tasks. <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> will
+also pull any Batch errors from the logs and raise them within the workflow, in
+the event of an unsuccessful Batch execution.</p>
+<p>See <a class="reference internal" href="../workflows/batch.html"><span class="doc">Batch tasks in workflows</span></a> for an example of how a
+payload is passed to a job using this <code class="docutils literal notranslate"><span class="pre">url</span></code> parameter, how <code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> and
+<code class="docutils literal notranslate"><span class="pre">post-batch</span></code> are used, and some other tips regarding Batch tasks in workflows.</p>
+<p>Job parameters can also be used for other job settings, but are most commonly
+used within the <code class="docutils literal notranslate"><span class="pre">Command</span></code> specification in Cirrus.</p>
+</section>
+<section id="environment-variables">
+<h4>Environment variables<a class="headerlink" href="#environment-variables" title="Link to this heading"></a></h4>
+<p>Batch job definition resources support defining a list of environment variable
+names and values, similar to Lambda functions, though with a slightly different
+format. Like Lambda tasks, Batch tasks job definitions support the task
+definition’s top-level <code class="docutils literal notranslate"><span class="pre">environment</span></code> specification, which they inherit, along
+with any environment variable defined globally in the <code class="docutils literal notranslate"><span class="pre">cirrus.yml</span></code> file under
+the <code class="docutils literal notranslate"><span class="pre">provider.environment</span></code> key, with preference given to any duplicate
+varaibles defined on the Batch job defintion.</p>
+<p>Additionally, <code class="docutils literal notranslate"><span class="pre">AWS_REGION</span></code> and <code class="docutils literal notranslate"><span class="pre">AWS_DEFAULT_REGION</span></code> are added to the job
+defintion’s environment variables with the value derived from the stack’s
+deployment region.</p>
+<p>If ever in doubt about the final environment variables/values (or the values of
+any other parameters) used in a Batch task definition, the <code class="docutils literal notranslate"><span class="pre">cirrus</span></code> cli
+provides a <code class="docutils literal notranslate"><span class="pre">show</span></code> command that runs the full configuration interpolation to
+generate the “complete” definition as it appears in the compiled configuration
+generated by the <code class="docutils literal notranslate"><span class="pre">build</span></code> command. Run it like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus show task &lt;TaskName&gt;
+</pre></div>
+</div>
+</section>
+<section id="resource-requirements">
+<h4>Resource requirements<a class="headerlink" href="#resource-requirements" title="Link to this heading"></a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">ResourceRequirements</span></code> key allows specification of a list of all hardware
+resources required by the job (unfortunately with the exception of disk space).
+Note that the values provided here serve as defaults for spawned jobs, and can
+be overriden when calling <code class="docutils literal notranslate"><span class="pre">SubmitJob</span></code> in the workflow. Again, see <a class="reference internal" href="../workflows/batch.html"><span class="doc">Batch
+tasks in workflows</span></a> for an example of overriding resource
+requirements.</p>
+<p>The specified resource requirements are used by the compute environment to pick
+an appropriate-sized instance type for the job, either by doing a best fit
+across all available instance types, or by selecting the best fit instance type
+from a user-provided list. Additional factors come into play with instance
+selection such as whether the compute environment is using on-demand or spot
+instance.</p>
+<p>Optimizing task resource requirements to the minimum required is critical.
+While doing so certainly provides an important cost savings, often the more
+meaningful reason to do so is to ensure fast instance start up time. Larger
+instances can take much longer to become available than small instance, delaying
+instance provisioning and therefore job start.</p>
+</section>
+<section id="image-specification">
+<h4>Image specification<a class="headerlink" href="#image-specification" title="Link to this heading"></a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">Image</span></code> key accepts an image name within a docker registry in the form
+<code class="docutils literal notranslate"><span class="pre">repository-url/image:tag</span></code>. If omitted, the <code class="docutils literal notranslate"><span class="pre">repository-url</span></code> will point to
+Docker Hub.</p>
+<p>For Cirrus tasks, using the AWS Elastic Container Registry to store images is
+common, as is show in the example <code class="docutils literal notranslate"><span class="pre">Image</span></code> value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">123456789012.</span><span class="n">dkr</span><span class="o">.</span><span class="n">ecr</span><span class="o">.</span><span class="c1">#{AWS::Region}.amazonaws.com/some-image-name:${opt:stage}</span>
+</pre></div>
+</div>
+<p>Note the use of the Serverless parameter <code class="docutils literal notranslate"><span class="pre">${opt:stage}</span></code>, which allows
+specification of an image tag based on the stage in a multi-stage deployment
+pipeline. For example, if we have a deployment pipeline with the stages,
+<code class="docutils literal notranslate"><span class="pre">dev</span></code>, <code class="docutils literal notranslate"><span class="pre">staging</span></code>, and <code class="docutils literal notranslate"><span class="pre">prod</span></code>, we will want to ensure we have image
+versions in the ECR repo with tags of those same names.</p>
+</section>
+</section>
+<section id="compute-environments">
+<h3>Compute environments<a class="headerlink" href="#compute-environments" title="Link to this heading"></a></h3>
+<p>Compute environments are perhaps the most complex of the Batch resources. Users
+are strongly encouraged to read through both the <a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/compute_environments.html">Batch compute environment
+documentation</a> and the <a class="reference external" href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-batch-computeenvironment.html">CloudFormation compute environment documentation</a> to
+gain an understanding of the role of compute environments, how they can be
+used, and what options are available for controlling how jobs are executed
+within them.</p>
+<p>Within the Cirrus context, it is recommended to use <code class="docutils literal notranslate"><span class="pre">MANAGED</span></code> compute
+environments. Whether to make use of Fargate or EC2 for job execution is highly
+dependent on the workload involved. Many geospatial processing tasks a
+compute-intensive and make heavy, constant use of instance CPUs, which often
+tips the balance in favor of EC2 for the cost savings. EC2 also allows great
+flexibility, at the expense of having more complex configuration to manage.</p>
+<section id="naming-compute-environments">
+<h4>Naming compute environments<a class="headerlink" href="#naming-compute-environments" title="Link to this heading"></a></h4>
+<p>Naming a compute environment is seemingly desirable as the autogenerated names
+created when a name is omitted are often less than useful and potentially
+shortened in ways that incite confusion. Unfortunately, as a replace-only
+resource, using a name can lead to an issue if needing to update an existing
+compute environment, due to name conflict between the existing environment and
+its replacement.</p>
+<p>Sometimes that restriction is advantageous, as it acts as something of a barrier
+to prevent potentially service-impacting updates. However, for some projects,
+omitting the name may be preferable, as doing so allows updates without
+requiring explicit name changes or resource duplication.</p>
+<p>Review the Batch resource management strategies for more information.</p>
+</section>
+<section id="compute-resources">
+<h4>Compute resources<a class="headerlink" href="#compute-resources" title="Link to this heading"></a></h4>
+<p>The majority of the compute environment configuration is provided by the
+<code class="docutils literal notranslate"><span class="pre">ComputeResources</span></code> settings. Refer to the <a class="reference external" href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html">compute resources CloudFormation
+documentation</a> for a complete list of all supported options.</p>
+<p>Compute environment scaling is defined by several parameters, most notably
+<code class="docutils literal notranslate"><span class="pre">AllocationStrategy</span></code> and <code class="docutils literal notranslate"><span class="pre">MaxvCpus</span></code>. As jobs are submitted with a desired
+CPU count, the compute environment responds by spinning up instances to match
+the total number of CPUs required by all executing jobs. Instances are allocated
+to the compute environment using the specified <code class="docutils literal notranslate"><span class="pre">AllocationStrategy</span></code>. In some
+cases, the desired instance type may not be available, and more-strict
+strategies may prevent substitute instance types from being allocated, causing
+jobs to wait for instance to become available. A similar situation can happen
+with large resource demands, where even less-strict allocation strategies cannot
+find a suitable instance and jobs have to wait.</p>
+<p>Specifying a <code class="docutils literal notranslate"><span class="pre">MinvCpus</span></code> value as a multiple of the number of jobs the compute
+environment should minimally accommodate without waiting can be a viable
+mechanism for dealing with instance inavailability. That is, if needing to
+ensure ten jobs each requiring four CPUs can run without a wait then a
+<code class="docutils literal notranslate"><span class="pre">MinvCpus</span></code> value of 40 will ensure enough instances are continuously running
+to support those jobs. However, using this parameter can add significant idle
+costs and is not recommended unless strictly required. It also does not help
+mitigate latency in the case of job bursts beyond the minimum constant capacity.</p>
+<p>Back to scaling: the compute environment will continue to allocate instances
+until the total number of CPUs in the environment matchs the total CPU demand
+from jobs. However, this allocation will only continue as long as <code class="docutils literal notranslate"><span class="pre">MaxvCpus</span></code>
+is greater than the number of CPUs in the environment. In this way <code class="docutils literal notranslate"><span class="pre">MaxvCpus</span></code>
+acts as the cap on instance count and therefore the maximum number of Batch jobs
+that can be running at any given time. Therefore, ensuring <code class="docutils literal notranslate"><span class="pre">MaxvCpus</span></code> is
+appropriately set is important; an optimal value can be calculated by
+multiplying the maximum number of simultaneous jobs required by the number of
+CPUs each job requires.</p>
+</section>
+<section id="using-the-aws-spot-market">
+<h4>Using the AWS spot market<a class="headerlink" href="#using-the-aws-spot-market" title="Link to this heading"></a></h4>
+</section>
+</section>
+<section id="launch-templates">
+<h3>Launch templates<a class="headerlink" href="#launch-templates" title="Link to this heading"></a></h3>
+<p>Launch templates provide a way to run scripts, apply configuration, and make
+other initialization changes to EC2 instances started in a compute environment.
+Perhaps most commonly, launch templates are used to increase the root disk size
+to ensure enough space is available for running containers and any scratch space
+they may require. The <code class="docutils literal notranslate"><span class="pre">ReprojectLaunchTemplate500GB</span></code> resource in the example
+<code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> is doing exactly that, increasing the root disk to 500GB from
+the default 30GB.</p>
+<p>Other common uses of launch templates for Batch tasks include mounting an EFS
+volume or tweaking the ECS container agent settings.</p>
+<p>When using launch templates with compute environments please note that <em>updating
+a luanch template will not affect any existing compute environments</em> referencing
+that launch template. The launch template referenced at compute environment
+creation is cached independently of the base version, and cannot be updated. If
+needing launch template changes to apply to an existing compute environment the
+compute environment must to be recreated so the new environment can pull the new
+launch template version.</p>
+<p>Consult the <a class="reference external" href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-launchtemplate.html">CloudFormation documentation for launch templates</a> to learn more.</p>
+</section>
+<section id="iam-permissions">
+<h3>IAM permissions<a class="headerlink" href="#iam-permissions" title="Link to this heading"></a></h3>
+<p>Looking closely at the compute environment in the above example, one will notice
+two IAM role keys: <code class="docutils literal notranslate"><span class="pre">ServiceRole</span></code> and <code class="docutils literal notranslate"><span class="pre">ComputeResources.InstanceRole</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ServiceRole</span></code> is the IAM role used by AWS Batch and normally requires a fairly
+standard set of permissions. Therefore, the same role is commonly shared across
+all compute environments as the permissions typically do not differ between
+environments (that role is not part of the example for that reason).</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">ComputeResources.InstanceRole</span></code> is the role used for each container
+instance, and is therefore rather specific to the Batch task at hand. Unlike
+<code class="docutils literal notranslate"><span class="pre">ServiceRole</span></code> the instance role parameter does not expect an IAM role ARN;
+instead it expects an <a class="reference external" href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html">IAM instance profile</a>. Consequently, the above example
+features both the <code class="docutils literal notranslate"><span class="pre">ReprojectInstanceRole</span></code> IAM role resource and the
+<code class="docutils literal notranslate"><span class="pre">ReprojectInstanceProfile</span></code> IAM instance profile referencing the former. We
+then resolve the profile’s ARN and pass that to the compute environment, and it
+can use that profile to associate the desired role and its polices to all Batch
+job containers.</p>
+<p>Commands run as Batch jobs therefore get the permissions allowed by the
+specified IAM role, in a similar manner to the unique role created and used for
+Lambda-based components. Ensure this role has all required permissions and no
+more, so the Batch task does not encounter any permissions errors but also
+cannot access unexpected resources. Roles/profiles can be shared between compute
+environments, but doing so is discouraged.</p>
+<p>Container overrides can be used when calling <code class="docutils literal notranslate"><span class="pre">SubmitJob</span></code> to change the profile
+used for a specific job. This feature can be useful for advanced users
+attempting to run multiple jobs are executed in the same compute environment
+(again, having unique compute environments per task is typically recommended).</p>
+</section>
+<section id="job-queues">
+<h3>Job queues<a class="headerlink" href="#job-queues" title="Link to this heading"></a></h3>
+<p>Compute environments are not actually referenced when submitting a job.
+Instead, a job queue is specified, which itself provides a link to a specific
+compute environment. Job queues are used as a means of holding submitted jobs
+while waiting for available CPUs in a saturated compute environment, and can
+also provide prioritization in the case where different types of jobs share a
+single compute environment.</p>
+<p>Multiple compute environment can also be specified for a single queue. This can
+be useful in the case of wanting some on-demand capacity, but pushing overflow
+into the spot market, or vise versa.</p>
+<p>Job queues can be combined with a <a class="reference external" href="https://docs.aws.amazon.com/batch/latest/userguide/scheduling-policies.html">Batch scheduling policy</a> for advanced
+use-cases.</p>
+<p>See the <a class="reference external" href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-batch-jobqueue.html">job queue CloudFormation documentation</a> for more information about
+supported job queue configurations.</p>
+</section>
+</section>
+<section id="other-considerations">
+<h2>Other considerations<a class="headerlink" href="#other-considerations" title="Link to this heading"></a></h2>
+<section id="shared-resources">
+<h3>Shared resources<a class="headerlink" href="#shared-resources" title="Link to this heading"></a></h3>
+<p>While it is generally encouraged to keep Batch resources isolated to each task,
+it can sometimes be advantageous to share resources between multiple Batch
+tasks. In this case, these resources can also be declared within the project’s
+<code class="docutils literal notranslate"><span class="pre">cloudformation/</span></code> directory, unattached to any specific task instance.</p>
+<p>When in doubt, however, defer to declaring unique resources per Batch task
+rather than sharing, even at the expense of duplication. Duplicating resources
+in this way is often easier to manage and allows more-specific configurations.
+Consider shared resources an “expert-pattern”, as shared resources bring a lot
+of baggage along with them that can increase the potential for issues and other
+unintended side effects.</p>
+</section>
+<section id="other-cloudformation-template-sections">
+<h3>Other CloudFormation template sections<a class="headerlink" href="#other-cloudformation-template-sections" title="Link to this heading"></a></h3>
+<p>In addition to support for CloudFormation <code class="docutils literal notranslate"><span class="pre">Resources</span></code> under
+<code class="docutils literal notranslate"><span class="pre">batch.resources</span></code>, Cirrus also supports defining other CloudFormation
+template section types such as <code class="docutils literal notranslate"><span class="pre">Outputs</span></code> or <code class="docutils literal notranslate"><span class="pre">Conditions</span></code>. Use those as
+required to keep such items together with the associated Batch task.</p>
+</section>
+</section>
+<section id="batch-cloudformation-resources-in-the-cli">
+<h2>Batch CloudFormation resources in the cli<a class="headerlink" href="#batch-cloudformation-resources-in-the-cli" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">cirrus</span></code> cli allows search/discovery of all CloudFormation resources in a
+project. All resources within a project can be listed with the <code class="docutils literal notranslate"><span class="pre">show</span></code>
+command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>❯ cirrus show cloudformation
+[Outputs]
+CirrusQueueSnsArn (built-in)
+
+[Resources]
+AddPreviewAsBatchJob [AWS::Batch::JobDefinition] (from built-in task add-preview)
+AddPreviewComputeEnvironment [AWS::Batch::ComputeEnvironment] (from built-in task add-preview)
+AddPreviewJobQueue [AWS::Batch::JobQueue] (from built-in task add-preview)
+BasicOnDemandComputeEnvironment [AWS::Batch::ComputeEnvironment] (built-in)
+BasicOnDemandJobQueue [AWS::Batch::JobQueue] (built-in)
+...
+</pre></div>
+</div>
+<p>The CloudFormation items are broken down by types, and show the source. For
+Batch resources, they will look something like <code class="docutils literal notranslate"><span class="pre">AddPreviewAsBatchJob</span></code>, where
+it shows that the resource is specifically from the built-in batch-enabled task
+<code class="docutils literal notranslate"><span class="pre">add-preview</span></code>. In this way it is easy to identify a given resource, output, or
+other CloudFormation object and determine if its origin is a Batch task, and if
+so, which one.</p>
+</section>
+<section id="batch-quotas">
+<h2>Batch Quotas<a class="headerlink" href="#batch-quotas" title="Link to this heading"></a></h2>
+<p>AWS limits the number of job queues and compute environments in an account to 50
+each. Considering this limit is important when determining how to
+structure/organize a project’s compute environments. In a large, batch-heavy
+deployment, consolidating compute environments and job queus such that they can
+be shared between tasks may be advantegeous or even necessary to ensure the
+deployment can remain below these quotas. If diverging from the general
+recommendation of a unique job queue and compute environment per task, be sure
+to fully consider instance requirement compatibilities between tasks (including
+instance AMI selection), job queue scheduling policies and prioritization
+mechanisms, and compute environment capacities.</p>
+<p>Also consider the deployment downtime requirements and how changes to compute
+environments must be managed per the following guidelines, making sure that the
+chosen strategy will have enough headroom within the quotas.</p>
+</section>
+<section id="managing-changes-to-batch-resources">
+<h2>Managing changes to Batch resources<a class="headerlink" href="#managing-changes-to-batch-resources" title="Link to this heading"></a></h2>
+<section id="observed-issues">
+<h3>Observed issues<a class="headerlink" href="#observed-issues" title="Link to this heading"></a></h3>
+<p>Several different service-impacting issues can result from changes to Batch
+resources. The following is an attempt to capture those issues and the affected
+resource types, though it is not an exhaustive list of potential problems.</p>
+<section id="workflows-started-during-a-deployment-can-have-broken-batch-configurations">
+<h4>Workflows started during a deployment can have broken Batch configurations<a class="headerlink" href="#workflows-started-during-a-deployment-can-have-broken-batch-configurations" title="Link to this heading"></a></h4>
+<p>A step function referencing a Batch job definition does so via the definition
+ARN, including revision, when using the standard reference syntax like
+<code class="docutils literal notranslate"><span class="pre">#{JobDefinitionName}</span></code>. When deploying a new revision of a job definition,
+CloudFormation automatically deactivates the old revision before the step
+function is updated. Any workflow executions trying to start a batch job between
+the deactivation of the old revision and the step function update will fail.</p>
+</section>
+<section id="batch-job-definitions-roll-forward-on-cloudformation-rollback">
+<h4>Batch job definitions “roll forward” on CloudFormation rollback<a class="headerlink" href="#batch-job-definitions-roll-forward-on-cloudformation-rollback" title="Link to this heading"></a></h4>
+<p>If CloudFormation encounters an error during stack deployment and has to
+rollback after updating a Batch job definition, the old job revision is not
+reactivated. Rather, the job definition is “rolled forward,” such that the old
+definition is used to create a second new revision. It looks something like
+this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Job</span> <span class="n">definition</span>       <span class="n">A</span>       <span class="n">B</span>      <span class="n">A</span>
+<span class="n">Revision</span> <span class="n">number</span>      <span class="mi">1</span>   <span class="o">-&gt;</span>  <span class="mi">2</span>  <span class="o">-&gt;</span>  <span class="mi">3</span>
+</pre></div>
+</div>
+<p>At the time the updated definition with B is created as revision 2, revision 1
+is deactivated. Then, on rollback, CloudFormation re-deploys the definition with
+A as revision 3, deactivating revision 2. But, like the above temporary issue
+with job definition revisions, the step function definition will not be updated
+and still points to revision 1. Unlike the above issue, this case results in a
+premanent issue, unless fixed by another deployment or manual configuration
+changes.</p>
+</section>
+<section id="killed-jobs-on-job-queue-removal">
+<h4>Killed jobs on job queue removal<a class="headerlink" href="#killed-jobs-on-job-queue-removal" title="Link to this heading"></a></h4>
+<p>Perhaps obviously, if deleting a job queue all associated jobs will be killed.
+While not typical, it is important to note when making large changes/refactoring
+existing compute environments/job queues, or simply just renaming a template
+resource.</p>
+</section>
+</section>
+<section id="what-to-do-about-these-issues">
+<h3>What to do about these issues<a class="headerlink" href="#what-to-do-about-these-issues" title="Link to this heading"></a></h3>
+<p>In essences, each of these issues results from trying to make updates to Batch
+infrastructure while jobs are running or can be started. How best to mitigate
+these issues, therefore, depends on project uptime requirements and/or how
+constantly jobs are run as part of the pipeline.</p>
+<section id="downtime-an-issue-jobs-continuously-running">
+<h4>Downtime an issue, jobs continuously running<a class="headerlink" href="#downtime-an-issue-jobs-continuously-running" title="Link to this heading"></a></h4>
+<p>In the case where jobs are continuously running and any pipeline downtime is
+undeserable, the best management strategy is to avoid any Batch resource
+updates, instead deferring to strategy of duplicating all changed resources.
+Commonly, this results in something like a blue-green deployment where every
+Batch resource has two copies, a revision A and revision B. Changes then
+alternate between the two revisions, ensuring the active revision is not updated
+at any time.</p>
+<p>In the provided Batch example above, we would end up with a list of resources
+like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ReprojectBatchJobRevA</span>
+<span class="n">ReprojectLaunchTemplate500GBrevA</span>
+<span class="n">ReprojectComputeEnvironment500GBrevA</span>
+<span class="n">ReprojectJobQueue500GBrevA</span>
+<span class="n">ReprojectInstanceRoleRevA</span>
+<span class="n">ReprojectInstanceProfileRevA</span>
+
+<span class="n">ReprojectBatchJobRevB</span>
+<span class="n">ReprojectLaunchTemplate500GBrevB</span>
+<span class="n">ReprojectComputeEnvironment500GBrevB</span>
+<span class="n">ReprojectJobQueue500GBrevB</span>
+<span class="n">ReprojectInstanceRoleRevB</span>
+<span class="n">ReprojectInstanceProfileRevB</span>
+</pre></div>
+</div>
+<p>In this circumstance, it is advantageous to name things like the compute
+environments and job queues to prevent updates and try to force the duplication
+workflow.</p>
+<p>If currently using the revision A resources and needing to update, say, the
+launch template, the procedure would be as follows:</p>
+<ul class="simple">
+<li><p>Copy <code class="docutils literal notranslate"><span class="pre">ReprojectLaunchTemplate500GBrevA</span></code> as
+<code class="docutils literal notranslate"><span class="pre">ReprojectLaunchTemplate500GBrevB</span></code> and update as required</p></li>
+<li><p>Copy <code class="docutils literal notranslate"><span class="pre">ReprojectComputeEnvironment500GBrevA</span></code> to
+<code class="docutils literal notranslate"><span class="pre">ReprojectComputeEnvironment500GBrevB</span></code> and change the latter to point to the
+new launch template <code class="docutils literal notranslate"><span class="pre">ReprojectLaunchTemplate500GBrevB</span></code></p></li>
+<li><p>Copy <code class="docutils literal notranslate"><span class="pre">ReprojectJobQueue500GBrevA</span></code> to <code class="docutils literal notranslate"><span class="pre">ReprojectJobQueue500GBrevB</span></code> and
+update the copy to reference <code class="docutils literal notranslate"><span class="pre">ReprojectComputeEnvironment500GBrevB</span></code></p></li>
+<li><p>Update all workflow references to <code class="docutils literal notranslate"><span class="pre">ReprojectJobQueue500GBrevA</span></code> to point to
+<code class="docutils literal notranslate"><span class="pre">ReprojectJobQueue500GBrevB</span></code></p></li>
+</ul>
+<p>On deploy, CloudFormation should perform the following operations, in order:</p>
+<ol class="arabic simple">
+<li><p>Create the new launch template <code class="docutils literal notranslate"><span class="pre">ReprojectLaunchTemplate500GBrevB</span></code></p></li>
+<li><p>Create the new compute environment <code class="docutils literal notranslate"><span class="pre">ReprojectComputeEnvironment500GBrevB</span></code></p></li>
+<li><p>Create the new job queue <code class="docutils literal notranslate"><span class="pre">ReprojectJobQueue500GBrevB</span></code></p></li>
+<li><p>Update any workflow step functions per the new job queue reference</p></li>
+</ol>
+<p>If at any point in this deployment an error is encountered, the step functions
+and the old batch resources are left unmodified. The case of a new workflow
+execution prior to the step function updates is similar, in that the step
+functions still point to old batch resources which can continue to process jobs.</p>
+<p>After a successful deployment of the revision B resources and confirmation that
+all running jobs have completed, the old revision A resources can be removed
+entirely. Next time changes are required the revision B resources can be copied
+to revision A resources.</p>
+<p>The above steps are the minimal set of changes for the example launch template
+update. In practice it is often easiest to copy all resources at once, to ensure
+all resources are consistently using revision A or B.</p>
+<p>If needing to use this management strategy for batch resources, be sure to
+remember the Batch resource quota. Ensure enough headroom is present at all
+times in the batch resource totals to allow any possible changes to take place.</p>
+</section>
+<section id="downtime-okay-jobs-intermittent">
+<h4>Downtime okay, jobs intermittent<a class="headerlink" href="#downtime-okay-jobs-intermittent" title="Link to this heading"></a></h4>
+<p>In the case where downtime is acceptable and jobs are intermittent and/or can
+fail without issues, avoiding the complexities of the above management strategy
+may be preferable. In this case, use the simpler strategy of simply updating
+resources and handling any potential issues as they occur during deployment. In
+this case it might be best to omit names from resources like compute
+environments and job queues; else plan to change the names on any update.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Tasks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../workflows/index.html" class="btn btn-neutral float-right" title="Workflows" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: v0.15.1
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
