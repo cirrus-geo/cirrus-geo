@@ -486,13 +486,13 @@ class SQSPublisher(BatchHandler):
     def __init__(self, queue_url: str, **kwargs):
         """extend BatchHandler constructor to add queue_url and setup SQS Queue"""
         self.queue_url = queue_url
-        self.dest_name = queue_url.split("/")[-1]
         self._sqs_client = get_resource("sqs")
         self._queue = self._sqs_client.Queue(self.queue_url)
         super().__init__(
             fn=self._queue.send_messages,
             params={},
             batch_param_name="Entries",
+            dest_name=queue_url.split("/")[-1],
             **kwargs,
         )
 
