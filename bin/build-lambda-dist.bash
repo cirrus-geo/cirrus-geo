@@ -18,7 +18,7 @@ find_this () {
 
 setup_venv() {
     local venv
-    venv="${1:-'provide path to directory for venv'}"
+    venv="${1:?'provide path to directory for venv'}"
     python -m venv "${venv}"
     "${venv}/bin/pip" install "${THIS_DIR}"/..
 }
@@ -26,8 +26,8 @@ setup_venv() {
 
 make_zip_base() {
     local venv dest _python site_packages
-    venv="${1:-'provide path to virtual env with cirrus installed'}"
-    dest="${2:-'provide path to output zip file'}"
+    venv="${1:?'provide path to virtual env with cirrus installed'}"
+    dest="${2:?'provide path to output zip file'}"
     _python="${venv}/bin/python"
     site_packages="$("${_python}" -c "import sysconfig as s; print(s.get_path('purelib'))")"
     (
@@ -41,7 +41,7 @@ make_zip_base() {
 
 get_lambda_handlers() {
     local venv
-    venv="${1:-'provide path to virtual env with cirrus installed'}"
+    venv="${1:?'provide path to virtual env with cirrus installed'}"
     "${venv}/bin/python" <<EOP
 from pathlib import Path
 from cirrus import lambda_functions
@@ -88,4 +88,4 @@ main() {
 }
 
 
-main "$@"
+main
