@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Fixed issue [#225] where default string is treated as a list when input
+  collection is specified neither via `payload.collections` nor on the items in
+  `payload.features[].collection`. ([#280])
+
 ## [v0.15.0] - 2024-05-06
 
 ### ⚠️ Deprecations
@@ -889,6 +897,7 @@ Initial release
 [#182]: https://github.com/cirrus-geo/cirrus-geo/issues/182
 [#193]: https://github.com/cirrus-geo/cirrus-geo/issues/193
 [#202]: https://github.com/cirrus-geo/cirrus-geo/issues/202
+[#225]: https://github.com/cirrus-geo/cirrus-geo/issues/225
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73
@@ -920,6 +929,7 @@ Initial release
 [#267]: https://github.com/cirrus-geo/cirrus-geo/pull/267
 [#270]: https://github.com/cirrus-geo/cirrus-geo/pull/270
 [#272]: https://github.com/cirrus-geo/cirrus-geo/pull/272
+[#280]: https://github.com/cirrus-geo/cirrus-geo/pull/280
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
