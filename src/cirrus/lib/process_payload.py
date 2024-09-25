@@ -216,7 +216,7 @@ class ProcessPayload(dict):
 
             # invoke step function
             self.logger.debug("Running Step Function %s", arn)
-            exe_response = get_client("stepfunctions").start_execution(
+            get_client("stepfunctions").start_execution(
                 stateMachineArn=arn,
                 name=execution_name,
                 input=json.dumps(self.get_payload()),
@@ -225,7 +225,7 @@ class ProcessPayload(dict):
             # add execution to DynamoDB record
             wfem.started_processing(
                 self["id"],
-                exe_response["executionArn"],
+                f"{arn}:{execution_name}",
                 payload_url=url,
             )
 

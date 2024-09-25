@@ -1,7 +1,6 @@
 import functools
 import logging
 import os
-import uuid
 
 from datetime import UTC, datetime, timedelta
 from types import MethodType
@@ -319,7 +318,7 @@ class StateDB:
     def claim_processing(
         self,
         payload_id: str,
-        base_arn: str,
+        execution_arn: str,
         isotimestamp: str | None = None,
     ) -> dict[str, Any]:
         """Sets payload_id to CLAIMED and sets the prospective execution_arn.
@@ -327,7 +326,7 @@ class StateDB:
         stepfunction exectuion name is tied to the CLAIMED state,
         Args:
             payload_id (str): The Cirrus Payload
-            base_arn (str): The base of the workflow arn
+            execution_arn (str): The anticipated execution ARN
             isotimestamp (str): ISO format UTC timestamp for this action.
 
         Returns:
@@ -339,8 +338,6 @@ class StateDB:
         """
         now = isotimestamp if isotimestamp else datetime.now(UTC).isoformat()
         key = self.payload_id_to_key(payload_id)
-        execution_name = uuid.uuid5(uuid.NAMESPACE_URL, f"{payload_id}/{now}")
-        arn = f"{base_arn}:{execution_name}"
         expr = (
             "SET "
             "created = if_not_exists(created, :created), "
@@ -360,7 +357,7 @@ class StateDB:
                 ":updated": now,
                 ":proc": StateEnum.PROCESSING,
                 ":claim": StateEnum.CLAIMED,
-                ":exes": [arn],
+                ":exes": [execution_arn],
                 ":empty_list": [],
             },
         )

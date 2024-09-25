@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -159,12 +160,15 @@ class WorkflowEventManager:
     ) -> str:
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
-        db_item = self.statedb.claim_processing(
+
+        execution_name = uuid.uuid5(uuid.NAMESPACE_URL, f"{payload_id}/{isotimestamp}")
+        arn = f"{arn_base}:{execution_name}"
+
+        self.statedb.claim_processing(
             payload_id=payload_id,
-            arn_base=arn_base,
+            execution_arn=arn,
             isotimestamp=isotimestamp,
         )
-        execution_name = db_item["executions"][-1].split(":")[-1]
         self.announce(
             WorkflowEvent(
                 event_type=WFEventType.CLAIMED_PROCESSING,
@@ -173,7 +177,7 @@ class WorkflowEventManager:
                 payload_url=payload_url,
             ),
         )
-        return execution_name
+        return arn.split(":")[-1]
 
     def started_processing(
         self: Self,
