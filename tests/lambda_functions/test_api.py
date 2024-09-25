@@ -87,9 +87,17 @@ def test_api_stats_output_when_not_enabled(fixtures):
 def test_api_collection_summary(statedb):
     itemid = "test-collection/workflow-test-workflow/badbeefa11da7"
     statedb.limit = 10
+    statedb.claim_processing(
+        f"{itemid}_claimed",
+        execution_arn="arn::uuid5",
+    )
+    statedb.claim_processing(
+        f"{itemid}_processing",
+        execution_arn="arn::uuid5",
+    )
     statedb.set_processing(
         f"{itemid}_processing",
-        execution_arn="arn::test",
+        execution_arn="arn::uuid5",
     )
     statedb.set_completed(
         f"{itemid}_completed",
@@ -121,6 +129,7 @@ def test_api_collection_summary(statedb):
         "workflow": "test-workflow",
         "counts": {
             "PROCESSING": 1,
+            "CLAIMED": 1,
             "COMPLETED": 1,
             "FAILED": 2,
             "INVALID": 1,
