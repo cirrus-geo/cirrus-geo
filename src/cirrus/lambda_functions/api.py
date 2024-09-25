@@ -106,7 +106,11 @@ def _results_transform(
             "period": ts,
             "interval": interval,
             "states": [
-                {"state": state, "unique_count": state_val[0], "count": state_val[1]}
+                {
+                    "state": state.value,
+                    "unique_count": state_val[0],
+                    "count": state_val[1],
+                }
                 for state in StateEnum
                 if (state_val := states.get(state, (0, 0)))
             ],
