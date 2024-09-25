@@ -390,7 +390,7 @@ class StateDB:
             Key=key,
             UpdateExpression=expr,
             ConditionExpression=(
-                "begins_with(state_updated, :claim) and :exec IN executions"
+                "begins_with(state_updated, :claim) " "and contains(executions, :exec)"
             ),
             ExpressionAttributeValues={
                 ":state_updated": f"PROCESSING_{now}",
