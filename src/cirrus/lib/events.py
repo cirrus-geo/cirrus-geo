@@ -153,12 +153,18 @@ class WorkflowEventManager:
     def claim_processing(
         self: Self,
         payload_id: str,
+        arn_base: str,
         payload_url: str | None = None,
         isotimestamp: str | None = None,
-    ):
+    ) -> str:
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
-        self.statedb.claim_processing(payload_id=payload_id, isotimestamp=isotimestamp)
+        db_item = self.statedb.claim_processing(
+            payload_id=payload_id,
+            arn_base=arn_base,
+            isotimestamp=isotimestamp,
+        )
+        execution_name = db_item["executions"][-1].split(":")[-1]
         self.announce(
             WorkflowEvent(
                 event_type=WFEventType.CLAIMED_PROCESSING,
@@ -167,6 +173,7 @@ class WorkflowEventManager:
                 payload_url=payload_url,
             ),
         )
+        return execution_name
 
     def started_processing(
         self: Self,

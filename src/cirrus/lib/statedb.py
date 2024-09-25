@@ -1,6 +1,7 @@
 import functools
 import logging
 import os
+import uuid
 
 from datetime import UTC, datetime, timedelta
 from types import MethodType
@@ -315,12 +316,22 @@ class StateDB:
         return states
 
     @ValidStateChange
-    def claim_processing(self, payload_id: str, isotimestamp: str | None = None):
-        """Sets payload_id to PROCESSING to claim it (preventing other runs)
+    def claim_processing(
+        self,
+        payload_id: str,
+        base_arn: str,
+        isotimestamp: str | None = None,
+    ) -> dict[str, Any]:
+        """Sets payload_id to CLAIMED and sets the prospective execution_arn.
+        This prevents other runs from starting a duplicate stepfunction.  As the
+        stepfunction exectuion name is tied to the CLAIMED state,
         Args:
             payload_id (str): The Cirrus Payload
-            execution_arn (Optional[str]): The Step Function execution ARN.
+            base_arn (str): The base of the workflow arn
             isotimestamp (str): ISO format UTC timestamp for this action.
+
+        Returns:
+            Dict: DynamoDB response
 
         Raises:
             ValueError: if isotimestamp is not ISO and UTC
@@ -328,21 +339,29 @@ class StateDB:
         """
         now = isotimestamp if isotimestamp else datetime.now(UTC).isoformat()
         key = self.payload_id_to_key(payload_id)
-
+        execution_name = uuid.uuid5(uuid.NAMESPACE_URL, f"{payload_id}/{now}")
+        arn = f"{base_arn}:{execution_name}"
         expr = (
             "SET "
             "created = if_not_exists(created, :created), "
-            "state_updated=:state_updated, updated=:updated"
+            "state_updated=:state_updated, updated=:updated, "
+            "executions = list_append(if_not_exists(executions, :empty_list), :exes)"
         )
         return self.table.update_item(
             Key=key,
             UpdateExpression=expr,
-            ConditionExpression="NOT begins_with(state_updated, :proc)",
+            ConditionExpression=(
+                "NOT (begins_with(state_updated, :proc) "
+                "or begins_with(state_updated, :claim))"
+            ),
             ExpressionAttributeValues={
                 ":created": now,
-                ":state_updated": f"PROCESSING_{now}",
+                ":state_updated": f"{StateEnum.CLAIMED}_{now}",
                 ":updated": now,
-                ":proc": "PROCESSING",
+                ":proc": StateEnum.PROCESSING,
+                ":claim": StateEnum.CLAIMED,
+                ":exes": [arn],
+                ":empty_list": [],
             },
         )
 
@@ -366,21 +385,18 @@ class StateDB:
         now = isotimestamp if isotimestamp else datetime.now(UTC).isoformat()
         key = self.payload_id_to_key(payload_id)
 
-        expr = (
-            "SET "
-            "created = if_not_exists(created, :created), "
-            "state_updated=:state_updated, updated=:updated, "
-            "executions = list_append(if_not_exists(executions, :empty_list), :exes)"
-        )
+        expr = "SET state_updated=:state_updated, updated=:updated"
         return self.table.update_item(
             Key=key,
             UpdateExpression=expr,
+            ConditionExpression=(
+                "begins_with(state_updated, :claim) and :exec IN executions"
+            ),
             ExpressionAttributeValues={
-                ":created": now,
                 ":state_updated": f"PROCESSING_{now}",
                 ":updated": now,
-                ":empty_list": [],
-                ":exes": [execution_arn],
+                ":exec": execution_arn,
+                ":claim": StateEnum.CLAIMED,
             },
         )
 

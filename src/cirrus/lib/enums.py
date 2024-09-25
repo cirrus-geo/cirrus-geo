@@ -10,6 +10,7 @@ class StateEnum(str, Enum):
     FAILED = "FAILED"
     INVALID = "INVALID"
     ABORTED = "ABORTED"
+    CLAIMED = "CLAIMED"
 
     def __str__(self):
         return self.value
