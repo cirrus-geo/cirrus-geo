@@ -207,26 +207,33 @@ class ProcessPayload(dict):
             s3().upload_json(self, url)
 
             # create DynamoDB record
-            # -> this overwrites existing states other than PROCESSING
-            wfem.claim_processing(self["id"], payload_url=url)
+            # -> this overwrites existing states other than PROCESSING and CLAIMED
+            execution_name = wfem.claim_processing(
+                self["id"],
+                payload_url=url,
+                arn_base=arn,
+            )
 
             # invoke step function
             self.logger.debug("Running Step Function %s", arn)
-            exe_response = get_client("stepfunctions").start_execution(
+            get_client("stepfunctions").start_execution(
                 stateMachineArn=arn,
+                name=execution_name,
                 input=json.dumps(self.get_payload()),
             )
 
             # add execution to DynamoDB record
             wfem.started_processing(
                 self["id"],
-                exe_response["executionArn"],
+                f"{arn}:{execution_name}",
                 payload_url=url,
             )
 
             return self["id"]
         except ClientError as e:
             if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                # TODO: may need to address this check for claim and processing
+                #       separately now that we are specifying the execution name
                 wfem.skipping(self["id"], state=StateEnum.PROCESSING, payload_url=url)
                 return None
             if e.response["Error"]["Code"] == "StateMachineDoesNotExist":
