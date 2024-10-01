@@ -156,8 +156,7 @@ class ProcessPayload(dict):
             cols = sorted(
                 list({i["collection"] for i in self.features if "collection" in i})
             )
-            input_collections = cols if len(cols) != 0 else "none"
-            collections_str = "/".join(input_collections)
+            collections_str = "/".join(cols) if len(cols) != 0 else "none"
 
         items_str = "/".join(sorted(list([i["id"] for i in self.features])))
         self[
