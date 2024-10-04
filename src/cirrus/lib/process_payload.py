@@ -156,9 +156,9 @@ class ProcessPayload(dict):
             collections_str = "/".join(cols) if len(cols) != 0 else "none"
 
         items_str = "/".join(sorted([i["id"] for i in self.features]))
-        self["id"] = (
-            f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
-        )
+        self[
+            "id"
+        ] = f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
 
     @staticmethod
     def upload_to_s3(payload: dict, bucket: str | None = None) -> str:
@@ -193,17 +193,12 @@ class ProcessPayload(dict):
         url = self.upload_to_s3(self, payload_bucket)
         return {"url": url}
 
-    def items_to_sns_messages(self: Self) -> list[SNSMessage]:
-        """Prepare list of Payload Items as SNS Messages for publishing"""
-        return [
-            SNSMessage(
-                body=json.dumps(item),
-                attributes=build_item_sns_attributes(item),
-            )
-            for item in self.features
-        ]
-
-    def __call__(self, wfem) -> str | None:
+    def __call__(
+        self,
+        wfem,
+        execution_arn,
+        previous_state,
+    ) -> str | None:
         """Add this ProcessPayload to Cirrus and start workflow
 
         Returns:
@@ -214,7 +209,7 @@ class ProcessPayload(dict):
         if not payload_bucket:
             raise ValueError("env var CIRRUS_PAYLOAD_BUCKET must be defined")
 
-        arn = os.getenv("CIRRUS_BASE_WORKFLOW_ARN") + self.process["workflow"]
+        state_machine_arn, _, execution_name = execution_arn.rpartition(":")
         url = f"s3://{payload_bucket}/{self['id']}/input.json"
 
         # start workflow
@@ -223,35 +218,42 @@ class ProcessPayload(dict):
             s3().upload_json(self, url)
 
             # create DynamoDB record
-            # -> this overwrites existing states other than PROCESSING and CLAIMED
-            execution_name = wfem.claim_processing(
-                self["id"],
-                payload_url=url,
-                arn_base=arn,
-            )
+            if previous_state is not StateEnum.CLAIMED:
+                # -> this overwrites existing states other than PROCESSING and CLAIMED
+                wfem.claim_processing(
+                    self["id"],
+                    payload_url=url,
+                    execution_arn=execution_arn,
+                )
 
             # invoke step function
-            self.logger.debug("Running Step Function %s", arn)
+            self.logger.debug("Running Step Function %s", execution_arn)
             get_client("stepfunctions").start_execution(
-                stateMachineArn=arn,
+                stateMachineArn=state_machine_arn,
                 name=execution_name,
                 input=json.dumps(self.get_payload()),
             )
-
             # add execution to DynamoDB record
             wfem.started_processing(
                 self["id"],
-                f"{arn}:{execution_name}",
+                execution_arn=execution_arn,
                 payload_url=url,
             )
 
             return self["id"]
+
         except ClientError as e:
             if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
                 # TODO: may need to address this check for claim and processing
                 #       separately now that we are specifying the execution name
                 wfem.skipping(self["id"], state=StateEnum.PROCESSING, payload_url=url)
                 return None
+            if e.response["Error"]["Code"] == "ExecutionAlreadyExists":
+                wfem.already_started(
+                    self["id"],
+                    execution_arn=execution_arn,
+                    payload_url=url,
+                )
             if e.response["Error"]["Code"] == "StateMachineDoesNotExist":
                 # This failure is tracked in the DB and we raise an error
                 # so we can handle it specifically, to keep the payload
@@ -300,14 +302,55 @@ class ProcessPayloads:
         """
         return [c["id"] for c in self.payloads]
 
-    def get_states(self) -> dict[str, StateEnum]:
+    def get_states_and_exec_arn(self) -> dict[str, tuple]:
         if self.state_items is None:
             items = [
                 self.statedb.dbitem_to_item(i)
                 for i in self.statedb.get_dbitems(self.payload_ids)
             ]
             self.state_items = items
-        return {c["payload_id"]: StateEnum(c["state"]) for c in self.state_items}
+        response = dict(self.get_process_attrs(self.state_items))
+        response += {
+            i: (None, ProcessPayload.gen_execution_arn(i))
+            for i in self.payload_ids
+            if i not in response
+        }
+        return response
+
+    @staticmethod
+    def get_process_attrs(state_items):
+        for si in state_items:
+            payload_id = si["payload_id"]
+            state = StateEnum(si["state"]) if si["state"] is not None else None
+
+            # if workflow is found in CLAIMED state, then we want the last execution to
+            # determine where in the process of sfn execution the failure to proceeed to
+            # PROCESSING occurred.
+            if state == StateEnum.CLAIMED:
+                exec_arn = si["executions"][-1]
+            else:
+                exec_arn = ProcessPayload.gen_execution_arn(
+                    payload_id,
+                    si["workflow"],
+                    si,
+                )
+
+            yield payload_id, (state, exec_arn)
+
+    @staticmethod
+    def gen_execution_arn(payload_id, workflow, state_item=None) -> str:
+        """
+        Generate an execution arn for the given payload_id, using the state_item info if
+        given.
+        """
+        # is this the right UUID, or do we want to have an idempotent one like
+        # {payload_id}/{state_item['executions']}?
+        execution_name = uuid.uuid5(
+            uuid.NAMESPACE_URL,
+            f"{payload_id}/{WorkflowEventManager.isotimestamp_now()}",
+        )
+
+        return os.environ["CIRRUS_BASE_WORKFLOW_ARN"] + workflow + f":{execution_name}"
 
     def process(
         self: Self,
@@ -323,13 +366,13 @@ class ProcessPayloads:
             "failed": [],
         }
         # check existing states
-        states = self.get_states()
+        states = self.get_states_and_exec_arn()
 
         for payload in self.payloads:
             _replace = replace or payload.process.get("replace", False)
 
             # check existing state for Item, if any
-            state = states.get(payload["id"])
+            state, exec_arn = states[payload["id"]]
 
             if (
                 payload["id"] in payload_ids["started"]
@@ -343,13 +386,11 @@ class ProcessPayloads:
                 )
                 payload_ids["dropped"].append(payload["id"])
             elif (
-                state == StateEnum.FAILED
-                or state == StateEnum.ABORTED
-                or state is None
+                state in (StateEnum.FAILED, StateEnum.ABORTED, StateEnum.CLAIMED, None)
                 or _replace
             ):
                 try:
-                    payload_id = payload(wfem)
+                    payload_id = payload(wfem, exec_arn, state)
                 except TerminalError:
                     payload_ids["failed"].append(payload["id"])
                 else:
@@ -364,8 +405,8 @@ class ProcessPayloads:
                     state,
                 )
                 wfem.skipping(
-                    payload["id"],
-                    state,
+                    payload_id=payload["id"],
+                    state=state,
                     payload_url=StateDB.payload_id_to_url(payload["id"]),
                 )
                 payload_ids["skipped"].append(payload["id"])
