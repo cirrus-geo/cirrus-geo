@@ -31,10 +31,13 @@ RECORD_LIMIT = 10
 STATES = list(StateEnum._member_names_)
 
 
-def create_items_bulk(item_count, fn, **kwargs):
+def create_items_bulk(item_count, fns, **kwargs):
+    if callable(fns):
+        fns = [fns]
     for index in range(item_count):
-        newitem = deepcopy(test_item)
-        fn(f'{newitem["id"]}{index}', **kwargs)
+        for fn in fns:
+            newitem = deepcopy(test_item)
+            fn(f'{newitem["id"]}{index}', **kwargs)
 
 
 TESTKEY = {"collections_workflow": "col1_wf1", "itemids": "item1/item2"}
@@ -75,6 +78,14 @@ def test_since_to_timedelta():
 @pytest.fixture()
 def state_table(statedb: StateDB):
     statedb.limit = RECORD_LIMIT
+    statedb.claim_processing(
+        f'{test_item["id"]}_claimed',
+        execution_arn="arn::notexecuted",
+    )
+    statedb.claim_processing(
+        f'{test_item["id"]}_processing',
+        execution_arn="arn::test",
+    )
     statedb.set_processing(
         f'{test_item["id"]}_processing',
         execution_arn="arn::test",
@@ -109,7 +120,11 @@ def test_get_items(state_table: StateDB):
 
 def test_get_items_bulk(state_table: StateDB):
     _count = 25
-    create_items_bulk(_count, state_table.set_processing, execution_arn="arn::test")
+    create_items_bulk(
+        _count,
+        [state_table.claim_processing, state_table.set_processing],
+        execution_arn="arn::test",
+    )
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
@@ -129,7 +144,11 @@ def test_get_items_limit_1(state_table: StateDB):
 
 
 def test_get_items_limit_1_bulk(state_table: StateDB):
-    create_items_bulk(20, state_table.set_processing, execution_arn="arn::test")
+    create_items_bulk(
+        20,
+        [state_table.claim_processing, state_table.set_processing],
+        execution_arn="arn::test",
+    )
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
@@ -178,7 +197,11 @@ def test_get_dbitem_noitem(state_table: StateDB):
 
 def test_get_dbitems(state_table: StateDB):
     count = 5
-    create_items_bulk(count, state_table.set_processing, execution_arn="arn::test")
+    create_items_bulk(
+        count,
+        [state_table.claim_processing, state_table.set_processing],
+        execution_arn="arn::test",
+    )
     ids = [test_item["id"] + str(i) for i in range(count)]
     dbitems = state_table.get_dbitems(ids)
     assert len(dbitems) == len(ids)
@@ -188,7 +211,11 @@ def test_get_dbitems(state_table: StateDB):
 
 def test_get_dbitems_duplicates(state_table: StateDB):
     count = 5
-    create_items_bulk(count, state_table.set_processing, execution_arn="arn::test")
+    create_items_bulk(
+        count,
+        [state_table.claim_processing, state_table.set_processing],
+        execution_arn="arn::test",
+    )
     ids = [test_item["id"] + str(i) for i in range(count)]
     ids.append(ids[0])
     dbitems = state_table.get_dbitems(ids)
@@ -219,7 +246,11 @@ def test_get_states(state_table: StateDB):
 
 def test_get_counts(state_table: StateDB):
     _count = 3
-    create_items_bulk(_count, state_table.set_processing, execution_arn="arn::test")
+    create_items_bulk(
+        _count,
+        [state_table.claim_processing, state_table.set_processing],
+        execution_arn="arn::test",
+    )
     count = state_table.get_counts(test_dbitem["collections_workflow"])
     assert count == _count + len(STATES)
     for s in STATES:
