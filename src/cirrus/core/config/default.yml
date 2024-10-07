@@ -44,12 +44,7 @@ custom:
     slim: true
     slimPatternsAppendDefaults: false
     slimPatterns:
-      - "botocore/**"
-      - "botocore-*/**"
-      - "boto3/**"
-      - "boto3-*/**"
       - "bin/**"
-      - "dateutils*"
       - "docutils/**"
       - "docutils-*/**"
       - "numpy/**"

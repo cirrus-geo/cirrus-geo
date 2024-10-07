@@ -12,12 +12,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed issue [#225] where default string is treated as a list when input
   collection is specified neither via `payload.collections` nor on the items in
   `payload.features[].collection`. ([#279])
+- Fixed issue [#255] for the `release/v0` branch by using a heuristic to select
+  only the libs that cirrus.lib2 needs for injection into the python lambda
+  requirements files. ([#283])
 
 ### Changed
 
 - Loosened requirement `rich~=10.6` to `rich`, and bumped python-dateutil from
   `~2.8.2` to `~2.9.0`. Note, the sum total of `rich` usage is printing
-  escaped character sequences to the console.
+  escaped character sequences to the console. ([#283])
+
+### Removed
+
+- Removed slimPatterns for `boto*` and `dateutil` packages, per [#242]. ([#283])
 
 ## [v0.15.1] - 2024-05-09
 
@@ -911,6 +918,8 @@ Initial release
 [#193]: https://github.com/cirrus-geo/cirrus-geo/issues/193
 [#202]: https://github.com/cirrus-geo/cirrus-geo/issues/202
 [#225]: https://github.com/cirrus-geo/cirrus-geo/issues/225
+[#242]: https://github.com/cirrus-geo/cirrus-geo/issues/242
+[#255]: https://github.com/cirrus-geo/cirrus-geo/issues/255
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73
@@ -944,6 +953,7 @@ Initial release
 [#272]: https://github.com/cirrus-geo/cirrus-geo/pull/272
 [#274]: https://github.com/cirrus-geo/cirrus-geo/pull/274
 [#279]: https://github.com/cirrus-geo/cirrus-geo/pull/279
+[#283]: https://github.com/cirrus-geo/cirrus-geo/pull/283
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c

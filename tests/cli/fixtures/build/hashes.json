@@ -1,11 +1,11 @@
 {
   "serverless.yml": {
-    "shasum": "1e0c3e44eefea234949ee6a0ffe51d68e36f111ff0298b412197ee6fe19272c7",
-    "size": 40310
+    "shasum": "d1909875e0417d277268b86367439b0770f4b1332497b85e1408a7cf85c7099d",
+    "size": 40213
   },
   "lambdas/pre-batch/requirements.txt": {
-    "shasum": "2a77a534dc996764dfd7b51ddc7d2e7dae98a3351f94eb26872a568e97664194",
-    "size": 160
+    "shasum": "eb5f4e337f4a9a7616308c5314fc75c3f62a59ce921c012d1a1281038bdbbfd1",
+    "size": 99
   },
   "lambdas/pre-batch/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -16,8 +16,8 @@
     "size": 858
   },
   "lambdas/post-batch/requirements.txt": {
-    "shasum": "2a77a534dc996764dfd7b51ddc7d2e7dae98a3351f94eb26872a568e97664194",
-    "size": 160
+    "shasum": "eb5f4e337f4a9a7616308c5314fc75c3f62a59ce921c012d1a1281038bdbbfd1",
+    "size": 99
   },
   "lambdas/post-batch/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -28,8 +28,8 @@
     "size": 3161
   },
   "lambdas/update-state/requirements.txt": {
-    "shasum": "2a77a534dc996764dfd7b51ddc7d2e7dae98a3351f94eb26872a568e97664194",
-    "size": 160
+    "shasum": "eb5f4e337f4a9a7616308c5314fc75c3f62a59ce921c012d1a1281038bdbbfd1",
+    "size": 99
   },
   "lambdas/update-state/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -44,8 +44,8 @@
     "size": 7806
   },
   "lambdas/publish/requirements.txt": {
-    "shasum": "2a77a534dc996764dfd7b51ddc7d2e7dae98a3351f94eb26872a568e97664194",
-    "size": 160
+    "shasum": "eb5f4e337f4a9a7616308c5314fc75c3f62a59ce921c012d1a1281038bdbbfd1",
+    "size": 99
   },
   "lambdas/publish/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -64,8 +64,8 @@
     "size": 1403
   },
   "lambdas/api/requirements.txt": {
-    "shasum": "2a77a534dc996764dfd7b51ddc7d2e7dae98a3351f94eb26872a568e97664194",
-    "size": 160
+    "shasum": "eb5f4e337f4a9a7616308c5314fc75c3f62a59ce921c012d1a1281038bdbbfd1",
+    "size": 99
   },
   "lambdas/api/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -76,8 +76,8 @@
     "size": 8162
   },
   "lambdas/feed-rerun/requirements.txt": {
-    "shasum": "2a77a534dc996764dfd7b51ddc7d2e7dae98a3351f94eb26872a568e97664194",
-    "size": 160
+    "shasum": "eb5f4e337f4a9a7616308c5314fc75c3f62a59ce921c012d1a1281038bdbbfd1",
+    "size": 99
   },
   "lambdas/feed-rerun/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -92,8 +92,8 @@
     "size": 1916
   },
   "lambdas/process/requirements.txt": {
-    "shasum": "2a77a534dc996764dfd7b51ddc7d2e7dae98a3351f94eb26872a568e97664194",
-    "size": 160
+    "shasum": "eb5f4e337f4a9a7616308c5314fc75c3f62a59ce921c012d1a1281038bdbbfd1",
+    "size": 99
   },
   "lambdas/process/__init__.py": {
     "shasum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
