@@ -46,7 +46,7 @@ class Config(NamedYamlable):
         if "include" not in self.custom.pythonRequirements:
             self.custom.pythonRequirements.include = []
         self.custom.pythonRequirements.include.extend(
-            misc.get_cirrus_geo_requirements(),
+            misc.get_cirrus_geo_lib2_requirements(),
         )
 
         # populate required plugin list
