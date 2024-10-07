@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   collection is specified neither via `payload.collections` nor on the items in
   `payload.features[].collection`. ([#279])
 
+### Changed
+
+- Loosened requirement `rich~=10.6` to `rich`, and bumped python-dateutil from
+  `~2.8.2` to `~2.9.0`. Note, the sum total of `rich` usage is printing
+  escaped character sequences to the console.
+
 ## [v0.15.1] - 2024-05-09
 
 ### Fixed
