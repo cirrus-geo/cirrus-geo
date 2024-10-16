@@ -20,8 +20,7 @@ from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import (
-    SNSMessage,
-    build_item_sns_attributes,
+    PAYLOAD_ID_REGEX,
     extract_event_records,
     get_client,
     payload_from_s3,
@@ -310,11 +309,13 @@ class ProcessPayloads:
             ]
             self.state_items = items
         response = dict(self.get_process_attrs(self.state_items))
-        response += {
-            i: (None, ProcessPayload.gen_execution_arn(i))
-            for i in self.payload_ids
-            if i not in response
-        }
+        response.update(
+            {
+                i: (None, ProcessPayloads.gen_execution_arn(i))
+                for i in self.payload_ids
+                if i not in response
+            },
+        )
         return response
 
     @staticmethod
@@ -329,7 +330,7 @@ class ProcessPayloads:
             if state == StateEnum.CLAIMED:
                 exec_arn = si["executions"][-1]
             else:
-                exec_arn = ProcessPayload.gen_execution_arn(
+                exec_arn = ProcessPayloads.gen_execution_arn(
                     payload_id,
                     si["workflow"],
                     si,
@@ -338,7 +339,7 @@ class ProcessPayloads:
             yield payload_id, (state, exec_arn)
 
     @staticmethod
-    def gen_execution_arn(payload_id, workflow, state_item=None) -> str:
+    def gen_execution_arn(payload_id, workflow=None, state_item=None) -> str:
         """
         Generate an execution arn for the given payload_id, using the state_item info if
         given.
@@ -349,6 +350,13 @@ class ProcessPayloads:
             uuid.NAMESPACE_URL,
             f"{payload_id}/{WorkflowEventManager.isotimestamp_now()}",
         )
+        if workflow is None:
+            m = PAYLOAD_ID_REGEX.match(payload_id)
+            if not m:
+                raise ValueError(
+                    "payload ID doesn't match expected form: " + payload_id,
+                )
+            workflow = m.group("workflow")
 
         return os.environ["CIRRUS_BASE_WORKFLOW_ARN"] + workflow + f":{execution_name}"
 
