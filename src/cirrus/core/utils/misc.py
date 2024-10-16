@@ -4,13 +4,21 @@ from importlib import metadata
 from pathlib import Path
 
 
-def get_cirrus_geo_requirements() -> list[str]:
+def get_cirrus_geo_lib2_requirements() -> list[str]:
     """
-    Get the cirrus-geo dependencies.
+    Get the cirrus-geo lib2 dependencies, for injection into deployed lambdas.
     """
-    return [
+    full_reqs = [
         req.split(";")[0].translate(str.maketrans("", "", " ()"))
         for req in metadata.requires("cirrus-geo")
+    ]
+    return [
+        lib_req
+        for lib_req in full_reqs
+        if not any(
+            lib_req.startswith(main_req)
+            for main_req in ("pyyaml", "click", "click-plugins", "rich", "cfn-flip")
+        )
     ]
 
 
