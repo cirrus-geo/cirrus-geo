@@ -325,7 +325,14 @@ def test_get_counts_since_state(state_table: StateDB):
     assert count == _count + 1
 
 
+def test_claim_processing(state_table: StateDB):
+    state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
+    dbitem = state_table.get_dbitem(test_item["id"])
+    assert dbitem["state_updated"].startswith("CLAIMED")
+
+
 def test_set_processing(state_table: StateDB):
+    state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
     state_table.set_processing(test_item["id"], execution_arn="arn::test1")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert StateDB.key_to_payload_id(dbitem) == test_item["id"]
@@ -334,7 +341,10 @@ def test_set_processing(state_table: StateDB):
 
 def test_second_execution(state_table: StateDB):
     # check that processing adds new execution to list
+    state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
     state_table.set_processing(test_item["id"], execution_arn="arn::test1")
+    state_table.set_failed(test_item["id"], msg="because testing")
+    state_table.claim_processing(test_item["id"], execution_arn="arn::test2")
     state_table.set_processing(test_item["id"], execution_arn="arn::test2")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert len(dbitem["executions"]) == 2
@@ -390,9 +400,3 @@ def test_delete_item(state_table: StateDB):
     state_table.delete_item(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem is None
-
-
-def test_claim_processing(state_table: StateDB):
-    state_table.claim_processing(test_item["id"])
-    dbitem = state_table.get_dbitem(test_item["id"])
-    assert dbitem["state_updated"].startswith("PROCESSING")
