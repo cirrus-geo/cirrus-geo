@@ -191,6 +191,18 @@ class ProcessPayload(dict):
         url = self.upload_to_s3(self, payload_bucket)
         return {"url": url}
 
+    def _fail_and_raise(self, wfem, e, url):
+        """
+        This function is to be to handle exceptions that we don't know why they
+        happened. We'll be conservative, log+raise. Not raise a terminal failure, so it
+        will get retried in case it was a transient failure. If we find terminal
+        failures handled here, we should add terminal exception handlers for them.
+        """
+        msg = f"failed starting workflow ({e})"
+        self.logger.exception(msg)
+        wfem.failed(self.get("id", "missing"), msg, payload_url=url)
+        raise
+
     def __call__(
         self,
         wfem,
@@ -211,101 +223,86 @@ class ProcessPayload(dict):
         url = f"s3://{payload_bucket}/{self['id']}/input.json"
 
         # start workflow
+
+        # add input payload to s3
+        s3().upload_json(self, url)
+
+        # create DynamoDB record
         try:
-            # add input payload to s3
-            s3().upload_json(self, url)
+            # -> overwrites states other than PROCESSING and CLAIMED
+            wfem.claim_processing(
+                self["id"],
+                payload_url=url,
+                execution_arn=execution_arn,
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                # as previous_state was not CLAIMED, this should be PROCESSING,
+                # hence skipping w/o need for other action.  Double checking via
+                # exception response.
+                db_state = (
+                    StateEnum(
+                        e.response["Item"]["state_updated"]["S"].split("_")[0],
+                    )
+                    if "Item" in e.response
+                    else StateEnum.PROCESSING
+                )
 
-            # create DynamoDB record
-            try:
-                # -> overwrites states other than PROCESSING and CLAIMED
-                wfem.claim_processing(
+                wfem.skipping(
                     self["id"],
+                    state=db_state,
                     payload_url=url,
-                    execution_arn=execution_arn,
+                    message=f"state before claim attempt was {previous_state}",
                 )
-            except ClientError as e:
-                if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                    # as previous_state was not CLAIMED, this should be PROCESSING,
-                    # hence skipping w/o need for other action.  Double checking via
-                    # exception response.
-                    db_state = (
-                        StateEnum(
-                            e.response["Item"]["state_updated"]["S"].split("_")[0],
-                        )
-                        if "Item" in e.response
-                        else StateEnum.PROCESSING
-                    )
+                return None
+            self._fail_and_raise(wfem, e, url)
 
-                    wfem.skipping(
-                        self["id"],
-                        state=db_state,
-                        payload_url=url,
-                        message=f"state before claim attempt was {previous_state}",
-                    )
-                    return None
-                raise
+        # invoke step function
+        self.logger.debug("Running Step Function %s", execution_arn)
+        started_sfn = False
+        try:
+            get_client("stepfunctions").start_execution(
+                stateMachineArn=state_machine_arn,
+                name=execution_name,
+                input=json.dumps(self.get_payload()),
+            )
+            started_sfn = True
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "StateMachineDoesNotExist":
+                # This failure is tracked in the DB and we raise an error
+                # so we can handle it specifically, to keep the payload
+                # falling through to the DLQ and alerting.
+                logger.error(e)
+                wfem.failed(self["id"], str(e), payload_url=url)
+                raise TerminalError() from e
+            if e.response["Error"]["Code"] != "ExecutionAlreadyExists":
+                self._fail_and_raise(wfem, e, url)
+            # Let ExecutionAlreadyExists pass, to try setting PROCESSING
 
-            # invoke step function
-            self.logger.debug("Running Step Function %s", execution_arn)
-            started_sfn = False
-            try:
-                get_client("stepfunctions").start_execution(
-                    stateMachineArn=state_machine_arn,
-                    name=execution_name,
-                    input=json.dumps(self.get_payload()),
-                )
-                started_sfn = True
-            except ClientError as e:
-                if e.response["Error"]["Code"] == "StateMachineDoesNotExist":
-                    # This failure is tracked in the DB and we raise an error
-                    # so we can handle it specifically, to keep the payload
-                    # falling through to the DLQ and alerting.
-                    logger.error(e)
-                    wfem.failed(self["id"], str(e), payload_url=url)
-                    raise TerminalError() from e
-                if e.response["Error"]["Code"] != "ExecutionAlreadyExists":
-                    raise
-                # Let ExecutionAlreadyExists pass, to try setting PROCESSING
-
-            try:
-                # add execution to DynamoDB record
-                wfem.started_processing(
+        try:
+            # add execution to DynamoDB record
+            wfem.started_processing(
+                self["id"],
+                execution_arn=execution_arn,
+                payload_url=url,
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                db_state = e.response.get("Item", "dbitem not found in response")
+                wfem.skipping(
                     self["id"],
-                    execution_arn=execution_arn,
+                    state=StateEnum.PROCESSING,
                     payload_url=url,
+                    message=(
+                        "started stepfunction, but could not set processing "
+                        if started_sfn
+                        else "could not set processing "
+                    )
+                    + f"({db_state}).",
                 )
-            except ClientError as e:
-                if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                    db_state = (
-                        e.response["Item"]["state_updated"]["S"].split("_")[0]
-                        if "Item" in e.response
-                        else "item state not found"
-                    )
-                    wfem.skipping(
-                        self["id"],
-                        state=StateEnum.PROCESSING,
-                        payload_url=url,
-                        message=(
-                            "started stepfunction, but could not set processing"
-                            if started_sfn
-                            else f"could not set processing.  already {db_state}"
-                        ),
-                    )
-                    return None
-
-            return self["id"]
-        except TerminalError:
-            raise
-        except Exception as e:
-            # This case should be like the above, except we don't know
-            # why it happened. We'll be conservative and not raise a
-            # terminal failure, so it will get retried in case it was
-            # a transient failure. If we find terminal failures handled
-            # here, we should add terminal exception handlers for them.
-            msg = f"failed starting workflow ({e})"
-            self.logger.exception(msg)
-            wfem.failed(self.get("id", "missing"), msg, payload_url=url)
-            raise
+                return None
+            self._fail_and_raise(wfem, e, url)
+        return self["id"]
 
 
 class ProcessPayloads:
