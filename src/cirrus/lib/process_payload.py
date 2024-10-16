@@ -216,49 +216,85 @@ class ProcessPayload(dict):
             s3().upload_json(self, url)
 
             # create DynamoDB record
-            if previous_state is not StateEnum.CLAIMED:
-                # -> this overwrites existing states other than PROCESSING and CLAIMED
+            try:
+                # -> overwrites states other than PROCESSING and CLAIMED
                 wfem.claim_processing(
                     self["id"],
                     payload_url=url,
                     execution_arn=execution_arn,
                 )
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                    # as previous_state was not CLAIMED, this should be PROCESSING,
+                    # hence skipping w/o need for other action.  Double checking via
+                    # exception response.
+                    db_state = (
+                        StateEnum(
+                            e.response["Item"]["state_updated"]["S"].split("_")[0],
+                        )
+                        if "Item" in e.response
+                        else StateEnum.PROCESSING
+                    )
+
+                    wfem.skipping(
+                        self["id"],
+                        state=db_state,
+                        payload_url=url,
+                        message=f"state before claim attempt was {previous_state}",
+                    )
+                    return None
+                raise
 
             # invoke step function
             self.logger.debug("Running Step Function %s", execution_arn)
-            get_client("stepfunctions").start_execution(
-                stateMachineArn=state_machine_arn,
-                name=execution_name,
-                input=json.dumps(self.get_payload()),
-            )
-            # add execution to DynamoDB record
-            wfem.started_processing(
-                self["id"],
-                execution_arn=execution_arn,
-                payload_url=url,
-            )
+            started_sfn = False
+            try:
+                get_client("stepfunctions").start_execution(
+                    stateMachineArn=state_machine_arn,
+                    name=execution_name,
+                    input=json.dumps(self.get_payload()),
+                )
+                started_sfn = True
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "StateMachineDoesNotExist":
+                    # This failure is tracked in the DB and we raise an error
+                    # so we can handle it specifically, to keep the payload
+                    # falling through to the DLQ and alerting.
+                    logger.error(e)
+                    wfem.failed(self["id"], str(e), payload_url=url)
+                    raise TerminalError() from e
+                if e.response["Error"]["Code"] != "ExecutionAlreadyExists":
+                    raise
+                # Let ExecutionAlreadyExists pass, to try setting PROCESSING
 
-            return self["id"]
-
-        except ClientError as e:
-            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                # TODO: may need to address this check for claim and processing
-                #       separately now that we are specifying the execution name
-                wfem.skipping(self["id"], state=StateEnum.PROCESSING, payload_url=url)
-                return None
-            if e.response["Error"]["Code"] == "ExecutionAlreadyExists":
-                wfem.already_started(
+            try:
+                # add execution to DynamoDB record
+                wfem.started_processing(
                     self["id"],
                     execution_arn=execution_arn,
                     payload_url=url,
                 )
-            if e.response["Error"]["Code"] == "StateMachineDoesNotExist":
-                # This failure is tracked in the DB and we raise an error
-                # so we can handle it specifically, to keep the payload
-                # falling through to the DLQ and alerting.
-                logger.error(e)
-                wfem.failed(self["id"], str(e), payload_url=url)
-                raise TerminalError() from e
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                    db_state = (
+                        e.response["Item"]["state_updated"]["S"].split("_")[0]
+                        if "Item" in e.response
+                        else "item state not found"
+                    )
+                    wfem.skipping(
+                        self["id"],
+                        state=StateEnum.PROCESSING,
+                        payload_url=url,
+                        message=(
+                            "started stepfunction, but could not set processing"
+                            if started_sfn
+                            else f"could not set processing.  already {db_state}"
+                        ),
+                    )
+                    return None
+
+            return self["id"]
+        except TerminalError:
             raise
         except Exception as e:
             # This case should be like the above, except we don't know

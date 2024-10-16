@@ -360,6 +360,7 @@ class StateDB:
                 ":exes": [execution_arn],
                 ":empty_list": [],
             },
+            ReturnValuesOnConditionCheckFailure="ALL_OLD",
         )
 
     @ValidStateChange
@@ -387,17 +388,15 @@ class StateDB:
             Key=key,
             UpdateExpression=expr,
             ConditionExpression=(
-                "(begins_with(state_updated, :claim) "
-                "OR begins_with(state_updated, :proc)) "
-                "and contains(executions, :exec)"
+                "begins_with(state_updated, :claim) and contains(executions, :exec)"
             ),
             ExpressionAttributeValues={
-                ":state_updated": f"PROCESSING_{now}",
+                ":state_updated": f"{StateEnum.PROCESSING}_{now}",
                 ":updated": now,
                 ":exec": execution_arn,
                 ":claim": StateEnum.CLAIMED,
-                ":proc": StateEnum.PROCESSING,
             },
+            ReturnValuesOnConditionCheckFailure="ALL_OLD",
         )
 
     @ValidStateChange

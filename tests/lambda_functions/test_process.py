@@ -12,10 +12,10 @@ from moto.sns.models import sns_backends
 
 def assert_sns_message_sequence(expected, topic):
     sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
-    assert [
-        json.loads(x[1])["event_type"]
-        for x in sns_backend.topics[topic].sent_notifications
-    ] == expected
+    notifications = list(sns_backend.topics[topic].sent_notifications)
+    messages = [json.loads(x[1]) for x in notifications]
+    event_types = [x["event_type"] for x in messages]
+    assert event_types == expected
 
 
 def sqs_to_event(sqs_resp, sqs_arn):
@@ -151,7 +151,7 @@ def test_simulate_race_to_in_process_client_error(
     def raises_client_error(*args, **kwargs):
         raise botocore.exceptions.ClientError(
             error_response={"Error": {"Code": "ConditionalCheckFailedException"}},
-            operation_name="monkeying aroudn",
+            operation_name="monkeying around",
         )
 
     wfem_claim = mocker.patch(
