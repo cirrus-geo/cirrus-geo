@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from botocore.exceptions import ClientError
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.statedb import StateDB
 
@@ -337,6 +338,22 @@ def test_set_processing(state_table: StateDB):
     dbitem = state_table.get_dbitem(test_item["id"])
     assert StateDB.key_to_payload_id(dbitem) == test_item["id"]
     assert dbitem["executions"] == ["arn::test1"]
+
+
+def test_set_processing_without_claim(state_table: StateDB):
+    with pytest.raises(ClientError) as ce:
+        state_table.set_processing(test_item["id"], execution_arn="arn::test1")
+    assert ce.value.response["Error"]["Code"] == "ConditionalCheckFailedException"
+
+
+def test_double_claim(state_table: StateDB):
+    state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
+    with pytest.raises(TypeError) as te:
+        # This should be ClientError, but moto has an issue where serializing the item
+        # fails when converting existing item to json.
+        state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
+
+    assert te.value.args[0] == "Object of type DynamoType is not JSON serializable"
 
 
 def test_second_execution(state_table: StateDB):
