@@ -154,9 +154,9 @@ class ProcessPayload(dict):
             collections_str = "/".join(cols) if len(cols) != 0 else "none"
 
         items_str = "/".join(sorted([i["id"] for i in self.features]))
-        self[
-            "id"
-        ] = f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
+        self["id"] = (
+            f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
+        )
 
     @staticmethod
     def upload_to_s3(payload: dict, bucket: str | None = None) -> str:
@@ -203,6 +203,74 @@ class ProcessPayload(dict):
         wfem.failed(self.get("id", "missing"), msg, payload_url=url)
         raise
 
+    def _claim(
+        self,
+        wfem: WorkflowEventManager,
+        execution_arn: str,
+        previous_state: StateEnum,
+    ) -> tuple[str, str, str]:
+        """Claim this ProcessPayload, and return
+        (state_machine_arn, execution_name, url)
+        to be used for uploading and invoking the state machine"""
+
+        payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
+
+        if not payload_bucket:
+            raise ValueError("env var CIRRUS_PAYLOAD_BUCKET must be defined")
+
+        state_machine_arn, _, execution_name = execution_arn.rpartition(":")
+        url = f"s3://{payload_bucket}/{self['id']}/input.json"
+
+        # claim workflow
+        try:
+            # create or update DynamoDB record
+            # -> overwrites states other than PROCESSING and CLAIMED
+            wfem.claim_processing(
+                self["id"],
+                payload_url=url,
+                execution_arn=execution_arn,
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                # conditional errors on state being CLAIMED or PROCESSING.
+                # if PROCESSING, skip w/o need for other action, and return None
+                # if CLAIMED, check if state_machine_arn and execution_name (uuid) are
+                # equal to above, warn if different, and reguardless, update for this
+                # function to use the pair from the database.
+                db_state = (
+                    StateEnum(
+                        e.response["Item"]["state_updated"]["S"].split("_")[0],
+                    )
+                    if "Item" in e.response
+                    else StateEnum.PROCESSING
+                )
+
+                if db_state is StateEnum.CLAIMED:
+                    db_exec = e.response["Item"]["execution_arn"]["S"].split("_")[0]
+                    if db_exec != execution_arn:
+                        self.logger.warning(
+                            msg="payload found in CLAIMED",
+                            extra={
+                                "payload_id": self["id"],
+                                "db_exec_arn": db_exec,
+                                "planned_exec_arn": execution_arn,
+                            },
+                        )
+                        execution_arn = db_exec
+                        state_machine_arn, _, execution_name = db_exec.rpartition(":")
+                else:
+                    wfem.skipping(
+                        self["id"],
+                        state=db_state,
+                        payload_url=url,
+                        message=f"state before claim attempt was {previous_state}",
+                    )
+                    return "", "", ""
+            else:
+                # unknown ClientError
+                self._fail_and_raise(wfem, e, url)
+        return state_machine_arn, execution_name, url
+
     def __call__(
         self,
         wfem,
@@ -214,47 +282,21 @@ class ProcessPayload(dict):
         Returns:
             str: ProcessPayload ID
         """
-        payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
 
-        if not payload_bucket:
-            raise ValueError("env var CIRRUS_PAYLOAD_BUCKET must be defined")
+        state_machine_arn, execution_name, url = self._claim(
+            wfem,
+            execution_arn,
+            previous_state,
+        )
 
-        state_machine_arn, _, execution_name = execution_arn.rpartition(":")
-        url = f"s3://{payload_bucket}/{self['id']}/input.json"
+        if state_machine_arn == "":
+            # skipped with likely already PROCESSING (announced from _claim function)
+            return None
 
-        # start workflow
-
-        # add input payload to s3
-        s3().upload_json(self, url)
-
-        # create DynamoDB record
         try:
-            # -> overwrites states other than PROCESSING and CLAIMED
-            wfem.claim_processing(
-                self["id"],
-                payload_url=url,
-                execution_arn=execution_arn,
-            )
-        except ClientError as e:
-            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                # as previous_state was not CLAIMED, this should be PROCESSING,
-                # hence skipping w/o need for other action.  Double checking via
-                # exception response.
-                db_state = (
-                    StateEnum(
-                        e.response["Item"]["state_updated"]["S"].split("_")[0],
-                    )
-                    if "Item" in e.response
-                    else StateEnum.PROCESSING
-                )
-
-                wfem.skipping(
-                    self["id"],
-                    state=db_state,
-                    payload_url=url,
-                    message=f"state before claim attempt was {previous_state}",
-                )
-                return None
+            # add input payload to s3
+            s3().upload_json(self, url)
+        except Exception as e:  # noqa: BLE001
             self._fail_and_raise(wfem, e, url)
 
         # invoke step function
@@ -280,7 +322,6 @@ class ProcessPayload(dict):
             # Let ExecutionAlreadyExists pass, to try setting PROCESSING
 
         try:
-            # add execution to DynamoDB record
             wfem.started_processing(
                 self["id"],
                 execution_arn=execution_arn,
@@ -296,7 +337,10 @@ class ProcessPayload(dict):
                     message=(
                         "started stepfunction, but could not set processing "
                         if started_sfn
-                        else "could not set processing "
+                        else (
+                            "stepfunction started by another process, "
+                            "and database already updated "
+                        )
                     )
                     + f"({db_state}).",
                 )
@@ -345,7 +389,7 @@ class ProcessPayloads:
             {
                 p["id"]: (
                     None,
-                    ProcessPayloads.gen_execution_arn(p["id"], p.process["workflow"]),
+                    self.gen_execution_arn(p["id"], p.process["workflow"]),
                 )
                 for p in self.payloads
                 if p["id"] not in response
@@ -368,23 +412,21 @@ class ProcessPayloads:
                 exec_arn = ProcessPayloads.gen_execution_arn(
                     payload_id,
                     si["workflow"],
+                    si.get("executions"),
                 )
 
             yield payload_id, (state, exec_arn)
 
     @staticmethod
-    def gen_execution_arn(payload_id, workflow) -> str:
+    def gen_execution_arn(payload_id, workflow, executions=None) -> str:
         """
         Generate an execution arn for the given payload_id, using the state_item info if
         given.
         """
-        # is this the right UUID, or do we want to have an idempotent one
-        # that includes the executions: {payload_id}/{state_item['executions']}?
-        execution_name = uuid.uuid5(
-            uuid.NAMESPACE_URL,
-            f"{payload_id}/{WorkflowEventManager.isotimestamp_now()}",
-        )
-        return os.environ["CIRRUS_BASE_WORKFLOW_ARN"] + workflow + f":{execution_name}"
+        if executions is None:
+            executions = []
+        execution_name = uuid.uuid5(uuid.NAMESPACE_URL, f"{payload_id}/{executions}")
+        return f"{os.environ['CIRRUS_BASE_WORKFLOW_ARN']}{workflow}:{execution_name}"
 
     def process(
         self: Self,

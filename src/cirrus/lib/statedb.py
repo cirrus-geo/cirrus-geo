@@ -387,9 +387,7 @@ class StateDB:
         return self.table.update_item(
             Key=key,
             UpdateExpression=expr,
-            ConditionExpression=(
-                "begins_with(state_updated, :claim) and contains(executions, :exec)"
-            ),
+            ConditionExpression="begins_with(state_updated, :claim)",
             ExpressionAttributeValues={
                 ":state_updated": f"{StateEnum.PROCESSING}_{now}",
                 ":updated": now,
