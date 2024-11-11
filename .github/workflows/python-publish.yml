@@ -1,12 +1,6 @@
 name: Build Python Package
 
 on:
-  push:
-    branches:
-      - release/v0
-  pull_request:
-    branches:
-      - release/v0
   release:
     types:
       - published
