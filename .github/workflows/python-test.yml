@@ -1,9 +1,9 @@
 name: Python Test
 on:
   push:
-    branches: main
+    branches: release/v0
   pull_request:
-    branches: main
+    branches: release/v0
 
 jobs:
   build:
