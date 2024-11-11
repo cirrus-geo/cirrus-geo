@@ -11,6 +11,9 @@ on:
     types:
       - published
 
+env:
+  CIRRUS_VERSION: ${{ github.event.release.tag_name }}
+
 jobs:
   build-package:
     runs-on: ubuntu-latest
