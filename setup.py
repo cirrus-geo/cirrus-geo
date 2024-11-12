@@ -66,7 +66,7 @@ dependency_links = [x.strip().replace("git+", "") for x in reqs if "git+" not in
 
 setup(
     name="cirrus-geo",
-    python_requires=">=3.9",
+    python_requires=">=3.9,<3.12",
     packages=find_namespace_packages("src"),
     package_dir={"": "src"},
     version=VERSION,
@@ -83,7 +83,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
+        # "Programming Language :: Python :: 3.12", # Not ready yet
     ],
     license="Apache-2.0",
     include_package_data=True,
