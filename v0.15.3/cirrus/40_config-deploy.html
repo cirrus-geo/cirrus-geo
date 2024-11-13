@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuration and Deployment &mdash; cirrus-geo  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/js/versions-loader.js?v=d43487cb"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Basic Operation" href="50_operation.html" />
+    <link rel="prev" title="Cirrus Process Payload" href="30_payload.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            cirrus-geo
+          </a>
+              <div class="version">
+                v0.15.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="30_payload.html">Cirrus Process Payload</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration and Deployment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#using-the-cirrus-cli-to-create-new-project">Using the Cirrus CLI to create new project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#naming-your-deployment">Naming your deployment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#required-aws-deploy-permissions">Required AWS deploy permissions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#build-and-deploy">Build and deploy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#test-basic-publish-workflow">Test basic publish workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#required-resources">Required resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#notes-on-using-a-vpc">Notes on using a VPC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deleting-a-deployment">Deleting a deployment</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="60_components.html">Cirrus Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../components/feeders/index.html">Feeders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/tasks/index.html">Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/workflows/index.html">Workflows</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">cirrus-geo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Configuration and Deployment</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/cirrus/40_config-deploy.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="configuration-and-deployment">
+<h1>Configuration and Deployment<a class="headerlink" href="#configuration-and-deployment" title="Link to this heading"></a></h1>
+<section id="using-the-cirrus-cli-to-create-new-project">
+<h2>Using the Cirrus CLI to create new project<a class="headerlink" href="#using-the-cirrus-cli-to-create-new-project" title="Link to this heading"></a></h2>
+</section>
+<section id="naming-your-deployment">
+<h2>Naming your deployment<a class="headerlink" href="#naming-your-deployment" title="Link to this heading"></a></h2>
+</section>
+<section id="required-aws-deploy-permissions">
+<h2>Required AWS deploy permissions<a class="headerlink" href="#required-aws-deploy-permissions" title="Link to this heading"></a></h2>
+</section>
+<section id="build-and-deploy">
+<h2>Build and deploy<a class="headerlink" href="#build-and-deploy" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Use of the AWS Timestream timeseries database can be turned off by removing the environment variable
+<cite>CIRRUS_EVENT_DB_AND_TABLE: !Ref StateEventTimestreamTable</cite> in cirrus.yml.</p></li>
+</ul>
+</section>
+<section id="test-basic-publish-workflow">
+<h2>Test basic publish workflow<a class="headerlink" href="#test-basic-publish-workflow" title="Link to this heading"></a></h2>
+</section>
+<section id="required-resources">
+<h2>Required resources<a class="headerlink" href="#required-resources" title="Link to this heading"></a></h2>
+</section>
+<section id="notes-on-using-a-vpc">
+<h2>Notes on using a VPC<a class="headerlink" href="#notes-on-using-a-vpc" title="Link to this heading"></a></h2>
+</section>
+<section id="deleting-a-deployment">
+<h2>Deleting a deployment<a class="headerlink" href="#deleting-a-deployment" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="30_payload.html" class="btn btn-neutral float-left" title="Cirrus Process Payload" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="50_operation.html" class="btn btn-neutral float-right" title="Basic Operation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: v0.15.3
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
