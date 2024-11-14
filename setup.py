@@ -41,7 +41,7 @@ def git_version(gitdir, default="0.0.0"):
     #  3 - dirty (if repo state is dirty)
     parts = desc.stdout.decode().strip().lstrip("v").split("-", maxsplit=2)
     if int(parts[1]) > 0 or "dirty" in parts[2]:
-        return f'{parts[0]}+{parts[1]}.{parts[2].replace("-",".")}'
+        return f'{parts[0]}+{parts[1]}.{parts[2].replace("-", ".")}'
     else:
         return parts[0]
 
@@ -66,7 +66,7 @@ dependency_links = [x.strip().replace("git+", "") for x in reqs if "git+" not in
 
 setup(
     name="cirrus-geo",
-    python_requires=">=3.9,<3.12",
+    python_requires=">=3.9",
     packages=find_namespace_packages("src"),
     package_dir={"": "src"},
     version=VERSION,
