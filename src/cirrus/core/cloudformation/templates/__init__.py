@@ -1,4 +1,8 @@
-import importlib.resources as _ir
+try:
+    import importlib.resources._legacy as _ir
+except ImportError:
+    import importlib.resources as _ir
+
 
 TEMPLATE_EXT = ".yml"
 
