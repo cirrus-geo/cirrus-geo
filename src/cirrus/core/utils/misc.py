@@ -17,7 +17,14 @@ def get_cirrus_geo_lib2_requirements() -> list[str]:
         for lib_req in full_reqs
         if not any(
             lib_req.startswith(main_req)
-            for main_req in ("pyyaml", "click", "click-plugins", "rich", "cfn-flip")
+            for main_req in (
+                "pyyaml",
+                "click",
+                "click-plugins",
+                "rich",
+                "cfn-flip",
+                "setuptools",
+            )
         )
     ]
 
