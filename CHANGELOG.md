@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed issue [#255] for the `release/v0` branch by using a heuristic to select
   only the libs that cirrus.lib2 needs for injection into the python lambda
   requirements files. ([#283])
+- Use `importlib.resources._legacy` module for compatiblity with python version
+  3.12. ([#290])
 
 ### Changed
 
@@ -959,6 +961,7 @@ Initial release
 [#274]: https://github.com/cirrus-geo/cirrus-geo/pull/274
 [#279]: https://github.com/cirrus-geo/cirrus-geo/pull/279
 [#283]: https://github.com/cirrus-geo/cirrus-geo/pull/283
+[#290]: https://github.com/cirrus-geo/cirrus-geo/pull/290
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
