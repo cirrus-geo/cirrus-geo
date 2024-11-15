@@ -13,6 +13,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,10 +38,11 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --statistics
       - name: Test with pytest
         run: pytest --cov=cirrus --cov-report=xml
-      - name: "Upload coverage to Codecov"
-        uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          fail_ci_if_error: true
-          verbose: true
+      ## commented due to upload issues and urgency
+      # - name: "Upload coverage to Codecov"
+      #   uses: codecov/codecov-action@v4
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      #   with:
+      #     fail_ci_if_error: true
+      #     verbose: true
