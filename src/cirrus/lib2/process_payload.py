@@ -20,6 +20,8 @@ from cirrus.lib2.utils import extract_event_records, get_client, payload_from_s3
 
 logger = logging.getLogger(__name__)
 
+MAX_PAYLOAD_LENGTH = 250000
+
 
 class TerminalError(Exception):
     pass
@@ -183,8 +185,8 @@ class ProcessPayload(dict):
         """
         payload = json.dumps(self)
         payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
-        if payload_bucket and len(payload.encode("utf-8")) > 250000:
-            url = self.upload_to_s3(payload, payload_bucket)
+        if payload_bucket and len(payload.encode("utf-8")) > MAX_PAYLOAD_LENGTH:
+            url = self.upload_to_s3(self, payload_bucket)
             return {"url": url}
         else:
             return dict(self)
