@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from cirrus.lib2.process_payload import ProcessPayload
+from cirrus.lib2.process_payload import MAX_PAYLOAD_LENGTH, ProcessPayload
 from cirrus.lib2.utils import recursive_compare
 
 fixtures = Path(__file__).parent.joinpath("fixtures")
@@ -79,6 +79,15 @@ def test_open_payload_output_options(base_payload):
         payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
     )
     assert payload.process["upload_options"]
+
+
+def test_upload_large_payload(base_payload, boto3utils_s3, monkeypatch):
+    base_payload["features"][0]["properties"]["giant"] = MAX_PAYLOAD_LENGTH * "-"
+    monkeypatch.setenv("CIRRUS_PAYLOAD_BUCKET", "circular-file")
+    payload = ProcessPayload(**base_payload)
+    boto3utils_s3.s3.create_bucket(Bucket="circular-file")
+    url_payload = payload.get_payload()
+    assert set(url_payload.keys()) == {"url"}
 
 
 def test_update_payload(base_payload):
