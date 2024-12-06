@@ -296,6 +296,90 @@ def delete_from_queue_batch(messages: list[dict]) -> dict:
     return resp
 
 
+def build_item_sns_attributes(item: dict) -> dict:  # noqa: C901
+    """Create message attributes from Item for publishing to SNS
+
+    Args:
+        item (dict): A STAC Item
+
+    Returns:
+        dict: Attributes for SNS publishing
+    """
+    # note that only 10 message attributes can be used with SNS -> SQS when
+    # raw message delivery is enabled; we currently have 10 possible attrs
+    attrs = {}
+
+    if "collection" in item:
+        attrs["collection"] = {
+            "DataType": "String",
+            "StringValue": item["collection"],
+        }
+
+    if "bbox" in item:
+        attrs["bbox.ll_lon"] = {
+            "DataType": "Number",
+            "StringValue": str(item["bbox"][0]),
+        }
+        attrs["bbox.ll_lat"] = {
+            "DataType": "Number",
+            "StringValue": str(item["bbox"][1]),
+        }
+        attrs["bbox.ur_lon"] = {
+            "DataType": "Number",
+            "StringValue": str(item["bbox"][2]),
+        }
+        attrs["bbox.ur_lat"] = {
+            "DataType": "Number",
+            "StringValue": str(item["bbox"][3]),
+        }
+
+    if "properties" not in item:
+        return attrs
+
+    if "start_datetime" in item["properties"]:
+        attrs["start_datetime"] = {
+            "DataType": "String",
+            "StringValue": item["properties"]["start_datetime"],
+        }
+    elif "datetime" in item["properties"]:
+        attrs["start_datetime"] = {
+            "DataType": "String",
+            "StringValue": item["properties"]["datetime"],
+        }
+
+    if "end_datetime" in item["properties"]:
+        attrs["end_datetime"] = {
+            "DataType": "String",
+            "StringValue": item["properties"]["end_datetime"],
+        }
+    elif "datetime" in item["properties"]:
+        attrs["end_datetime"] = {
+            "DataType": "String",
+            "StringValue": item["properties"]["datetime"],
+        }
+
+    if "datetime" in item["properties"]:
+        attrs["datetime"] = {
+            "DataType": "String",
+            "StringValue": item["properties"]["datetime"],
+        }
+
+    if "eo:cloud_cover" in item["properties"]:
+        attrs["cloud_cover"] = {
+            "DataType": "Number",
+            "StringValue": str(item["properties"]["eo:cloud_cover"]),
+        }
+
+    if "created" not in item["properties"] or "updated" not in item["properties"]:
+        pass
+    elif item["properties"]["created"] != item["properties"]["updated"]:
+        attrs["status"] = {"DataType": "String", "StringValue": "updated"}
+    else:
+        attrs["status"] = {"DataType": "String", "StringValue": "created"}
+
+    return attrs
+
+
 T = TypeVar("T")
 
 

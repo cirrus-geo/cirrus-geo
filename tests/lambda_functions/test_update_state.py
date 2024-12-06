@@ -24,7 +24,7 @@ def event():
         "id": "3d3281f9-5f46-5dc6-9bf7-fea13994432e",
         "detail-type": "Step Functions Execution Status Change",
         "source": "aws.states",
-        "account": "608149789419",
+        "account": "123456789012",
         "time": "2022-11-09T00:17:18Z",
         "region": "us-east-1",
         "resources": [

@@ -10,6 +10,7 @@ from moto.sns.models import sns_backends
 
 fixtures = Path(__file__).parent.joinpath("fixtures")
 event_dir = fixtures.joinpath("events")
+item_dir = fixtures.joinpath("items")
 
 
 @pytest.fixture()
@@ -142,6 +143,14 @@ def test_delete_from_queue_bad_message(sqs, queue):
     msg["eventSourceARN"] = arn
     with pytest.raises(ValueError):
         utils.delete_from_queue(msg)
+
+
+@pytest.mark.parametrize("item", item_dir.glob("*.json"))
+def test_build_item_sns_attributes(item):
+    expected = json.loads(item.with_suffix(".json.expected").read_text())
+    item = json.loads(item.read_text())
+    sns_attributes = utils.build_item_sns_attributes(item)
+    assert sns_attributes == expected
 
 
 @pytest.fixture()

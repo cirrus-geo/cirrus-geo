@@ -1,0 +1,34 @@
+{
+  "collection": {
+    "DataType": "String",
+    "StringValue": "sentinel-s2-l2a"
+  },
+  "bbox.ll_lon": {
+    "DataType": "Number",
+    "StringValue": "-78.85549714480591"
+  },
+  "bbox.ll_lat": {
+    "DataType": "Number",
+    "StringValue": "-33.5090673116811"
+  },
+  "bbox.ur_lon": {
+    "DataType": "Number",
+    "StringValue": "-77.66654434530413"
+  },
+  "bbox.ur_lat": {
+    "DataType": "Number",
+    "StringValue": "-33.171471085391424"
+  },
+  "start_datetime": {
+    "DataType": "String",
+    "StringValue": "2020-11-03T15:22:26Z"
+  },
+  "end_datetime": {
+    "DataType": "String",
+    "StringValue": "2020-11-04T15:22:26Z"
+  },
+  "status": {
+    "DataType": "String",
+    "StringValue": "updated"
+  }
+}
