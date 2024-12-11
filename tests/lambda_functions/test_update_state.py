@@ -39,7 +39,7 @@ def event():
             "stopDate": 1667953037547,
             "input": '{"id": "'
             + EVENT_PAYLOAD_ID
-            + '", "metadata_href": "s3://sentinel-s2-l2a/tiles/31/T/DG/2017/9/10/0/tileInfo.json", "process": [{"workflow": "sentinel2-to-stac", "input_collections": ["roda-sentinel2"], "upload_options": {"path_template": "${earthsearch:s3_path}", "public_assets": "ALL"}, "tasks": {"sentinel2-to-stac": {}}}]}',  # noqa: E501
+            + '", "type": "FeatureCollection", "features": [{"type": "Feature", "id": "test-id1", "collection": "test-collection-input1", "properties": {}, "assets": {}, "links": []}], "process": [{"workflow": "test-workflow1", "upload_options": {"path_template": "/${collection}/${year}/${month}/${day}/${id}", "collections": {"test-collection-output": ".*"}}, "tasks": {}}]}',  # noqa: E501
             "output": None,
             "inputDetails": {"included": True},
             "outputDetails": None,
@@ -103,12 +103,27 @@ def test_workflow_event_notification(
             assert wfevent.error is not None
 
 
-def test_success(event, statedb):
+@pytest.mark.parametrize("publish_enabled", [True, False])
+def test_success(event, statedb, publish_topic, publish_enabled, monkeypatch):
+    if publish_enabled:
+        expected_msg_count = 1
+        monkeypatch.setenv("CIRRUS_PUBLISH_TOPIC_ARN", publish_topic)
+    else:
+        expected_msg_count = 0
+        monkeypatch.delenv("CIRRUS_PUBLISH_TOPIC_ARN", raising=False)
+
+    # Event needs an output payload to publish, so just use the input payload
+    event["detail"]["output"] = event["detail"]["input"]
+
     update_state(event, {})
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
 
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("COMPLETED")
+
+    sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
+    all_sent_notifications = sns_backend.topics[publish_topic].sent_notifications
+    assert len(all_sent_notifications) == expected_msg_count
 
 
 def test_failed(event, statedb):

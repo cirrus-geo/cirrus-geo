@@ -15,10 +15,6 @@ cold_start()
 
 logger = get_task_logger("function.update-state", payload=())
 
-# envvars
-PROCESS_QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
-PUBLISH_TOPIC_ARN = getenv("CIRRUS_PUBLISH_TOPIC_ARN")
-
 # boto3 clients
 SFN_CLIENT = get_client("stepfunctions")
 
@@ -114,16 +110,16 @@ def workflow_completed(
     # a different order/behavior (fail on error or something?).
     wf_event_manager.succeeded(execution.input["id"], execution_arn=execution.arn)
 
-    if execution.output and PUBLISH_TOPIC_ARN:
-        # TODO: determine which links in the workflow chain should be published:
-        #       each link (current), leaf links, or allow the user to specify?
-        with SNSPublisher(PUBLISH_TOPIC_ARN, logger=logger) as publisher:
+    publish_topic_arn = getenv("CIRRUS_PUBLISH_TOPIC_ARN")
+    if execution.output and publish_topic_arn:
+        with SNSPublisher(publish_topic_arn, logger=logger) as publisher:
             if messages := execution.output.to_sns_messages():
                 publisher.send(messages)
 
-    if execution.output and PROCESS_QUEUE_URL:
+    process_queue_url = getenv("CIRRUS_PROCESS_QUEUE_URL")
+    if execution.output and process_queue_url:
         # TODO: add test of workflow chaining
-        with SQSPublisher(PROCESS_QUEUE_URL, logger=logger) as publisher:
+        with SQSPublisher(process_queue_url, logger=logger) as publisher:
             for next_payload in execution.output.next_payloads():
                 publisher.add(json.dumps(next_payload))
 
