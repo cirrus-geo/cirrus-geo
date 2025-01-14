@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.utils import recursive_compare
+from cirrus.lib.utils import build_item_sns_attributes, recursive_compare
 
 fixtures = Path(__file__).parent.joinpath("fixtures")
 
@@ -175,3 +175,19 @@ def test_payload_process_not_an_array(base_payload):
     )
     with pytest.raises(TypeError, match=expected):
         ProcessPayload.from_event(base_payload)
+
+
+def test_items_to_sns_messages(base_payload):
+    # SNSMessage instances do not implement the equality dunder method; instead,
+    # compare the rendered message contents.
+    messages = [
+        message.render()
+        for message in ProcessPayload.from_event(base_payload).items_to_sns_messages()
+    ]
+    expected = [
+        {
+            "Message": json.dumps(base_payload["features"][0]),
+            "MessageAttributes": build_item_sns_attributes(base_payload["features"][0]),
+        },
+    ]
+    assert messages == expected

@@ -1,0 +1,22 @@
+{
+  "collection": {
+    "DataType": "String",
+    "StringValue": "sentinel-s2-l2a"
+  },
+  "bbox.ll_lon": {
+    "DataType": "Number",
+    "StringValue": "-78.85549714480591"
+  },
+  "bbox.ll_lat": {
+    "DataType": "Number",
+    "StringValue": "-33.5090673116811"
+  },
+  "bbox.ur_lon": {
+    "DataType": "Number",
+    "StringValue": "-77.66654434530413"
+  },
+  "bbox.ur_lat": {
+    "DataType": "Number",
+    "StringValue": "-33.171471085391424"
+  }
+}

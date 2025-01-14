@@ -9,14 +9,11 @@ from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.utils import SQSPublisher, cold_start, get_client
+from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start, get_client
 
 cold_start()
 
 logger = get_task_logger("function.update-state", payload=())
-
-# envvars
-PROCESS_QUEUE_URL = getenv("CIRRUS_PROCESS_QUEUE_URL")
 
 # boto3 clients
 SFN_CLIENT = get_client("stepfunctions")
@@ -112,9 +109,17 @@ def workflow_completed(
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
     wf_event_manager.succeeded(execution.input["id"], execution_arn=execution.arn)
-    if execution.output and PROCESS_QUEUE_URL:
+
+    publish_topic_arn = getenv("CIRRUS_PUBLISH_TOPIC_ARN")
+    if execution.output and publish_topic_arn:
+        with SNSPublisher(publish_topic_arn, logger=logger) as publisher:
+            if messages := execution.output.items_to_sns_messages():
+                publisher.send(messages)
+
+    process_queue_url = getenv("CIRRUS_PROCESS_QUEUE_URL")
+    if execution.output and process_queue_url:
         # TODO: add test of workflow chaining
-        with SQSPublisher(PROCESS_QUEUE_URL, logger=logger) as publisher:
+        with SQSPublisher(process_queue_url, logger=logger) as publisher:
             for next_payload in execution.output.next_payloads():
                 publisher.add(json.dumps(next_payload))
 
