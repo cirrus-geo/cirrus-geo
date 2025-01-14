@@ -113,7 +113,7 @@ def workflow_completed(
     publish_topic_arn = getenv("CIRRUS_PUBLISH_TOPIC_ARN")
     if execution.output and publish_topic_arn:
         with SNSPublisher(publish_topic_arn, logger=logger) as publisher:
-            if messages := execution.output.to_sns_messages():
+            if messages := execution.output.items_to_sns_messages():
                 publisher.send(messages)
 
     process_queue_url = getenv("CIRRUS_PROCESS_QUEUE_URL")

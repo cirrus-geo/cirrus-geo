@@ -193,7 +193,7 @@ class ProcessPayload(dict):
         url = self.upload_to_s3(self, payload_bucket)
         return {"url": url}
 
-    def to_sns_messages(self: Self) -> list[SNSMessage]:
+    def items_to_sns_messages(self: Self) -> list[SNSMessage]:
         """Prepare list of Payload Items as SNS Messages for publishing"""
         return [
             SNSMessage(

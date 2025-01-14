@@ -177,12 +177,12 @@ def test_payload_process_not_an_array(base_payload):
         ProcessPayload.from_event(base_payload)
 
 
-def test_to_sns_messages(base_payload):
+def test_items_to_sns_messages(base_payload):
     # SNSMessage instances do not implement the equality dunder method; instead,
     # compare the rendered message contents.
     messages = [
         message.render()
-        for message in ProcessPayload.from_event(base_payload).to_sns_messages()
+        for message in ProcessPayload.from_event(base_payload).items_to_sns_messages()
     ]
     expected = [
         {
