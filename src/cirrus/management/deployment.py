@@ -78,17 +78,8 @@ class Deployment(DeploymentMeta):
         yield from DeploymentPointer.list(region=region, session=session)
 
     @classmethod
-    def from_pointer(
-        cls,
-        pointer: DeploymentPointer,
-        session: boto3.Session | None = None,
-    ) -> Deployment:
-        return cls(session=session, **pointer.get_config(session=session))
-
-    @classmethod
     def from_name(cls, name: str, session: boto3.Session | None = None) -> Deployment:
-        dp = DeploymentPointer.get(name, session=session)
-        return cls.from_pointer(dp, session=session)
+        return DeploymentPointer.get(name, session=session)
 
     def get_lambda_functions(self):
         if self._functions is None:

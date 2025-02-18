@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-import json
-import re
-
 from collections.abc import Iterator
 from dataclasses import dataclass
-from enum import StrEnum, auto
-from typing import Any, Protocol, Self
+from typing import Self
 
 import boto3
 
@@ -15,116 +11,71 @@ from cirrus.lib.utils import get_client
 DEFAULT_CIRRUS_DEPLOYMENT_PREFIX = "/cirrus/deployments/"
 
 
-def get_secret(
-    secret_arn: str,
-    region: str | None = None,
-    session: boto3.Session | None = None,
-) -> str:
-    sm = get_client("secretsmanager", region=region, session=session)
-    resp = sm.get_secret_value(
-        SecretId=secret_arn,
-    )
-    return resp["SecretString"]
-
-
-class PointerObject(Protocol):  # pragma: no cover
-    account_id: str
-    region: str
-
-    @classmethod
-    def from_string(cls: type[Self], string: str) -> Self: ...
-
-    def fetch(
-        self: Self,
-        session: boto3.Session | None = None,
-    ) -> str: ...
-
-
-class SecretArn:
-    _format = "arn:aws:secretsmanager:{region}:{account_id}:secret:{name}".format
-    _regex = re.compile(
-        r"^arn:aws:secretsmanager:(?P<region>[a-z0-9\-]+):(?P<account_id>\d{12}):secret:(?P<name>.+)$",
-    )
-
-    def __init__(self, account_id: str, region: str, name: str) -> None:
-        self.account_id = account_id
-        self.region = region
-        self.name = name
-
-    def __str__(self) -> str:
-        return self._format(
-            region=self.region,
-            account_id=self.account_id,
-            name=self.name,
-        )
-
-    @classmethod
-    def from_string(cls, string: str) -> Self:
-        match = cls._regex.match(string)
-
-        if not match:
-            raise ValueError(f"Unparsable secret arn string '{string}'")
-
-        groups = match.groupdict()
-
-        return cls(
-            account_id=groups["account_id"],
-            name=groups["name"],
-            region=groups["region"],
-        )
-
-    def fetch(
-        self,
-        session: boto3.Session | None = None,
-    ) -> str:
-        return get_secret(
-            secret_arn=str(self),
-            region=self.region,
-            session=session,
-        )
-
-
-class PointerType(StrEnum):
-    SECRET = auto()
-
-
-@dataclass()
-class Pointer:
-    _type: PointerType
-    value: str
-
-    @classmethod
-    def from_string(cls: type[Self], string: str) -> Self:
-        obj = json.loads(string)
-        obj["_type"] = obj.pop("type")
-        return cls(**obj)
-
-    def resolve(self) -> PointerObject:
-        match self._type:
-            case PointerType.SECRET:
-                return SecretArn.from_string(self.value)
-            case _ as unknown:
-                raise TypeError(f"Unsupported pointer type '{unknown}'")
+@dataclass
+class Components:
+    process_lambda: str
+    state_db_name: str
+    payload_bucket: str
+    dlq_queue_url: str | None
+    process_topic: str | None
+    process_queue_url: str | None
 
 
 @dataclass
 class DeploymentPointer:
     prefix: str
     name: str
-    pointer: Pointer
+    components: dict
+    """
+    Contains all related AWS pieces of a single cirrus deployment
+    """
 
     @classmethod
-    def _from_parameter(
+    def _get_deployments(
         cls,
-        parameter: dict[str, Any],
-        prefix: str = "",
-    ) -> DeploymentPointer:
-        name = parameter["Name"][len(prefix) :]
-        return cls(
-            name=name,
-            pointer=Pointer.from_string(parameter["Value"]),
-            prefix=prefix,
+        prefix: str,
+        region: str | None = None,
+        session: boto3.Session | None = None,
+    ) -> list[Self]:
+        ssm = get_client("ssm", region=region, session=session)
+        resp = ssm.get_parameters_by_path(
+            Path=prefix,
+            Recursive=True,
         )
+        return cls.parse_deployments(resp, prefix)
+
+    @classmethod
+    def parse_deployments(cls, response: dict, prefix: str) -> list[Self]:
+        """
+        Parse parameter response and return all deployments
+
+        Parameter store entires shuld have format {prefix}{deployment_name}{component}
+        """
+
+        # break parameter name into components
+        parameters = [
+            (
+                param["Name"].split("/")[-1],
+                param["Value"],
+                param["Name"][len(prefix) : param["Name"].rindex("/") + 1],
+            )
+            for param in response["Parameters"]
+        ]
+        # name set
+        deployment_names = {deployment_name for _, _, deployment_name in parameters}
+
+        return [
+            cls(
+                prefix,
+                name,
+                {
+                    param_name: value
+                    for param_name, value, deployment_name in parameters
+                    if deployment_name == name
+                },
+            )
+            for name in deployment_names
+        ]
 
     @classmethod
     def get(
@@ -134,13 +85,14 @@ class DeploymentPointer:
         region: str | None = None,
         session: boto3.Session | None = None,
     ):
-        ssm = get_client("ssm", region=region, session=session)
-        return cls._from_parameter(
-            ssm.get_parameter(
-                Name=f"{deployment_prefix}{deployment_name}",
-            )["Parameter"],
-            prefix=deployment_prefix,
-        )
+        """
+        Retrieve a single deployment configuration by name from parameter store
+        """
+        deployments = cls._get_deployments(deployment_prefix, region, session)
+        for deployment in deployments:
+            if deployment.name == deployment_name:
+                return deployment
+        return None
 
     @classmethod
     def list(
@@ -149,16 +101,5 @@ class DeploymentPointer:
         region: str | None = None,
         session: boto3.Session | None = None,
     ) -> Iterator[DeploymentPointer]:
-        ssm = get_client("ssm", region=region, session=session)
-        resp = ssm.get_parameters_by_path(Path=deployment_prefix)
-        for param in resp["Parameters"]:
-            yield cls._from_parameter(
-                param,
-                prefix=deployment_prefix,
-            )
-
-    def get_config(
-        self,
-        session: boto3.Session | None = None,
-    ) -> dict[str, Any]:
-        return json.loads(self.pointer.resolve().fetch(session=session))
+        """Retrieve and list all deployments in parameter store"""
+        yield from cls._get_deployments(deployment_prefix, region, session)
