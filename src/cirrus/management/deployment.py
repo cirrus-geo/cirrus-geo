@@ -75,11 +75,11 @@ class Deployment(DeploymentMeta):
         region: str | None = None,
         session: boto3.Session | None = None,
     ) -> Iterator[DeploymentPointer]:
-        yield from DeploymentPointer.list(region=region, session=session)
+        yield from DeploymentPointer.list_deployments(region=region, session=session)
 
     @classmethod
     def from_name(cls, name: str, session: boto3.Session | None = None) -> Deployment:
-        return DeploymentPointer.get(name, session=session)
+        return DeploymentPointer.get_deployment(name, session=session)
 
     def get_lambda_functions(self):
         if self._functions is None:

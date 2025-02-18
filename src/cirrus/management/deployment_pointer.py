@@ -51,34 +51,22 @@ class DeploymentPointer:
 
         Parameter store entires shuld have format {prefix}{deployment_name}{component}
         """
-
-        # break parameter name into components
         parameters = [
-            (
-                param["Name"].split("/")[-1],
-                param["Value"],
-                param["Name"][len(prefix) : param["Name"].rindex("/") + 1],
-            )
-            for param in response["Parameters"]
+            cls.parsed_parameter(param, prefix) for param in response["Parameters"]
         ]
-        # name set
         deployment_names = {deployment_name for _, _, deployment_name in parameters}
 
         return [
             cls(
                 prefix,
                 name,
-                {
-                    param_name: value
-                    for param_name, value, deployment_name in parameters
-                    if deployment_name == name
-                },
+                cls.cirrus_components(parameters, name),
             )
             for name in deployment_names
         ]
 
     @classmethod
-    def get(
+    def get_deployment(
         cls,
         deployment_name: str,
         deployment_prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
@@ -95,7 +83,7 @@ class DeploymentPointer:
         return None
 
     @classmethod
-    def list(
+    def list_deployments(
         cls,
         deployment_prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
         region: str | None = None,
@@ -103,3 +91,24 @@ class DeploymentPointer:
     ) -> Iterator[DeploymentPointer]:
         """Retrieve and list all deployments in parameter store"""
         yield from cls._get_deployments(deployment_prefix, region, session)
+
+    @classmethod
+    def parsed_parameter(cls, param: dict, prefix: str) -> tuple[str, str, str]:
+        """split param into name, value, and deployment name components"""
+        return (
+            param["Name"].split("/")[-1],
+            param["Value"],
+            param["Name"][len(prefix) : param["Name"].rindex("/") + 1],
+        )
+
+    @classmethod
+    def cirrus_components(
+        cls,
+        parameters: list[tuple[str, str, str]],
+        name: str,
+    ) -> dict[str, str]:
+        return {
+            param_name: value
+            for param_name, value, deployment_name in parameters
+            if deployment_name == name
+        }
