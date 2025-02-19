@@ -42,55 +42,55 @@ def statedb_schema(fixtures) -> dict[str, Any]:
     return json.loads(fixtures.joinpath("statedb-schema.json").read_text())
 
 
-@pytest.fixture()
+@pytest.fixture
 def s3():
     with moto.mock_s3():
         yield get_client("s3", region="us-east-1")
 
 
-@pytest.fixture()
+@pytest.fixture
 def sqs():
     with moto.mock_sqs():
         yield get_client("sqs", region="us-east-1")
 
 
-@pytest.fixture()
+@pytest.fixture
 def sns():
     with moto.mock_sns():
         yield get_client("sns", region="us-east-1")
 
 
-@pytest.fixture()
+@pytest.fixture
 def dynamo():
     with moto.mock_dynamodb():
         yield get_client("dynamodb", region="us-east-1")
 
 
-@pytest.fixture()
+@pytest.fixture
 def stepfunctions():
     with moto.mock_stepfunctions():
         yield get_client("stepfunctions", region="us-east-1")
 
 
-@pytest.fixture()
+@pytest.fixture
 def iam():
     with moto.mock_iam():
         yield get_client("iam", region="us-east-1")
 
 
-@pytest.fixture()
+@pytest.fixture
 def statedb_table_name(dynamo, statedb_schema) -> str:
     dynamo.create_table(**statedb_schema)
     return statedb_schema["TableName"]
 
 
-@pytest.fixture()
+@pytest.fixture
 def timestream_write_client():
     with moto.mock_timestreamwrite():
         yield get_client("timestream-write", region="us-east-1")
 
 
-@pytest.fixture()
+@pytest.fixture
 def eventdb(timestream_write_client) -> EventDB:
     timestream_write_client.create_database(DatabaseName="event-db-1")
     timestream_write_client.create_table(
@@ -100,35 +100,35 @@ def eventdb(timestream_write_client) -> EventDB:
     return EventDB("event-db-1|event-table-1")
 
 
-@pytest.fixture()
+@pytest.fixture
 def statedb(dynamo, statedb_schema, eventdb) -> StateDB:
     dynamo.create_table(**statedb_schema)
     table_name = statedb_schema["TableName"]
     return StateDB(table_name=table_name)
 
 
-@pytest.fixture()
+@pytest.fixture
 def payloads(s3):
     name = "payloads"
     s3.create_bucket(Bucket=name)
     return name
 
 
-@pytest.fixture()
+@pytest.fixture
 def data(s3):
     name = "data"
     s3.create_bucket(Bucket=name)
     return name
 
 
-@pytest.fixture()
+@pytest.fixture
 def queue(sqs):
     q = sqs.create_queue(QueueName="test-queue")
     q["Arn"] = "arn:aws:sqs:us-east-1:123456789012:test-queue"
     return q
 
 
-@pytest.fixture()
+@pytest.fixture
 def workflow(stepfunctions, iam):
     defn = {
         "StartAt": "FirstState",
@@ -162,7 +162,7 @@ def workflow(stepfunctions, iam):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def _environment() -> Iterator[None]:
     current_env = deepcopy(os.environ)  # stash env
     try:

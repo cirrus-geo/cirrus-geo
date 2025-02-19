@@ -34,7 +34,7 @@ STATES = list(StateEnum._member_names_)
 def create_items_bulk(item_count, fn, **kwargs):
     for index in range(item_count):
         newitem = deepcopy(test_item)
-        fn(f'{newitem["id"]}{index}', **kwargs)
+        fn(f"{newitem['id']}{index}", **kwargs)
 
 
 TESTKEY = {"collections_workflow": "col1_wf1", "itemids": "item1/item2"}
@@ -72,27 +72,27 @@ def test_since_to_timedelta():
     assert td.seconds == 600
 
 
-@pytest.fixture()
+@pytest.fixture
 def state_table(statedb: StateDB):
     statedb.limit = RECORD_LIMIT
     statedb.set_processing(
-        f'{test_item["id"]}_processing',
+        f"{test_item['id']}_processing",
         execution_arn="arn::test",
     )
     statedb.set_completed(
-        f'{test_item["id"]}_completed',
+        f"{test_item['id']}_completed",
         outputs=["item1", "item2"],
     )
     statedb.set_failed(
-        f'{test_item["id"]}_failed',
+        f"{test_item['id']}_failed",
         "failed",
     )
     statedb.set_invalid(
-        f'{test_item["id"]}_invalid',
+        f"{test_item['id']}_invalid",
         "invalid",
     )
     statedb.set_aborted(
-        f'{test_item["id"]}_aborted',
+        f"{test_item['id']}_aborted",
     )
     yield statedb
     statedb.delete()

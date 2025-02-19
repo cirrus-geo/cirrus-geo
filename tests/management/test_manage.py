@@ -14,7 +14,7 @@ DEPLYOMENT_NAME = "test-deployment"
 STACK_NAME = "cirrus-test"
 
 
-@pytest.fixture()
+@pytest.fixture
 def manage(invoke):
     def _manage(cmd):
         return invoke("manage " + cmd)
@@ -22,7 +22,7 @@ def manage(invoke):
     return _manage
 
 
-@pytest.fixture()
+@pytest.fixture
 def deployment_meta(queue, statedb, payloads, data, workflow):
     return {
         "name": DEPLYOMENT_NAME,
@@ -47,7 +47,7 @@ def deployment_meta(queue, statedb, payloads, data, workflow):
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def deployment(manage, project, deployment_meta):
     def _manage(deployment, cmd):
         return manage(f"{deployment.name} {cmd}")
@@ -70,14 +70,14 @@ def test_manage(manage):
     assert result.exit_code == 0
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 def test_manage_show_deployment(deployment, deployment_meta):
     result = deployment("show")
     assert result.exit_code == 0
     assert result.stdout.strip() == json.dumps(deployment_meta, indent=4)
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 def test_manage_show_unknown_deployment(manage, deployment):
     unknown = "unknown-deployment"
     result = manage(f"{unknown} show")
@@ -85,7 +85,7 @@ def test_manage_show_unknown_deployment(manage, deployment):
     assert result.stderr.strip() == f"Deployment not found: {unknown}"
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 def test_manage_get_path(deployment, project):
     result = deployment("get-path")
     assert result.exit_code == 0
@@ -97,7 +97,7 @@ def test_manage_get_path(deployment, project):
     )
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 def test_manage_refresh(deployment, mock_lambda_get_conf, lambda_env):
     result = deployment("refresh")
     assert result.exit_code == 0
@@ -105,7 +105,7 @@ def test_manage_refresh(deployment, mock_lambda_get_conf, lambda_env):
     assert new["environment"] == lambda_env
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 @pytest.mark.usefixtures("_environment")
 def test_manage_get_execution_by_payload_id(
     deployment,
@@ -125,7 +125,7 @@ def test_manage_get_execution_by_payload_id(
     assert sfn_exe1["executionArn"] != sfn_exe2["executionArn"]
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 @pytest.mark.parametrize(
     ("command", "expect_exit_zero"),
     [
@@ -141,11 +141,11 @@ def test_call_cli_return_values(deployment, command, expect_exit_zero):
 def test_parse_deployments(parameter_store_response):
     actual = DeploymentPointer.parse_deployments(
         parameter_store_response,
-        "/cirrus/deployments",
+        "/cirrus/deployments/",
     )
     expected = [
         DeploymentPointer(
-            "/cirrus/deployments",
+            "/cirrus/deployments/",
             "rhino",
             {
                 "dlq-url": "cirrus-rhino-dlq-url",
@@ -154,7 +154,7 @@ def test_parse_deployments(parameter_store_response):
             },
         ),
         DeploymentPointer(
-            "/cirrus/deployments",
+            "/cirrus/deployments/",
             "squirrel/dev",
             {
                 "payload-bucket": "arn::s3:a-bucket-for-payload",
@@ -167,13 +167,13 @@ def test_parse_deployments(parameter_store_response):
 
 def test_get_deployments(parameter_store):
     deployments = DeploymentPointer._get_deployments(
-        "/cirrus/deployments",
+        "/cirrus/deployments/",
         "us-west-2",
         boto3.Session(),
     )
     expected = [
         DeploymentPointer(
-            "/cirrus/deployments",
+            "/cirrus/deployments/",
             "rhino",
             {
                 "dlq-url": "cirrus-rhino-dlq-url",
@@ -182,7 +182,7 @@ def test_get_deployments(parameter_store):
             },
         ),
         DeploymentPointer(
-            "/cirrus/deployments",
+            "/cirrus/deployments/",
             "squirrel/dev",
             {
                 "payload-bucket": "arn::s3:a-bucket-for-payload",
@@ -196,12 +196,12 @@ def test_get_deployments(parameter_store):
 def test_get_deployment_by_name(parameter_store):
     deployment = DeploymentPointer.get_deployment_by_name(
         "rhino",
-        "/cirrus/deployments",
+        "/cirrus/deployments/",
         "us-west-2",
         boto3.Session(),
     )
     assert deployment == DeploymentPointer(
-        "/cirrus/deployments",
+        "/cirrus/deployments/",
         "rhino",
         {
             "dlq-url": "cirrus-rhino-dlq-url",

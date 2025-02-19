@@ -17,8 +17,12 @@ import boto3
 
 from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.utils import get_client
-from cirrus.management import exceptions
 from cirrus.management.deployment_pointer import DeploymentPointer
+from cirrus.management.exceptions import (
+    DeploymentNotFoundError,
+    NoExecutionsError,
+    PayloadNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +83,12 @@ class Deployment(DeploymentMeta):
 
     @classmethod
     def from_name(cls, name: str, session: boto3.Session | None = None) -> Deployment:
-        return DeploymentPointer.get_deployment_by_name(name, session=session)
+        deployment = DeploymentPointer.get_deployment_by_name(name, session=session)
+        if not deployment:
+            raise DeploymentNotFoundError(
+                f"no deployment named '{name}' was found in the parameter store",
+            )
+        return deployment
 
     def get_lambda_functions(self):
         if self._functions is None:
@@ -143,7 +152,7 @@ class Deployment(DeploymentMeta):
         state = _get_payload_item_from_statedb(statedb, payload_id)
 
         if not state:
-            raise exceptions.PayloadNotFoundError(payload_id)
+            raise PayloadNotFoundError(payload_id)
         return state
 
     def process_payload(self, payload):
@@ -197,7 +206,7 @@ class Deployment(DeploymentMeta):
         try:
             exec_arn = execs[-1]
         except IndexError as e:
-            raise exceptions.NoExecutionsError(payload_id) from e
+            raise NoExecutionsError(payload_id) from e
 
         return self.get_execution(exec_arn)
 

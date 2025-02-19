@@ -85,6 +85,7 @@ def manage(ctx, session: boto3.Session, deployment: str, profile: str | None = N
     Commands to run management operations against a cirrus deployment.
     """
     ctx.obj = Deployment.from_name(deployment, session=session)
+    click.echo(f"manage ctx.obj {ctx.obj}")
 
 
 @manage.command()

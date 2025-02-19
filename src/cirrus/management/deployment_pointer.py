@@ -44,7 +44,9 @@ class DeploymentPointer:
         parameters = [
             cls.parsed_parameter(param, prefix) for param in response["Parameters"]
         ]
-        deployment_names = {deployment_name for _, _, deployment_name in parameters}
+        deployment_names = sorted(
+            {deployment_name for _, _, deployment_name in parameters},
+        )
 
         return [
             cls(
@@ -88,7 +90,7 @@ class DeploymentPointer:
         return (
             param["Name"].split("/")[-1],
             param["Value"],
-            param["Name"][len(prefix) + 1 : param["Name"].rindex("/")],
+            param["Name"][len(prefix) : param["Name"].rindex("/")],
         )
 
     @classmethod
