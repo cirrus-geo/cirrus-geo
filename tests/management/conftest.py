@@ -1,6 +1,7 @@
 import json
 import shlex
 
+from pathlib import Path
 from unittest.mock import patch
 
 import boto3
@@ -24,6 +25,8 @@ def timestream_write_client():
 orig = botocore.client.BaseClient._make_api_call
 
 LAMBDA_ENV_VARS = {"var": "value"}
+
+PAYLOADS = Path(__file__).parent / "fixtures"
 
 
 @pytest.fixture()
@@ -70,3 +73,40 @@ def basic_payloads(fixtures, statedb):
         ],
         statedb=statedb,
     )
+
+
+@pytest.fixture()
+def parameter_store_response():
+    with Path.open(PAYLOADS / "parameter_store_response.json") as f:
+        return json.load(f)
+
+
+@pytest.fixture()
+def parameter_store():
+    with moto.mock_ssm():
+        ssm_client = boto3.client("ssm", region_name="us-west-2")
+        deployment_name = "squirrel/dev/"
+        prefix = "/cirrus/deployments/"
+        values = {
+            "payload-bucket": "arn::s3:a-bucket-for-payload",
+            "process-lambda": "cirrus-squirrel-process-lambda",
+        }
+        parameters = {f"{prefix}{deployment_name}{k}": v for k, v in values.items()}
+        for param, value in parameters.items():
+            ssm_client.put_parameter(Name=param, Value=value, Type="String")
+
+        deployment_name = "rhino/"
+        values = {
+            "dlq-url": "cirrus-rhino-dlq-url",
+            "payload-bucket": "arn:s3:rhino-payload-bucket",
+            "process-lambda": "cirrus-rhino-process-lambda",
+        }
+        parameters = {f"{prefix}{deployment_name}{k}": v for k, v in values.items()}
+
+        for param, value in parameters.items():
+            ssm_client.put_parameter(Name=param, Value=value, Type="String")
+
+        yield ssm_client
+
+
+# @pytest.fixture()

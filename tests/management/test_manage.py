@@ -1,11 +1,13 @@
 import json
 
+import boto3
 import pytest
 
 from cirrus.management.deployment import (
     CONFIG_VERSION,
     DEFAULT_DEPLOYMENTS_DIR_NAME,
     Deployment,
+    DeploymentPointer,
 )
 
 DEPLYOMENT_NAME = "test-deployment"
@@ -134,3 +136,76 @@ def test_manage_get_execution_by_payload_id(
 def test_call_cli_return_values(deployment, command, expect_exit_zero):
     result = deployment(f"call {command}")
     assert result.exit_code == 0 if expect_exit_zero else result.exit_code != 0
+
+
+def test_parse_deployments(parameter_store_response):
+    actual = DeploymentPointer.parse_deployments(
+        parameter_store_response,
+        "/cirrus/deployments",
+    )
+    expected = [
+        DeploymentPointer(
+            "/cirrus/deployments",
+            "rhino",
+            {
+                "dlq-url": "cirrus-rhino-dlq-url",
+                "payload-bucket": "arn:s3:rhino-payload-bucket",
+                "process-lambda": "cirrus-rhino-process-lambda",
+            },
+        ),
+        DeploymentPointer(
+            "/cirrus/deployments",
+            "squirrel/dev",
+            {
+                "payload-bucket": "arn::s3:a-bucket-for-payload",
+                "process-lambda": "cirrus-squirrel-process-lambda",
+            },
+        ),
+    ]
+    assert actual == expected
+
+
+def test_get_deployments(parameter_store):
+    deployments = DeploymentPointer._get_deployments(
+        "/cirrus/deployments",
+        "us-west-2",
+        boto3.Session(),
+    )
+    expected = [
+        DeploymentPointer(
+            "/cirrus/deployments",
+            "rhino",
+            {
+                "dlq-url": "cirrus-rhino-dlq-url",
+                "payload-bucket": "arn:s3:rhino-payload-bucket",
+                "process-lambda": "cirrus-rhino-process-lambda",
+            },
+        ),
+        DeploymentPointer(
+            "/cirrus/deployments",
+            "squirrel/dev",
+            {
+                "payload-bucket": "arn::s3:a-bucket-for-payload",
+                "process-lambda": "cirrus-squirrel-process-lambda",
+            },
+        ),
+    ]
+    assert deployments == expected
+
+
+def test_get_deployment_by_name(parameter_store):
+    deployment = DeploymentPointer.get_deployment_by_name(
+        "rhino",
+        "/cirrus/deployments",
+        "us-west-2",
+        boto3.Session(),
+    )
+    assert deployment == DeploymentPointer(
+        "/cirrus/deployments",
+        "rhino",
+        {
+            "dlq-url": "cirrus-rhino-dlq-url",
+            "payload-bucket": "arn:s3:rhino-payload-bucket",
+            "process-lambda": "cirrus-rhino-process-lambda",
+        },
+    )

@@ -1,0 +1,49 @@
+{
+    "Parameters": [
+        {
+            "Name": "/cirrus/deployments/rhino/dlq-url",
+            "Type": "String",
+            "Value": "cirrus-rhino-dlq-url",
+            "Version": 1,
+            "LastModifiedDate": "2025-02-14T16:37:07.087000-05:00",
+            "ARN": "arn:aws:ssm:us-west-2:893341642023:parameter/cirrus/deployments/rhino/dlq-url",
+            "DataType": "text"
+        },
+        {
+            "Name": "/cirrus/deployments/rhino/payload-bucket",
+            "Type": "String",
+            "Value": "arn:s3:rhino-payload-bucket",
+            "Version": 1,
+            "LastModifiedDate": "2025-02-18T16:25:19.927000-05:00",
+            "ARN": "arn:aws:ssm:us-west-2:893341642023:parameter/cirrus/deployments/rhino/payload-bucket",
+            "DataType": "text"
+        },
+        {
+            "Name": "/cirrus/deployments/rhino/process-lambda",
+            "Type": "String",
+            "Value": "cirrus-rhino-process-lambda",
+            "Version": 1,
+            "LastModifiedDate": "2025-02-14T16:33:55.677000-05:00",
+            "ARN": "arn:aws:ssm:us-west-2:893341642023:parameter/cirrus/deployments/rhino/process-lambda",
+            "DataType": "text"
+        },
+        {
+            "Name": "/cirrus/deployments/squirrel/dev/payload-bucket",
+            "Type": "String",
+            "Value": "arn::s3:a-bucket-for-payload",
+            "Version": 1,
+            "LastModifiedDate": "2025-02-18T16:24:33.823000-05:00",
+            "ARN": "arn:aws:ssm:us-west-2:893341642023:parameter/cirrus/deployments/squirrel/payload-bucket",
+            "DataType": "text"
+        },
+        {
+            "Name": "/cirrus/deployments/squirrel/dev/process-lambda",
+            "Type": "String",
+            "Value": "cirrus-squirrel-process-lambda",
+            "Version": 1,
+            "LastModifiedDate": "2025-02-14T16:33:19.076000-05:00",
+            "ARN": "arn:aws:ssm:us-west-2:893341642023:parameter/cirrus/deployments/squirrel/process-lambda",
+            "DataType": "text"
+        }
+    ]
+}

@@ -79,7 +79,7 @@ class Deployment(DeploymentMeta):
 
     @classmethod
     def from_name(cls, name: str, session: boto3.Session | None = None) -> Deployment:
-        return DeploymentPointer.get_deployment(name, session=session)
+        return DeploymentPointer.get_deployment_by_name(name, session=session)
 
     def get_lambda_functions(self):
         if self._functions is None:

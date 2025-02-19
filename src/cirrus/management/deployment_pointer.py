@@ -12,16 +12,6 @@ DEFAULT_CIRRUS_DEPLOYMENT_PREFIX = "/cirrus/deployments/"
 
 
 @dataclass
-class Components:
-    process_lambda: str
-    state_db_name: str
-    payload_bucket: str
-    dlq_queue_url: str | None
-    process_topic: str | None
-    process_queue_url: str | None
-
-
-@dataclass
 class DeploymentPointer:
     prefix: str
     name: str
@@ -66,7 +56,7 @@ class DeploymentPointer:
         ]
 
     @classmethod
-    def get_deployment(
+    def get_deployment_by_name(
         cls,
         deployment_name: str,
         deployment_prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
@@ -98,7 +88,7 @@ class DeploymentPointer:
         return (
             param["Name"].split("/")[-1],
             param["Value"],
-            param["Name"][len(prefix) : param["Name"].rindex("/") + 1],
+            param["Name"][len(prefix) + 1 : param["Name"].rindex("/")],
         )
 
     @classmethod
