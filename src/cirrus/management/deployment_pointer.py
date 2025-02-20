@@ -88,15 +88,14 @@ class DeploymentPointer:
         """
         Retrieve a single deployment configuration by name from parameter store
         """
-        deployments = cls._get_deployments(
+        deployment = cls._get_deployments(
             deployment_prefix,
             deployment_name,
             region,
             session,
         )
-        for deployment in deployments:
-            if deployment.name == deployment_name:
-                return deployment
+        if deployment:
+            return deployment[0]
         return None
 
     @classmethod
