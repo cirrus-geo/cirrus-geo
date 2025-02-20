@@ -12,10 +12,22 @@ DEFAULT_CIRRUS_DEPLOYMENT_PREFIX = "/cirrus/deployments/"
 
 
 @dataclass
+class DeploymentEnvVars:
+    # core required for built in
+    dynamo_db: str
+    payload_bucket: str
+    process_sqs: str
+    workflow_topic: str
+
+
+# could be more outside of that for a given deployment for customization
+
+
+@dataclass
 class DeploymentPointer:
     prefix: str
     name: str
-    components: dict
+    environment: dict
     """
     Contains all related AWS pieces of a single cirrus deployment
     """
@@ -24,18 +36,26 @@ class DeploymentPointer:
     def _get_deployments(
         cls,
         prefix: str,
+        name: str | None = None,
         region: str | None = None,
         session: boto3.Session | None = None,
     ) -> list[Self]:
+        if name:
+            prefix = prefix + f"{name}"
         ssm = get_client("ssm", region=region, session=session)
         resp = ssm.get_parameters_by_path(
             Path=prefix,
             Recursive=True,
         )
-        return cls.parse_deployments(resp, prefix)
+        # TODO: handle pagination
+        return cls.parse_deployments(resp)
 
     @classmethod
-    def parse_deployments(cls, response: dict, prefix: str) -> list[Self]:
+    def parse_deployments(
+        cls,
+        response: dict,
+        prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
+    ) -> list[Self]:
         """
         Parse parameter response and return all deployments
 
@@ -68,7 +88,12 @@ class DeploymentPointer:
         """
         Retrieve a single deployment configuration by name from parameter store
         """
-        deployments = cls._get_deployments(deployment_prefix, region, session)
+        deployments = cls._get_deployments(
+            deployment_prefix,
+            deployment_name,
+            region,
+            session,
+        )
         for deployment in deployments:
             if deployment.name == deployment_name:
                 return deployment
@@ -82,7 +107,11 @@ class DeploymentPointer:
         session: boto3.Session | None = None,
     ) -> Iterator[DeploymentPointer]:
         """Retrieve and list all deployments in parameter store"""
-        yield from cls._get_deployments(deployment_prefix, region, session)
+        yield from cls._get_deployments(
+            deployment_prefix,
+            region=region,
+            session=session,
+        )
 
     @classmethod
     def parsed_parameter(cls, param: dict, prefix: str) -> tuple[str, str, str]:
