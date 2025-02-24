@@ -16,4 +16,4 @@ def list_deployments(session: boto3.Session) -> None:
     List all project deployments (accessible via current AWS role)
     """
     for deployment in Deployment.yield_deployments(session=session):
-        click.echo(f"{deployment.name} ({deployment.components})")
+        click.echo(f"{deployment.name} ({deployment.environment})")

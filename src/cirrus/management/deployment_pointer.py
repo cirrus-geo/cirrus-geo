@@ -8,7 +8,7 @@ import boto3
 
 from cirrus.lib.utils import get_client
 
-DEFAULT_CIRRUS_DEPLOYMENT_PREFIX = "/cirrus/deployments/"
+PARAMETER_PREFIX = "/cirrus/deployments/"
 
 
 @dataclass
@@ -40,7 +40,7 @@ class DeploymentPointer:
         region: str | None = None,
         session: boto3.Session | None = None,
     ) -> list[Self]:
-        if name:
+        if name:  # if searching by name
             prefix = prefix + f"{name}"
         ssm = get_client("ssm", region=region, session=session)
         resp = ssm.get_parameters_by_path(
@@ -54,7 +54,7 @@ class DeploymentPointer:
     def parse_deployments(
         cls,
         response: dict,
-        prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
+        prefix: str = PARAMETER_PREFIX,
     ) -> list[Self]:
         """
         Parse parameter response and return all deployments
@@ -81,7 +81,7 @@ class DeploymentPointer:
     def get_deployment_by_name(
         cls,
         deployment_name: str,
-        deployment_prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
+        deployment_prefix: str = PARAMETER_PREFIX,
         region: str | None = None,
         session: boto3.Session | None = None,
     ):
@@ -101,7 +101,7 @@ class DeploymentPointer:
     @classmethod
     def list_deployments(
         cls,
-        deployment_prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
+        deployment_prefix: str = PARAMETER_PREFIX,
         region: str | None = None,
         session: boto3.Session | None = None,
     ) -> Iterator[DeploymentPointer]:

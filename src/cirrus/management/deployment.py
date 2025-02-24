@@ -6,6 +6,7 @@ import logging
 import os
 
 from collections.abc import Iterator
+from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from subprocess import check_call
@@ -44,13 +45,11 @@ def _maybe_use_buffer(fileobj: IO):
 @dataclasses.dataclass
 class DeploymentMeta:
     name: str
-    created: str
-    updated: str
-    stackname: str
-    profile: str
+    prefix: str
     environment: dict
     user_vars: dict
-    config_version: int
+    config_version: int | None = None
+    profile: str | None = None  # aws user profile
 
     def save(self, path: Path) -> int:
         return path.write_text(self.asjson(indent=4))
@@ -82,23 +81,34 @@ class Deployment(DeploymentMeta):
         yield from DeploymentPointer.list_deployments(region=region, session=session)
 
     @classmethod
+    def from_pointer(
+        cls,
+        pointer: DeploymentPointer,
+        session: boto3.Session | None = None,
+    ) -> Deployment:
+        return cls(session=session, **asdict(pointer))
+
+    @classmethod
     def from_name(cls, name: str, session: boto3.Session | None = None) -> Deployment:
-        deployment = DeploymentPointer.get_deployment_by_name(name, session=session)
-        if not deployment:
+        dp = DeploymentPointer.get_deployment_by_name(name, session=session)
+        if not dp:
             raise DeploymentNotFoundError(
                 f"no deployment named '{name}' was found in the parameter store",
             )
-        return deployment
+        return cls.from_pointer(dp, session)
 
-    def get_lambda_functions(self):
+    def get_lambda_functions(self, session):
         if self._functions is None:
-            aws_lambda = get_client("lambda")
+            aws_lambda = get_client("lambda", session)
 
             def deployment_functions_filter(response):
                 return [
-                    f["FunctionName"].replace(f"{self.stackname}-", "")
+                    f["FunctionName"].replace(
+                        f"{self.environment['CIRRUS_PREFIX']}-",
+                        "",
+                    )
                     for f in response["Functions"]
-                    if f["FunctionName"].startswith(self.stackname)
+                    if f["FunctionName"].startswith(self.environment["CIRRUS_PREFIX"])
                 ]
 
             resp = aws_lambda.list_functions()
@@ -210,13 +220,13 @@ class Deployment(DeploymentMeta):
 
         return self.get_execution(exec_arn)
 
-    def invoke_lambda(self, event, function_name):
+    def invoke_lambda(self, event, function_name, session):
         aws_lambda = get_client("lambda", session=self.session)
-        if function_name not in self.get_lambda_functions():
+        if function_name not in self.get_lambda_functions(session):
             raise ValueError(
                 f"lambda named '{function_name}' not found in deployment '{self.name}'",
             )
-        full_name = f"{self.stackname}-{function_name}"
+        full_name = f"{self.environment['CIRRUS_PREFIX']}-{function_name}"
         response = aws_lambda.invoke(FunctionName=full_name, Payload=event)
         if response["StatusCode"] < 200 or response["StatusCode"] > 299:
             raise RuntimeError(response)
