@@ -9,13 +9,12 @@ import botocore.client
 import moto
 import pytest
 
-from click.testing import CliRunner
-
 from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
 from cirrus.management.cli import cli
+from click.testing import CliRunner
 
 
-@pytest.fixture
+@pytest.fixture()
 def timestream_write_client():
     with moto.mock_timestreamwrite():
         yield boto3.client("timestream-write", region_name="us-east-1")
@@ -30,7 +29,7 @@ LAMBDA_ENV_VARS = {"var": "value"}
 PAYLOADS = Path(__file__).parent / "fixtures"
 
 
-@pytest.fixture
+@pytest.fixture()
 def lambda_env():
     return LAMBDA_ENV_VARS
 
@@ -41,8 +40,8 @@ def mock_make_api_call(self, operation_name, kwarg):
     return orig(self, operation_name, kwarg)
 
 
-@pytest.fixture
-def mock_lambda_get_conf():
+@pytest.fixture()
+def _mock_lambda_get_conf():
     with patch(
         "botocore.client.BaseClient._make_api_call",
         new=mock_make_api_call,
@@ -64,7 +63,7 @@ def invoke(cli_runner):
     return _invoke
 
 
-@pytest.fixture
+@pytest.fixture()
 def basic_payloads(fixtures, statedb):
     return ProcessPayloads(
         process_payloads=[
@@ -76,13 +75,13 @@ def basic_payloads(fixtures, statedb):
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def parameter_store_response():
     with Path.open(PAYLOADS / "parameter_store_response.json") as f:
         return json.load(f)
 
 
-@pytest.fixture
+@pytest.fixture()
 def parameter_store():
     with moto.mock_ssm():
         ssm_client = boto3.client("ssm", region_name="us-west-2")
@@ -108,6 +107,3 @@ def parameter_store():
             ssm_client.put_parameter(Name=param, Value=value, Type="String")
 
         yield ssm_client
-
-
-# @pytest.fixture()

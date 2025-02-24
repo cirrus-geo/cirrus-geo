@@ -98,7 +98,8 @@ def test_manage_get_path(deployment, project):
 
 
 @pytest.mark.xfail()
-def test_manage_refresh(deployment, mock_lambda_get_conf, lambda_env):
+@pytest.mark.usefixtures("_mock_lambda_get_conf")
+def test_manage_refresh(deployment, lambda_env):
     result = deployment("refresh")
     assert result.exit_code == 0
     new = json.loads(deployment("show").stdout)

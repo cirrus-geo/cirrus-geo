@@ -5,10 +5,9 @@ import os
 import botocore.exceptions
 import pytest
 
+from cirrus.lambda_functions.process import lambda_handler as process
 from moto.core.models import DEFAULT_ACCOUNT_ID
 from moto.sns.models import sns_backends
-
-from cirrus.lambda_functions.process import lambda_handler as process
 
 
 def assert_sns_message_sequence(expected, topic):
@@ -45,7 +44,7 @@ def _process_env(_environment, workflow, workflow_event_topic):
     os.environ["CIRRUS_WORKFLOW_EVENT_TOPIC_ARN"] = workflow_event_topic
 
 
-@pytest.fixture
+@pytest.fixture()
 def payload():
     return {
         "type": "FeatureCollection",

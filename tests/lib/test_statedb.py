@@ -72,7 +72,7 @@ def test_since_to_timedelta():
     assert td.seconds == 600
 
 
-@pytest.fixture
+@pytest.fixture()
 def state_table(statedb: StateDB):
     statedb.limit = RECORD_LIMIT
     statedb.set_processing(

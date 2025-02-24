@@ -2,9 +2,8 @@ import json
 
 import pytest
 
-from moto import mock_logs
-
 from cirrus.lambda_functions.post_batch import lambda_handler as post_batch
+from moto import mock_logs
 
 
 def test_empty_event():

@@ -4,22 +4,21 @@ from pathlib import Path
 
 import pytest
 
+from cirrus.lib import utils
 from moto.core.models import DEFAULT_ACCOUNT_ID
 from moto.sns.models import sns_backends
-
-from cirrus.lib import utils
 
 fixtures = Path(__file__).parent.joinpath("fixtures")
 event_dir = fixtures.joinpath("events")
 item_dir = fixtures.joinpath("items")
 
 
-@pytest.fixture
+@pytest.fixture()
 def queue(sqs):
     return sqs.create_queue(QueueName="test-queue")["QueueUrl"]
 
 
-@pytest.fixture
+@pytest.fixture()
 def topic(sns):
     return sns.create_topic(Name="some-topic")["TopicArn"]
 
@@ -154,7 +153,7 @@ def test_build_item_sns_attributes(item):
     assert sns_attributes == expected
 
 
-@pytest.fixture
+@pytest.fixture()
 def batch_tester():
     class BatchTester:
         def __init__(self):

@@ -7,7 +7,7 @@ from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, StateEnum
 
 
-@pytest.fixture
+@pytest.fixture()
 def event_kwargs():
     return {
         "payload_id": "sentinel2/workflow-cogification/xxxaaaa",
