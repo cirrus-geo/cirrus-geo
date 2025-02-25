@@ -11,7 +11,10 @@ import pytest
 
 from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
 from cirrus.management.cli import cli
+from cirrus.management.deployment_pointer import PARAMETER_PREFIX
 from click.testing import CliRunner
+
+from tests.conftest import MOCK_REGION
 
 
 @pytest.fixture()
@@ -58,7 +61,6 @@ def cli_runner():
 def invoke(cli_runner):
     def _invoke(cmd, **kwargs):
         kwargs["catch_exceptions"] = kwargs.get("catch_exceptions", False)
-        kwargs["--region"] = "us-west-2"
         return cli_runner.invoke(cli, shlex.split(cmd), **kwargs)
 
     return _invoke
@@ -80,3 +82,30 @@ def basic_payloads(fixtures, statedb):
 def parameter_store_response():
     with Path.open(PAYLOADS / "parameter_store_response.json") as f:
         return json.load(f)["Parameters"]
+
+
+def mock_parameters(deployment_name: str, region: str = MOCK_REGION):
+    return {
+        "CIRRUS_BASE_WORKFLOW_ARN": f"arn:aws:states:{region}:00000000:stateMachine:fd-{deployment_name}-dev-cirrus-",
+        "CIRRUS_DATA_BUCKET": f"filmdrop-{deployment_name}-{region}-random-data-bucket-name",
+        "CIRRUS_EVENT_DB_AND_TABLE": f"fd-{deployment_name}-dev-cirrus-nane-db|fd-{deployment_name}-dev-cirrus-random-table",
+        "CIRRUS_LOG_LEVEL": "DEBUG",
+        "CIRRUS_PAYLOAD_BUCKET": f"filmdrop-{deployment_name}-{region}-cirrus-random-payload-bucket-000000",
+        "CIRRUS_PREFIX": f"fd-{deployment_name}-dev-cirrus",
+        "CIRRUS_PROCESS_QUEUE_URL": f"https://sqs.{region}.amazonaws.com/000000000/fd-{deployment_name}-dev-cirrus-random-queue-name",
+        "CIRRUS_STATE_DB": f"fd-{deployment_name}-dev-cirrus-random-state-db",
+        "CIRRUS_WORKFLOW_EVENT_TOPIC_ARN": f"arn:aws:sns:{region}:00000000000:fd-{deployment_name}-dev-cirrus-random-workflow-name-here",
+    }
+
+
+@pytest.fixture()
+def put_parameters(ssm):
+    # don't want slashes in parameter arn values but want in param path
+    for deployment_name in ["lion", "squirrel/dev"]:
+        for param_name, value in mock_parameters(deployment_name.split("/")[0]).items():
+            ssm.put_parameter(
+                Name=f"{PARAMETER_PREFIX}{deployment_name}/{param_name}",
+                Value=value,
+                Type="String",
+            )
+    return ssm

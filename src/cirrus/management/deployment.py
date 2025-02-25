@@ -48,7 +48,7 @@ class DeploymentMeta:
     prefix: str
     environment: dict
     user_vars: dict = field(default_factory=dict)
-    config_version: int | None = None
+    config_version: int = CONFIG_VERSION
     profile: str | None = None  # aws user profile
 
     def save(self, path: Path) -> int:

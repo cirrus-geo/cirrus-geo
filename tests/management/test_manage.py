@@ -1,17 +1,23 @@
 import json
 
-import boto3
+from dataclasses import asdict
+from pathlib import Path
+
 import pytest
 
 from cirrus.management.deployment import (
     CONFIG_VERSION,
     DEFAULT_DEPLOYMENTS_DIR_NAME,
     Deployment,
-    DeploymentPointer,
+    DeploymentMeta,
 )
+from cirrus.management.deployment_pointer import PARAMETER_PREFIX
 
-DEPLYOMENT_NAME = "test-deployment"
+from tests.management.conftest import mock_parameters
+
+DEPLYOMENT_NAME = "lion"
 STACK_NAME = "cirrus-test"
+MOCK_CIRRUS_PREFIX = "ts-lion-dev-cirrus"
 
 
 @pytest.fixture()
@@ -23,46 +29,30 @@ def manage(invoke):
 
 
 @pytest.fixture()
-def deployment_meta(queue, statedb, payloads, data, workflow):
-    return {
-        "name": DEPLYOMENT_NAME,
-        "created": "2022-11-07T04:42:26.666916+00:00",
-        "updated": "2022-11-07T04:42:26.666916+00:00",
-        "stackname": STACK_NAME,
-        "profile": None,
-        "environment": {
-            "CIRRUS_STATE_DB": statedb.table_name,
-            "CIRRUS_BASE_WORKFLOW_ARN": workflow["stateMachineArn"].replace(
-                "workflow1",
-                "",
-            ),
-            "CIRRUS_LOG_LEVEL": "DEBUG",
-            "CIRRUS_STACK": STACK_NAME,
-            "CIRRUS_DATA_BUCKET": data,
-            "CIRRUS_PAYLOAD_BUCKET": payloads,
-            "CIRRUS_PROCESS_QUEUE_URL": queue["QueueUrl"],
-        },
-        "user_vars": {},
-        "config_version": CONFIG_VERSION,
-    }
+def deployment_meta() -> DeploymentMeta:
+    return DeploymentMeta(
+        name=DEPLYOMENT_NAME,
+        prefix=PARAMETER_PREFIX,
+        environment=mock_parameters(DEPLYOMENT_NAME),
+        user_vars={},
+        config_version=CONFIG_VERSION,
+    )
 
 
 @pytest.fixture()
-def deployment(manage, project, deployment_meta):
+def deployment(manage, deployment_meta):
     def _manage(deployment, cmd):
         return manage(f"{deployment.name} {cmd}")
 
     Deployment.__call__ = _manage
 
     dep = Deployment(
-        Deployment.get_path_from_project(project, DEPLYOMENT_NAME),
-        **deployment_meta,
+        **asdict(deployment_meta),
     )
-    dep.save()
 
-    yield dep
+    dep.save(Path(__file__).parent / "fixtures" / f"{DEPLYOMENT_NAME}.json")
 
-    Deployment.remove(dep.name, project)
+    return dep
 
 
 def test_manage(manage):
@@ -70,11 +60,12 @@ def test_manage(manage):
     assert result.exit_code == 0
 
 
-@pytest.mark.xfail()
-def test_manage_show_deployment(deployment, deployment_meta):
+# @pytest.mark.xfail()
+def test_manage_show_deployment(deployment, deployment_meta, put_parameters):
+    # with mock_ssm():
     result = deployment("show")
     assert result.exit_code == 0
-    assert result.stdout.strip() == json.dumps(deployment_meta, indent=4)
+    assert result.stdout.strip() == json.dumps(asdict(deployment_meta), indent=4)
 
 
 @pytest.mark.xfail()
@@ -137,76 +128,3 @@ def test_manage_get_execution_by_payload_id(
 def test_call_cli_return_values(deployment, command, expect_exit_zero):
     result = deployment(f"call {command}")
     assert result.exit_code == 0 if expect_exit_zero else result.exit_code != 0
-
-
-def test_parse_deployments(parameter_store_response):
-    actual = DeploymentPointer.parse_deployments(
-        parameter_store_response,
-        "/cirrus/deployments/",
-    )
-    expected = [
-        DeploymentPointer(
-            "/cirrus/deployments/",
-            "rhino",
-            {
-                "dlq-url": "cirrus-rhino-dlq-url",
-                "payload-bucket": "arn:s3:rhino-payload-bucket",
-                "process-lambda": "cirrus-rhino-process-lambda",
-            },
-        ),
-        DeploymentPointer(
-            "/cirrus/deployments/",
-            "squirrel/dev",
-            {
-                "payload-bucket": "arn::s3:a-bucket-for-payload",
-                "process-lambda": "cirrus-squirrel-process-lambda",
-            },
-        ),
-    ]
-    assert actual == expected
-
-
-def test_get_deployments(parameter_store):
-    deployments = DeploymentPointer._get_deployments(
-        "/cirrus/deployments/",
-        region="us-west-2",
-        session=boto3.Session(),
-    )
-    expected = [
-        DeploymentPointer(
-            "/cirrus/deployments/",
-            "rhino",
-            {
-                "dlq-url": "cirrus-rhino-dlq-url",
-                "payload-bucket": "arn:s3:rhino-payload-bucket",
-                "process-lambda": "cirrus-rhino-process-lambda",
-            },
-        ),
-        DeploymentPointer(
-            "/cirrus/deployments/",
-            "squirrel/dev",
-            {
-                "payload-bucket": "arn::s3:a-bucket-for-payload",
-                "process-lambda": "cirrus-squirrel-process-lambda",
-            },
-        ),
-    ]
-    assert deployments == expected
-
-
-def test_get_deployment_by_name(parameter_store):
-    deployment = DeploymentPointer.get_deployment_by_name(
-        "rhino",
-        "/cirrus/deployments/",
-        "us-west-2",
-        boto3.Session(),
-    )
-    assert deployment == DeploymentPointer(
-        "/cirrus/deployments/",
-        "rhino",
-        {
-            "dlq-url": "cirrus-rhino-dlq-url",
-            "payload-bucket": "arn:s3:rhino-payload-bucket",
-            "process-lambda": "cirrus-rhino-process-lambda",
-        },
-    )
