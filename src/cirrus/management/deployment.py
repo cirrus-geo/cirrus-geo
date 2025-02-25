@@ -6,7 +6,7 @@ import logging
 import os
 
 from collections.abc import Iterator
-from dataclasses import asdict
+from dataclasses import asdict, field
 from datetime import UTC, datetime
 from pathlib import Path
 from subprocess import check_call
@@ -47,7 +47,7 @@ class DeploymentMeta:
     name: str
     prefix: str
     environment: dict
-    user_vars: dict
+    user_vars: dict = field(default_factory=dict)
     config_version: int | None = None
     profile: str | None = None  # aws user profile
 
