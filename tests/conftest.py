@@ -61,6 +61,12 @@ def sns():
 
 
 @pytest.fixture()
+def ssm():
+    with moto.mock_ssm():
+        yield get_client("ssm", region="us-east-1")
+
+
+@pytest.fixture()
 def dynamo():
     with moto.mock_dynamodb():
         yield get_client("dynamodb", region="us-east-1")
