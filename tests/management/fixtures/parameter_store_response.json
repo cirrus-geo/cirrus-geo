@@ -1,49 +1,93 @@
 {
     "Parameters": [
         {
-            "Name": "/cirrus/deployments/rhino/dlq-url",
+            "ARN": "arn:aws:ssm:us-east-1:123456789012:parameter/cirrus/deployments/lion/CIRRUS_BASE_WORKFLOW_ARN",
+            "DataType": "text",
+            "LastModifiedDate": "2025-02-25 14:38:56.028000-05:00",
+            "Name": "/cirrus/deployments/lion/CIRRUS_BASE_WORKFLOW_ARN",
             "Type": "String",
-            "Value": "cirrus-rhino-dlq-url",
-            "Version": 1,
-            "LastModifiedDate": "2025-02-14T16:37:07.087000-05:00",
-            "ARN": "arn:aws:ssm:us-west-2:893341642023:parameter/cirrus/deployments/rhino/dlq-url",
-            "DataType": "text"
+            "Value": "arn:aws:states:us-east-1:00000000:stateMachine:fd-lion-dev-cirrus-",
+            "Version": 1
         },
         {
-            "Name": "/cirrus/deployments/rhino/payload-bucket",
+            "ARN": "arn:aws:ssm:us-east-1:123456789012:parameter/cirrus/deployments/lion/CIRRUS_DATA_BUCKET",
+            "DataType": "text",
+            "LastModifiedDate": "2025-02-25 14:38:56.029000-05:00",
+            "Name": "/cirrus/deployments/lion/CIRRUS_DATA_BUCKET",
             "Type": "String",
-            "Value": "arn:s3:rhino-payload-bucket",
-            "Version": 1,
-            "LastModifiedDate": "2025-02-18T16:25:19.927000-05:00",
-            "ARN": "arn:aws:ssm:us-west-2:893341642023:parameter/cirrus/deployments/rhino/payload-bucket",
-            "DataType": "text"
+            "Value": "filmdrop-lion-us-east-1-random-data-bucket-name",
+            "Version": 1
         },
         {
-            "Name": "/cirrus/deployments/rhino/process-lambda",
+            "ARN": "arn:aws:ssm:us-east-1:123456789012:parameter/cirrus/deployments/lion/CIRRUS_EVENT_DB_AND_TABLE",
+            "DataType": "text",
+            "LastModifiedDate": "2025-02-25 14:38:56.029000-05:00",
+            "Name": "/cirrus/deployments/lion/CIRRUS_EVENT_DB_AND_TABLE",
             "Type": "String",
-            "Value": "cirrus-rhino-process-lambda",
-            "Version": 1,
-            "LastModifiedDate": "2025-02-14T16:33:55.677000-05:00",
-            "ARN": "arn:aws:ssm:us-west-2:893341642023:parameter/cirrus/deployments/rhino/process-lambda",
-            "DataType": "text"
+            "Value": "fd-lion-dev-cirrus-nane-db|fd-lion-dev-cirrus-random-table",
+            "Version": 1
         },
         {
-            "Name": "/cirrus/deployments/squirrel/dev/payload-bucket",
+            "ARN": "arn:aws:ssm:us-east-1:123456789012:parameter/cirrus/deployments/lion/CIRRUS_LOG_LEVEL",
+            "DataType": "text",
+            "LastModifiedDate": "2025-02-25 14:38:56.030000-05:00",
+            "Name": "/cirrus/deployments/lion/CIRRUS_LOG_LEVEL",
             "Type": "String",
-            "Value": "arn::s3:a-bucket-for-payload",
-            "Version": 1,
-            "LastModifiedDate": "2025-02-18T16:24:33.823000-05:00",
-            "ARN": "arn:aws:ssm:us-west-2:893341642023:parameter/cirrus/deployments/squirrel/payload-bucket",
-            "DataType": "text"
+            "Value": "DEBUG",
+            "Version": 1
         },
         {
-            "Name": "/cirrus/deployments/squirrel/dev/process-lambda",
+            "ARN": "arn:aws:ssm:us-east-1:123456789012:parameter/cirrus/deployments/lion/CIRRUS_PAYLOAD_BUCKET",
+            "DataType": "text",
+            "LastModifiedDate": "2025-02-25 14:38:56.031000-05:00",
+            "Name": "/cirrus/deployments/lion/CIRRUS_PAYLOAD_BUCKET",
             "Type": "String",
-            "Value": "cirrus-squirrel-process-lambda",
-            "Version": 1,
-            "LastModifiedDate": "2025-02-14T16:33:19.076000-05:00",
-            "ARN": "arn:aws:ssm:us-west-2:893341642023:parameter/cirrus/deployments/squirrel/process-lambda",
-            "DataType": "text"
+            "Value": "filmdrop-lion-us-east-1-cirrus-random-payload-bucket-000000",
+            "Version": 1
+        },
+        {
+            "ARN": "arn:aws:ssm:us-east-1:123456789012:parameter/cirrus/deployments/lion/CIRRUS_PREFIX",
+            "DataType": "text",
+            "LastModifiedDate": "2025-02-25 14:38:56.031000-05:00",
+            "Name": "/cirrus/deployments/lion/CIRRUS_PREFIX",
+            "Type": "String",
+            "Value": "fd-lion-dev-cirrus",
+            "Version": 1
+        },
+        {
+            "ARN": "arn:aws:ssm:us-east-1:123456789012:parameter/cirrus/deployments/lion/CIRRUS_PROCESS_QUEUE_URL",
+            "DataType": "text",
+            "LastModifiedDate": "2025-02-25 14:38:56.032000-05:00",
+            "Name": "/cirrus/deployments/lion/CIRRUS_PROCESS_QUEUE_URL",
+            "Type": "String",
+            "Value": "https://sqs.us-east-1.amazonaws.com/000000000/fd-lion-dev-cirrus-random-queue-name",
+            "Version": 1
+        },
+        {
+            "ARN": "arn:aws:ssm:us-east-1:123456789012:parameter/cirrus/deployments/lion/CIRRUS_STATE_DB",
+            "DataType": "text",
+            "LastModifiedDate": "2025-02-25 14:38:56.032000-05:00",
+            "Name": "/cirrus/deployments/lion/CIRRUS_STATE_DB",
+            "Type": "String",
+            "Value": "fd-lion-dev-cirrus-random-state-db",
+            "Version": 1
+        },
+        {
+            "ARN": "arn:aws:ssm:us-east-1:123456789012:parameter/cirrus/deployments/lion/CIRRUS_WORKFLOW_EVENT_TOPIC_ARN",
+            "DataType": "text",
+            "LastModifiedDate": "2025-02-25 14:38:56.033000-05:00",
+            "Name": "/cirrus/deployments/lion/CIRRUS_WORKFLOW_EVENT_TOPIC_ARN",
+            "Type": "String",
+            "Value": "arn:aws:sns:us-east-1:00000000000:fd-lion-dev-cirrus-random-workflow-name-here",
+            "Version": 1
         }
-    ]
+    ],
+    "ResponseMetadata": {
+        "HTTPHeaders": {
+            "date": "Tue, 25 Feb 2025 14:38:56 GMT",
+            "server": "amazon.com"
+        },
+        "HTTPStatusCode": 200,
+        "RetryAttempts": 0
+    }
 }
