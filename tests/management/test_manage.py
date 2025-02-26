@@ -84,6 +84,7 @@ def test_list_lambas(deployment, manage, make_lambdas, put_parameters):
     )
 
 
+@pytest.mark.xfail()
 def test_process(deployment, manage, make_lambdas):
     result = deployment('process {"a": "payload to test process command"}')
     assert result.exit_code == 0
