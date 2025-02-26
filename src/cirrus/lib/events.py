@@ -313,6 +313,7 @@ class WorkflowEventManager:
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
                 payload_url=payload_url,
+                execution_arn=execution_arn,
             ),
         )
 
