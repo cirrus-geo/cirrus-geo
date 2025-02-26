@@ -305,7 +305,6 @@ def _call(ctx, deployment, command, include_user_vars):
 @click.pass_context
 def list_lambdas(ctx, deployment: Deployment, session):
     """List lambda functions"""
-    click.echo(f"trying to list {ctx.obj}")
     click.echo(
         json.dumps(
             {"Functions": deployment.get_lambda_functions(session)},

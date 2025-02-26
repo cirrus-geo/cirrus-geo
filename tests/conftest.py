@@ -69,6 +69,12 @@ def ssm():
 
 
 @pytest.fixture()
+def lambdas():
+    with moto.mock_lambda():
+        yield get_client("lambda", region=MOCK_REGION)
+
+
+@pytest.fixture()
 def dynamo():
     with moto.mock_dynamodb():
         yield get_client("dynamodb", region=MOCK_REGION)
@@ -137,16 +143,7 @@ def queue(sqs):
 
 
 @pytest.fixture()
-def workflow(stepfunctions, iam):
-    defn = {
-        "StartAt": "FirstState",
-        "States": {
-            "FirstState": {
-                "Type": "Pass",
-                "End": True,
-            },
-        },
-    }
+def iam_role(iam):
     role_policy = {
         "Version": "2012-10-17",
         "Statement": [
@@ -163,10 +160,25 @@ def workflow(stepfunctions, iam):
         RoleName="test-step-function-role",
         AssumeRolePolicyDocument=json.dumps(role_policy),
     )["Role"]
+
+    return role["Arn"]
+
+
+@pytest.fixture()
+def workflow(stepfunctions, iam_role):
+    defn = {
+        "StartAt": "FirstState",
+        "States": {
+            "FirstState": {
+                "Type": "Pass",
+                "End": True,
+            },
+        },
+    }
     return stepfunctions.create_state_machine(
         name="test-workflow1",
         definition=json.dumps(defn),
-        roleArn=role["Arn"],
+        roleArn=iam_role,
     )
 
 

@@ -71,6 +71,19 @@ def test_manage_show_unknown_deployment(manage, put_parameters):
     )
 
 
+def test_list_lambas(deployment, manage, make_lambdas, put_parameters):
+    result = deployment("list-lambdas")
+    assert result.exit_code == 0
+    assert result.stdout.strip() == json.dumps(
+        {
+            "Functions": [
+                "process",
+            ],
+        },
+        indent=4,
+    )
+
+
 @pytest.mark.xfail()
 def test_manage_get_path(deployment, project):
     result = deployment("get-path")

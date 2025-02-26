@@ -109,3 +109,19 @@ def put_parameters(ssm):
                 Type="String",
             )
     return ssm
+
+
+@pytest.fixture()
+def make_lambdas(lambdas, iam_role):
+    lambda_code = """
+    def lambda_handler(event, context):
+        return
+    """
+    lambdas.create_function(
+        FunctionName="fd-lion-dev-cirrus-process",
+        Runtime="python3.12",
+        Role=iam_role,
+        Code={"ZipFile": bytes(lambda_code, "utf-8")},
+        Description="mock process lambda for unit testing",
+    )
+    return lambdas
