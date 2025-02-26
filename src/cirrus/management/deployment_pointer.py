@@ -50,20 +50,21 @@ class DeploymentPointer:
         name: str | None = None,
         region: str | None = None,
         session: boto3.Session | None = None,
-    ) -> list[Self]:
-        if name:  # if searching by name
+    ) -> None | list[Self]:
+        if name:
             prefix = prefix + f"{name}"
         ssm = get_client("ssm", region=region, session=session)
         resp = cls.get_parameters_by_path(ssm, prefix)
+        if resp["Parameters"]:
+            parameters = resp["Parameters"]
 
-        parameters = resp["Parameters"]
+            # handle pagination
+            while "NextToken" in resp:
+                resp = cls.get_parameters_by_path(ssm, prefix, resp["NextToken"])
+                parameters = parameters + resp["Parameters"]
 
-        # handle if paginated
-        while "NextToken" in resp:
-            resp = cls.get_parameters_by_path(ssm, prefix, resp["NextToken"])
-            parameters = parameters + resp["Parameters"]
-
-        return cls.parse_deployments(parameters)
+            return cls.parse_deployments(parameters)
+        return None
 
     @classmethod
     def parse_deployments(
@@ -122,11 +123,14 @@ class DeploymentPointer:
         session: boto3.Session | None = None,
     ) -> Iterator[DeploymentPointer]:
         """Retrieve and list all deployments in parameter store"""
-        yield from cls._get_deployments(
+        deployments = cls._get_deployments(
             deployment_prefix,
             region=region,
             session=session,
         )
+        if deployments:
+            yield from deployments
+        return None
 
     @classmethod
     def parsed_parameter(cls, param: dict, prefix: str) -> tuple[str, str, str]:

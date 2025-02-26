@@ -1,7 +1,6 @@
 import json
 
 from dataclasses import asdict
-from pathlib import Path
 
 import pytest
 
@@ -46,13 +45,9 @@ def deployment(manage, deployment_meta):
 
     Deployment.__call__ = _manage
 
-    dep = Deployment(
+    return Deployment(
         **asdict(deployment_meta),
     )
-
-    dep.save(Path(__file__).parent / "fixtures" / f"{DEPLYOMENT_NAME}.json")
-
-    return dep
 
 
 def test_manage(manage):
@@ -60,20 +55,20 @@ def test_manage(manage):
     assert result.exit_code == 0
 
 
-# @pytest.mark.xfail()
 def test_manage_show_deployment(deployment, deployment_meta, put_parameters):
-    # with mock_ssm():
     result = deployment("show")
     assert result.exit_code == 0
     assert result.stdout.strip() == json.dumps(asdict(deployment_meta), indent=4)
 
 
-@pytest.mark.xfail()
-def test_manage_show_unknown_deployment(manage, deployment):
+def test_manage_show_unknown_deployment(manage, put_parameters):
     unknown = "unknown-deployment"
     result = manage(f"{unknown} show")
     assert result.exit_code == 1
-    assert result.stderr.strip() == f"Deployment not found: {unknown}"
+    assert (
+        result.stderr.strip()
+        == f"Deployment not found: no deployment named '{unknown}' was found in the parameter store"
+    )
 
 
 @pytest.mark.xfail()
