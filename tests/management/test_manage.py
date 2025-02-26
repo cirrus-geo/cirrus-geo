@@ -84,6 +84,12 @@ def test_list_lambas(deployment, manage, make_lambdas, put_parameters):
     )
 
 
+def test_process(deployment, manage, make_lambdas):
+    result = deployment('process {"a": "payload to test process command"}')
+    assert result.exit_code == 0
+    assert result.stdout.strip == json.dumps('{"a": "check"}')
+
+
 @pytest.mark.xfail()
 def test_manage_get_path(deployment, project):
     result = deployment("get-path")
@@ -125,7 +131,6 @@ def test_manage_get_execution_by_payload_id(
     assert sfn_exe1["executionArn"] != sfn_exe2["executionArn"]
 
 
-@pytest.mark.xfail()
 @pytest.mark.parametrize(
     ("command", "expect_exit_zero"),
     [
@@ -133,6 +138,6 @@ def test_manage_get_execution_by_payload_id(
         ("false", False),
     ],
 )
-def test_call_cli_return_values(deployment, command, expect_exit_zero):
+def test_call_cli_return_values(deployment, command, expect_exit_zero, put_parameters):
     result = deployment(f"call {command}")
     assert result.exit_code == 0 if expect_exit_zero else result.exit_code != 0
