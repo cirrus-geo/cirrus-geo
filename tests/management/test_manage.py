@@ -5,7 +5,6 @@ from dataclasses import asdict
 import pytest
 
 from cirrus.management.deployment import (
-    CONFIG_VERSION,
     DEFAULT_DEPLOYMENTS_DIR_NAME,
     Deployment,
     DeploymentMeta,
@@ -33,8 +32,6 @@ def deployment_meta() -> DeploymentMeta:
         name=DEPLYOMENT_NAME,
         prefix=PARAMETER_PREFIX,
         environment=mock_parameters(DEPLYOMENT_NAME),
-        user_vars={},
-        config_version=CONFIG_VERSION,
     )
 
 

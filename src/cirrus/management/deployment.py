@@ -6,7 +6,7 @@ import logging
 import os
 
 from collections.abc import Iterator
-from dataclasses import asdict, field
+from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from subprocess import check_call
@@ -47,9 +47,6 @@ class DeploymentMeta:
     name: str
     prefix: str
     environment: dict
-    user_vars: dict = field(default_factory=dict)
-    config_version: int = CONFIG_VERSION
-    profile: str | None = None  # aws user profile
 
     def save(self, path: Path) -> int:
         return path.write_text(self.asjson(indent=4))
@@ -118,13 +115,6 @@ class Deployment(DeploymentMeta):
                 self._functions += deployment_functions_filter(resp)
         return self._functions
 
-    def set_env(self, include_user_vars=False):
-        os.environ.update(self.environment)
-        if include_user_vars:
-            os.environ.update(self.user_vars)
-        if self.profile:
-            os.environ["AWS_PROFILE"] = self.profile
-
     def exec(self, command, include_user_vars=True, isolated=False):
         import os
 
@@ -134,7 +124,7 @@ class Deployment(DeploymentMeta):
                 env.update(self.user_vars)
             os.execlpe(command[0], *command, env)  # noqa: S606
 
-        self.set_env(include_user_vars=include_user_vars)
+        os.environ.update(self.environment)
         os.execlp(command[0], *command)  # noqa: S606
 
     def call(self, command, include_user_vars=True, isolated=False):
@@ -144,7 +134,7 @@ class Deployment(DeploymentMeta):
                 env.update(self.user_vars)
             check_call(command, env=env)  # noqa: S603
         else:
-            self.set_env(include_user_vars=include_user_vars)
+            os.environ.update(self.environment)
             check_call(command)  # noqa: S603
 
     def get_payload_state(self, payload_id):
@@ -291,8 +281,6 @@ class Deployment(DeploymentMeta):
         from .utils.templating import template_payload
 
         _vars = self.environment.copy()
-        if include_user_vars:
-            _vars.update(self.user_vars)
 
         return template_payload(
             payload,
