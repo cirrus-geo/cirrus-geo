@@ -160,8 +160,7 @@ def test_payload_no_process(base_payload):
 def test_payload_empty_process_array(base_payload):
     base_payload["process"] = []
     expected = (
-        "ProcessPayload `process` must be an array "
-        "with at least one process definition"
+        "ProcessPayload `process` must be an array with at least one process definition"
     )
     with pytest.raises(TypeError, match=expected):
         ProcessPayload.from_event(base_payload)
@@ -170,8 +169,7 @@ def test_payload_empty_process_array(base_payload):
 def test_payload_process_not_an_array(base_payload):
     base_payload["process"] = base_payload["process"][0]
     expected = (
-        "ProcessPayload `process` must be an array "
-        "with at least one process definition"
+        "ProcessPayload `process` must be an array with at least one process definition"
     )
     with pytest.raises(TypeError, match=expected):
         ProcessPayload.from_event(base_payload)

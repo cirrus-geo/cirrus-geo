@@ -1,164 +1,161 @@
 from __future__ import annotations
 
-import json
-import re
-
 from collections.abc import Iterator
-from dataclasses import dataclass
-from enum import StrEnum, auto
-from typing import Any, Protocol, Self
+from dataclasses import dataclass, fields
+from typing import Self
 
 import boto3
 
 from cirrus.lib.utils import get_client
+from cirrus.management.exceptions import MissingParameterError
 
-DEFAULT_CIRRUS_DEPLOYMENT_PREFIX = "/cirrus/deployments/"
-
-
-def get_secret(
-    secret_arn: str,
-    region: str | None = None,
-    session: boto3.Session | None = None,
-) -> str:
-    sm = get_client("secretsmanager", region=region, session=session)
-    resp = sm.get_secret_value(
-        SecretId=secret_arn,
-    )
-    return resp["SecretString"]
+PARAMETER_PREFIX = "/cirrus/deployments/"
 
 
-class PointerObject(Protocol):  # pragma: no cover
-    account_id: str
-    region: str
-
-    @classmethod
-    def from_string(cls: type[Self], string: str) -> Self: ...
-
-    def fetch(
-        self: Self,
-        session: boto3.Session | None = None,
-    ) -> str: ...
-
-
-class SecretArn:
-    _format = "arn:aws:secretsmanager:{region}:{account_id}:secret:{name}".format
-    _regex = re.compile(
-        r"^arn:aws:secretsmanager:(?P<region>[a-z0-9\-]+):(?P<account_id>\d{12}):secret:(?P<name>.+)$",
-    )
-
-    def __init__(self, account_id: str, region: str, name: str) -> None:
-        self.account_id = account_id
-        self.region = region
-        self.name = name
-
-    def __str__(self) -> str:
-        return self._format(
-            region=self.region,
-            account_id=self.account_id,
-            name=self.name,
-        )
-
-    @classmethod
-    def from_string(cls, string: str) -> Self:
-        match = cls._regex.match(string)
-
-        if not match:
-            raise ValueError(f"Unparsable secret arn string '{string}'")
-
-        groups = match.groupdict()
-
-        return cls(
-            account_id=groups["account_id"],
-            name=groups["name"],
-            region=groups["region"],
-        )
-
-    def fetch(
-        self,
-        session: boto3.Session | None = None,
-    ) -> str:
-        return get_secret(
-            secret_arn=str(self),
-            region=self.region,
-            session=session,
-        )
-
-
-class PointerType(StrEnum):
-    SECRET = auto()
-
-
-@dataclass()
-class Pointer:
-    _type: PointerType
-    value: str
-
-    @classmethod
-    def from_string(cls: type[Self], string: str) -> Self:
-        obj = json.loads(string)
-        obj["_type"] = obj.pop("type")
-        return cls(**obj)
-
-    def resolve(self) -> PointerObject:
-        match self._type:
-            case PointerType.SECRET:
-                return SecretArn.from_string(self.value)
-            case _ as unknown:
-                raise TypeError(f"Unsupported pointer type '{unknown}'")
+# core required vars.  Not exclusive.
+@dataclass
+class DeploymentEnvVars:
+    CIRRUS_BASE_WORKFLOW_ARN: str
+    CIRRUS_DATA_BUCKET: str
+    CIRRUS_EVENT_DB_AND_TABLE: str
+    CIRRUS_LOG_LEVEL: str
+    CIRRUS_PAYLOAD_BUCKET: str
+    CIRRUS_PREFIX: str
+    CIRRUS_PROCESS_QUEUE_URL: str
+    CIRRUS_STATE_DB: str
+    CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: str
 
 
 @dataclass
 class DeploymentPointer:
     prefix: str
     name: str
-    pointer: Pointer
+    environment: dict
+    """
+    Contains all related AWS pieces of a single cirrus deployment
+    """
 
     @classmethod
-    def _from_parameter(
-        cls,
-        parameter: dict[str, Any],
-        prefix: str = "",
-    ) -> DeploymentPointer:
-        name = parameter["Name"][len(prefix) :]
-        return cls(
-            name=name,
-            pointer=Pointer.from_string(parameter["Value"]),
-            prefix=prefix,
+    def get_parameters_by_path(cls, ssm, prefix: str, next: str = ""):
+        return ssm.get_parameters_by_path(
+            Path=prefix,
+            Recursive=True,
+            NextToken=next,
         )
 
     @classmethod
-    def get(
+    def _get_deployments(
+        cls,
+        prefix: str,
+        name: str | None = None,
+        region: str | None = None,
+        session: boto3.Session | None = None,
+    ) -> None | list[Self]:
+        if name:
+            prefix = prefix + f"{name}"
+        ssm = get_client("ssm", region=region, session=session)
+        resp = cls.get_parameters_by_path(ssm, prefix)
+        if resp["Parameters"]:
+            parameters = resp["Parameters"]
+
+            # handle pagination
+            while "NextToken" in resp:
+                resp = cls.get_parameters_by_path(ssm, prefix, resp["NextToken"])
+                parameters = parameters + resp["Parameters"]
+
+            return cls.parse_deployments(parameters)
+        return None
+
+    @classmethod
+    def parse_deployments(
+        cls,
+        params: list,
+        prefix: str = PARAMETER_PREFIX,
+    ) -> list[Self]:
+        """
+        Parse parameter response and return all deployments
+
+        Parameter store entires shuld have format {prefix}{deployment_name}{component}
+        """
+        parameters = [cls.parsed_parameter(param, prefix) for param in params]
+
+        cls.validate_vars(parameters)
+
+        deployment_names = sorted(
+            {deployment_name for _, _, deployment_name in parameters},
+        )
+
+        return [
+            cls(
+                prefix,
+                name,
+                cls.cirrus_components(parameters, name),
+            )
+            for name in deployment_names
+        ]
+
+    @classmethod
+    def get_deployment_by_name(
         cls,
         deployment_name: str,
-        deployment_prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
+        deployment_prefix: str = PARAMETER_PREFIX,
         region: str | None = None,
         session: boto3.Session | None = None,
     ):
-        ssm = get_client("ssm", region=region, session=session)
-        return cls._from_parameter(
-            ssm.get_parameter(
-                Name=f"{deployment_prefix}{deployment_name}",
-            )["Parameter"],
-            prefix=deployment_prefix,
+        """
+        Retrieve a single deployment configuration by name from parameter store
+        """
+        deployment = cls._get_deployments(
+            deployment_prefix,
+            deployment_name,
+            region,
+            session,
         )
+        if deployment:
+            return deployment[0]
+        return None
 
     @classmethod
-    def list(
+    def list_deployments(
         cls,
-        deployment_prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
+        deployment_prefix: str = PARAMETER_PREFIX,
         region: str | None = None,
         session: boto3.Session | None = None,
     ) -> Iterator[DeploymentPointer]:
-        ssm = get_client("ssm", region=region, session=session)
-        resp = ssm.get_parameters_by_path(Path=deployment_prefix)
-        for param in resp["Parameters"]:
-            yield cls._from_parameter(
-                param,
-                prefix=deployment_prefix,
-            )
+        """Retrieve and list all deployments in parameter store"""
+        deployments = cls._get_deployments(
+            deployment_prefix,
+            region=region,
+            session=session,
+        )
+        if deployments:
+            yield from deployments
+        return None
 
-    def get_config(
-        self,
-        session: boto3.Session | None = None,
-    ) -> dict[str, Any]:
-        return json.loads(self.pointer.resolve().fetch(session=session))
+    @classmethod
+    def parsed_parameter(cls, param: dict, prefix: str) -> tuple[str, str, str]:
+        """split param into name, value, and deployment name components"""
+        return (
+            param["Name"].split("/")[-1],
+            param["Value"],
+            param["Name"][len(prefix) : param["Name"].rindex("/")],
+        )
+
+    @classmethod
+    def cirrus_components(
+        cls,
+        parameters: list[tuple[str, str, str]],
+        name: str,
+    ) -> dict[str, str]:
+        return {
+            param_name: value
+            for param_name, value, deployment_name in parameters
+            if deployment_name == name
+        }
+
+    @classmethod
+    def validate_vars(cls, parameters: list[tuple[str, str, str]]):
+        parameter_names = [name for name, _, _ in parameters]
+        for field in fields(DeploymentEnvVars):
+            if field.name not in parameter_names:
+                raise MissingParameterError(field.name)
