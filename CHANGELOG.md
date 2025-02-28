@@ -5,13 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v1.0.0a1] - 2025-02-28
 
 ### Fixed
 
+- Errors in `build-lambda-dist.bash` ([#278])
 - Fixed issue [#225] where default string is treated as a list when input
   collection is specified neither via `payload.collections` nor on the items in
   `payload.features[].collection`. ([#280])
+
+### Changed
+
+- The `update_state` lambda now pushes each Item in output Cirrus Process Payloads to
+  the `CIRRUS_PUBLISH_TOPIC_ARN`, if set, with SNS messages derived from the Item.
+  ([#294])
+- Workflow events of type `SUCCEEDED` now include the step function execution ARN in
+  the event. ([#297])
+
+## [v1.0.0a0] - 2024-08-13
+
+### ⚠️ Breaking changes
+
+- This release rebuilds cirrus-geo to support a "bring-your-own-IaC" deployment model.
+  The changeset is extensive. Refer to the following PRs:
+
+  - Initial work for v1 ([#268])
+  - Build a dist zip for all cirrus lambdas ([#276])
+  - Fix package build and switch to trusted publishers ([#277])
 
 ## [v0.15.0] - 2024-05-06
 
@@ -812,7 +832,9 @@ cleanup steps.
 
 Initial release
 
-[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.0...main
+[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0a1...main
+[v1.0.0a1]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0a0...v1.0.0a1
+[v1.0.0a0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.0...v1.0.0a0
 [v0.15.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.14.0...v0.15.0
 [v0.14.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.13.0...v0.14.0
 [v0.13.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.12.1...v0.13.0
@@ -927,9 +949,15 @@ Initial release
 [#264]: https://github.com/cirrus-geo/cirrus-geo/pull/264
 [#266]: https://github.com/cirrus-geo/cirrus-geo/pull/266
 [#267]: https://github.com/cirrus-geo/cirrus-geo/pull/267
+[#268]: https://github.com/cirrus-geo/cirrus-geo/pull/268
 [#270]: https://github.com/cirrus-geo/cirrus-geo/pull/270
 [#272]: https://github.com/cirrus-geo/cirrus-geo/pull/272
+[#276]: https://github.com/cirrus-geo/cirrus-geo/pull/276
+[#277]: https://github.com/cirrus-geo/cirrus-geo/pull/277
+[#278]: https://github.com/cirrus-geo/cirrus-geo/pull/278
 [#280]: https://github.com/cirrus-geo/cirrus-geo/pull/280
+[#294]: https://github.com/cirrus-geo/cirrus-geo/pull/294
+[#297]: https://github.com/cirrus-geo/cirrus-geo/pull/297
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
