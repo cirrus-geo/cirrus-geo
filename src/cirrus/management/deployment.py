@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import dataclasses
 import json
 import logging
 import os
 
 from collections.abc import Iterator
-from dataclasses import asdict
 from datetime import UTC, datetime
-from pathlib import Path
 from subprocess import check_call
 from time import sleep, time
 from typing import IO, Any
@@ -20,7 +17,6 @@ from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.utils import get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
 from cirrus.management.exceptions import (
-    DeploymentNotFoundError,
     NoExecutionsError,
     PayloadNotFoundError,
 )
@@ -42,57 +38,36 @@ def _maybe_use_buffer(fileobj: IO):
     return fileobj.buffer if hasattr(fileobj, "buffer") else fileobj
 
 
-@dataclasses.dataclass
-class DeploymentMeta:
-    name: str
-    prefix: str
-    environment: dict
-
-    def save(self, path: Path) -> int:
-        return path.write_text(self.asjson(indent=4))
-
-    def asdict(self) -> dict[str, Any]:
-        return dataclasses.asdict(self)
-
-    def asjson(self, *args, **kwargs) -> str:
-        return json.dumps(self.asdict(), *args, **kwargs)
-
-
-@dataclasses.dataclass
-class Deployment(DeploymentMeta):
+class Deployment:
     def __init__(
         self,
-        *args,
+        name: str,
+        environment: dict,
         session: boto3.Session | None = None,
-        **kwargs,
     ) -> None:
-        super().__init__(*args, **kwargs)
+        self.name = name
+        self.environment = environment
         self.session = session if session else boto3.Session()
         self._functions: list[str] | None = None
 
     @staticmethod
     def yield_deployments(
-        region: str | None = None,
-        session: boto3.Session | None = None,
-    ) -> Iterator[DeploymentPointer]:
-        yield from DeploymentPointer.list_deployments(region=region, session=session)
+        session: boto3.Session,
+    ) -> Iterator[str]:
+        yield from DeploymentPointer.list_deployments(session=session)
 
     @classmethod
     def from_pointer(
         cls,
         pointer: DeploymentPointer,
-        session: boto3.Session | None = None,
-    ) -> Deployment:
-        return cls(session=session, **asdict(pointer))
+        session: boto3.Session,
+    ):
+        return cls(session=session, **pointer.get_configuration(session=session))
 
     @classmethod
-    def from_name(cls, name: str, session: boto3.Session | None = None) -> Deployment:
-        dp = DeploymentPointer.get_deployment_by_name(name, session=session)
-        if not dp:
-            raise DeploymentNotFoundError(
-                f"no deployment named '{name}' was found in the parameter store",
-            )
-        return cls.from_pointer(dp, session)
+    def from_name(cls, name: str, session: boto3.Session) -> Deployment:
+        dp = DeploymentPointer.get_pointer(name, session=session)
+        return cls.from_pointer(dp, session=session)
 
     def get_lambda_functions(self, session):
         if self._functions is None:
@@ -101,7 +76,7 @@ class Deployment(DeploymentMeta):
             def deployment_functions_filter(response):
                 return [
                     f["FunctionName"].replace(
-                        f"{self.environment['CIRRUS_PREFIX']}-",
+                        f"{self.environment['']}-",
                         "",
                     )
                     for f in response["Functions"]

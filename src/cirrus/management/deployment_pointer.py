@@ -1,42 +1,86 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from dataclasses import dataclass, fields
-from typing import Self
+import json
+
+from dataclasses import dataclass
+from typing import Any, Self
 
 import boto3
+import click
 
 from cirrus.lib.utils import get_client
 from cirrus.management.exceptions import MissingParameterError
 
-PARAMETER_PREFIX = "/cirrus/deployments/"
-
+DEPLOYMENTS_PREFIX = "/cirrus/deployments/"
 
 # core required vars.  Not exclusive.
-@dataclass
-class DeploymentEnvVars:
-    CIRRUS_BASE_WORKFLOW_ARN: str
-    CIRRUS_DATA_BUCKET: str
-    CIRRUS_EVENT_DB_AND_TABLE: str
-    CIRRUS_LOG_LEVEL: str
-    CIRRUS_PAYLOAD_BUCKET: str
-    CIRRUS_PREFIX: str
-    CIRRUS_PROCESS_QUEUE_URL: str
-    CIRRUS_STATE_DB: str
-    CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: str
+REQUIRED_VARS = [
+    "CIRRUS_PAYLOAD_BUCKET",
+    "CIRRUS_BASE_WORKFLOW_ARN",
+    "CIRRUS_PROCESS_QUEUE_URL",
+    "CIRRUS_STATE_DB",
+    "CIRRUS_PREFIX",
+]
+
+
+@dataclass()
+class Pointer:
+    _type: str
+    value: str
+
+    @classmethod
+    def from_string(cls: type[Self], string: str) -> Self:
+        obj = json.loads(string)
+        obj["_type"] = obj.pop("type")
+
+        return cls(**obj)
+
+    def resolve(self):
+        match self._type:
+            case "parameter_store":
+                return ParamStoreDeployment(self.value)
+            case _ as unknown:
+                raise TypeError(f"Unsupported pointer type '{unknown}'")
+
+
+class ParamStoreDeployment:
+    def __init__(self, deployment_key: str):
+        self.prefix = deployment_key
+
+    def fetch(self, session=boto3.Session) -> dict[str, str]:
+        """Get parameters for specific deployment"""
+
+        parameters = DeploymentPointer._get_parameters(self.prefix, session)
+        env = {}
+        for param in parameters:
+            var = {param["Name"].split(self.prefix)[1]: param["Value"]}
+            env.update(var)
+        click.echo(f"env: {env}")
+        return env
 
 
 @dataclass
 class DeploymentPointer:
-    prefix: str
     name: str
-    environment: dict
+    pointer: Pointer
     """
-    Contains all related AWS pieces of a single cirrus deployment
+    Class to retrieve deployment pointer and using pointer
+    for building deployment
     """
 
     @classmethod
-    def get_parameters_by_path(cls, ssm, prefix: str, next: str = ""):
+    def _from_parameter(
+        cls,
+        parameter: dict[str, Any],
+        name: str = "",
+    ) -> DeploymentPointer:
+        return cls(
+            name=name,
+            pointer=Pointer.from_string(parameter["Value"]),
+        )
+
+    @classmethod
+    def _get_parameters_by_path(cls, ssm, prefix: str, next: str = ""):
         return ssm.get_parameters_by_path(
             Path=prefix,
             Recursive=True,
@@ -44,118 +88,64 @@ class DeploymentPointer:
         )
 
     @classmethod
-    def _get_deployments(
+    def _get_parameters(
         cls,
         prefix: str,
-        name: str | None = None,
-        region: str | None = None,
-        session: boto3.Session | None = None,
-    ) -> None | list[Self]:
-        if name:
-            prefix = prefix + f"{name}"
-        ssm = get_client("ssm", region=region, session=session)
-        resp = cls.get_parameters_by_path(ssm, prefix)
-        if resp["Parameters"]:
-            parameters = resp["Parameters"]
+        session: boto3.Session,
+    ) -> list[dict[str, Any]]:
+        ssm = get_client("ssm", region=session.region_name, session=session)
+        resp = cls._get_parameters_by_path(ssm, prefix)
+        parameters = resp["Parameters"]
 
-            # handle pagination
-            while "NextToken" in resp:
-                resp = cls.get_parameters_by_path(ssm, prefix, resp["NextToken"])
-                parameters = parameters + resp["Parameters"]
+        # handle pagination
+        while "NextToken" in resp:
+            resp = cls._get_parameters_by_path(ssm, prefix, resp["NextToken"])
+            parameters = parameters + resp["Parameters"]
 
-            return cls.parse_deployments(parameters)
-        return None
+        return parameters
 
     @classmethod
-    def parse_deployments(
-        cls,
-        params: list,
-        prefix: str = PARAMETER_PREFIX,
-    ) -> list[Self]:
-        """
-        Parse parameter response and return all deployments
-
-        Parameter store entires shuld have format {prefix}{deployment_name}{component}
-        """
-        parameters = [cls.parsed_parameter(param, prefix) for param in params]
-
-        cls.validate_vars(parameters)
-
-        deployment_names = sorted(
-            {deployment_name for _, _, deployment_name in parameters},
-        )
-
-        return [
-            cls(
-                prefix,
-                name,
-                cls.cirrus_components(parameters, name),
-            )
-            for name in deployment_names
-        ]
-
-    @classmethod
-    def get_deployment_by_name(
+    def get_pointer(
         cls,
         deployment_name: str,
-        deployment_prefix: str = PARAMETER_PREFIX,
         region: str | None = None,
         session: boto3.Session | None = None,
     ):
-        """
-        Retrieve a single deployment configuration by name from parameter store
-        """
-        deployment = cls._get_deployments(
-            deployment_prefix,
-            deployment_name,
-            region,
-            session,
+        """Get pointer to deployment in param store.  Pointer is one param"""
+        ssm = get_client("ssm", region=region, session=session)
+        click.echo(f"name={DEPLOYMENTS_PREFIX}/{deployment_name}")
+        return cls._from_parameter(
+            ssm.get_parameter(Name=f"{DEPLOYMENTS_PREFIX}{deployment_name}")[
+                "Parameter"
+            ],
+            name=deployment_name,
         )
-        if deployment:
-            return deployment[0]
-        return None
 
     @classmethod
     def list_deployments(
         cls,
-        deployment_prefix: str = PARAMETER_PREFIX,
-        region: str | None = None,
-        session: boto3.Session | None = None,
-    ) -> Iterator[DeploymentPointer]:
-        """Retrieve and list all deployments in parameter store"""
-        deployments = cls._get_deployments(
-            deployment_prefix,
-            region=region,
+        session: boto3.Session,
+    ) -> list[str]:
+        """Retrieve and list names of available deployments in parameter
+        store"""
+        parameters = cls._get_parameters(
+            DEPLOYMENTS_PREFIX,
             session=session,
         )
-        if deployments:
-            yield from deployments
-        return None
+
+        return [param["Name"].split(DEPLOYMENTS_PREFIX)[1] for param in parameters]
 
     @classmethod
-    def parsed_parameter(cls, param: dict, prefix: str) -> tuple[str, str, str]:
-        """split param into name, value, and deployment name components"""
-        return (
-            param["Name"].split("/")[-1],
-            param["Value"],
-            param["Name"][len(prefix) : param["Name"].rindex("/")],
-        )
+    def validate_vars(cls, environment: dict[str, Any]):
+        for field in REQUIRED_VARS:
+            if field not in environment:
+                raise MissingParameterError(field)
+        return environment
 
-    @classmethod
-    def cirrus_components(
-        cls,
-        parameters: list[tuple[str, str, str]],
-        name: str,
-    ) -> dict[str, str]:
-        return {
-            param_name: value
-            for param_name, value, deployment_name in parameters
-            if deployment_name == name
-        }
+    def get_configuration(
+        self,
+        session: boto3.Session,
+    ) -> dict[str, Any]:
+        """Get env vars for single named deployment"""
 
-    @classmethod
-    def validate_vars(cls, parameters: list[tuple[str, str, str]]):
-        parameter_names = [name for name, _, _ in parameters]
-        for field in fields(DeploymentEnvVars):
-            if field.name not in parameter_names:
-                raise MissingParameterError(field.name)
+        return self.validate_vars(self.pointer.resolve().fetch(session=session))
