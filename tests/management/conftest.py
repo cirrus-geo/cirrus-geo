@@ -11,7 +11,7 @@ import pytest
 
 from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
 from cirrus.management.cli import cli
-from cirrus.management.deployment_pointer import PARAMETER_PREFIX
+from cirrus.management.deployment_pointer import DEPLOYMENTS_PREFIX
 from click.testing import CliRunner
 
 from tests.conftest import MOCK_REGION
@@ -86,25 +86,35 @@ def parameter_store_response():
 
 def mock_parameters(deployment_name: str, region: str = MOCK_REGION):
     return {
-        "CIRRUS_BASE_WORKFLOW_ARN": f"arn:aws:states:{region}:00000000:stateMachine:fd-{deployment_name}-dev-cirrus-",
-        "CIRRUS_DATA_BUCKET": f"filmdrop-{deployment_name}-{region}-random-data-bucket-name",
-        "CIRRUS_EVENT_DB_AND_TABLE": f"fd-{deployment_name}-dev-cirrus-nane-db|fd-{deployment_name}-dev-cirrus-random-table",
-        "CIRRUS_LOG_LEVEL": "DEBUG",
         "CIRRUS_PAYLOAD_BUCKET": f"filmdrop-{deployment_name}-{region}-cirrus-random-payload-bucket-000000",
-        "CIRRUS_PREFIX": f"fd-{deployment_name}-dev-cirrus",
+        "CIRRUS_BASE_WORKFLOW_ARN": f"arn:aws:states:{region}:00000000:stateMachine:fd-{deployment_name}-dev-cirrus-",
         "CIRRUS_PROCESS_QUEUE_URL": f"https://sqs.{region}.amazonaws.com/000000000/fd-{deployment_name}-dev-cirrus-random-queue-name",
         "CIRRUS_STATE_DB": f"fd-{deployment_name}-dev-cirrus-random-state-db",
-        "CIRRUS_WORKFLOW_EVENT_TOPIC_ARN": f"arn:aws:sns:{region}:00000000000:fd-{deployment_name}-dev-cirrus-random-workflow-name-here",
+        "CIRRUS_PREFIX": f"fd-{deployment_name}-dev-cirrus",
     }
 
 
 @pytest.fixture()
 def put_parameters(ssm):
     # don't want slashes in parameter arn values but want in param path
-    for deployment_name in ["lion", "squirrel/dev"]:
-        for param_name, value in mock_parameters(deployment_name.split("/")[0]).items():
+    for deployment_name in ["lion", "squirrel-dev"]:
+        # put pointer parameters
+        deployment_key = f"/deployment/{deployment_name}/"
+        ssm.put_parameter(
+            Name=f"{DEPLOYMENTS_PREFIX}{deployment_name}",
+            Value=json.dumps(
+                {
+                    "type": "parameter_store",
+                    "value": deployment_key,
+                },
+            ),
+            Type="String",
+        )
+        # put mock deployment parameters
+        for param_name, value in mock_parameters(deployment_name).items():
+            name = f"{deployment_key}{param_name}"
             ssm.put_parameter(
-                Name=f"{PARAMETER_PREFIX}{deployment_name}/{param_name}",
+                Name=name,
                 Value=value,
                 Type="String",
             )

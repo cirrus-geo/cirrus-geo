@@ -1,15 +1,11 @@
 import json
 
-from dataclasses import asdict
-
 import pytest
 
 from cirrus.management.deployment import (
     DEFAULT_DEPLOYMENTS_DIR_NAME,
     Deployment,
-    DeploymentMeta,
 )
-from cirrus.management.deployment_pointer import PARAMETER_PREFIX
 
 from tests.management.conftest import mock_parameters
 
@@ -27,23 +23,15 @@ def manage(invoke):
 
 
 @pytest.fixture()
-def deployment_meta() -> DeploymentMeta:
-    return DeploymentMeta(
-        name=DEPLYOMENT_NAME,
-        prefix=PARAMETER_PREFIX,
-        environment=mock_parameters(DEPLYOMENT_NAME),
-    )
-
-
-@pytest.fixture()
-def deployment(manage, deployment_meta):
+def deployment(manage):
     def _manage(deployment, cmd):
         return manage(f"{deployment.name} {cmd}")
 
     Deployment.__call__ = _manage
 
     return Deployment(
-        **asdict(deployment_meta),
+        DEPLYOMENT_NAME,
+        mock_parameters(DEPLYOMENT_NAME),
     )
 
 
@@ -52,20 +40,23 @@ def test_manage(manage):
     assert result.exit_code == 0
 
 
-def test_manage_show_deployment(deployment, deployment_meta, put_parameters):
+def test_manage_show_deployment(deployment, put_parameters):
     result = deployment("show")
     assert result.exit_code == 0
-    assert result.stdout.strip() == json.dumps(asdict(deployment_meta), indent=4)
+    assert result.stdout.strip() == json.dumps(deployment.environment, indent=4)
 
 
 def test_manage_show_unknown_deployment(manage, put_parameters):
     unknown = "unknown-deployment"
     result = manage(f"{unknown} show")
     assert result.exit_code == 1
-    assert (
-        result.stderr.strip()
-        == f"Deployment not found: no deployment named '{unknown}' was found in the parameter store"
-    )
+    assert result.stderr.strip() == f"Deployment not found: '{unknown}'"
+
+
+def test_list_deployments(invoke, put_parameters):
+    result = invoke("list-deployments")
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "lion\nsquirrel-dev"
 
 
 def test_list_lambas(deployment, manage, make_lambdas, put_parameters):
