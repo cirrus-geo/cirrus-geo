@@ -25,3 +25,9 @@ class NoExecutionsError(CirrusError):
     def __init__(self, payload_id, *args, **kwargs):
         msg = f"Payload has no executions: {payload_id}"
         super().__init__(msg, *args, **kwargs)
+
+
+class MissingParameterError(KeyError):
+    def __init__(self, parameter, *args, **kwargs):
+        msg = f"A required environment variable was not found: {parameter}"
+        super().__init__(msg, *args, **kwargs)

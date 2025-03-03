@@ -1,164 +1,151 @@
 from __future__ import annotations
 
 import json
-import re
 
-from collections.abc import Iterator
 from dataclasses import dataclass
-from enum import StrEnum, auto
-from typing import Any, Protocol, Self
+from typing import Any, Self
 
 import boto3
+import click
 
 from cirrus.lib.utils import get_client
+from cirrus.management.exceptions import MissingParameterError
 
-DEFAULT_CIRRUS_DEPLOYMENT_PREFIX = "/cirrus/deployments/"
+DEPLOYMENTS_PREFIX = "/cirrus/deployments/"
 
-
-def get_secret(
-    secret_arn: str,
-    region: str | None = None,
-    session: boto3.Session | None = None,
-) -> str:
-    sm = get_client("secretsmanager", region=region, session=session)
-    resp = sm.get_secret_value(
-        SecretId=secret_arn,
-    )
-    return resp["SecretString"]
-
-
-class PointerObject(Protocol):  # pragma: no cover
-    account_id: str
-    region: str
-
-    @classmethod
-    def from_string(cls: type[Self], string: str) -> Self: ...
-
-    def fetch(
-        self: Self,
-        session: boto3.Session | None = None,
-    ) -> str: ...
-
-
-class SecretArn:
-    _format = "arn:aws:secretsmanager:{region}:{account_id}:secret:{name}".format
-    _regex = re.compile(
-        r"^arn:aws:secretsmanager:(?P<region>[a-z0-9\-]+):(?P<account_id>\d{12}):secret:(?P<name>.+)$",
-    )
-
-    def __init__(self, account_id: str, region: str, name: str) -> None:
-        self.account_id = account_id
-        self.region = region
-        self.name = name
-
-    def __str__(self) -> str:
-        return self._format(
-            region=self.region,
-            account_id=self.account_id,
-            name=self.name,
-        )
-
-    @classmethod
-    def from_string(cls, string: str) -> Self:
-        match = cls._regex.match(string)
-
-        if not match:
-            raise ValueError(f"Unparsable secret arn string '{string}'")
-
-        groups = match.groupdict()
-
-        return cls(
-            account_id=groups["account_id"],
-            name=groups["name"],
-            region=groups["region"],
-        )
-
-    def fetch(
-        self,
-        session: boto3.Session | None = None,
-    ) -> str:
-        return get_secret(
-            secret_arn=str(self),
-            region=self.region,
-            session=session,
-        )
-
-
-class PointerType(StrEnum):
-    SECRET = auto()
+# core required vars.  Not exclusive.
+REQUIRED_VARS = [
+    "CIRRUS_PAYLOAD_BUCKET",
+    "CIRRUS_BASE_WORKFLOW_ARN",
+    "CIRRUS_PROCESS_QUEUE_URL",
+    "CIRRUS_STATE_DB",
+    "CIRRUS_PREFIX",
+]
 
 
 @dataclass()
 class Pointer:
-    _type: PointerType
+    _type: str
     value: str
 
     @classmethod
     def from_string(cls: type[Self], string: str) -> Self:
         obj = json.loads(string)
         obj["_type"] = obj.pop("type")
+
         return cls(**obj)
 
-    def resolve(self) -> PointerObject:
+    def resolve(self):
         match self._type:
-            case PointerType.SECRET:
-                return SecretArn.from_string(self.value)
+            case "parameter_store":
+                return ParamStoreDeployment(self.value)
             case _ as unknown:
                 raise TypeError(f"Unsupported pointer type '{unknown}'")
 
 
+class ParamStoreDeployment:
+    def __init__(self, deployment_key: str):
+        self.prefix = deployment_key
+
+    def fetch(self, session=boto3.Session) -> dict[str, str]:
+        """Get parameters for specific deployment"""
+
+        parameters = DeploymentPointer._get_parameters(self.prefix, session)
+        env = {}
+        for param in parameters:
+            var = {param["Name"].split(self.prefix)[1]: param["Value"]}
+            env.update(var)
+        click.echo(f"env: {env}")
+        return env
+
+
 @dataclass
 class DeploymentPointer:
-    prefix: str
     name: str
     pointer: Pointer
+    """
+    Class to retrieve deployment pointer and using pointer
+    for building deployment
+    """
 
     @classmethod
     def _from_parameter(
         cls,
         parameter: dict[str, Any],
-        prefix: str = "",
+        name: str = "",
     ) -> DeploymentPointer:
-        name = parameter["Name"][len(prefix) :]
         return cls(
             name=name,
             pointer=Pointer.from_string(parameter["Value"]),
-            prefix=prefix,
         )
 
     @classmethod
-    def get(
+    def _get_parameters_by_path(cls, ssm, prefix: str, next: str = ""):
+        return ssm.get_parameters_by_path(
+            Path=prefix,
+            Recursive=True,
+            NextToken=next,
+        )
+
+    @classmethod
+    def _get_parameters(
+        cls,
+        prefix: str,
+        session: boto3.Session,
+    ) -> list[dict[str, Any]]:
+        ssm = get_client("ssm", region=session.region_name, session=session)
+        resp = cls._get_parameters_by_path(ssm, prefix)
+        parameters = resp["Parameters"]
+
+        # handle pagination
+        while "NextToken" in resp:
+            resp = cls._get_parameters_by_path(ssm, prefix, resp["NextToken"])
+            parameters = parameters + resp["Parameters"]
+
+        return parameters
+
+    @classmethod
+    def get_pointer(
         cls,
         deployment_name: str,
-        deployment_prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
         region: str | None = None,
         session: boto3.Session | None = None,
     ):
+        """Get pointer to deployment in param store.  Pointer is one param"""
         ssm = get_client("ssm", region=region, session=session)
+        click.echo(f"name={DEPLOYMENTS_PREFIX}/{deployment_name}")
         return cls._from_parameter(
-            ssm.get_parameter(
-                Name=f"{deployment_prefix}{deployment_name}",
-            )["Parameter"],
-            prefix=deployment_prefix,
+            ssm.get_parameter(Name=f"{DEPLOYMENTS_PREFIX}{deployment_name}")[
+                "Parameter"
+            ],
+            name=deployment_name,
         )
 
     @classmethod
-    def list(
+    def list_deployments(
         cls,
-        deployment_prefix: str = DEFAULT_CIRRUS_DEPLOYMENT_PREFIX,
-        region: str | None = None,
-        session: boto3.Session | None = None,
-    ) -> Iterator[DeploymentPointer]:
-        ssm = get_client("ssm", region=region, session=session)
-        resp = ssm.get_parameters_by_path(Path=deployment_prefix)
-        for param in resp["Parameters"]:
-            yield cls._from_parameter(
-                param,
-                prefix=deployment_prefix,
-            )
+        session: boto3.Session,
+    ) -> list[str]:
+        """Retrieve and list names of available deployments in parameter
+        store"""
+        parameters = cls._get_parameters(
+            DEPLOYMENTS_PREFIX,
+            session=session,
+        )
 
-    def get_config(
+        return [param["Name"].split(DEPLOYMENTS_PREFIX)[1] for param in parameters]
+
+    @classmethod
+    def validate_vars(cls, environment: dict[str, Any]):
+        for field in REQUIRED_VARS:
+            if field not in environment:
+                raise MissingParameterError(field)
+        return environment
+
+    def get_configuration(
         self,
-        session: boto3.Session | None = None,
+        session: boto3.Session,
     ) -> dict[str, Any]:
-        return json.loads(self.pointer.resolve().fetch(session=session))
+        """Get env vars for single named deployment"""
+
+        return self.validate_vars(self.pointer.resolve().fetch(session=session))

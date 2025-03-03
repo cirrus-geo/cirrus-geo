@@ -1,15 +1,21 @@
 import json
 
+from dataclasses import asdict
+
 import pytest
 
 from cirrus.management.deployment import (
-    CONFIG_VERSION,
     DEFAULT_DEPLOYMENTS_DIR_NAME,
     Deployment,
+    DeploymentMeta,
 )
+from cirrus.management.deployment_pointer import PARAMETER_PREFIX
 
-DEPLYOMENT_NAME = "test-deployment"
+from tests.management.conftest import mock_parameters
+
+DEPLYOMENT_NAME = "lion"
 STACK_NAME = "cirrus-test"
+MOCK_CIRRUS_PREFIX = "ts-lion-dev-cirrus"
 
 
 @pytest.fixture()
@@ -21,46 +27,24 @@ def manage(invoke):
 
 
 @pytest.fixture()
-def deployment_meta(queue, statedb, payloads, data, workflow):
-    return {
-        "name": DEPLYOMENT_NAME,
-        "created": "2022-11-07T04:42:26.666916+00:00",
-        "updated": "2022-11-07T04:42:26.666916+00:00",
-        "stackname": STACK_NAME,
-        "profile": None,
-        "environment": {
-            "CIRRUS_STATE_DB": statedb.table_name,
-            "CIRRUS_BASE_WORKFLOW_ARN": workflow["stateMachineArn"].replace(
-                "workflow1",
-                "",
-            ),
-            "CIRRUS_LOG_LEVEL": "DEBUG",
-            "CIRRUS_STACK": STACK_NAME,
-            "CIRRUS_DATA_BUCKET": data,
-            "CIRRUS_PAYLOAD_BUCKET": payloads,
-            "CIRRUS_PROCESS_QUEUE_URL": queue["QueueUrl"],
-        },
-        "user_vars": {},
-        "config_version": CONFIG_VERSION,
-    }
+def deployment_meta() -> DeploymentMeta:
+    return DeploymentMeta(
+        name=DEPLYOMENT_NAME,
+        prefix=PARAMETER_PREFIX,
+        environment=mock_parameters(DEPLYOMENT_NAME),
+    )
 
 
 @pytest.fixture()
-def deployment(manage, project, deployment_meta):
+def deployment(manage, deployment_meta):
     def _manage(deployment, cmd):
         return manage(f"{deployment.name} {cmd}")
 
     Deployment.__call__ = _manage
 
-    dep = Deployment(
-        Deployment.get_path_from_project(project, DEPLYOMENT_NAME),
-        **deployment_meta,
+    return Deployment(
+        **asdict(deployment_meta),
     )
-    dep.save()
-
-    yield dep
-
-    Deployment.remove(dep.name, project)
 
 
 def test_manage(manage):
@@ -68,19 +52,40 @@ def test_manage(manage):
     assert result.exit_code == 0
 
 
-@pytest.mark.xfail()
-def test_manage_show_deployment(deployment, deployment_meta):
+def test_manage_show_deployment(deployment, deployment_meta, put_parameters):
     result = deployment("show")
     assert result.exit_code == 0
-    assert result.stdout.strip() == json.dumps(deployment_meta, indent=4)
+    assert result.stdout.strip() == json.dumps(asdict(deployment_meta), indent=4)
 
 
-@pytest.mark.xfail()
-def test_manage_show_unknown_deployment(manage, deployment):
+def test_manage_show_unknown_deployment(manage, put_parameters):
     unknown = "unknown-deployment"
     result = manage(f"{unknown} show")
     assert result.exit_code == 1
-    assert result.stderr.strip() == f"Deployment not found: {unknown}"
+    assert (
+        result.stderr.strip()
+        == f"Deployment not found: no deployment named '{unknown}' was found in the parameter store"
+    )
+
+
+def test_list_lambas(deployment, manage, make_lambdas, put_parameters):
+    result = deployment("list-lambdas")
+    assert result.exit_code == 0
+    assert result.stdout.strip() == json.dumps(
+        {
+            "Functions": [
+                "process",
+            ],
+        },
+        indent=4,
+    )
+
+
+@pytest.mark.xfail()
+def test_process(deployment, manage, make_lambdas):
+    result = deployment('process {"a": "payload to test process command"}')
+    assert result.exit_code == 0
+    assert result.stdout.strip == json.dumps('{"a": "check"}')
 
 
 @pytest.mark.xfail()
@@ -96,7 +101,8 @@ def test_manage_get_path(deployment, project):
 
 
 @pytest.mark.xfail()
-def test_manage_refresh(deployment, mock_lambda_get_conf, lambda_env):
+@pytest.mark.usefixtures("_mock_lambda_get_conf")
+def test_manage_refresh(deployment, lambda_env):
     result = deployment("refresh")
     assert result.exit_code == 0
     new = json.loads(deployment("show").stdout)
@@ -123,7 +129,6 @@ def test_manage_get_execution_by_payload_id(
     assert sfn_exe1["executionArn"] != sfn_exe2["executionArn"]
 
 
-@pytest.mark.xfail()
 @pytest.mark.parametrize(
     ("command", "expect_exit_zero"),
     [
@@ -131,6 +136,6 @@ def test_manage_get_execution_by_payload_id(
         ("false", False),
     ],
 )
-def test_call_cli_return_values(deployment, command, expect_exit_zero):
+def test_call_cli_return_values(deployment, command, expect_exit_zero, put_parameters):
     result = deployment(f"call {command}")
     assert result.exit_code == 0 if expect_exit_zero else result.exit_code != 0
