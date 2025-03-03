@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 import boto3
-import click
 
 from cirrus.lib.utils import get_client
 from cirrus.management.exceptions import MissingParameterError
@@ -47,16 +46,17 @@ class ParamStoreDeployment:
     def __init__(self, deployment_key: str):
         self.prefix = deployment_key
 
-    def fetch(self, session=boto3.Session) -> dict[str, str]:
+    def fetch(self, session=boto3.Session) -> dict[str, Any]:
         """Get parameters for specific deployment"""
 
         parameters = DeploymentPointer._get_parameters(self.prefix, session)
-        env = {}
+        vars = {}
         for param in parameters:
-            var = {param["Name"].split(self.prefix)[1]: param["Value"]}
-            env.update(var)
-        click.echo(f"env: {env}")
-        return env
+            var_name = param["Name"].split(self.prefix)[1]
+            if var_name in REQUIRED_VARS:
+                vars.update({var_name: param["Value"]})
+
+        return vars
 
 
 @dataclass
@@ -113,7 +113,6 @@ class DeploymentPointer:
     ):
         """Get pointer to deployment in param store.  Pointer is one param"""
         ssm = get_client("ssm", region=region, session=session)
-        click.echo(f"name={DEPLOYMENTS_PREFIX}/{deployment_name}")
         return cls._from_parameter(
             ssm.get_parameter(Name=f"{DEPLOYMENTS_PREFIX}{deployment_name}")[
                 "Parameter"
@@ -135,12 +134,11 @@ class DeploymentPointer:
 
         return [param["Name"].split(DEPLOYMENTS_PREFIX)[1] for param in parameters]
 
-    @classmethod
-    def validate_vars(cls, environment: dict[str, Any]):
+    def validate_vars(self, environment: dict[str, Any]):
         for field in REQUIRED_VARS:
             if field not in environment:
                 raise MissingParameterError(field)
-        return environment
+        return {"name": self.name, "environment": environment}
 
     def get_configuration(
         self,

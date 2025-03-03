@@ -92,7 +92,7 @@ def manage(ctx, session: boto3.Session, deployment: str, profile: str | None = N
 def show(deployment):
     """Show a deployment configuration"""
     color = "blue"
-    click.secho(deployment.asjson(indent=4), fg=color)
+    click.secho(json.dumps(deployment.environment, indent=4), fg=color)
 
 
 @manage.command("run-workflow")
