@@ -3,13 +3,12 @@ import json
 import pytest
 
 from cirrus.management.deployment import (
-    DEFAULT_DEPLOYMENTS_DIR_NAME,
     Deployment,
 )
 
 from tests.management.conftest import mock_parameters
 
-DEPLYOMENT_NAME = "lion"
+MOCK_DEPLYOMENT_NAME = "lion"
 STACK_NAME = "cirrus-test"
 MOCK_CIRRUS_PREFIX = "ts-lion-dev-cirrus"
 
@@ -23,15 +22,15 @@ def manage(invoke):
 
 
 @pytest.fixture()
-def deployment(manage):
+def deployment(manage, queue, payloads, statedb, workflow):
     def _manage(deployment, cmd):
         return manage(f"{deployment.name} {cmd}")
 
     Deployment.__call__ = _manage
 
     return Deployment(
-        DEPLYOMENT_NAME,
-        mock_parameters(DEPLYOMENT_NAME),
+        MOCK_DEPLYOMENT_NAME,
+        mock_parameters(queue, payloads, statedb, workflow, MOCK_DEPLYOMENT_NAME),
     )
 
 
@@ -59,7 +58,7 @@ def test_list_deployments(invoke, put_parameters):
     assert result.stdout.strip() == "lion\nsquirrel-dev"
 
 
-def test_list_lambas(deployment, manage, make_lambdas, put_parameters):
+def test_list_lambas(deployment, make_lambdas, put_parameters):
     result = deployment("list-lambdas")
     assert result.exit_code == 0
     assert result.stdout.strip() == json.dumps(
@@ -72,23 +71,19 @@ def test_list_lambas(deployment, manage, make_lambdas, put_parameters):
     )
 
 
+def test_get_execution_by_arn(deployment, st_func_execution_arn):
+    result = deployment(
+        f"get-execution --arn {st_func_execution_arn}",
+    )
+    assert result.exit_code == 0
+    assert json.loads(result.stdout.strip())["executionArn"] == st_func_execution_arn
+
+
 @pytest.mark.xfail()
 def test_process(deployment, manage, make_lambdas):
     result = deployment('process {"a": "payload to test process command"}')
     assert result.exit_code == 0
     assert result.stdout.strip == json.dumps('{"a": "check"}')
-
-
-@pytest.mark.xfail()
-def test_manage_get_path(deployment, project):
-    result = deployment("get-path")
-    assert result.exit_code == 0
-    assert result.stdout.strip() == str(
-        project.dot_dir.joinpath(
-            DEFAULT_DEPLOYMENTS_DIR_NAME,
-            f"{DEPLYOMENT_NAME}.json",
-        ),
-    )
 
 
 @pytest.mark.xfail()
@@ -106,16 +101,18 @@ def test_manage_get_execution_by_payload_id(
     deployment,
     basic_payloads,
     statedb,
+    wfem,
+    put_parameters,
+    st_func_execution_arn,
 ) -> None:
     """Adds causes two workflow executions, and confirms that the second call
     to get_execution_by_payload_id gets a different executionArn value from the
     first execution."""
-    deployment.set_env()
-    basic_payloads.process()
+    basic_payloads.process(wfem)
     pid = basic_payloads[0]["id"]
     sfn_exe1 = deployment.get_execution_by_payload_id(pid)
     statedb.set_aborted(pid, execution_arn=sfn_exe1["executionArn"])
-    basic_payloads.process()
+    basic_payloads.process(wfem)
     sfn_exe2 = deployment.get_execution_by_payload_id(pid)
     assert sfn_exe1["executionArn"] != sfn_exe2["executionArn"]
 

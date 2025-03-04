@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 pass_deployment = click.make_pass_decorator(Deployment)
 
 
-def _get_execution(deployment, arn=None, payload_id=None):
+def _get_execution(deployment: Deployment, arn=None, payload_id=None):
     if payload_id:
         return deployment.get_execution_by_payload_id(payload_id)
     return deployment.get_execution(arn)

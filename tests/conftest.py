@@ -10,6 +10,7 @@ import moto
 import pytest
 
 from cirrus.lib.eventdb import EventDB
+from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import get_client
 
@@ -90,12 +91,6 @@ def stepfunctions():
 def iam():
     with moto.mock_iam():
         yield get_client("iam", region=MOCK_REGION)
-
-
-@pytest.fixture()
-def statedb_table_name(dynamo, statedb_schema) -> str:
-    dynamo.create_table(**statedb_schema)
-    return statedb_schema["TableName"]
 
 
 @pytest.fixture()
@@ -190,3 +185,23 @@ def _environment() -> Iterator[None]:
     finally:
         os.environ.clear()
         os.environ = current_env  # noqa: B003
+
+
+@pytest.fixture()
+def execute_state_function(stepfunctions, workflow, put_parameters):
+    state_machine_arn = workflow["stateMachineArn"]
+    os.environ["CIRRUS_BASE_WORKFLOW_ARN"] = state_machine_arn[: -len("test-workflow1")]
+    return stepfunctions.start_execution(
+        stateMachineArn=state_machine_arn,
+        name="test-execution",
+    )
+
+
+@pytest.fixture()
+def st_func_execution_arn(execute_state_function):
+    return execute_state_function["executionArn"]
+
+
+@pytest.fixture()
+def wfem(statedb, eventdb):
+    return WorkflowEventManager(statedb=statedb, eventdb=eventdb)

@@ -28,6 +28,6 @@ class NoExecutionsError(CirrusError):
 
 
 class MissingParameterError(KeyError):
-    def __init__(self, parameter, *args, **kwargs):
-        msg = f"A required environment variable was not found: {parameter}"
+    def __init__(self, parameters, *args, **kwargs):
+        msg = f"A required environment variable(s) was not found: {parameters}"
         super().__init__(msg, *args, **kwargs)

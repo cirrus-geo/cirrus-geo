@@ -135,9 +135,9 @@ class DeploymentPointer:
         return [param["Name"].split(DEPLOYMENTS_PREFIX)[1] for param in parameters]
 
     def validate_vars(self, environment: dict[str, Any]):
-        for field in REQUIRED_VARS:
-            if field not in environment:
-                raise MissingParameterError(field)
+        missing = [field for field in REQUIRED_VARS if field not in environment]
+        if missing:
+            raise MissingParameterError(", ".join(missing))
         return {"name": self.name, "environment": environment}
 
     def get_configuration(

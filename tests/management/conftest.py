@@ -14,8 +14,6 @@ from cirrus.management.cli import cli
 from cirrus.management.deployment_pointer import DEPLOYMENTS_PREFIX
 from click.testing import CliRunner
 
-from tests.conftest import MOCK_REGION
-
 
 @pytest.fixture()
 def timestream_write_client():
@@ -78,25 +76,21 @@ def basic_payloads(fixtures, statedb):
     )
 
 
-@pytest.fixture()
-def parameter_store_response():
-    with Path.open(PAYLOADS / "parameter_store_response.json") as f:
-        return json.load(f)["Parameters"]
-
-
-def mock_parameters(deployment_name: str, region: str = MOCK_REGION):
+def mock_parameters(queue, payloads, statedb, workflow, deployment_name):
     return {
-        "CIRRUS_PAYLOAD_BUCKET": f"filmdrop-{deployment_name}-{region}-cirrus-random-payload-bucket-000000",
-        "CIRRUS_BASE_WORKFLOW_ARN": f"arn:aws:states:{region}:00000000:stateMachine:fd-{deployment_name}-dev-cirrus-",
-        "CIRRUS_PROCESS_QUEUE_URL": f"https://sqs.{region}.amazonaws.com/000000000/fd-{deployment_name}-dev-cirrus-random-queue-name",
-        "CIRRUS_STATE_DB": f"fd-{deployment_name}-dev-cirrus-random-state-db",
+        "CIRRUS_PAYLOAD_BUCKET": payloads,
+        "CIRRUS_BASE_WORKFLOW_ARN": workflow["stateMachineArn"].replace(
+            "workflow1",
+            "",
+        ),
+        "CIRRUS_PROCESS_QUEUE_URL": queue["QueueUrl"],
+        "CIRRUS_STATE_DB": statedb.table_name,
         "CIRRUS_PREFIX": f"fd-{deployment_name}-dev-cirrus",
     }
 
 
 @pytest.fixture()
-def put_parameters(ssm):
-    # don't want slashes in parameter arn values but want in param path
+def put_parameters(ssm, queue, payloads, statedb, workflow):
     for deployment_name in ["lion", "squirrel-dev"]:
         # put pointer parameters
         deployment_key = f"/deployment/{deployment_name}/"
@@ -111,7 +105,13 @@ def put_parameters(ssm):
             Type="String",
         )
         # put mock deployment parameters
-        for param_name, value in mock_parameters(deployment_name).items():
+        for param_name, value in mock_parameters(
+            queue,
+            payloads,
+            statedb,
+            workflow,
+            deployment_name,
+        ).items():
             name = f"{deployment_key}{param_name}"
             ssm.put_parameter(
                 Name=name,
