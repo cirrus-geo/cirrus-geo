@@ -33,7 +33,7 @@ def test_fetch(ssm, put_parameters):
     [
         pytest.param(
             VALID_ENV,
-            {"name": MOCK_DEPLYOMENT_NAME, "environment": VALID_ENV},
+            VALID_ENV,
             id="valid env passes",
         ),
         pytest.param(

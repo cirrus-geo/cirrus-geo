@@ -138,9 +138,9 @@ class DeploymentPointer:
         missing = [field for field in REQUIRED_VARS if field not in environment]
         if missing:
             raise MissingParameterError(", ".join(missing))
-        return {"name": self.name, "environment": environment}
+        return environment
 
-    def get_configuration(
+    def get_environment(
         self,
         session: boto3.Session,
     ) -> dict[str, Any]:

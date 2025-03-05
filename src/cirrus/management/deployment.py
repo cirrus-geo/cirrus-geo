@@ -65,7 +65,11 @@ class Deployment:
         pointer: DeploymentPointer,
         session: boto3.Session,
     ):
-        return cls(session=session, **pointer.get_configuration(session=session))
+        return cls(
+            session=session,
+            environment=pointer.get_environment(session=session),
+            name=pointer.name,
+        )
 
     @classmethod
     def from_name(cls, name: str, session: boto3.Session) -> Deployment:

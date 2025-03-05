@@ -55,7 +55,7 @@ def test_manage_show_unknown_deployment(manage, put_parameters):
 def test_list_deployments(invoke, put_parameters):
     result = invoke("list-deployments")
     assert result.exit_code == 0
-    assert result.stdout.strip() == "lion\nsquirrel-dev"
+    assert result.stdout.strip().splitlines() == ["lion", "squirrel-dev"]
 
 
 def test_list_lambas(deployment, make_lambdas, put_parameters):
