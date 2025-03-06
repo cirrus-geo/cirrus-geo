@@ -46,17 +46,13 @@ class ParamStoreDeployment:
     def __init__(self, deployment_key: str):
         self.prefix = deployment_key
 
-    def fetch(self, session=boto3.Session) -> dict[str, Any]:
-        """Get parameters for specific deployment"""
+    def fetch(self, session=boto3.Session) -> dict[str, str]:
+        """Get all parameters for specific deployment"""
 
         parameters = DeploymentPointer._get_parameters(self.prefix, session)
-        vars = {}
-        for param in parameters:
-            var_name = param["Name"].split(self.prefix)[1]
-            if var_name in REQUIRED_VARS:
-                vars.update({var_name: param["Value"]})
-
-        return vars
+        return {
+            param["Name"].split(self.prefix)[1]: param["Value"] for param in parameters
+        }
 
 
 @dataclass
@@ -134,7 +130,7 @@ class DeploymentPointer:
 
         return [param["Name"].split(DEPLOYMENTS_PREFIX)[1] for param in parameters]
 
-    def validate_vars(self, environment: dict[str, Any]):
+    def validate_vars(self, environment: dict[str, str]):
         missing = [field for field in REQUIRED_VARS if field not in environment]
         if missing:
             raise MissingParameterError(", ".join(missing))
@@ -143,7 +139,7 @@ class DeploymentPointer:
     def get_environment(
         self,
         session: boto3.Session,
-    ) -> dict[str, Any]:
+    ) -> dict[str, str]:
         """Get env vars for single named deployment"""
 
         return self.validate_vars(self.pointer.resolve().fetch(session=session))
