@@ -131,7 +131,7 @@ def run_workflow(deployment, timeout, raw, poll_interval):
 )
 @raw_option
 @pass_deployment
-def get_payload(deployment, payload_id, raw):
+def get_payload(deployment: Deployment, payload_id, raw):
     """Get a payload from S3 using its ID"""
 
     def download(output_fileobj):

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any, Self
 
 import boto3
@@ -22,9 +23,13 @@ REQUIRED_VARS = [
 ]
 
 
+class PointerType(StrEnum):
+    ParamStore = "parameter_store"
+
+
 @dataclass()
 class Pointer:
-    _type: str
+    _type: PointerType
     value: str
 
     @classmethod

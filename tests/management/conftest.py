@@ -85,7 +85,7 @@ def mock_parameters(queue, payloads, statedb, workflow, deployment_name):
         ),
         "CIRRUS_PROCESS_QUEUE_URL": queue["QueueUrl"],
         "CIRRUS_STATE_DB": statedb.table_name,
-        "CIRRUS_PREFIX": f"fd-{deployment_name}-dev-cirrus",
+        "CIRRUS_PREFIX": f"fd-{deployment_name}-dev-cirrus-",
     }
 
 
