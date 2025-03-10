@@ -1,5 +1,5 @@
 Cirrus CLI management Tool - CLIrrus
-==========================
+====================================
 
 Introduction
 ------------
@@ -39,24 +39,32 @@ deployments and the cirrus CLI tool and you want to jump right into using the
 CLI tool here is what an example workflow might look like:
 
 1. Install requirements
-```
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
-```
+
+.. code-block:: bash
+
+    python3.12 -m venv .venv
+    source .venv/bin/activate
+    pip install -r requirements-dev.txt -r requirements-cli.txt -r requirements.txt
+
 2. Authenticate
-```
-aws sso login --profile your-config-profile-here
-```
+
+.. code-block:: bash
+
+    aws sso login --profile your-config-profile-here
+
 3. Use CLIrrus
-```
-cirrus mgmt deployment-name-here list-lambdas
-```
+
+.. code-block:: bash
+
+    cirrus mgmt deployment-name-here list-lambdas
+
 If your cirrus resources are in a different region from the account sso region
 you can use a region flag
-```
-cirrus --region us-west-2 mgmt deployment-name-here list-lambdas
-```
+
+.. code-block:: bash
+
+    cirrus --region us-west-2 mgmt deployment-name-here list-lambdas
+
 
 And thats it!  If you would like more in depth explanations on how to use the
 tool, please proceed.
