@@ -13,6 +13,7 @@ from cirrus.lib.eventdb import EventDB
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import get_client
+from click.testing import CliRunner
 
 MOCK_REGION = "us-east-1"
 
@@ -205,3 +206,8 @@ def st_func_execution_arn(execute_state_function):
 @pytest.fixture()
 def wfem(statedb, eventdb):
     return WorkflowEventManager(statedb=statedb, eventdb=eventdb)
+
+
+@pytest.fixture()
+def runner():
+    return CliRunner()
