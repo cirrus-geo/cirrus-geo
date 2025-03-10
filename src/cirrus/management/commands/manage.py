@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 pass_deployment = click.make_pass_decorator(Deployment)
 
 
-def _get_execution(deployment, arn=None, payload_id=None):
+def _get_execution(deployment: Deployment, arn=None, payload_id=None):
     if payload_id:
         return deployment.get_execution_by_payload_id(payload_id)
     return deployment.get_execution(arn)
@@ -92,7 +92,7 @@ def manage(ctx, session: boto3.Session, deployment: str, profile: str | None = N
 def show(deployment):
     """Show a deployment configuration"""
     color = "blue"
-    click.secho(deployment.asjson(indent=4), fg=color)
+    click.secho(json.dumps(deployment.environment, indent=4), fg=color)
 
 
 @manage.command("run-workflow")
@@ -131,7 +131,7 @@ def run_workflow(deployment, timeout, raw, poll_interval):
 )
 @raw_option
 @pass_deployment
-def get_payload(deployment, payload_id, raw):
+def get_payload(deployment: Deployment, payload_id, raw):
     """Get a payload from S3 using its ID"""
 
     def download(output_fileobj):
@@ -204,7 +204,7 @@ def get_execution_output(deployment, arn, payload_id, raw):
     "payload-id",
 )
 @pass_deployment
-def get_state(deployment, payload_id):
+def get_state(deployment: Deployment, payload_id):
     """Get the statedb record for a payload ID"""
     state = deployment.get_payload_state(payload_id)
     click.echo(json.dumps(state, indent=4))
@@ -212,7 +212,7 @@ def get_state(deployment, payload_id):
 
 @manage.command()
 @pass_deployment
-def process(deployment):
+def process(deployment: Deployment):
     """Enqueue a payload (from stdin) for processing"""
     click.echo(json.dumps(deployment.process_payload(sys.stdin), indent=4))
 
@@ -221,11 +221,15 @@ def process(deployment):
 @click.argument(
     "lambda-name",
 )
+@pass_session
 @pass_deployment
-def invoke_lambda(deployment, lambda_name):
+def invoke_lambda(deployment: Deployment, session, lambda_name):
     """Invoke lambda with event (from stdin)"""
     click.echo(
-        json.dumps(deployment.invoke_lambda(sys.stdin.read(), lambda_name), indent=4),
+        json.dumps(
+            deployment.invoke_lambda(sys.stdin.read(), lambda_name, session),
+            indent=4,
+        ),
     )
 
 
@@ -296,13 +300,14 @@ def _call(ctx, deployment, command, include_user_vars):
 
 
 @manage.command()
+@pass_session
 @pass_deployment
 @click.pass_context
-def list_lambdas(ctx, deployment):
+def list_lambdas(ctx, deployment: Deployment, session):
     """List lambda functions"""
     click.echo(
         json.dumps(
-            {"Functions": deployment.get_lambda_functions()},
+            {"Functions": deployment.get_lambda_functions(session)},
             indent=4,
             default=str,
         ),

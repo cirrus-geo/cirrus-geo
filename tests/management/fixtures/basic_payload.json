@@ -21,7 +21,7 @@
             "collection": "dummy-collection"
         }
     ],
-    "process": {
+    "process": [{
         "workflow": "workflow1",
         "replace": true,
         "upload_options": {
@@ -36,6 +36,6 @@
                 "param1": true
             }
         }
-    },
+    }],
     "id": "test/workflow-workflow1/test-item"
 }
