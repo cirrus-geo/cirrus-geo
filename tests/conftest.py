@@ -189,7 +189,7 @@ def _environment() -> Iterator[None]:
 
 
 @pytest.fixture()
-def execute_state_function(stepfunctions, workflow, put_parameters):
+def execute_state_machine(stepfunctions, workflow, put_parameters):
     state_machine_arn = workflow["stateMachineArn"]
     os.environ["CIRRUS_BASE_WORKFLOW_ARN"] = state_machine_arn[: -len("test-workflow1")]
     return stepfunctions.start_execution(
@@ -199,8 +199,8 @@ def execute_state_function(stepfunctions, workflow, put_parameters):
 
 
 @pytest.fixture()
-def st_func_execution_arn(execute_state_function):
-    return execute_state_function["executionArn"]
+def st_func_execution_arn(execute_state_machine):
+    return execute_state_machine["executionArn"]
 
 
 @pytest.fixture()

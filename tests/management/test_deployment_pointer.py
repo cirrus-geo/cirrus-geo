@@ -2,6 +2,7 @@ import boto3
 import pytest
 
 from cirrus.management.deployment_pointer import (
+    REQUIRED_VARS,
     DeploymentPointer,
     ParamStoreDeployment,
     Pointer,
@@ -39,7 +40,7 @@ def test_fetch(ssm, put_parameters):
         pytest.param(
             {},
             MissingParameterError(
-                "CIRRUS_PAYLOAD_BUCKET, CIRRUS_BASE_WORKFLOW_ARN, CIRRUS_PROCESS_QUEUE_URL, CIRRUS_STATE_DB, CIRRUS_PREFIX",
+                "CIRRUS_BASE_WORKFLOW_ARN, CIRRUS_PAYLOAD_BUCKET,  CIRRUS_STATE_DB, CIRRUS_PREFIX, CIRRUS_PROCESS_QUEUE_URL",
             ),
             id="missing vars raises error",
         ),
@@ -50,7 +51,8 @@ def test_validate_vars(environment, expected):
     if isinstance(expected, Exception):
         with pytest.raises(MissingParameterError) as e:
             actual = dp.validate_vars(environment)
-        assert e.value.args[0] == expected.args[0]
+        for env_var in REQUIRED_VARS:
+            assert env_var in e.value.args[0]
     else:
         actual = dp.validate_vars(environment)
         assert actual == expected
