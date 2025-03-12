@@ -45,9 +45,9 @@ def get_parameters_by_path(
         )
 
         yield from resp["Parameters"]
-        next_token = resp.get("NextToken")
+        next_token = resp.get("NextToken", "")
 
-        if not next_token:
+        if next_token == "":
             break
 
 
