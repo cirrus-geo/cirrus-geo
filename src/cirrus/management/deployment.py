@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import dataclasses
 import json
 import logging
 import os
 
 from collections.abc import Iterator
 from datetime import UTC, datetime
-from pathlib import Path
 from subprocess import check_call
 from time import sleep, time
 from typing import IO, Any
@@ -17,8 +15,11 @@ import boto3
 
 from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.utils import get_client
-from cirrus.management import exceptions
 from cirrus.management.deployment_pointer import DeploymentPointer
+from cirrus.management.exceptions import (
+    NoExecutionsError,
+    PayloadNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,68 +38,53 @@ def _maybe_use_buffer(fileobj: IO):
     return fileobj.buffer if hasattr(fileobj, "buffer") else fileobj
 
 
-@dataclasses.dataclass
-class DeploymentMeta:
-    name: str
-    created: str
-    updated: str
-    stackname: str
-    profile: str
-    environment: dict
-    user_vars: dict
-    config_version: int
-
-    def save(self, path: Path) -> int:
-        return path.write_text(self.asjson(indent=4))
-
-    def asdict(self) -> dict[str, Any]:
-        return dataclasses.asdict(self)
-
-    def asjson(self, *args, **kwargs) -> str:
-        return json.dumps(self.asdict(), *args, **kwargs)
-
-
-@dataclasses.dataclass
-class Deployment(DeploymentMeta):
+class Deployment:
     def __init__(
         self,
-        *args,
+        name: str,
+        environment: dict,
         session: boto3.Session | None = None,
-        **kwargs,
     ) -> None:
-        super().__init__(*args, **kwargs)
+        self.name = name
+        self.environment = environment
         self.session = session if session else boto3.Session()
         self._functions: list[str] | None = None
 
     @staticmethod
     def yield_deployments(
-        region: str | None = None,
-        session: boto3.Session | None = None,
-    ) -> Iterator[DeploymentPointer]:
-        yield from DeploymentPointer.list(region=region, session=session)
+        session: boto3.Session,
+    ) -> Iterator[str]:
+        yield from DeploymentPointer.list_deployments(session=session)
 
     @classmethod
     def from_pointer(
         cls,
         pointer: DeploymentPointer,
-        session: boto3.Session | None = None,
-    ) -> Deployment:
-        return cls(session=session, **pointer.get_config(session=session))
+        session: boto3.Session,
+    ):
+        return cls(
+            session=session,
+            environment=pointer.get_environment(session=session),
+            name=pointer.name,
+        )
 
     @classmethod
-    def from_name(cls, name: str, session: boto3.Session | None = None) -> Deployment:
-        dp = DeploymentPointer.get(name, session=session)
+    def from_name(cls, name: str, session: boto3.Session) -> Deployment:
+        dp = DeploymentPointer.get_pointer(name, session=session)
         return cls.from_pointer(dp, session=session)
 
-    def get_lambda_functions(self):
+    def get_lambda_functions(self, session):
         if self._functions is None:
-            aws_lambda = get_client("lambda")
+            aws_lambda = get_client("lambda", session)
 
             def deployment_functions_filter(response):
                 return [
-                    f["FunctionName"].replace(f"{self.stackname}-", "")
+                    f["FunctionName"].replace(
+                        f"{self.environment["CIRRUS_PREFIX"]}",
+                        "",
+                    )
                     for f in response["Functions"]
-                    if f["FunctionName"].startswith(self.stackname)
+                    if f["FunctionName"].startswith(self.environment["CIRRUS_PREFIX"])
                 ]
 
             resp = aws_lambda.list_functions()
@@ -107,13 +93,6 @@ class Deployment(DeploymentMeta):
                 resp = aws_lambda.list_functions(Marker=resp["NextMarker"])
                 self._functions += deployment_functions_filter(resp)
         return self._functions
-
-    def set_env(self, include_user_vars=False):
-        os.environ.update(self.environment)
-        if include_user_vars:
-            os.environ.update(self.user_vars)
-        if self.profile:
-            os.environ["AWS_PROFILE"] = self.profile
 
     def exec(self, command, include_user_vars=True, isolated=False):
         import os
@@ -124,7 +103,7 @@ class Deployment(DeploymentMeta):
                 env.update(self.user_vars)
             os.execlpe(command[0], *command, env)  # noqa: S606
 
-        self.set_env(include_user_vars=include_user_vars)
+        os.environ.update(self.environment)
         os.execlp(command[0], *command)  # noqa: S606
 
     def call(self, command, include_user_vars=True, isolated=False):
@@ -134,7 +113,7 @@ class Deployment(DeploymentMeta):
                 env.update(self.user_vars)
             check_call(command, env=env)  # noqa: S603
         else:
-            self.set_env(include_user_vars=include_user_vars)
+            os.environ.update(self.environment)
             check_call(command)  # noqa: S603
 
     def get_payload_state(self, payload_id):
@@ -152,7 +131,7 @@ class Deployment(DeploymentMeta):
         state = _get_payload_item_from_statedb(statedb, payload_id)
 
         if not state:
-            raise exceptions.PayloadNotFoundError(payload_id)
+            raise PayloadNotFoundError(payload_id)
         return state
 
     def process_payload(self, payload):
@@ -206,17 +185,17 @@ class Deployment(DeploymentMeta):
         try:
             exec_arn = execs[-1]
         except IndexError as e:
-            raise exceptions.NoExecutionsError(payload_id) from e
+            raise NoExecutionsError(payload_id) from e
 
         return self.get_execution(exec_arn)
 
-    def invoke_lambda(self, event, function_name):
+    def invoke_lambda(self, event, function_name, session):
         aws_lambda = get_client("lambda", session=self.session)
-        if function_name not in self.get_lambda_functions():
+        if function_name not in self.get_lambda_functions(session):
             raise ValueError(
                 f"lambda named '{function_name}' not found in deployment '{self.name}'",
             )
-        full_name = f"{self.stackname}-{function_name}"
+        full_name = f"{self.environment['CIRRUS_PREFIX']}-{function_name}"
         response = aws_lambda.invoke(FunctionName=full_name, Payload=event)
         if response["StatusCode"] < 200 or response["StatusCode"] > 299:
             raise RuntimeError(response)
@@ -281,8 +260,6 @@ class Deployment(DeploymentMeta):
         from .utils.templating import template_payload
 
         _vars = self.environment.copy()
-        if include_user_vars:
-            _vars.update(self.user_vars)
 
         return template_payload(
             payload,

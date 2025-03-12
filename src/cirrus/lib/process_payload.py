@@ -82,7 +82,7 @@ class ProcessPayload(dict):
         self.tasks = self.process["tasks"]
 
         if "workflow-" not in self["id"]:
-            raise ValueError(f'Invalid payload id: {self["id"]}')
+            raise ValueError(f"Invalid payload id: {self['id']}")
 
         for item in self.features:
             if "links" not in item:
@@ -130,7 +130,7 @@ class ProcessPayload(dict):
             new["process"][0] = process
             if "chain_filter" in process:
                 jsonfilter = jsonpath.parse(
-                    f'$.features[?({process["chain_filter"]})]',
+                    f"$.features[?({process['chain_filter']})]",
                 )
                 new["features"] = [match.value for match in jsonfilter.find(new)]
             yield new
