@@ -3,19 +3,32 @@ CLIrrus commands
 
 CLIrrus currently support a number of commands.
 
-list-deployments: Return a list of all named cirrus deployments available for interacting with.  Names returned here will be the name strings needed to run commands on a specific deployment.
+- *list-deployments:* Return a list of all named cirrus deployments available for interacting with.  Names returned here will be the name strings needed to run commands on a specific deployment.  Will default to searching region in config file
 
-manage (mgmt): A wrapper for commands to interact with a specific named deployment
+    .. code-block:: bash
 
-payload: a wrapper for commands for working with payloads.
+        cirrus --region us-west-2 list-deployments
+
+- *manage (mgmt):* A wrapper for commands to interact with a specific named deployment
+
+- *payload:* a wrapper for commands for working with payloads.
 
 
 Manage commands
 ---------------
 - *call:*
-    Run an executable, in a new process, with the...
+    Run an executable, in a new process, with the deployment environment vars loaded
+
+    .. code-block:: bash
+
+        cirrus mgmt name-dev call
 - *exec:*
-    Run an executable with the deployment environment...
+    Run an executable with the deployment environment with vars loaded
+
+    .. code-block:: bash
+
+        cirrus mgmt name-dev exec
+
 - *get-execution:*
     Get a workflow execution using its ARN or its payload-id
 
@@ -108,7 +121,7 @@ Manage commands
         cirrus mgmt name-dev show
 
 - *template-payload:*
-    Template a payload using a deployment's vars
+    Template a payload using a deployment's vars and '$' based substitution
 
     .. code-block:: bash
 
@@ -120,3 +133,36 @@ Payload commands
 
 - *get-id:*
     Get/generate an ID for a given payload
+
+    .. code-block:: bash
+
+        cirrus payload get-id
+        {
+            "type": "FeatureCollection",
+            "process": [{"workflow": "example"}],
+            "features": []
+        }
+
+- *template:*
+    Template a payload (from stdin) with user supplied variables with '$' based substitution
+
+    .. code-block:: bash
+
+        cirrus payload template --var EXAMPLE_VAR VALUE
+        {
+            "type": "FeatureCollection",
+            "process": [{"workflow": $EXAMPLE_VAR}],
+            "features": []
+        }
+- *validate:*
+
+    Validate an input payload (from stdin) is a valid cirrus payload
+
+    .. code-block:: bash
+
+        cirrus payload validate
+        {
+            "type": "FeatureCollection",
+            "process": [{"workflow": "example"}],
+            "features": []
+        }
