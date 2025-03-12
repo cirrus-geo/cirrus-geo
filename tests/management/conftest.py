@@ -1,7 +1,6 @@
 import json
 import shlex
 
-from pathlib import Path
 from unittest.mock import patch
 
 import boto3
@@ -26,8 +25,6 @@ def timestream_write_client():
 orig = botocore.client.BaseClient._make_api_call
 
 LAMBDA_ENV_VARS = {"var": "value"}
-
-PAYLOADS = Path(__file__).parent / "fixtures"
 
 
 @pytest.fixture()

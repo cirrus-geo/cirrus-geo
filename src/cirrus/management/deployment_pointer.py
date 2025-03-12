@@ -2,29 +2,53 @@ from __future__ import annotations
 
 import json
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Self
 
 import boto3
 
+from botocore.exceptions import ClientError
+
 from cirrus.lib.utils import get_client
-from cirrus.management.exceptions import MissingParameterError
+from cirrus.management.exceptions import DeploymentNotFoundError, MissingParameterError
 
 DEPLOYMENTS_PREFIX = "/cirrus/deployments/"
 
 # core required vars.  Not exclusive.
-REQUIRED_VARS = [
+REQUIRED_VARS = {
     "CIRRUS_PAYLOAD_BUCKET",
     "CIRRUS_BASE_WORKFLOW_ARN",
     "CIRRUS_PROCESS_QUEUE_URL",
     "CIRRUS_STATE_DB",
     "CIRRUS_PREFIX",
-]
+}
 
 
 class PointerType(StrEnum):
     ParamStore = "parameter_store"
+
+
+def get_parameters_by_path(
+    path: str,
+    session: boto3.Session | None = None,
+) -> Iterator[dict[str, Any]]:
+    ssm = get_client("ssm", session=session)
+    next_token = ""
+
+    while True:
+        resp = ssm.get_parameters_by_path(
+            Path=path,
+            Recursive=True,
+            NextToken=next_token,
+        )
+
+        yield from resp["Parameters"]
+        next_token = resp.get("NextToken", "")
+
+        if next_token == "":
+            break
 
 
 @dataclass()
@@ -41,7 +65,7 @@ class Pointer:
 
     def resolve(self):
         match self._type:
-            case "parameter_store":
+            case PointerType.ParamStore:
                 return ParamStoreDeployment(self.value)
             case _ as unknown:
                 raise TypeError(f"Unsupported pointer type '{unknown}'")
@@ -54,9 +78,9 @@ class ParamStoreDeployment:
     def fetch(self, session=boto3.Session) -> dict[str, str]:
         """Get all parameters for specific deployment"""
 
-        parameters = DeploymentPointer._get_parameters(self.prefix, session)
         return {
-            param["Name"].split(self.prefix)[1]: param["Value"] for param in parameters
+            param["Name"].removeprefix(self.prefix): param["Value"]
+            for param in get_parameters_by_path(self.prefix, session)
         }
 
 
@@ -81,31 +105,6 @@ class DeploymentPointer:
         )
 
     @classmethod
-    def _get_parameters_by_path(cls, ssm, prefix: str, next: str = ""):
-        return ssm.get_parameters_by_path(
-            Path=prefix,
-            Recursive=True,
-            NextToken=next,
-        )
-
-    @classmethod
-    def _get_parameters(
-        cls,
-        prefix: str,
-        session: boto3.Session,
-    ) -> list[dict[str, Any]]:
-        ssm = get_client("ssm", region=session.region_name, session=session)
-        resp = cls._get_parameters_by_path(ssm, prefix)
-        parameters = resp["Parameters"]
-
-        # handle pagination
-        while "NextToken" in resp:
-            resp = cls._get_parameters_by_path(ssm, prefix, resp["NextToken"])
-            parameters = parameters + resp["Parameters"]
-
-        return parameters
-
-    @classmethod
     def get_pointer(
         cls,
         deployment_name: str,
@@ -114,29 +113,31 @@ class DeploymentPointer:
     ):
         """Get pointer to deployment in param store.  Pointer is one param"""
         ssm = get_client("ssm", region=region, session=session)
-        return cls._from_parameter(
-            ssm.get_parameter(Name=f"{DEPLOYMENTS_PREFIX}{deployment_name}")[
-                "Parameter"
-            ],
-            name=deployment_name,
-        )
+        try:
+            parameter = ssm.get_parameter(
+                Name=f"{DEPLOYMENTS_PREFIX}{deployment_name}",
+            )["Parameter"]
+            return cls._from_parameter(parameter, name=deployment_name)
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ParameterNotFound":
+                raise DeploymentNotFoundError(deployment_name) from e
+            raise
 
     @classmethod
     def list_deployments(
         cls,
         session: boto3.Session,
-    ) -> list[str]:
+    ) -> Iterator[str]:
         """Retrieve and list names of available deployments in parameter
         store"""
-        parameters = cls._get_parameters(
-            DEPLOYMENTS_PREFIX,
-            session=session,
+
+        yield from (
+            param["Name"].removeprefix(DEPLOYMENTS_PREFIX)
+            for param in get_parameters_by_path(DEPLOYMENTS_PREFIX, session=session)
         )
 
-        return [param["Name"].split(DEPLOYMENTS_PREFIX)[1] for param in parameters]
-
     def validate_vars(self, environment: dict[str, str]):
-        missing = [field for field in REQUIRED_VARS if field not in environment]
+        missing = REQUIRED_VARS - set(environment.keys())
         if missing:
             raise MissingParameterError(", ".join(missing))
         return environment

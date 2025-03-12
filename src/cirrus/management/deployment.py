@@ -13,13 +13,10 @@ from typing import IO, Any
 import backoff
 import boto3
 
-from botocore.exceptions import ClientError
-
 from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.utils import get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
 from cirrus.management.exceptions import (
-    DeploymentNotFoundError,
     NoExecutionsError,
     PayloadNotFoundError,
 )
@@ -73,11 +70,8 @@ class Deployment:
 
     @classmethod
     def from_name(cls, name: str, session: boto3.Session) -> Deployment:
-        try:
-            dp = DeploymentPointer.get_pointer(name, session=session)
-            return cls.from_pointer(dp, session=session)
-        except ClientError:
-            raise DeploymentNotFoundError(name) from None
+        dp = DeploymentPointer.get_pointer(name, session=session)
+        return cls.from_pointer(dp, session=session)
 
     def get_lambda_functions(self, session):
         if self._functions is None:
