@@ -12,7 +12,6 @@ To execute the AWS SSO command you will need to have an `AWS config file`_ so
 that the AWS CLI SSO command can access the necessary account information in
 that config file.
 
-
 A config file needs to live in the discoverable ``.aws/config`` location. The
 config file is broken into sections for different profiles that are assigned
 names of your choice.
@@ -24,7 +23,7 @@ Required key value pairs are:
 - sso_role_name: A valid AWS role assigned to the account ID
 - region: AWS Region to SSO into
 
-After you can built your config file you can login
+After you can built your config file you can login with
 
 
 .. code-block:: bash

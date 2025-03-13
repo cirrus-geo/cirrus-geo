@@ -3,31 +3,45 @@ CLIrrus commands
 
 CLIrrus currently support a number of commands.
 
-- *list-deployments:* Return a list of all named cirrus deployments available for interacting with.  Names returned here will be the name strings needed to run commands on a specific deployment.  Will default to searching region in config file
+- *list-deployments:*
+    Return a list of all named cirrus deployments available for interacting
+    with by pulling deployments available in AWS parameter store.  Defaults to looking in the region used in AWS SSO login.  Names returned here will be the name strings needed to run commands on a specific deployment.
 
     .. code-block:: bash
 
-        cirrus --region us-west-2 list-deployments
+        cirrus list-deployments
 
-- *manage (mgmt):* A wrapper for commands to interact with a specific named deployment
+- *manage (mgmt):*
+    A wrapper for commands to interact with a specific named deployment
 
-- *payload:* a wrapper for commands for working with payloads.
+    .. code-block:: bash
+
+        cirrus mgmt DEPLOYMENT_NAME COMMAND
+
+
+- *payload:*
+    a wrapper for commands for working with payloads.
+
+    .. code-block:: bash
+
+        cirrus payload COMMAND
 
 
 Manage commands
 ---------------
 - *call:*
-    Run an executable, in a new process, with the deployment environment vars loaded
+    Call a new command with the deployment environment variables loaded
 
     .. code-block:: bash
 
-        cirrus mgmt name-dev call
+        cirrus mgmt name-dev call ls
+
 - *exec:*
-    Run an executable with the deployment environment with vars loaded
+    Run an executable with the deployment specific environment variables loaded into the local environment
 
     .. code-block:: bash
 
-        cirrus mgmt name-dev exec
+        cirrus mgmt name-dev exec "bash" "hello_env_var_world.sh"
 
 - *get-execution:*
     Get a workflow execution using its ARN or its payload-id
@@ -61,17 +75,17 @@ Manage commands
 
     .. code-block:: bash
 
-        cirrus mgmt name-dev get-payload  sar/workflow-test/example-01_2024-10-31-06-05-10
+        cirrus mgmt name-dev get-payload sar/workflow-test/example-01_2024-10-31-06-05-10
 
 - *get-state:*
-    Get the statedb record for a payload ID
+    Get the stateDB record for a payload ID
 
     .. code-block:: bash
 
         cirrus mgmt name-dev get-state sar/workflow-test/example-01_2024-10-31-06-05-10
 
 - *invoke-lambda:*
-    Invoke lambda with event (from stdin)
+    Invoke lambda with event (from stdin) and specifying by name which lambda to invoke
 
     .. code-block:: bash
 
@@ -83,7 +97,7 @@ Manage commands
         }
 
 - *list-lambdas*:
-    List lambda functions
+    List all lambda functions available in a given deployment
 
     .. code-block:: bash
 
@@ -102,7 +116,7 @@ Manage commands
         }
 
 - *run-workflow:*
-    Pass a payload (from stdin) off to a deployment,...
+    Pass a payload (from stdin) off to a deployment wait for the workflow to finish, retrieve and return its output payload
 
     .. code-block:: bash
 
@@ -114,14 +128,14 @@ Manage commands
         }
 
 - *show:*
-    Show a deployment configuration's environment variables
+    Show a deployment configuration's environment variables available in the parameter store
 
     .. code-block:: bash
 
         cirrus mgmt name-dev show
 
 - *template-payload:*
-    Template a payload using a deployment's vars and '$' based substitution
+    Template a payload using a deployment's environment variables and '$' based substitution
 
     .. code-block:: bash
 
@@ -155,7 +169,6 @@ Payload commands
             "features": []
         }
 - *validate:*
-
     Validate an input payload (from stdin) is a valid cirrus payload
 
     .. code-block:: bash

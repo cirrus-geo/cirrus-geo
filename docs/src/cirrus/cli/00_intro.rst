@@ -1,28 +1,36 @@
-Cirrus CLI management Tool - CLIrrus
-====================================
+CLIrrus - The Cirrus CLI management Tool
+========================================
 
 Introduction
 ------------
 Cirrus itself is `STAC`_-based geospatial processing pipeline platform deployed
-on AWS and the pieces of a Cirrus deployment like the lambdas, SQS, S3 buckets
-and other can be managed and interacted with using common AWS management tools,
-either from the AWS GUI or AWS CLI.  However the nature of a Cirrus deployment
-can make direct management via AWS tools difficult to do things like batch
-reruns, manage deployments, individual invokations, and more.  There can be
-multiple cirrus deployments, and Cirrus infrastructure like SQS queues, S3
-buckets, and lambdas may co-exist in an AWS account with non Cirrus resources.
+on AWS and is a constellation of associated pieces of AWS infrastructure.  The
+pieces of a Cirrus deployment like the lambdas, SQS, S3 buckets and other can be
+managed and interacted with using common AWS management tools, either from the
+AWS GUI or AWS CLI.  However the nature of a Cirrus deployment can make direct
+management via AWS tools difficult to do things like batch reruns, manage
+deployments, individual invokations, and more.  There can be multiple cirrus
+deployments, and Cirrus infrastructure like SQS queues, S3 buckets, and lambdas
+may co-exist in an AWS account with non Cirrus resources further complicating
+this management.
 
 What Is CLIrrus?
 ----------------
-To ease the management of a cirrus deployment, the cirrus-geo library comes out
-of the box with a command line tool (CLIrrus!) designed to streamline the
-developer experience when using and managing a Cirrus deployment.
+To ease the management of a cirrus deployment, the cirrus-geo library has a
+built in command line tool (CLIrrus) designed to streamline the developer
+experience when using and managing a Cirrus deployment.
 
 CLIrrus is a python CLI tool built using the `click`_ library with commmands
 specific to Cirrus.  Example use cases would be to list all available cirrus
 deployments, list lambdas in a given deployment, and even directly trigger a
 workflow with an input Payload by sending the payload directly to the SQS queue
-monitored by the Process lambda.
+monitored by the Process lambda, and more.
+
+What if I'm using an older version of Cirrus?
+---------------------------------------------
+
+You can use the `older CLI tool`_ which is a standalone module and can be
+installed via pip.
 
 How To Use CLIrrus?
 -------------------
@@ -71,3 +79,4 @@ tool, please proceed.
 
 .. _click: https://click.palletsprojects.com/en/stable/
 .. _STAC: https://stacspec.org/
+.. _older CLI tool: https://pypi.org/project/cirrus-mgmt/
