@@ -2,11 +2,11 @@ CLIrrus Authentication
 =========================
 
 Because CLIrrus interacts directly with AWS resources via the
-AWS python API with the boto3 library, you will have to be authenticated with AWS. The easiest way to do this will be to use the `AWS CLI tool`_ and install as necessary for your system/needs
+AWS python API with the boto3 library, you will have to be authenticated with AWS. The easiest way to do this will be to use the `AWS CLI tool`_.
 
 CLIrrus will only need to be installed once, but authenticatig with AWS
 will be necessary for each new session as AWS credentials expire and must be
-renewed.  The best way to retrieve and store these credentials is with the AWS CLI single sign on (SSO) option.
+refreshed every so often.  The best way to retrieve and store these credentials is with the AWS CLI single sign on (SSO) option.
 
 To execute the AWS SSO command you will need to have an `AWS config file`_ so
 that the AWS CLI SSO command can access the necessary account information in
@@ -23,8 +23,7 @@ Required key value pairs are:
 - sso_role_name: A valid AWS role assigned to the account ID
 - region: AWS Region to SSO into
 
-After you can built your config file you can login with
-
+After you have built your config file you can login with
 
 .. code-block:: bash
 

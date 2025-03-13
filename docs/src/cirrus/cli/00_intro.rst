@@ -6,19 +6,17 @@ Introduction
 Cirrus itself is `STAC`_-based geospatial processing pipeline platform deployed
 on AWS and is a constellation of associated pieces of AWS infrastructure.  The
 pieces of a Cirrus deployment like the lambdas, SQS, S3 buckets and other can be
-managed and interacted with using common AWS management tools, either from the
-AWS GUI or AWS CLI.  However the nature of a Cirrus deployment can make direct
+managed and interacted with using common AWS management tools like the AWS GUI
+or AWS CLI.  However the nature of a Cirrus deployment can make direct
 management via AWS tools difficult to do things like batch reruns, manage
-deployments, individual invokations, and more.  There can be multiple cirrus
-deployments, and Cirrus infrastructure like SQS queues, S3 buckets, and lambdas
-may co-exist in an AWS account with non Cirrus resources further complicating
-this management.
+deployments, individual lambda invocations, and more.  There can be multiple
+cirrus deployments and Cirrus infrastructure may co-exist in an AWS account with non Cirrus resources further complicating this management.
 
 What Is CLIrrus?
 ----------------
-To ease the management of a cirrus deployment, the cirrus-geo library has a
+To ease the management of a cirrus deployment the cirrus-geo library has a
 built in command line tool (CLIrrus) designed to streamline the developer
-experience when using and managing a Cirrus deployment.
+experience when using and interacting with a Cirrus deployment.
 
 CLIrrus is a python CLI tool built using the `click`_ library with commmands
 specific to Cirrus.  Example use cases would be to list all available cirrus
