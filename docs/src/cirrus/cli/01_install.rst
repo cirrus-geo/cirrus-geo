@@ -10,7 +10,7 @@ For superior environment management we recommend you create a specific virtual e
 
     source .venv/bin/activate
 
-    pip install -r requirements-dev.txt -r requirements-cli.txt -r requirements.txt
+    pip install .
 
 .. _click: https://click.palletsprojects.com/en/stable/
 .. _cirrus-geo: https://github.com/cirrus-geo/cirrus-geo

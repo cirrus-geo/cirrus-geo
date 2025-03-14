@@ -50,9 +50,9 @@ CLI tool here is what an example workflow might look like:
 
     python3.12 -m venv .venv
     source .venv/bin/activate
-    pip install -r requirements-dev.txt -r requirements-cli.txt -r requirements.txt
+    pip install cirrus-geo>=1.0.0
 
-2. Authenticate
+2. Authenticate (if necessary)
 
 .. code-block:: bash
 
@@ -63,14 +63,6 @@ CLI tool here is what an example workflow might look like:
 .. code-block:: bash
 
     cirrus mgmt deployment-name-here list-lambdas
-
-If your cirrus resources are in a different region from the account sso region
-you can use a region flag
-
-.. code-block:: bash
-
-    cirrus --region us-west-2 mgmt deployment-name-here list-lambdas
-
 
 And thats it!  If you would like more in depth explanations on how to use the
 tool, please proceed.
