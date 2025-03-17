@@ -2,15 +2,13 @@ import json
 import logging
 import sys
 
-from functools import wraps
 from subprocess import CalledProcessError
 
 import boto3
 import botocore.exceptions
 import click
 
-from click_option_group import RequiredMutuallyExclusiveOptionGroup, optgroup
-
+from cirrus.lib.statedb import StateDB
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.utils.click import (
     AliasedShortMatchGroup,
@@ -18,56 +16,18 @@ from cirrus.management.utils.click import (
     pass_session,
     silence_templating_errors,
 )
+from cirrus.management.utils.manage import (
+    _get_execution,
+    download_payload,
+    execution_arn,
+    include_user_vars,
+    query_filters,
+    raw_option,
+)
 
 logger = logging.getLogger(__name__)
 
 pass_deployment = click.make_pass_decorator(Deployment)
-
-
-def _get_execution(deployment: Deployment, arn=None, payload_id=None):
-    if payload_id:
-        return deployment.get_execution_by_payload_id(payload_id)
-    return deployment.get_execution(arn)
-
-
-def execution_arn(func):
-    # reverse order because not using decorators
-    func = optgroup.option(
-        "--payload-id",
-        help="payload ID (resolves to latest execution ARN)",
-    )(func)
-    func = optgroup.option(
-        "--arn",
-        help="Execution ARN",
-    )(func)
-    func = optgroup.group(
-        "Identifier",
-        cls=RequiredMutuallyExclusiveOptionGroup,
-        help="Identifer type and value to get execution",
-    )(func)
-    return func  # noqa: RET504
-
-
-def raw_option(func):
-    return click.option(
-        "-r",
-        "--raw",
-        is_flag=True,
-        help="Do not pretty-format the response",
-    )(func)
-
-
-def include_user_vars(func):
-    @click.option(
-        "--include-user-vars/--exclude-user-vars",
-        default=True,
-        help="Whether or not to load deployment's user vars into environment",
-    )
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 @click.group(
@@ -134,21 +94,13 @@ def run_workflow(deployment, timeout, raw, poll_interval):
 def get_payload(deployment: Deployment, payload_id, raw):
     """Get a payload from S3 using its ID"""
 
-    def download(output_fileobj):
-        try:
-            deployment.get_payload_by_id(payload_id, output_fileobj)
-        except botocore.exceptions.ClientError as e:
-            # TODO: understand why this is a ClientError even
-            #   when it seems like it should be a NoKeyError
-            logger.error(e)
-
     if raw:
-        download(sys.stdout.buffer)
+        download_payload(deployment, payload_id, sys.stdout.buffer)
     else:
         import io
 
         with io.BytesIO() as b:
-            download(b)
+            download_payload(deployment, payload_id, b)
             b.seek(0)
             json.dump(json.load(b), sys.stdout, indent=4)
 
@@ -312,6 +264,48 @@ def list_lambdas(ctx, deployment: Deployment, session):
             default=str,
         ),
     )
+
+
+# set each to option or try and set up a dictionary with typing for cleaner input
+@manage.command("get-records")
+@query_filters
+@raw_option
+@pass_session
+@pass_deployment
+@click.pass_context
+def get_records(
+    ctx,
+    deployment: Deployment,
+    session,
+    raw,
+    collections,
+    workflow_name,
+    state,
+    since,
+    limit,
+    error_prefix,
+):
+    """Query multiple records from state DB using filter options"""
+    click.echo(f"filters: limit: {limit} state: {state}")
+    statedb = StateDB()
+
+    items = statedb.get_items_page("args")
+    for item in items["items"]:
+        try:
+            print(item)  # noqa: T201
+            deployment.get_payload_by_id("payload_id", "output_fileobj")
+        except botocore.exceptions.ClientError as e:
+            # TODO: understand why this is a ClientError even
+            #   when it seems like it should be a NoKeyError
+            logger.error(e)
+    # uery state DB to get records
+    # use StateDB to turn record to item
+    StateDB.dbitem_to_item({})
+    # get paylaod_ID from item object
+    # use payload ID to get full input payload from S3
+    # set `replace`: true on paylad to make sure it reruns
+    # send payload to process command to enque in pipeline
+    deployment.process_payload("payload_here")
 
 
 # check-pipeline
