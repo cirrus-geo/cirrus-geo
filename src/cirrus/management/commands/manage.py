@@ -289,23 +289,26 @@ def get_records(
     click.echo(f"filters: limit: {limit} state: {state}")
     statedb = StateDB()
 
+    # get items and make query
     items = statedb.get_items_page("args")
+
+    # loop through returned items, get each item and send to stdout for piping,
     for item in items["items"]:
         try:
             print(item)  # noqa: T201
-            deployment.get_payload_by_id("payload_id", "output_fileobj")
+            import io
+
+            with io.BytesIO() as b:
+                download_payload(deployment, "payload_id", b)
+                b.seek(0)
+                payload = json.load(b)
+                # TODO: set payload 'replace' to true
+                payload["replace"] = True
+                json.dump(payload, sys.stdout, indent=4)
         except botocore.exceptions.ClientError as e:
             # TODO: understand why this is a ClientError even
             #   when it seems like it should be a NoKeyError
             logger.error(e)
-    # uery state DB to get records
-    # use StateDB to turn record to item
-    StateDB.dbitem_to_item({})
-    # get paylaod_ID from item object
-    # use payload ID to get full input payload from S3
-    # set `replace`: true on paylad to make sure it reruns
-    # send payload to process command to enque in pipeline
-    deployment.process_payload("payload_here")
 
 
 # check-pipeline
