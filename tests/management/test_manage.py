@@ -127,3 +127,16 @@ def test_manage_get_execution_by_payload_id(
 def test_call_cli_return_values(deployment, command, expect_exit_zero, put_parameters):
     result = deployment(f"call {command}")
     assert result.exit_code == 0 if expect_exit_zero else result.exit_code != 0
+
+
+def test_get_payload(deployment, s3, load_payload):
+    result = deployment("get-payload test-payload-id")
+    assert result.exit_code == 0
+    assert 1 == 2
+
+
+def test_get_records(deployment, load_payload, statedb):
+    result = deployment("get-records --workflow-name 'test-workflow'")
+    assert result.exit_code == 0
+    assert result.stdout == json.dumps({})
+    assert 1 == 2

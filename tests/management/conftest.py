@@ -1,6 +1,7 @@
 import json
 import shlex
 
+from pathlib import Path
 from unittest.mock import patch
 
 import boto3
@@ -132,3 +133,19 @@ def make_lambdas(lambdas, iam_role):
         Description="mock process lambda for unit testing",
     )
     return lambdas
+
+
+@pytest.fixture()
+def load_payload(s3, put_parameters, statedb, payloads, tmp_path):
+    payload_id = "test-payload-id"
+    path = tmp_path / payload_id
+    path.mkdir()
+    path = path / "input.json"
+
+    payload = {"payload_id": payload_id, "properties": {"a": "property"}}
+    with Path.open(path, "w") as f:
+        json.dump(payload, f, indent=4)
+    with Path.open(path, "rb") as f:
+        s3.upload_fileobj(f, payloads, "TEST_OBJ_NAME")
+
+    return s3

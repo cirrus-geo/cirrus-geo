@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sys
 
 from subprocess import CalledProcessError
@@ -282,15 +283,24 @@ def get_records(
     workflow_name,
     state,
     since,
-    limit,
     error_prefix,
+    limit=100,
 ):
     """Query multiple records from state DB using filter options"""
     click.echo(f"filters: limit: {limit} state: {state}")
+    os.environ.update(deployment.environment)
     statedb = StateDB()
+    query_args = {
+        "collections_workflow": collections,
+        "workflow-name": workflow_name,
+        "state": state,
+        "since": since,
+        "limit": limit,
+        "error-prefix": error_prefix,
+    }
 
     # get items and make query
-    items = statedb.get_items_page("args")
+    items = statedb.get_items_page(**query_args)
 
     # loop through returned items, get each item and send to stdout for piping,
     for item in items["items"]:
