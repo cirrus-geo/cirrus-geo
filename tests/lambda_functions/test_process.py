@@ -881,3 +881,15 @@ def test_finding_claimed_item(
     state, exec_arn = state_items[proc_payload["id"]]
     assert state.value == "CLAIMED"
     assert exec_arn == pre_cooked_exec_arn
+
+
+def test_execution_name_idempotence(payload):
+    first_execution_name = ProcessPayloads.gen_execution_arn(
+        payload["id"],
+        payload["process"][0]["workflow"],
+    ).rpartition(":")[2]
+    second_execution_name = ProcessPayloads.gen_execution_arn(
+        payload["id"],
+        payload["process"][0]["workflow"],
+    ).rpartition(":")[2]
+    assert first_execution_name == second_execution_name
