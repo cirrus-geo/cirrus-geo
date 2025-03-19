@@ -42,7 +42,7 @@ CLIrrus Quick Start
 -------------------
 If you understand the broader background and structure of Cirrus, cirrus
 deployments and the cirrus CLI tool and you want to jump right into using the
-CLI tool here is what an example workflow might look like:
+CLI tool here is what an example workflow might look like.  These are one way of accomplishing these steps, personal and organizatonal requirements may differ.
 
 1. Install requirements
 
@@ -50,7 +50,7 @@ CLI tool here is what an example workflow might look like:
 
     python3.12 -m venv .venv
     source .venv/bin/activate
-    pip install cirrus-geo>=1.0.0
+    pip install 'cirrus-geo[cli]>=1.0.0'
 
 2. Authenticate (if necessary)
 

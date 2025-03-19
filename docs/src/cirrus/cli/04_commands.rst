@@ -57,7 +57,7 @@ Manage commands
 
     .. code-block:: bash
 
-        cirrus mgmt kodiak get-execution-input --arn arn:aws:states:us-west-2:000000000011:execution:fd-name-dev-cirrus-project:c123456789-b19292-999
+        cirrus mgmt name-dev get-execution-input --arn arn:aws:states:us-west-2:000000000011:execution:fd-name-dev-cirrus-project:c123456789-b19292-999
 
         cirrus mgmt name-dev get-execution-input --payload-id sar/workflow-test/example-01_2024-10-31-06-05-10
 
@@ -89,12 +89,7 @@ Manage commands
 
     .. code-block:: bash
 
-        cirrus mgmt name-dev invoke-lambda process
-        {
-            "type": "FeatureCollection",
-            "process": [{"workflow": "example"}],
-            "features": []
-        }
+        cat payload.json | cirrus mgmt name-dev invoke-lambda process
 
 - *list-lambdas*:
     List all lambda functions available in a given deployment
@@ -108,24 +103,14 @@ Manage commands
 
     .. code-block:: bash
 
-        cirrus mgmt name-dev process
-        {
-            "type": "FeatureCollection",
-            "process": [{"workflow": "example"}],
-            "features": []
-        }
+        cat payload.json | cirrus mgmt name-dev process
 
 - *run-workflow:*
     Pass a payload (from stdin) off to a deployment wait for the workflow to finish, retrieve and return its output payload
 
     .. code-block:: bash
 
-        cirrus mgmt name-dev run-workflow
-        {
-            "type": "FeatureCollection",
-            "process": [{"workflow": "example"}],
-            "features": []
-        }
+        cat payload.json | cirrus mgmt name-dev run-workflow
 
 - *show:*
     Show a deployment configuration's environment variables available in the parameter store
@@ -150,32 +135,18 @@ Payload commands
 
     .. code-block:: bash
 
-        cirrus payload get-id
-        {
-            "type": "FeatureCollection",
-            "process": [{"workflow": "example"}],
-            "features": []
-        }
+        cat payload.json | cirrus payload get-id
 
 - *template:*
     Template a payload (from stdin) with user supplied variables with '$' based substitution
 
     .. code-block:: bash
 
-        cirrus payload template --var EXAMPLE_VAR VALUE
-        {
-            "type": "FeatureCollection",
-            "process": [{"workflow": $EXAMPLE_VAR}],
-            "features": []
-        }
+        cat payload.json | cirrus payload template --var EXAMPLE_VAR VALUE
+
 - *validate:*
     Validate an input payload (from stdin) is a valid cirrus payload
 
     .. code-block:: bash
 
-        cirrus payload validate
-        {
-            "type": "FeatureCollection",
-            "process": [{"workflow": "example"}],
-            "features": []
-        }
+        cat payload.json | cirrus payload validate
