@@ -22,7 +22,7 @@ def manage(invoke):
 
 
 @pytest.fixture()
-def deployment(manage, queue, payloads, statedb, workflow):
+def deployment(manage, queue, payloads, statedb, workflow, iam_role):
     def _manage(deployment, cmd):
         return manage(f"{deployment.name} {cmd}")
 
@@ -30,7 +30,14 @@ def deployment(manage, queue, payloads, statedb, workflow):
 
     return Deployment(
         MOCK_DEPLYOMENT_NAME,
-        mock_parameters(queue, payloads, statedb, workflow, MOCK_DEPLYOMENT_NAME),
+        mock_parameters(
+            queue,
+            payloads,
+            statedb,
+            workflow,
+            MOCK_DEPLYOMENT_NAME,
+            iam_role,
+        ),
     )
 
 
