@@ -6,6 +6,8 @@ import botocore.exceptions
 import pytest
 
 from cirrus.lambda_functions.process import lambda_handler as process
+from cirrus.lib.events import WorkflowEventManager
+from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
 from moto.core.models import DEFAULT_ACCOUNT_ID
 from moto.sns.models import sns_backends
 
@@ -852,3 +854,30 @@ def test_payload_unable_to_upload(
 
     with pytest.raises(botocore.exceptions.ClientError, match="monkeying around"):
         _ = process(payload, {})
+
+
+def test_finding_claimed_item(
+    payload,
+    sqs,
+    queue,
+    stepfunctions,
+    workflow,
+    statedb,
+    workflow_event_topic,
+):
+    wfem = WorkflowEventManager()
+    proc_payload = ProcessPayload(**payload)
+
+    pre_cooked_exec_arn = (
+        ProcessPayloads.gen_execution_arn(
+            payload["id"],
+            payload["process"][0]["workflow"],
+        ).rpartition(":")[0]
+        + ":from_db_entry"
+    )
+    proc_payload._claim(wfem, pre_cooked_exec_arn, None)
+    proc_payloads = ProcessPayloads([ProcessPayload(**payload)], statedb=statedb)
+    state_items = proc_payloads.get_states_and_exec_arn()
+    state, exec_arn = state_items[proc_payload["id"]]
+    assert state.value == "CLAIMED"
+    assert exec_arn == pre_cooked_exec_arn

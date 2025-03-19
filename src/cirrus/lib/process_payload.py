@@ -419,7 +419,7 @@ class ProcessPayloads:
             # determine where in the process of sfn execution the failure to proceeed to
             # PROCESSING occurred.
             if state == StateEnum.CLAIMED:
-                exec_arn = si["executions"][-1]
+                exec_arn = si["executions"][-1].rpartition("/")[2]
             else:
                 exec_arn = ProcessPayloads.gen_execution_arn(
                     payload_id,
