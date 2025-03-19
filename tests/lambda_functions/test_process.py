@@ -827,3 +827,28 @@ def test_double_payload_sqs_with_bad_format(
         ["NOT_A_PROCESS_PAYLOAD", "CLAIMED_PROCESSING", "STARTED_PROCESSING"],
         workflow_event_topic,
     )
+
+
+def test_payload_unable_to_upload(
+    payload,
+    sqs,
+    queue,
+    stepfunctions,
+    workflow,
+    statedb,
+    workflow_event_topic,
+    mocker,
+):
+    def raises_client_error(*args, **kwargs):
+        raise botocore.exceptions.ClientError(
+            error_response={"Error": {"Code": "403"}},
+            operation_name="monkeying around",
+        )
+
+    s3_upload = mocker.patch(
+        "boto3utils.s3.s3.upload_json",
+    )
+    s3_upload.side_effect = raises_client_error
+
+    with pytest.raises(botocore.exceptions.ClientError, match="monkeying around"):
+        _ = process(payload, {})
