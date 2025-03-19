@@ -6,16 +6,18 @@ import botocore.exceptions
 import pytest
 
 from cirrus.lambda_functions.process import lambda_handler as process
+from cirrus.lib.events import WorkflowEventManager
+from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
 from moto.core.models import DEFAULT_ACCOUNT_ID
 from moto.sns.models import sns_backends
 
 
 def assert_sns_message_sequence(expected, topic):
     sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
-    assert [
-        json.loads(x[1])["event_type"]
-        for x in sns_backend.topics[topic].sent_notifications
-    ] == expected
+    notifications = list(sns_backend.topics[topic].sent_notifications)
+    messages = [json.loads(x[1]) for x in notifications]
+    event_types = [x["event_type"] for x in messages]
+    assert event_types == expected
 
 
 def sqs_to_event(sqs_resp, sqs_arn):
@@ -111,6 +113,19 @@ def test_single_payload(
     )
 
 
+def test_no_payload_bucket(
+    payload,
+    stepfunctions,
+    workflow,
+    eventdb,
+    workflow_event_topic,
+    monkeypatch,
+):
+    monkeypatch.delenv("CIRRUS_PAYLOAD_BUCKET")
+    with pytest.raises(ValueError):
+        _ = process(payload, {})
+
+
 def test_rerun_in_process(
     payload,
     stepfunctions,
@@ -151,7 +166,7 @@ def test_simulate_race_to_in_process_client_error(
     def raises_client_error(*args, **kwargs):
         raise botocore.exceptions.ClientError(
             error_response={"Error": {"Code": "ConditionalCheckFailedException"}},
-            operation_name="monkeying aroudn",
+            operation_name="monkeying around",
         )
 
     wfem_claim = mocker.patch(
@@ -814,3 +829,84 @@ def test_double_payload_sqs_with_bad_format(
         ["NOT_A_PROCESS_PAYLOAD", "CLAIMED_PROCESSING", "STARTED_PROCESSING"],
         workflow_event_topic,
     )
+
+
+def test_payload_unable_to_upload(
+    payload,
+    sqs,
+    queue,
+    stepfunctions,
+    workflow,
+    statedb,
+    workflow_event_topic,
+    mocker,
+):
+    def raises_client_error(*args, **kwargs):
+        raise botocore.exceptions.ClientError(
+            error_response={"Error": {"Code": "403"}},
+            operation_name="monkeying around",
+        )
+
+    s3_upload = mocker.patch(
+        "boto3utils.s3.s3.upload_json",
+    )
+    s3_upload.side_effect = raises_client_error
+
+    with pytest.raises(botocore.exceptions.ClientError, match="monkeying around"):
+        _ = process(payload, {})
+
+
+def test_finding_claimed_item(
+    payload,
+    sqs,
+    queue,
+    stepfunctions,
+    workflow,
+    statedb,
+    workflow_event_topic,
+):
+    wfem = WorkflowEventManager()
+    proc_payload = ProcessPayload(**payload)
+
+    pre_cooked_exec_arn = (
+        ProcessPayloads.gen_execution_arn(
+            payload["id"],
+            payload["process"][0]["workflow"],
+        ).rpartition(":")[0]
+        + ":from_db_entry"
+    )
+    proc_payload._claim(wfem, pre_cooked_exec_arn, None)
+    proc_payloads = ProcessPayloads([ProcessPayload(**payload)], statedb=statedb)
+    state_items = proc_payloads.get_states_and_exec_arn()
+    state, exec_arn = state_items[proc_payload["id"]]
+    assert state.value == "CLAIMED"
+    assert exec_arn == pre_cooked_exec_arn
+
+
+def test_execution_name_idempotence(payload):
+    first_execution_name = ProcessPayloads.gen_execution_arn(
+        payload["id"],
+        payload["process"][0]["workflow"],
+    ).rpartition(":")[2]
+    second_execution_name = ProcessPayloads.gen_execution_arn(
+        payload["id"],
+        payload["process"][0]["workflow"],
+    ).rpartition(":")[2]
+    assert first_execution_name == second_execution_name
+
+
+def test_missing_payload_bucket_raises(
+    payload,
+    workflow,
+    statedb,
+    workflow_event_topic,
+    monkeypatch,
+):
+    payload = ProcessPayload(**payload)
+    monkeypatch.delenv("CIRRUS_PAYLOAD_BUCKET")
+    wfem = WorkflowEventManager()
+    with pytest.raises(
+        ValueError,
+        match="env var CIRRUS_PAYLOAD_BUCKET must be defined",
+    ):
+        payload._claim(wfem, "blah", None)

@@ -151,6 +151,22 @@
           "ScalarValue": "2022-11-06 05:00:00.000000000"
         },
         {
+          "ScalarValue": "CLAIMED"
+        },
+        {
+          "ScalarValue": "5"
+        },
+        {
+          "ScalarValue": "5"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "ScalarValue": "2022-11-06 05:00:00.000000000"
+        },
+        {
           "ScalarValue": "PROCESSING"
         },
         {
