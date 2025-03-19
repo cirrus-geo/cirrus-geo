@@ -75,7 +75,11 @@ class Deployment:
 
     def get_lambda_functions(self, session):
         if self._functions is None:
-            aws_lambda = get_client("lambda", session)
+            aws_lambda = get_client(
+                "lambda",
+                session,
+                iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+            )
 
             def deployment_functions_filter(response):
                 return [
@@ -152,11 +156,19 @@ class Deployment:
             url = f"s3://{bucket}/{key}"
             logger.warning("Message exceeds SQS max length.")
             logger.warning("Uploading to '%s'", url)
-            s3 = get_client("s3", session=self.session)
+            s3 = get_client(
+                "s3",
+                session=self.session,
+                iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+            )
             s3.upload_fileobj(stream, bucket, key)
             payload = json.dumps({"url": url})
 
-        sqs = get_client("sqs", session=self.session)
+        sqs = get_client(
+            "sqs",
+            session=self.session,
+            iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+        )
         return sqs.send_message(
             QueueUrl=self.environment["CIRRUS_PROCESS_QUEUE_URL"],
             MessageBody=payload,
@@ -172,12 +184,20 @@ class Deployment:
         )
         logger.debug("bucket: '%s', key: '%s'", bucket, key)
 
-        s3 = get_client("s3", session=self.session)
+        s3 = get_client(
+            "s3",
+            session=self.session,
+            iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+        )
 
         return s3.download_fileobj(bucket, key, output_fileobj)
 
     def get_execution(self, arn):
-        sfn = get_client("stepfunctions", session=self.session)
+        sfn = get_client(
+            "stepfunctions",
+            session=self.session,
+            iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+        )
         return sfn.describe_execution(executionArn=arn)
 
     def get_execution_by_payload_id(self, payload_id):
@@ -190,7 +210,11 @@ class Deployment:
         return self.get_execution(exec_arn)
 
     def invoke_lambda(self, event, function_name, session):
-        aws_lambda = get_client("lambda", session=self.session)
+        aws_lambda = get_client(
+            "lambda",
+            session=self.session,
+            iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+        )
         if function_name not in self.get_lambda_functions(session):
             raise ValueError(
                 f"lambda named '{function_name}' not found in deployment '{self.name}'",
