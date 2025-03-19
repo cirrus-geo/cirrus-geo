@@ -111,6 +111,19 @@ def test_single_payload(
     )
 
 
+def test_no_payload_bucket(
+    payload,
+    stepfunctions,
+    workflow,
+    eventdb,
+    workflow_event_topic,
+    monkeypatch,
+):
+    monkeypatch.delenv("CIRRUS_PAYLOAD_BUCKET")
+    with pytest.raises(ValueError):
+        _ = process(payload, {})
+
+
 def test_rerun_in_process(
     payload,
     stepfunctions,
