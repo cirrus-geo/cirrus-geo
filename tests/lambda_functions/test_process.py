@@ -893,3 +893,20 @@ def test_execution_name_idempotence(payload):
         payload["process"][0]["workflow"],
     ).rpartition(":")[2]
     assert first_execution_name == second_execution_name
+
+
+def test_missing_payload_bucket_raises(
+    payload,
+    workflow,
+    statedb,
+    workflow_event_topic,
+    monkeypatch,
+):
+    payload = ProcessPayload(**payload)
+    monkeypatch.delenv("CIRRUS_PAYLOAD_BUCKET")
+    wfem = WorkflowEventManager()
+    with pytest.raises(
+        ValueError,
+        match="env var CIRRUS_PAYLOAD_BUCKET must be defined",
+    ):
+        payload._claim(wfem, "blah", None)
