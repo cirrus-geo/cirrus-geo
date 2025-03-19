@@ -20,6 +20,8 @@ from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import (
+    SNSMessage,
+    build_item_sns_attributes,
     extract_event_records,
     get_client,
     payload_from_s3,
@@ -190,6 +192,16 @@ class ProcessPayload(dict):
 
         url = self.upload_to_s3(self, payload_bucket)
         return {"url": url}
+
+    def items_to_sns_messages(self: Self) -> list[SNSMessage]:
+        """Prepare list of Payload Items as SNS Messages for publishing"""
+        return [
+            SNSMessage(
+                body=json.dumps(item),
+                attributes=build_item_sns_attributes(item),
+            )
+            for item in self.features
+        ]
 
     def _fail_and_raise(self, wfem, e, url):
         """
