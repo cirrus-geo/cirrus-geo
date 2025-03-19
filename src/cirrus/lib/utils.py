@@ -59,14 +59,31 @@ def get_client(
     service: str,
     session: boto3.Session | None = None,
     region: str | None = None,
-):
-    """Wrapper around boto3 which implements singleton pattern via @cache"""
+    iam_role_arn: str | None = None,
+) -> boto3.client:
+    """
+    Wrapper around boto3 which implements singleton pattern via @cache
+    If IAM role is available create new client by assuming custom IAM role
+    """
     if session is None:
         session = boto3.Session()
-    return session.client(
+    client = session.client(
         service_name=service,
         region_name=region,
     )
+    if iam_role_arn:  # create client with iam role if available
+        creds = client.assume_role(
+            RoleArn=iam_role_arn,
+            RoleSessionName="CLIrrus_iam_session",
+        )["Credentials"]
+
+        return session.client(
+            service_name=service,
+            aws_access_key_id=creds["AccessKeyId"],
+            aws_secret_access_key=creds["SecretAccessKey"],
+            aws_session_token=creds["SessionToken"],
+        )
+    return client
 
 
 @cache
