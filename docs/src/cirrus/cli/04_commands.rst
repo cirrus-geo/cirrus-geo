@@ -71,7 +71,7 @@ Manage commands
         cirrus mgmt name-dev get-execution-output --arn arn:aws:states:us-west-2:000000000011:execution:fd-name-dev-cirrus-project:c123456789-b19292-999
 
 - *get-payload:*
-    Get a payload from S3 using its ID
+    Get a payload from S3 using its payload ID
 
     .. code-block:: bash
 
@@ -106,7 +106,7 @@ Manage commands
         cat payload.json | cirrus mgmt name-dev process
 
 - *run-workflow:*
-    Pass a payload (from stdin) off to a deployment wait for the workflow to finish, retrieve and return its output payload
+    Pass a payload (from stdin) off to a deployment, wait for the workflow to finish, and retrieve and return its output payload
 
     .. code-block:: bash
 
