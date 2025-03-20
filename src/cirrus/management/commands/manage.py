@@ -5,11 +5,10 @@ import sys
 from functools import wraps
 from subprocess import CalledProcessError
 
-import boto3
-import boto3.session
 import botocore.exceptions
 import click
 
+from boto3 import Session
 from click_option_group import RequiredMutuallyExclusiveOptionGroup, optgroup
 
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
@@ -85,7 +84,7 @@ def include_user_vars(func):
 )
 @pass_session
 @click.pass_context
-def manage(ctx, session: boto3.Session, deployment: str, profile: str | None = None):
+def manage(ctx, session: Session, deployment: str, profile: str | None = None):
     """
     Commands to run management operations against a cirrus deployment.
     """
@@ -132,7 +131,7 @@ def run_workflow(
         timeout=timeout,
         poll_interval=poll_interval,
     )
-    json.dump(output, sys.stdout, indent=4 if not raw else None)
+    click.echo(json.dump(output, sys.stdout, indent=4 if not raw else None))  # type: ignore
 
 
 @manage.command("get-payload")
@@ -248,7 +247,7 @@ def process(deployment: Deployment):
 )
 @pass_session
 @pass_deployment
-def invoke_lambda(deployment: Deployment, session: boto3.session, lambda_name: str):
+def invoke_lambda(deployment: Deployment, session: Session, lambda_name: str):
     """Invoke lambda with event (from stdin)"""
     click.echo(
         json.dumps(
@@ -328,7 +327,7 @@ def _call(ctx, deployment: Deployment, command: str, include_user_vars: bool):
 @pass_session
 @pass_deployment
 @click.pass_context
-def list_lambdas(ctx, deployment: Deployment, session: boto3.session):
+def list_lambdas(ctx, deployment: Deployment, session: Session):
     """List lambda functions"""
     click.echo(
         json.dumps(
@@ -337,9 +336,3 @@ def list_lambdas(ctx, deployment: Deployment, session: boto3.session):
             default=str,
         ),
     )
-
-
-# check-pipeline
-#   - this is like failmgr check
-#   - not sure how to reconcile with cache above
-#   - maybe need subcommand for everything it can do
