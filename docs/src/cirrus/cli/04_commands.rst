@@ -124,7 +124,7 @@ Manage commands
 
     .. code-block:: bash
 
-        cirrus mgmt name-dev template-payload
+        cat payload.json | cirrus mgmt name-dev template-payload --var EXAMPLE_VAR VALUE
 
 
 Payload commands
