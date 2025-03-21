@@ -30,5 +30,5 @@ class NoExecutionsError(CirrusError):
 class MissingParameterError(CirrusError):
     def __init__(self, missing: str, *extra_missing: str, **kwargs):
         msg = f"A required environment variable(s) was not found: {
-            ', '.join(missing, *extra_missing)}"
+            ', '.join((missing, *extra_missing))}"
         super().__init__(msg, **kwargs)
