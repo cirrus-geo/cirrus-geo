@@ -160,7 +160,7 @@ def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
             download(b)
             b.seek(0)
             json.dump(json.load(b), sys.stdout, indent=4)
-    click.echo("'")
+    click.echo("")
 
 
 @manage.command("get-execution")
