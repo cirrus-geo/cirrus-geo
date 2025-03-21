@@ -89,7 +89,7 @@ Manage commands
 
     .. code-block:: bash
 
-        cat payload.json | cirrus mgmt name-dev invoke-lambda process
+        <payload.json cirrus mgmt name-dev invoke-lambda process
 
 - *list-lambdas*:
     List all lambda functions available in a given deployment
@@ -103,14 +103,14 @@ Manage commands
 
     .. code-block:: bash
 
-        cat payload.json | cirrus mgmt name-dev process
+        <payload.json cirrus mgmt name-dev process
 
 - *run-workflow:*
     Pass a payload (from stdin) off to a deployment, wait for the workflow to finish, and retrieve and return its output payload
 
     .. code-block:: bash
 
-        cat payload.json | cirrus mgmt name-dev run-workflow
+        <payload.json cirrus mgmt name-dev run-workflow
 
 - *show:*
     Show a deployment configuration's environment variables available in the parameter store
@@ -124,7 +124,7 @@ Manage commands
 
     .. code-block:: bash
 
-        cat payload.json | cirrus mgmt name-dev template-payload --var EXAMPLE_VAR VALUE
+        <payload.json cirrus mgmt name-dev template-payload --var EXAMPLE_VAR VALUE
 
 
 Payload commands
@@ -135,18 +135,18 @@ Payload commands
 
     .. code-block:: bash
 
-        cat payload.json | cirrus payload get-id
+        <payload.json cirrus payload get-id
 
 - *template:*
     Template a payload (from stdin) with user supplied variables with '$' based substitution
 
     .. code-block:: bash
 
-        cat payload.json | cirrus payload template --var EXAMPLE_VAR VALUE
+        <payload.json cirrus payload template --var EXAMPLE_VAR VALUE
 
 - *validate:*
     Validate an input payload (from stdin) is a valid cirrus payload
 
     .. code-block:: bash
 
-        cat payload.json | cirrus payload validate
+        <payload.json cirrus payload validate
