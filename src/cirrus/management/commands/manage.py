@@ -119,8 +119,8 @@ def show(deployment: Deployment):
 def run_workflow(
     deployment: Deployment,
     timeout: int,
-    raw: str | None,
     poll_interval: int,
+    raw: bool = False,
 ):
     """Pass a payload (from stdin) off to a deployment, wait for the workflow to finish,
     retrieve and return its output payload"""
@@ -131,7 +131,7 @@ def run_workflow(
         timeout=timeout,
         poll_interval=poll_interval,
     )
-    click.echo(json.dump(output, sys.stdout, indent=4 if not raw else None))  # type: ignore
+    click.echo(json.dump(output, indent=(4 if not raw else None)))  # type: ignore
 
 
 @manage.command("get-payload")
@@ -140,7 +140,7 @@ def run_workflow(
 )
 @raw_option
 @pass_deployment
-def get_payload(deployment: Deployment, payload_id: str, raw: str | None):
+def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
     """Get a payload from S3 using its ID"""
 
     def download(output_fileobj):
@@ -159,10 +159,7 @@ def get_payload(deployment: Deployment, payload_id: str, raw: str | None):
         with io.BytesIO() as b:
             download(b)
             b.seek(0)
-            json.dump(json.load(b), sys.stdout, indent=4)
-
-    # ensure we end with a newline
-    click.echo("")
+            click.echo(json.dumps(json.load(b), indent=4))
 
 
 @manage.command("get-execution")
@@ -173,7 +170,7 @@ def get_execution(
     deployment: Deployment,
     arn: str | None,
     payload_id: str | None,
-    raw: str | None,
+    raw: bool = False,
 ):
     """Get a workflow execution using its ARN or its input payload ID"""
     execution = _get_execution(deployment, arn, payload_id)
@@ -192,7 +189,7 @@ def get_execution_input(
     deployment: Deployment,
     arn: str | None,
     payload_id: str | None,
-    raw: str | None,
+    raw: bool = False,
 ):
     """Get a workflow execution's input payload using its ARN or its input payload ID"""
     _input = json.loads(_get_execution(deployment, arn, payload_id)["input"])
@@ -211,7 +208,7 @@ def get_execution_output(
     deployment: Deployment,
     arn: str | None,
     payload_id: str | None,
-    raw,
+    raw: bool = False,
 ):
     """Get a workflow execution's output payload using its ARN or its input
     payload ID"""
@@ -264,9 +261,9 @@ def invoke_lambda(deployment: Deployment, session: Session, lambda_name: str):
 @pass_deployment
 def template_payload(
     deployment: Deployment,
-    additional_variables: dict[str, str] | None,
     silence_templating_errors: bool,
     include_user_vars: bool,
+    additional_variables: dict[str, str],
 ):
     """Template a payload using a deployment's vars"""
     click.echo(

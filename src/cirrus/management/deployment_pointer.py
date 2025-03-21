@@ -123,9 +123,8 @@ class DeploymentPointer:
                 raise DeploymentNotFoundError(deployment_name) from e
             raise
 
-    @classmethod
+    @staticmethod
     def list_deployments(
-        cls,
         session: boto3.Session,
     ) -> Iterator[str]:
         """Retrieve and list names of available deployments in parameter
@@ -136,10 +135,11 @@ class DeploymentPointer:
             for param in get_parameters_by_path(DEPLOYMENTS_PREFIX, session=session)
         )
 
-    def validate_vars(self, environment: dict[str, str]):
+    @staticmethod
+    def validate_vars(environment: dict[str, str]):
         missing = REQUIRED_VARS - set(environment.keys())
         if missing:
-            raise MissingParameterError(", ".join(missing))
+            raise MissingParameterError(*missing)
         return environment
 
     def get_environment(
