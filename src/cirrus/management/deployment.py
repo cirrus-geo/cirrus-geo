@@ -78,7 +78,7 @@ class Deployment:
             aws_lambda = get_client(
                 "lambda",
                 session,
-                iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+                iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
             )
 
             def deployment_functions_filter(response):
@@ -159,7 +159,7 @@ class Deployment:
             s3 = get_client(
                 "s3",
                 session=self.session,
-                iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+                iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
             )
             s3.upload_fileobj(stream, bucket, key)
             payload = json.dumps({"url": url})
@@ -167,7 +167,7 @@ class Deployment:
         sqs = get_client(
             "sqs",
             session=self.session,
-            iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+            iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
         )
         return sqs.send_message(
             QueueUrl=self.environment["CIRRUS_PROCESS_QUEUE_URL"],
@@ -187,7 +187,7 @@ class Deployment:
         s3 = get_client(
             "s3",
             session=self.session,
-            iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+            iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
         )
 
         return s3.download_fileobj(bucket, key, output_fileobj)
@@ -196,7 +196,7 @@ class Deployment:
         sfn = get_client(
             "stepfunctions",
             session=self.session,
-            iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+            iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
         )
         return sfn.describe_execution(executionArn=arn)
 
@@ -213,7 +213,7 @@ class Deployment:
         aws_lambda = get_client(
             "lambda",
             session=self.session,
-            iam_role_arn=os.getenv("CIRRUS_CLI_IAM_ARN"),
+            iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
         )
         if function_name not in self.get_lambda_functions(session):
             raise ValueError(

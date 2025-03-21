@@ -67,23 +67,21 @@ def get_client(
     """
     if session is None:
         session = boto3.Session()
-    client = session.client(
-        service_name=service,
-        region_name=region,
-    )
-    if iam_role_arn:  # create client with iam role if available
-        creds = client.assume_role(
+    if iam_role_arn:
+        creds = boto3.client("sts").assume_role(
             RoleArn=iam_role_arn,
             RoleSessionName="CLIrrus_iam_session",
         )["Credentials"]
-
         return session.client(
             service_name=service,
             aws_access_key_id=creds["AccessKeyId"],
             aws_secret_access_key=creds["SecretAccessKey"],
             aws_session_token=creds["SessionToken"],
         )
-    return client
+    return session.client(
+        service_name=service,
+        region_name=region,
+    )
 
 
 @cache

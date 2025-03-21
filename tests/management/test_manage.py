@@ -65,7 +65,7 @@ def test_list_deployments(invoke, put_parameters):
     assert result.stdout.strip().splitlines() == ["lion", "squirrel-dev"]
 
 
-def test_list_lambas(deployment, make_lambdas, put_parameters):
+def test_list_lambas(deployment, make_lambdas, put_parameters, sts):
     result = deployment("list-lambdas")
     assert result.exit_code == 0
     assert result.stdout.strip() == json.dumps(
@@ -78,7 +78,7 @@ def test_list_lambas(deployment, make_lambdas, put_parameters):
     )
 
 
-def test_get_execution_by_arn(deployment, st_func_execution_arn):
+def test_get_execution_by_arn(deployment, st_func_execution_arn, sts):
     result = deployment(
         f"get-execution --arn {st_func_execution_arn}",
     )
