@@ -131,7 +131,7 @@ def run_workflow(
         timeout=timeout,
         poll_interval=poll_interval,
     )
-    click.echo(json.dump(output, indent=(4 if not raw else None)))  # type: ignore
+    click.echo(json.dumps(output, indent=(4 if not raw else None)))
 
 
 @manage.command("get-payload")
@@ -159,7 +159,8 @@ def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
         with io.BytesIO() as b:
             download(b)
             b.seek(0)
-            click.echo(json.dumps(json.load(b), indent=4))
+            json.dump(json.load(b), sys.stdout, indent=4)
+    click.echo("'")
 
 
 @manage.command("get-execution")
