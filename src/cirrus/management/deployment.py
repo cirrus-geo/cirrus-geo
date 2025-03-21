@@ -47,8 +47,23 @@ class Deployment:
     ) -> None:
         self.name = name
         self.environment = environment
-        self.session = session if session else boto3.Session()
         self._functions: list[str] | None = None
+        # add region + iam role arn to init
+        if session is None:
+            session = boto3.Session()
+        session = assume_role(
+            session,
+            self.environment.get("CIRRUS_CLI_IAM_ARN"),
+            self.environment.get("AWS_REGION"),
+        )
+        self.session = session
+
+        # make sure all functions if taking a session are OPTIONALLY taking a session and by default using session from self
+
+        # create new session from the old session overwriting credential and region on old session
+
+    def assume_role():
+        return
 
     @staticmethod
     def yield_deployments(
