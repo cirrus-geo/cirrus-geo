@@ -298,7 +298,7 @@ def get_records(
         "limit": limit,
         "error-prefix": error_prefix,
     }
-
+    # get-records | xargs cirrus manage process 
     # get items and make query
     items = statedb.get_items_page(**query_args)
 
@@ -314,7 +314,7 @@ def get_records(
                 payload = json.load(b)
                 # TODO: set payload 'replace' to true
                 payload["replace"] = True
-                json.dump(payload, sys.stdout, indent=4)
+                json.dump(payload, sys.stdout, indent=4)  # instead of dump look into ndJSON new line delimited json  read man page xargs ndjson   How to distinguish 
         except botocore.exceptions.ClientError as e:
             # TODO: understand why this is a ClientError even
             #   when it seems like it should be a NoKeyError
