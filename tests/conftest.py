@@ -10,8 +10,12 @@ import moto
 import pytest
 
 from cirrus.lib.eventdb import EventDB
+from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import get_client
+from click.testing import CliRunner
+
+MOCK_REGION = "us-east-1"
 
 
 def set_fake_creds():
@@ -20,8 +24,8 @@ def set_fake_creds():
     os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"  # noqa: S105
     os.environ["AWS_SECURITY_TOKEN"] = "testing"  # noqa: S105
     os.environ["AWS_SESSION_TOKEN"] = "testing"  # noqa: S105
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-    os.environ["AWS_REGION"] = "us-east-1"
+    os.environ["AWS_DEFAULT_REGION"] = MOCK_REGION
+    os.environ["AWS_REGION"] = MOCK_REGION
 
 
 set_fake_creds()
@@ -45,49 +49,55 @@ def statedb_schema(fixtures) -> dict[str, Any]:
 @pytest.fixture()
 def s3():
     with moto.mock_s3():
-        yield get_client("s3", region="us-east-1")
+        yield get_client("s3", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def sqs():
     with moto.mock_sqs():
-        yield get_client("sqs", region="us-east-1")
+        yield get_client("sqs", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def sns():
     with moto.mock_sns():
-        yield get_client("sns", region="us-east-1")
+        yield get_client("sns", region=MOCK_REGION)
+
+
+@pytest.fixture()
+def ssm():
+    with moto.mock_ssm():
+        yield get_client("ssm", region=MOCK_REGION)
+
+
+@pytest.fixture()
+def lambdas():
+    with moto.mock_lambda():
+        yield get_client("lambda", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def dynamo():
     with moto.mock_dynamodb():
-        yield get_client("dynamodb", region="us-east-1")
+        yield get_client("dynamodb", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def stepfunctions():
     with moto.mock_stepfunctions():
-        yield get_client("stepfunctions", region="us-east-1")
+        yield get_client("stepfunctions", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def iam():
     with moto.mock_iam():
-        yield get_client("iam", region="us-east-1")
-
-
-@pytest.fixture()
-def statedb_table_name(dynamo, statedb_schema) -> str:
-    dynamo.create_table(**statedb_schema)
-    return statedb_schema["TableName"]
+        yield get_client("iam", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def timestream_write_client():
     with moto.mock_timestreamwrite():
-        yield get_client("timestream-write", region="us-east-1")
+        yield get_client("timestream-write", region=MOCK_REGION)
 
 
 @pytest.fixture()
@@ -124,28 +134,19 @@ def data(s3):
 @pytest.fixture()
 def queue(sqs):
     q = sqs.create_queue(QueueName="test-queue")
-    q["Arn"] = "arn:aws:sqs:us-east-1:123456789012:test-queue"
+    q["Arn"] = f"arn:aws:sqs:{MOCK_REGION}:123456789012:test-queue"
     return q
 
 
 @pytest.fixture()
-def workflow(stepfunctions, iam):
-    defn = {
-        "StartAt": "FirstState",
-        "States": {
-            "FirstState": {
-                "Type": "Pass",
-                "End": True,
-            },
-        },
-    }
+def iam_role(iam):
     role_policy = {
         "Version": "2012-10-17",
         "Statement": [
             {
                 "Effect": "Allow",
                 "Principal": {
-                    "Service": "states.us-east-1.amazonaws.com",
+                    "Service": f"states.{MOCK_REGION}.amazonaws.com",
                 },
                 "Action": "sts:AssumeRole",
             },
@@ -155,10 +156,25 @@ def workflow(stepfunctions, iam):
         RoleName="test-step-function-role",
         AssumeRolePolicyDocument=json.dumps(role_policy),
     )["Role"]
+
+    return role["Arn"]
+
+
+@pytest.fixture()
+def workflow(stepfunctions, iam_role):
+    defn = {
+        "StartAt": "FirstState",
+        "States": {
+            "FirstState": {
+                "Type": "Pass",
+                "End": True,
+            },
+        },
+    }
     return stepfunctions.create_state_machine(
         name="test-workflow1",
         definition=json.dumps(defn),
-        roleArn=role["Arn"],
+        roleArn=iam_role,
     )
 
 
@@ -170,3 +186,28 @@ def _environment() -> Iterator[None]:
     finally:
         os.environ.clear()
         os.environ = current_env  # noqa: B003
+
+
+@pytest.fixture()
+def execute_state_machine(stepfunctions, workflow, put_parameters):
+    state_machine_arn = workflow["stateMachineArn"]
+    os.environ["CIRRUS_BASE_WORKFLOW_ARN"] = state_machine_arn[: -len("test-workflow1")]
+    return stepfunctions.start_execution(
+        stateMachineArn=state_machine_arn,
+        name="test-execution",
+    )
+
+
+@pytest.fixture()
+def st_func_execution_arn(execute_state_machine):
+    return execute_state_machine["executionArn"]
+
+
+@pytest.fixture()
+def wfem(statedb, eventdb):
+    return WorkflowEventManager(statedb=statedb, eventdb=eventdb)
+
+
+@pytest.fixture()
+def runner():
+    return CliRunner()

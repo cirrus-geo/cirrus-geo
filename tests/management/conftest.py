@@ -10,6 +10,7 @@ import pytest
 
 from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
 from cirrus.management.cli import cli
+from cirrus.management.deployment_pointer import DEPLOYMENTS_PREFIX
 from click.testing import CliRunner
 
 
@@ -38,7 +39,7 @@ def mock_make_api_call(self, operation_name, kwarg):
 
 
 @pytest.fixture()
-def mock_lambda_get_conf():  # noqa: PT004
+def _mock_lambda_get_conf():
     with patch(
         "botocore.client.BaseClient._make_api_call",
         new=mock_make_api_call,
@@ -70,3 +71,64 @@ def basic_payloads(fixtures, statedb):
         ],
         statedb=statedb,
     )
+
+
+def mock_parameters(queue, payloads, statedb, workflow, deployment_name):
+    return {
+        "CIRRUS_PAYLOAD_BUCKET": payloads,
+        "CIRRUS_BASE_WORKFLOW_ARN": workflow["stateMachineArn"].replace(
+            "workflow1",
+            "",
+        ),
+        "CIRRUS_PROCESS_QUEUE_URL": queue["QueueUrl"],
+        "CIRRUS_STATE_DB": statedb.table_name,
+        "CIRRUS_PREFIX": f"fd-{deployment_name}-dev-cirrus-",
+    }
+
+
+@pytest.fixture()
+def put_parameters(ssm, queue, payloads, statedb, workflow):
+    for deployment_name in ["lion", "squirrel-dev"]:
+        # put pointer parameters
+        deployment_key = f"/deployment/{deployment_name}/"
+        ssm.put_parameter(
+            Name=f"{DEPLOYMENTS_PREFIX}{deployment_name}",
+            Value=json.dumps(
+                {
+                    "type": "parameter_store",
+                    "value": deployment_key,
+                },
+            ),
+            Type="String",
+        )
+        # put mock deployment parameters
+        for param_name, value in mock_parameters(
+            queue,
+            payloads,
+            statedb,
+            workflow,
+            deployment_name,
+        ).items():
+            name = f"{deployment_key}{param_name}"
+            ssm.put_parameter(
+                Name=name,
+                Value=value,
+                Type="String",
+            )
+    return ssm
+
+
+@pytest.fixture()
+def make_lambdas(lambdas, iam_role):
+    lambda_code = """
+    def lambda_handler(event, context):
+        return
+    """
+    lambdas.create_function(
+        FunctionName="fd-lion-dev-cirrus-process",
+        Runtime="python3.12",
+        Role=iam_role,
+        Code={"ZipFile": bytes(lambda_code, "utf-8")},
+        Description="mock process lambda for unit testing",
+    )
+    return lambdas
