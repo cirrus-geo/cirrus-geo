@@ -213,7 +213,12 @@ class Deployment:
 
         return self.get_execution(exec_arn)
 
-    def invoke_lambda(self, event, function_name, session: boto3.Session = None):
+    def invoke_lambda(
+        self,
+        event: str,
+        function_name: str,
+        session: boto3.Session = None,
+    ):
         aws_lambda = get_client(
             "lambda",
             session=self.session if self.session else session,
@@ -222,7 +227,7 @@ class Deployment:
             raise ValueError(
                 f"lambda named '{function_name}' not found in deployment '{self.name}'",
             )
-        full_name = f"{self.environment['CIRRUS_PREFIX']}-{function_name}"
+        full_name = f"{self.environment['CIRRUS_PREFIX']}{function_name}"
         response = aws_lambda.invoke(FunctionName=full_name, Payload=event)
         if response["StatusCode"] < 200 or response["StatusCode"] > 299:
             raise RuntimeError(response)

@@ -236,7 +236,7 @@ def get_state(deployment: Deployment, payload_id: str):
 @pass_deployment
 def process(deployment: Deployment):
     """Enqueue a payload (from stdin) for processing"""
-    click.echo(json.dumps(deployment.process_payload(sys.stdin), indent=4))
+    click.echo(json.dumps(deployment.process_payload(sys.stdin.read()), indent=4))
 
 
 @manage.command()
