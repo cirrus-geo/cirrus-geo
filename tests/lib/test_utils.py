@@ -2,11 +2,14 @@ import json
 
 from pathlib import Path
 
+import boto3
 import pytest
 
 from cirrus.lib import utils
 from moto.core.models import DEFAULT_ACCOUNT_ID
 from moto.sns.models import sns_backends
+
+from tests.conftest import MOCK_REGION
 
 fixtures = Path(__file__).parent.joinpath("fixtures")
 event_dir = fixtures.joinpath("events")
@@ -257,3 +260,20 @@ def test_snsmessage_too_many_mesg_attrs() -> None:
                 for i in range(11)
             },
         )
+
+
+def test_assume_role(sts):
+    session = boto3.Session(region_name=MOCK_REGION)
+    credentials = session._session.get_credentials()
+
+    iam_role_arn = (
+        "arn:aws:iam::000000000001:role/test-cirrus-cli-role-0000000000000000000000099"
+    )
+
+    session = utils.assume_role(session, iam_role_arn)
+
+    updated_credentals = session._session.get_credentials()
+
+    assert updated_credentals.access_key != credentials.access_key
+    assert updated_credentals.secret_key != credentials.secret_key
+    assert updated_credentals.token != credentials.token

@@ -71,6 +71,12 @@ def ssm():
 
 
 @pytest.fixture()
+def sts():
+    with moto.mock_sts():
+        yield get_client("sts", region=MOCK_REGION)
+
+
+@pytest.fixture()
 def lambdas():
     with moto.mock_lambda():
         yield get_client("lambda", region=MOCK_REGION)
