@@ -85,9 +85,9 @@ class Deployment:
         dp = DeploymentPointer.get_pointer(name, session=session)
         return cls.from_pointer(dp, session=session)
 
-    def get_lambda_functions(self):
+    def get_lambda_functions(self, session: boto3.Session | None = None):
         if self._functions is None:
-            aws_lambda = get_client("lambda", self.session)
+            aws_lambda = get_client("lambda", self.session if self.session else session)
 
             def deployment_functions_filter(response):
                 return [
@@ -213,12 +213,12 @@ class Deployment:
 
         return self.get_execution(exec_arn)
 
-    def invoke_lambda(self, event, function_name):
+    def invoke_lambda(self, event, function_name, session: boto3.Session = None):
         aws_lambda = get_client(
             "lambda",
-            session=self.session,
+            session=self.session if self.session else session,
         )
-        if function_name not in self.get_lambda_functions(self.session):
+        if function_name not in self.get_lambda_functions():
             raise ValueError(
                 f"lambda named '{function_name}' not found in deployment '{self.name}'",
             )
