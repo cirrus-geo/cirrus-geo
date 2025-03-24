@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLIrrus - The Cirrus CLI management Tool &mdash; Cirrus  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/js/versions-loader.js?v=d43487cb"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Cirrus
+          </a>
+              <div class="version">
+                main
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../30_payload.html">Cirrus Process Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../60_components.html">Cirrus Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../95_tips_and_tricks.html">Tips and Tricks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../components/feeders/index.html">Feeders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../components/tasks/index.html">Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../components/workflows/index.html">Workflows</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CLIrrus - The Cirrus CLI management Tool</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/cirrus/cli/00_intro.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="clirrus-the-cirrus-cli-management-tool">
+<h1>CLIrrus - The Cirrus CLI management Tool<a class="headerlink" href="#clirrus-the-cirrus-cli-management-tool" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>Cirrus itself is <a class="reference external" href="https://stacspec.org/">STAC</a>-based geospatial processing pipeline platform deployed
+on AWS and is a constellation of associated pieces of AWS infrastructure.  The
+pieces of a Cirrus deployment like the lambdas, SQS, S3 buckets and other can be
+managed and interacted with using common AWS management tools like the AWS GUI
+or AWS CLI.  However the nature of a Cirrus deployment can make direct
+management via AWS tools difficult to do things like batch reruns, manage
+deployments, individual lambda invocations, and more.  There can be multiple
+cirrus deployments and Cirrus infrastructure may co-exist in an AWS account with non Cirrus resources further complicating this management.</p>
+</section>
+<section id="what-is-clirrus">
+<h2>What Is CLIrrus?<a class="headerlink" href="#what-is-clirrus" title="Link to this heading"></a></h2>
+<p>To ease the management of a cirrus deployment the cirrus-geo library has a
+built in command line tool (CLIrrus) designed to streamline the developer
+experience when using and interacting with a Cirrus deployment.</p>
+<p>CLIrrus is a python CLI tool built using the <a class="reference external" href="https://click.palletsprojects.com/en/stable/">click</a> library with commmands
+specific to Cirrus.  Example use cases would be to list all available cirrus
+deployments, list lambdas in a given deployment, and even directly trigger a
+workflow with an input Payload by sending the payload directly to the SQS queue
+monitored by the Process lambda, and more.</p>
+</section>
+<section id="what-if-i-m-using-an-older-version-of-cirrus">
+<h2>What if I’m using an older version of Cirrus?<a class="headerlink" href="#what-if-i-m-using-an-older-version-of-cirrus" title="Link to this heading"></a></h2>
+<p>You can use the <a class="reference external" href="https://pypi.org/project/cirrus-mgmt/">older CLI tool</a> which is a standalone module and can be
+installed via pip.</p>
+</section>
+<section id="how-to-use-clirrus">
+<h2>How To Use CLIrrus?<a class="headerlink" href="#how-to-use-clirrus" title="Link to this heading"></a></h2>
+<p>A few simple steps are all it takes to set up CLIrrus for use.</p>
+<ol class="arabic simple">
+<li><p>Install</p></li>
+<li><p>Authenticatie</p></li>
+<li><p>Run commands</p></li>
+</ol>
+</section>
+<section id="clirrus-quick-start">
+<h2>CLIrrus Quick Start<a class="headerlink" href="#clirrus-quick-start" title="Link to this heading"></a></h2>
+<p>If you understand the broader background and structure of Cirrus, cirrus
+deployments and the cirrus CLI tool and you want to jump right into using the
+CLI tool here is what an example workflow might look like.  These are one way of accomplishing these steps, personal and organizatonal requirements may differ.</p>
+<ol class="arabic simple">
+<li><p>Install requirements</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3.12<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;cirrus-geo[cli]&gt;=1.0.0&#39;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Authenticate (if necessary)</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>aws<span class="w"> </span>sso<span class="w"> </span>login<span class="w"> </span>--profile<span class="w"> </span>your-config-profile-here
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Use CLIrrus</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>deployment-name-here<span class="w"> </span>list-lambdas
+</pre></div>
+</div>
+<p>And thats it!  If you would like more in depth explanations on how to use the
+tool, please proceed.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
