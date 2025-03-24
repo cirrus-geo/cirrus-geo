@@ -14,7 +14,7 @@ import backoff
 import boto3
 
 from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.utils import get_client
+from cirrus.lib.utils import assume_role, get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
 from cirrus.management.exceptions import (
     NoExecutionsError,
@@ -44,26 +44,23 @@ class Deployment:
         name: str,
         environment: dict,
         session: boto3.Session | None = None,
+        iam_role_arn: str | None = None,
+        region: str | None = None,
     ) -> None:
         self.name = name
         self.environment = environment
         self._functions: list[str] | None = None
-        # add region + iam role arn to init
+        self.iam_role_arm = iam_role_arn
+        self.region = region
+
         if session is None:
             session = boto3.Session()
         session = assume_role(
             session,
-            self.environment.get("CIRRUS_CLI_IAM_ARN"),
-            self.environment.get("AWS_REGION"),
+            self.iam_role_arm,
+            self.environment.get("AWS_REGION", session.region_name),
         )
         self.session = session
-
-        # make sure all functions if taking a session are OPTIONALLY taking a session and by default using session from self
-
-        # create new session from the old session overwriting credential and region on old session
-
-    def assume_role():
-        return
 
     @staticmethod
     def yield_deployments(
@@ -75,7 +72,7 @@ class Deployment:
     def from_pointer(
         cls,
         pointer: DeploymentPointer,
-        session: boto3.Session,
+        session: boto3.Session | None,
     ):
         return cls(
             session=session,
@@ -88,13 +85,9 @@ class Deployment:
         dp = DeploymentPointer.get_pointer(name, session=session)
         return cls.from_pointer(dp, session=session)
 
-    def get_lambda_functions(self, session):
+    def get_lambda_functions(self):
         if self._functions is None:
-            aws_lambda = get_client(
-                "lambda",
-                session,
-                iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
-            )
+            aws_lambda = get_client("lambda", self.session)
 
             def deployment_functions_filter(response):
                 return [
@@ -174,7 +167,6 @@ class Deployment:
             s3 = get_client(
                 "s3",
                 session=self.session,
-                iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
             )
             s3.upload_fileobj(stream, bucket, key)
             payload = json.dumps({"url": url})
@@ -182,7 +174,6 @@ class Deployment:
         sqs = get_client(
             "sqs",
             session=self.session,
-            iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
         )
         return sqs.send_message(
             QueueUrl=self.environment["CIRRUS_PROCESS_QUEUE_URL"],
@@ -202,7 +193,6 @@ class Deployment:
         s3 = get_client(
             "s3",
             session=self.session,
-            iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
         )
 
         return s3.download_fileobj(bucket, key, output_fileobj)
@@ -211,7 +201,6 @@ class Deployment:
         sfn = get_client(
             "stepfunctions",
             session=self.session,
-            iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
         )
         return sfn.describe_execution(executionArn=arn)
 
@@ -224,13 +213,12 @@ class Deployment:
 
         return self.get_execution(exec_arn)
 
-    def invoke_lambda(self, event, function_name, session):
+    def invoke_lambda(self, event, function_name):
         aws_lambda = get_client(
             "lambda",
             session=self.session,
-            iam_role_arn=self.environment.get("CIRRUS_CLI_IAM_ARN"),
         )
-        if function_name not in self.get_lambda_functions(session):
+        if function_name not in self.get_lambda_functions(self.session):
             raise ValueError(
                 f"lambda named '{function_name}' not found in deployment '{self.name}'",
             )
