@@ -5,9 +5,10 @@ import sys
 
 from subprocess import CalledProcessError
 
-import boto3
 import botocore.exceptions
 import click
+
+from boto3 import Session
 
 from cirrus.lib.statedb import StateDB
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
@@ -41,7 +42,7 @@ pass_deployment = click.make_pass_decorator(Deployment)
 )
 @pass_session
 @click.pass_context
-def manage(ctx, session: boto3.Session, deployment: str, profile: str | None = None):
+def manage(ctx, session: Session, deployment: str, profile: str | None = None):
     """
     Commands to run management operations against a cirrus deployment.
     """
@@ -50,7 +51,7 @@ def manage(ctx, session: boto3.Session, deployment: str, profile: str | None = N
 
 @manage.command()
 @pass_deployment
-def show(deployment):
+def show(deployment: Deployment):
     """Show a deployment configuration"""
     color = "blue"
     click.secho(json.dumps(deployment.environment, indent=4), fg=color)
@@ -73,7 +74,12 @@ def show(deployment):
 )
 @raw_option
 @pass_deployment
-def run_workflow(deployment, timeout, raw, poll_interval):
+def run_workflow(
+    deployment: Deployment,
+    timeout: int,
+    poll_interval: int,
+    raw: bool = False,
+):
     """Pass a payload (from stdin) off to a deployment, wait for the workflow to finish,
     retrieve and return its output payload"""
     payload = json.loads(sys.stdin.read())
@@ -83,7 +89,7 @@ def run_workflow(deployment, timeout, raw, poll_interval):
         timeout=timeout,
         poll_interval=poll_interval,
     )
-    click.echo(json.dump(output, sys.stdout, indent=4 if not raw else None))
+    click.echo(json.dumps(output, indent=(4 if not raw else None)))
 
 
 @manage.command("get-payload")
@@ -92,7 +98,7 @@ def run_workflow(deployment, timeout, raw, poll_interval):
 )
 @raw_option
 @pass_deployment
-def get_payload(deployment: Deployment, payload_id, raw):
+def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
     """Get a payload from S3 using its ID"""
 
     if raw:
@@ -104,8 +110,6 @@ def get_payload(deployment: Deployment, payload_id, raw):
             download_payload(deployment, payload_id, b)
             b.seek(0)
             json.dump(json.load(b), sys.stdout, indent=4)
-
-    # ensure we end with a newline
     click.echo("")
 
 
@@ -113,7 +117,12 @@ def get_payload(deployment: Deployment, payload_id, raw):
 @execution_arn
 @raw_option
 @pass_deployment
-def get_execution(deployment, arn, payload_id, raw):
+def get_execution(
+    deployment: Deployment,
+    arn: str | None,
+    payload_id: str | None,
+    raw: bool = False,
+):
     """Get a workflow execution using its ARN or its input payload ID"""
     execution = _get_execution(deployment, arn, payload_id)
 
@@ -127,7 +136,12 @@ def get_execution(deployment, arn, payload_id, raw):
 @execution_arn
 @raw_option
 @pass_deployment
-def get_execution_input(deployment, arn, payload_id, raw):
+def get_execution_input(
+    deployment: Deployment,
+    arn: str | None,
+    payload_id: str | None,
+    raw: bool = False,
+):
     """Get a workflow execution's input payload using its ARN or its input payload ID"""
     _input = json.loads(_get_execution(deployment, arn, payload_id)["input"])
 
@@ -141,7 +155,12 @@ def get_execution_input(deployment, arn, payload_id, raw):
 @execution_arn
 @raw_option
 @pass_deployment
-def get_execution_output(deployment, arn, payload_id, raw):
+def get_execution_output(
+    deployment: Deployment,
+    arn: str | None,
+    payload_id: str | None,
+    raw: bool = False,
+):
     """Get a workflow execution's output payload using its ARN or its input
     payload ID"""
     output = json.loads(_get_execution(deployment, arn, payload_id)["output"])
@@ -157,7 +176,7 @@ def get_execution_output(deployment, arn, payload_id, raw):
     "payload-id",
 )
 @pass_deployment
-def get_state(deployment: Deployment, payload_id):
+def get_state(deployment: Deployment, payload_id: str):
     """Get the statedb record for a payload ID"""
     state = deployment.get_payload_state(payload_id)
     click.echo(json.dumps(state, indent=4))
@@ -176,7 +195,7 @@ def process(deployment: Deployment):
 )
 @pass_session
 @pass_deployment
-def invoke_lambda(deployment: Deployment, session, lambda_name):
+def invoke_lambda(deployment: Deployment, session: Session, lambda_name: str):
     """Invoke lambda with event (from stdin)"""
     click.echo(
         json.dumps(
@@ -192,10 +211,10 @@ def invoke_lambda(deployment: Deployment, session, lambda_name):
 @include_user_vars
 @pass_deployment
 def template_payload(
-    deployment,
-    additional_variables,
-    silence_templating_errors,
-    include_user_vars,
+    deployment: Deployment,
+    silence_templating_errors: bool,
+    include_user_vars: bool,
+    additional_variables: dict[str, str],
 ):
     """Template a payload using a deployment's vars"""
     click.echo(
@@ -221,7 +240,7 @@ def template_payload(
 @include_user_vars
 @pass_deployment
 @click.pass_context
-def _exec(ctx, deployment, command, include_user_vars):
+def _exec(ctx, deployment: Deployment, command: str, include_user_vars: bool):
     """Run an executable with the deployment environment vars loaded"""
     if not command:
         return
@@ -241,7 +260,7 @@ def _exec(ctx, deployment, command, include_user_vars):
 @include_user_vars
 @pass_deployment
 @click.pass_context
-def _call(ctx, deployment, command, include_user_vars):
+def _call(ctx, deployment: Deployment, command: str, include_user_vars: bool):
     """Run an executable, in a new process, with the deployment environment
     vars loaded"""
     if not command:
@@ -256,7 +275,7 @@ def _call(ctx, deployment, command, include_user_vars):
 @pass_session
 @pass_deployment
 @click.pass_context
-def list_lambdas(ctx, deployment: Deployment, session):
+def list_lambdas(ctx, deployment: Deployment, session: Session):
     """List lambda functions"""
     click.echo(
         json.dumps(
@@ -298,7 +317,7 @@ def get_records(
         "limit": limit,
         "error-prefix": error_prefix,
     }
-    # get-records | xargs cirrus manage process 
+    # get-records | xargs cirrus manage process
     # get items and make query
     items = statedb.get_items_page(**query_args)
 
@@ -314,7 +333,12 @@ def get_records(
                 payload = json.load(b)
                 # TODO: set payload 'replace' to true
                 payload["replace"] = True
-                json.dump(payload, sys.stdout, indent=4)  # instead of dump look into ndJSON new line delimited json  read man page xargs ndjson   How to distinguish 
+                json.dump(
+                    payload,
+                    sys.stdout,
+                    indent=4,
+                )  # instead of dump look into ndJSON new line delimited json
+                # read man page xargs ndjson   How to distinguish
         except botocore.exceptions.ClientError as e:
             # TODO: understand why this is a ClientError even
             #   when it seems like it should be a NoKeyError

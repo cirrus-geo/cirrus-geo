@@ -177,6 +177,7 @@ def additional_variables(func):
         nargs=2,
         multiple=True,
         callback=merge_vars2,
+        default={},
         help="Additional templating variables",
     )(func)
 
