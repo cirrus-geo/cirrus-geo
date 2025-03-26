@@ -135,8 +135,10 @@ def test_get_payload(deployment, s3, load_payload):
     assert 1 == 2
 
 
-def test_get_records(deployment, load_payload, statedb):
-    result = deployment("get-records --workflow-name 'test-workflow'")
+def test_get_records(deployment, create_records, statedb):
+    result = deployment(
+        "get-records --collections-workflow 'sar-test-panda_test' --state 'COMPLETED'",
+    )
     assert result.exit_code == 0
     assert result.stdout == json.dumps({})
     assert 1 == 2

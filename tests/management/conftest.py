@@ -1,7 +1,8 @@
 import json
 import shlex
 
-from pathlib import Path
+from datetime import UTC, datetime, timedelta
+from io import BytesIO
 from unittest.mock import patch
 
 import boto3
@@ -10,6 +11,7 @@ import moto
 import pytest
 
 from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
+from cirrus.lib.statedb import StateDB
 from cirrus.management.cli import cli
 from cirrus.management.deployment_pointer import DEPLOYMENTS_PREFIX
 from click.testing import CliRunner
@@ -136,16 +138,39 @@ def make_lambdas(lambdas, iam_role):
 
 
 @pytest.fixture()
-def load_payload(s3, put_parameters, statedb, payloads, tmp_path):
-    payload_id = "test-payload-id"
-    path = tmp_path / payload_id
-    path.mkdir()
-    path = path / "input.json"
+def create_records(s3, put_parameters, statedb: StateDB, payloads):
+    def upload_payload(bucket_name: str, payload_id: str):
+        payload = {"payload_id": payload_id, "properties": {"a": "property"}}
+        with BytesIO() as f:
+            f.write(json.dumps(payload, indent=4).encode("utf-8"))
+            f.seek(0)
+            s3.upload_fileobj(f, bucket_name, f"{payload_id}_input.json")
 
-    payload = {"payload_id": payload_id, "properties": {"a": "property"}}
-    with Path.open(path, "w") as f:
-        json.dump(payload, f, indent=4)
-    with Path.open(path, "rb") as f:
-        s3.upload_fileobj(f, payloads, "TEST_OBJ_NAME")
+    payload_ids = {
+        "completed": [
+            "sar-test-panda/workflow-test/completed-01",
+            "sar-test-panda/workflow-test/completed-02",
+        ],
+        "failed": [
+            "sar-test-panda/workflow-test/failed-01",
+            "sar-test-panda/workflow-test/failed-02",
+        ],
+    }
+
+    # add to mock statedb first then mock payload bucket
+    for index, id in enumerate(payload_ids["completed"]):
+        statedb.set_completed(
+            id,
+            [f"item-{id}_completed-{index}"],
+            (datetime.now(UTC) + timedelta(days=index)).isoformat(),
+        )
+        upload_payload(payloads, id)
+    for index, id in enumerate(payload_ids["failed"]):
+        statedb.set_failed(
+            id,
+            f"failed-message-{index}",
+            (datetime.now(UTC) + timedelta(days=index)).isoformat(),
+        )
+        upload_payload(payloads, id)
 
     return s3
