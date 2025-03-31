@@ -55,7 +55,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   werkzeug
-moto==4.2.14
+moto==5.1.2
     # via -r requirements-in/40_requirements-dev.in
 mypy==1.10.0
     # via -r requirements-in/40_requirements-dev.in

@@ -258,7 +258,9 @@ class ProcessPayload(dict):
                 )
 
                 if db_state is StateEnum.CLAIMED:
-                    db_exec = e.response["Item"]["execution_arn"]["S"].split("_")[0]
+                    db_exec = e.response["Item"]["executions"]["L"][0]["S"].split("_")[
+                        0
+                    ]
                     if db_exec != execution_arn:
                         self.logger.warning(
                             msg="payload found in CLAIMED",

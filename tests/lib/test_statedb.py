@@ -348,12 +348,14 @@ def test_set_processing_without_claim(state_table: StateDB):
 
 def test_double_claim(state_table: StateDB):
     state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
-    with pytest.raises(TypeError) as te:
-        # This should be ClientError, but moto has an issue where serializing the item
-        # fails when converting existing item to json.
+    with pytest.raises(ClientError) as te:
         state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
 
-    assert te.value.args[0] == "Object of type DynamoType is not JSON serializable"
+    assert te.value.args[0] == (
+        "An error occurred (ConditionalCheckFailedException)"
+        " when calling the UpdateItem operation: "
+        "The conditional request failed"
+    )
 
 
 def test_second_execution(state_table: StateDB):
