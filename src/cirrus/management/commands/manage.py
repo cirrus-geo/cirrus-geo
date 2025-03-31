@@ -82,13 +82,24 @@ def include_user_vars(func):
     "deployment",
     metavar="DEPLOYMENT_NAME",
 )
+@click.option(
+    "--iam-arn",
+    metavar="IAM_ROLE_ARN",
+)
 @pass_session
 @click.pass_context
-def manage(ctx, session: Session, deployment: str, profile: str | None = None):
+def manage(
+    ctx,
+    session: Session,
+    deployment: str,
+    profile: str | None = None,
+    iam_arn: str | None = None,
+):
     """
     Commands to run management operations against a cirrus deployment.
     """
-    ctx.obj = Deployment.from_name(deployment, session=session)
+    click.echo(f"iam: {iam_arn}")
+    ctx.obj = Deployment.from_name(deployment, session=session, iam_role_arn=iam_arn)
 
 
 @manage.command()

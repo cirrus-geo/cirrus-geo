@@ -73,17 +73,24 @@ class Deployment:
         cls,
         pointer: DeploymentPointer,
         session: boto3.Session | None,
+        iam_role_arn: str | None = None,
     ):
         return cls(
             session=session,
             environment=pointer.get_environment(session=session),
             name=pointer.name,
+            iam_role_arn=iam_role_arn,
         )
 
     @classmethod
-    def from_name(cls, name: str, session: boto3.Session) -> Deployment:
+    def from_name(
+        cls,
+        name: str,
+        session: boto3.Session,
+        iam_role_arn: str | None = None,
+    ) -> Deployment:
         dp = DeploymentPointer.get_pointer(name, session=session)
-        return cls.from_pointer(dp, session=session)
+        return cls.from_pointer(dp, session=session, iam_role_arn=iam_role_arn)
 
     def get_lambda_functions(self, session: boto3.Session | None = None):
         if self._functions is None:
