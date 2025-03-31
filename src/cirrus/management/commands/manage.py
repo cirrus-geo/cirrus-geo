@@ -98,7 +98,6 @@ def manage(
     """
     Commands to run management operations against a cirrus deployment.
     """
-    click.echo(f"iam: {iam_arn}")
     ctx.obj = Deployment.from_name(deployment, session=session, iam_role_arn=iam_arn)
 
 
