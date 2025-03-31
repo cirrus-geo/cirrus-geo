@@ -296,35 +296,36 @@ def list_lambdas(ctx, deployment: Deployment, session: Session):
 def get_records(
     ctx,
     deployment: Deployment,
-    session,
-    raw,
-    collections,
-    workflow_name,
-    state,
-    since,
-    error_prefix,
-    limit=100,
+    session: Session,
+    collections_workflow: str,
+    workflow_name: str,
+    state: str,
+    since: str,
+    error_prefix: str,
+    limit: int = 100,
+    raw: bool = False,
 ):
     """Query multiple records from state DB using filter options"""
-    click.echo(f"filters: limit: {limit} state: {state}")
+    # click.echo(f"filters: limit: {limit} state: {state}")
     os.environ.update(deployment.environment)
     statedb = StateDB()
     query_args = {
-        "collections_workflow": collections,
-        "workflow-name": workflow_name,
+        # "workflow-name": workflow_name,
         "state": state,
         "since": since,
-        "limit": limit,
-        "error-prefix": error_prefix,
+        "error_begins_with": error_prefix,
     }
     # get-records | xargs cirrus manage process
     # get items and make query
-    items = statedb.get_items_page(**query_args)
+    items = statedb.get_items_page(
+        collections_workflow=collections_workflow,
+        limit=limit,
+        **query_args,
+    )
 
     # loop through returned items, get each item and send to stdout for piping,
     for item in items["items"]:
         try:
-            print(item)  # noqa: T201
             import io
 
             with io.BytesIO() as b:
@@ -338,7 +339,7 @@ def get_records(
                     sys.stdout,
                     indent=4,
                 )  # instead of dump look into ndJSON new line delimited json
-                # read man page xargs ndjson   How to distinguish
+                # read man page xargs ndjson
         except botocore.exceptions.ClientError as e:
             # TODO: understand why this is a ClientError even
             #   when it seems like it should be a NoKeyError
