@@ -41,7 +41,6 @@ def create_items_bulk(item_count, fns, **kwargs):
             fn(f"{newitem['id']}{index}", **kwargs)
 
 
-
 TESTKEY = {"collections_workflow": "col1_wf1", "itemids": "item1/item2"}
 
 

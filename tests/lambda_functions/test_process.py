@@ -1,3 +1,4 @@
+# ruff: noqa: ERA001
 import io
 import json
 import os
@@ -881,6 +882,34 @@ def test_finding_claimed_item(
     state, exec_arn = state_items[proc_payload["id"]]
     assert state.value == "CLAIMED"
     assert exec_arn == pre_cooked_exec_arn
+    with pytest.raises(TypeError):
+        # FILE UNDER: UPGRADE MOTO
+        # This should not raise an TypeError, but moto tries to serialize object
+        # containing a DynamoType entry:
+        #  {'collections_workflow': {'S': 'test-collection-input1_test-workflow1'},
+        #   'created': {'S': '2025-03-31T17:14:56.803734+00:00'},
+        #   'executions': {'L': [
+        #     DynamoType: {
+        #       'S':
+        #       ('arn:aws:states:us-east-1:123456789012:'
+        #        'stateMachine:test-workflow1:from_db_entry')
+        #     }
+        #   ]},
+        #   'itemids': {'S': 'test-id1'},
+        #   'state_updated': {'S': 'CLAIMED_2025-03-31T17:14:56.803734+00:00'},
+        #   'updated': {'S': '2025-03-31T17:14:56.803734+00:00'}}
+        #  }
+        # BUT a statedb.table.scan we see the item as just a string:
+        #   {
+        #     'collections_workflow': 'test-collection-input1_test-workflow1',
+        #     'created': '2025-03-31T17:14:56.803734+00:00',
+        #     'executions': [('arn:aws:states:us-east-1:123456789012:'
+        #                     'stateMachine:test-workflow1:from_db_entry')],
+        #     'itemids': 'test-id1',
+        #     'state_updated': 'CLAIMED_2025-03-31T17:14:56.803734+00:00',
+        #     'updated': '2025-03-31T17:14:56.803734+00:00'
+        #   }
+        _ = proc_payload(wfem, pre_cooked_exec_arn, state)
 
 
 def test_execution_name_idempotence(payload):
