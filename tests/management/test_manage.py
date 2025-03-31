@@ -22,7 +22,7 @@ def manage(invoke):
 
 
 @pytest.fixture()
-def deployment(manage, queue, payloads, statedb, workflow, iam_role):
+def deployment(manage, queue, payloads, statedb, workflow, sts, iam_role):
     def _manage(deployment, cmd):
         return manage(f"{deployment.name} {cmd}")
 
@@ -65,7 +65,7 @@ def test_list_deployments(invoke, put_parameters):
     assert result.stdout.strip().splitlines() == ["lion", "squirrel-dev"]
 
 
-def test_list_lambas(deployment, make_lambdas, put_parameters, sts):
+def test_list_lambas(deployment, make_lambdas, put_parameters, iam_role):
     result = deployment("list-lambdas")
     assert result.exit_code == 0
     assert result.stdout.strip() == json.dumps(

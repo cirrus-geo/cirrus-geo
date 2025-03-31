@@ -57,7 +57,7 @@ class Deployment:
             session = boto3.Session()
         session = assume_role(
             session,
-            self.iam_role_arm,
+            self.environment.get("CIRRUS_CLI_IAM_ARN", self.iam_role_arm),
             self.environment.get("AWS_REGION", session.region_name),
         )
         self.session = session

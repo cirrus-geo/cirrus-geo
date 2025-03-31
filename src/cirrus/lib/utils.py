@@ -63,7 +63,6 @@ def get_client(
 ) -> boto3.client:
     """
     Wrapper around boto3 which implements singleton pattern via @cache
-    If IAM role is available create new client by assuming custom IAM role
     """
     if session is None:
         session = boto3.Session()
@@ -93,6 +92,9 @@ def assume_role(
     iam_role_arn: str | None,
     region: str | None = None,
 ) -> boto3.Session:
+    """
+    Acquire and assign new IAM credentials to session if IAM role is available
+    """
     if iam_role_arn:
         creds = boto3.client("sts").assume_role(
             RoleArn=iam_role_arn,
