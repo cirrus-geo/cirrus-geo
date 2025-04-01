@@ -46,10 +46,51 @@ def test_manage(manage):
     assert result.exit_code == 0
 
 
-def test_manage_show_deployment(deployment, put_parameters):
-    result = deployment("show")
+def test_get_execution_by_arn(deployment, st_func_execution_arn, sts):
+    result = deployment(
+        f"get-execution --arn {st_func_execution_arn}",
+    )
     assert result.exit_code == 0
-    assert result.stdout.strip() == json.dumps(deployment.environment, indent=4)
+    assert json.loads(result.stdout.strip())["executionArn"] == st_func_execution_arn
+
+
+def test_manage_get_execution_by_payload_id(
+    deployment,
+    create_records,
+    put_parameters,
+    st_func_execution_arn,
+) -> None:
+    result = deployment(
+        "get-execution --payload-id sar-test-panda/workflow-test/completed-0",
+    )
+    assert result.exit_code == 0
+    assert json.loads(result.stdout.strip())["executionArn"] == st_func_execution_arn
+
+
+# using non-stac payloads for simplier testing
+def test_get_payload(
+    deployment,
+    create_records,
+):
+    for payload_id in create_records["processing"]:
+        result = deployment(f"get-payload {payload_id}")
+        assert result.exit_code == 0
+        assert json.loads(result.stdout.strip())["payload_id"] == payload_id
+
+
+def test_get_state(deployment, create_records):
+    for payload_id in create_records["processing"]:
+        result = deployment(f"get-state {payload_id}")
+        assert result.exit_code == 0
+        output = json.loads(result.stdout.strip())
+        actual_payload_id = (
+            output["collections_workflow"].split("_")[0]
+            + "/workflow-"
+            + output["collections_workflow"].split("_")[1]
+            + "/"
+            + output["itemids"]
+        )
+        assert actual_payload_id == payload_id
 
 
 def test_manage_show_unknown_deployment(manage, put_parameters):
@@ -78,14 +119,6 @@ def test_list_lambas(deployment, make_lambdas, put_parameters, iam_role):
     )
 
 
-def test_get_execution_by_arn(deployment, st_func_execution_arn, sts):
-    result = deployment(
-        f"get-execution --arn {st_func_execution_arn}",
-    )
-    assert result.exit_code == 0
-    assert json.loads(result.stdout.strip())["executionArn"] == st_func_execution_arn
-
-
 @pytest.mark.xfail()
 def test_process(deployment, manage, make_lambdas):
     result = deployment('process {"a": "payload to test process command"}')
@@ -93,35 +126,10 @@ def test_process(deployment, manage, make_lambdas):
     assert result.stdout.strip == json.dumps('{"a": "check"}')
 
 
-@pytest.mark.xfail()
-@pytest.mark.usefixtures("_mock_lambda_get_conf")
-def test_manage_refresh(deployment, lambda_env):
-    result = deployment("refresh")
+def test_manage_show_deployment(deployment, put_parameters):
+    result = deployment("show")
     assert result.exit_code == 0
-    new = json.loads(deployment("show").stdout)
-    assert new["environment"] == lambda_env
-
-
-@pytest.mark.xfail()
-@pytest.mark.usefixtures("_environment")
-def test_manage_get_execution_by_payload_id(
-    deployment,
-    basic_payloads,
-    statedb,
-    wfem,
-    put_parameters,
-    st_func_execution_arn,
-) -> None:
-    """Adds causes two workflow executions, and confirms that the second call
-    to get_execution_by_payload_id gets a different executionArn value from the
-    first execution."""
-    basic_payloads.process(wfem)
-    pid = basic_payloads[0]["id"]
-    sfn_exe1 = deployment.get_execution_by_payload_id(pid)
-    statedb.set_aborted(pid, execution_arn=sfn_exe1["executionArn"])
-    basic_payloads.process(wfem)
-    sfn_exe2 = deployment.get_execution_by_payload_id(pid)
-    assert sfn_exe1["executionArn"] != sfn_exe2["executionArn"]
+    assert result.stdout.strip() == json.dumps(deployment.environment, indent=4)
 
 
 @pytest.mark.parametrize(

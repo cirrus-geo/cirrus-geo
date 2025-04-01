@@ -1,6 +1,8 @@
 import json
 import shlex
 
+from datetime import UTC, datetime, timedelta
+from io import BytesIO
 from unittest.mock import patch
 
 import boto3
@@ -134,3 +136,51 @@ def make_lambdas(lambdas, iam_role):
         Description="mock process lambda for unit testing",
     )
     return lambdas
+
+
+@pytest.fixture()
+def create_records(s3, put_parameters, statedb, payloads, st_func_execution_arn):
+    def upload_mock_payload(bucket_name: str, payload_id: str):
+        payload = {"payload_id": payload_id, "properties": {"a": "property"}}
+        with BytesIO() as f:
+            f.write(json.dumps(payload, indent=4).encode("utf-8"))
+            f.seek(0)
+            s3.upload_fileobj(f, bucket_name, f"{payload_id}/input.json")
+
+    payload_ids = {
+        "processing": [
+            "sar-test-panda/workflow-test/completed-0",
+            "sar-test-panda/workflow-test/completed-1",
+        ],
+        "failed": [
+            "sar-test-panda/workflow-test/failed-0",
+            "sar-test-panda/workflow-test/failed-1",
+        ],
+    }
+
+    # add to mock statedb first then to mock payload bucket
+    # repeat use of st_func_execution_arn for get execution tests
+    # set processing to executio arn is also in mock statedb for other tests
+    for index, id in enumerate(payload_ids["processing"]):
+        (
+            statedb.set_processing(
+                id,
+                st_func_execution_arn,
+                (datetime.now(UTC) + timedelta(days=index)).isoformat(),
+            ),
+        )
+        statedb.set_completed(
+            id,
+            [f"item-{id}_completed-{index}"],
+            (datetime.now(UTC) + timedelta(days=index)).isoformat(),
+        )
+        upload_mock_payload(payloads, id)
+    for index, id in enumerate(payload_ids["failed"]):
+        statedb.set_failed(
+            id,
+            f"failed-message-{index}",
+            (datetime.now(UTC) + timedelta(days=index)).isoformat(),
+        )
+        upload_mock_payload(payloads, id)
+
+    return payload_ids
