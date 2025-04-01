@@ -4,7 +4,7 @@ darglint
 pytest
 pytest-cov
 pytest-mock
-moto<5.0
+moto>=5
 mypy
 pip-tools
 pre-commit

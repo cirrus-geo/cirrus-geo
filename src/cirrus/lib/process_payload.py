@@ -203,48 +203,127 @@ class ProcessPayload(dict):
             for item in self.features
         ]
 
-    def __call__(self, wfem) -> str | None:
-        """Add this ProcessPayload to Cirrus and start workflow
-
-        Returns:
-            str: ProcessPayload ID
+    def _fail_and_raise(self, wfem, e, url):
         """
+        This function is to be to handle exceptions that we don't know why they
+        happened. We'll be conservative, log+raise. Not raise a terminal failure, so it
+        will get retried in case it was a transient failure. If we find terminal
+        failures handled here, we should add terminal exception handlers for them.
+        """
+        msg = f"failed starting workflow ({e})"
+        self.logger.exception(msg)
+        wfem.failed(self.get("id", "missing"), msg, payload_url=url)
+        raise
+
+    def _claim(
+        self,
+        wfem: WorkflowEventManager,
+        execution_arn: str,
+        previous_state: StateEnum,
+    ) -> tuple[str, str, str]:
+        """Claim this ProcessPayload, and return
+        (state_machine_arn, execution_name, url)
+        to be used for uploading and invoking the state machine"""
+
         payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
 
         if not payload_bucket:
             raise ValueError("env var CIRRUS_PAYLOAD_BUCKET must be defined")
 
-        arn = os.getenv("CIRRUS_BASE_WORKFLOW_ARN") + self.process["workflow"]
+        state_machine_arn, _, execution_name = execution_arn.rpartition(":")
         url = f"s3://{payload_bucket}/{self['id']}/input.json"
 
-        # start workflow
+        # claim workflow
+        try:
+            # create or update DynamoDB record
+            # -> overwrites states other than PROCESSING and CLAIMED
+            wfem.claim_processing(
+                self["id"],
+                payload_url=url,
+                execution_arn=execution_arn,
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                # conditional errors on state being CLAIMED or PROCESSING.
+                # if PROCESSING, skip w/o need for other action, and return None
+                # if CLAIMED, check if state_machine_arn and execution_name (uuid) are
+                # equal to above, warn if different, and reguardless, update for this
+                # function to use the pair from the database.
+                db_state = (
+                    StateEnum(
+                        e.response["Item"]["state_updated"]["S"].split("_")[0],
+                    )
+                    if "Item" in e.response
+                    else StateEnum.PROCESSING
+                )
+
+                if db_state is StateEnum.CLAIMED:
+                    db_exec = e.response["Item"]["executions"]["L"][0]["S"].split("_")[
+                        0
+                    ]
+                    if db_exec != execution_arn:
+                        self.logger.warning(
+                            msg="payload found in CLAIMED",
+                            extra={
+                                "payload_id": self["id"],
+                                "db_exec_arn": db_exec,
+                                "planned_exec_arn": execution_arn,
+                            },
+                        )
+                        execution_arn = db_exec
+                        state_machine_arn, _, execution_name = db_exec.rpartition(":")
+                else:
+                    wfem.skipping(
+                        self["id"],
+                        state=db_state,
+                        payload_url=url,
+                        message=f"state before claim attempt was {previous_state}",
+                    )
+                    return "", "", ""
+            else:
+                # unknown ClientError
+                self._fail_and_raise(wfem, e, url)
+        return state_machine_arn, execution_name, url
+
+    def __call__(
+        self,
+        wfem,
+        execution_arn,
+        previous_state,
+    ) -> str | None:
+        """Add this ProcessPayload to Cirrus and start workflow
+
+        Returns:
+            str: ProcessPayload ID
+        """
+
+        state_machine_arn, execution_name, url = self._claim(
+            wfem,
+            execution_arn,
+            previous_state,
+        )
+
+        if state_machine_arn == "":
+            # skipped with likely already PROCESSING (announced from _claim function)
+            return None
+
         try:
             # add input payload to s3
             s3().upload_json(self, url)
+        except Exception as e:  # noqa: BLE001
+            self._fail_and_raise(wfem, e, url)
 
-            # create DynamoDB record
-            # -> this overwrites existing states other than PROCESSING
-            wfem.claim_processing(self["id"], payload_url=url)
-
-            # invoke step function
-            self.logger.debug("Running Step Function %s", arn)
-            exe_response = get_client("stepfunctions").start_execution(
-                stateMachineArn=arn,
+        # invoke step function
+        self.logger.debug("Running Step Function %s", execution_arn)
+        started_sfn = False
+        try:
+            get_client("stepfunctions").start_execution(
+                stateMachineArn=state_machine_arn,
+                name=execution_name,
                 input=json.dumps(self.get_payload()),
             )
-
-            # add execution to DynamoDB record
-            wfem.started_processing(
-                self["id"],
-                exe_response["executionArn"],
-                payload_url=url,
-            )
-
-            return self["id"]
+            started_sfn = True
         except ClientError as e:
-            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                wfem.skipping(self["id"], state=StateEnum.PROCESSING, payload_url=url)
-                return None
             if e.response["Error"]["Code"] == "StateMachineDoesNotExist":
                 # This failure is tracked in the DB and we raise an error
                 # so we can handle it specifically, to keep the payload
@@ -252,17 +331,41 @@ class ProcessPayload(dict):
                 logger.error(e)
                 wfem.failed(self["id"], str(e), payload_url=url)
                 raise TerminalError() from e
-            raise
-        except Exception as e:
-            # This case should be like the above, except we don't know
-            # why it happened. We'll be conservative and not raise a
-            # terminal failure, so it will get retried in case it was
-            # a transient failure. If we find terminal failures handled
-            # here, we should add terminal exception handlers for them.
-            msg = f"failed starting workflow ({e})"
-            self.logger.exception(msg)
-            wfem.failed(self.get("id", "missing"), msg, payload_url=url)
-            raise
+            if e.response["Error"]["Code"] != "ExecutionAlreadyExists":
+                self._fail_and_raise(wfem, e, url)
+            # Let ExecutionAlreadyExists pass, to try setting PROCESSING
+
+        try:
+            wfem.started_processing(
+                self["id"],
+                execution_arn=execution_arn,
+                payload_url=url,
+            )
+        except ClientError as e:
+            if (
+                e.response["Error"]["Code"] == "ConditionalCheckFailedException"
+                and "Item" in e.response
+            ):
+                db_state = StateEnum(
+                    e.response["Item"]["state_updated"]["S"].split("_")[0],
+                )
+                wfem.skipping(
+                    self["id"],
+                    state=db_state,
+                    payload_url=url,
+                    message=(
+                        "started stepfunction, but could not set processing "
+                        if started_sfn
+                        else (
+                            "stepfunction started by another process, "
+                            "and database already updated "
+                        )
+                    )
+                    + f"({db_state}).",
+                )
+                return None
+            self._fail_and_raise(wfem, e, url)
+        return self["id"]
 
 
 class ProcessPayloads:
@@ -293,14 +396,56 @@ class ProcessPayloads:
         """
         return [c["id"] for c in self.payloads]
 
-    def get_states(self) -> dict[str, StateEnum]:
+    def get_states_and_exec_arn(self) -> dict[str, tuple]:
         if self.state_items is None:
             items = [
                 self.statedb.dbitem_to_item(i)
                 for i in self.statedb.get_dbitems(self.payload_ids)
             ]
             self.state_items = items
-        return {c["payload_id"]: StateEnum(c["state"]) for c in self.state_items}
+        response = dict(self.get_process_attrs(self.state_items))
+        response.update(
+            {
+                p["id"]: (
+                    None,
+                    self.gen_execution_arn(p["id"], p.process["workflow"]),
+                )
+                for p in self.payloads
+                if p["id"] not in response
+            },
+        )
+        return response
+
+    @staticmethod
+    def get_process_attrs(state_items):
+        for si in state_items:
+            payload_id = si["payload_id"]
+            state = StateEnum(si["state"]) if si["state"] is not None else None
+
+            # if workflow is found in CLAIMED state, then we want the last execution to
+            # determine where in the process of sfn execution the failure to proceeed to
+            # PROCESSING occurred.
+            if state == StateEnum.CLAIMED:
+                exec_arn = si["executions"][-1].rpartition("/")[2]
+            else:
+                exec_arn = ProcessPayloads.gen_execution_arn(
+                    payload_id,
+                    si["workflow"],
+                    si.get("executions"),
+                )
+
+            yield payload_id, (state, exec_arn)
+
+    @staticmethod
+    def gen_execution_arn(payload_id, workflow, executions=None) -> str:
+        """
+        Generate an execution arn for the given payload_id, using the state_item info if
+        given.
+        """
+        if executions is None:
+            executions = []
+        execution_name = uuid.uuid5(uuid.NAMESPACE_URL, f"{payload_id}/{executions}")
+        return f"{os.environ['CIRRUS_BASE_WORKFLOW_ARN']}{workflow}:{execution_name}"
 
     def process(
         self: Self,
@@ -316,13 +461,13 @@ class ProcessPayloads:
             "failed": [],
         }
         # check existing states
-        states = self.get_states()
+        states = self.get_states_and_exec_arn()
 
         for payload in self.payloads:
             _replace = replace or payload.process.get("replace", False)
 
             # check existing state for Item, if any
-            state = states.get(payload["id"])
+            state, exec_arn = states[payload["id"]]
 
             if (
                 payload["id"] in payload_ids["started"]
@@ -336,13 +481,11 @@ class ProcessPayloads:
                 )
                 payload_ids["dropped"].append(payload["id"])
             elif (
-                state == StateEnum.FAILED
-                or state == StateEnum.ABORTED
-                or state is None
+                state in (StateEnum.FAILED, StateEnum.ABORTED, StateEnum.CLAIMED, None)
                 or _replace
             ):
                 try:
-                    payload_id = payload(wfem)
+                    payload_id = payload(wfem, exec_arn, state)
                 except TerminalError:
                     payload_ids["failed"].append(payload["id"])
                 else:
@@ -357,8 +500,8 @@ class ProcessPayloads:
                     state,
                 )
                 wfem.skipping(
-                    payload["id"],
-                    state,
+                    payload_id=payload["id"],
+                    state=state,
                     payload_url=StateDB.payload_id_to_url(payload["id"]),
                 )
                 payload_ids["skipped"].append(payload["id"])

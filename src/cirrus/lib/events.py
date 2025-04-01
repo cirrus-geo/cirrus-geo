@@ -153,12 +153,18 @@ class WorkflowEventManager:
     def claim_processing(
         self: Self,
         payload_id: str,
+        execution_arn: str,
         payload_url: str | None = None,
         isotimestamp: str | None = None,
-    ):
+    ) -> str:
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
-        self.statedb.claim_processing(payload_id=payload_id, isotimestamp=isotimestamp)
+
+        resp = self.statedb.claim_processing(
+            payload_id=payload_id,
+            execution_arn=execution_arn,
+            isotimestamp=isotimestamp,
+        )
         self.announce(
             WorkflowEvent(
                 event_type=WFEventType.CLAIMED_PROCESSING,
@@ -167,6 +173,8 @@ class WorkflowEventManager:
                 payload_url=payload_url,
             ),
         )
+
+        return resp
 
     def started_processing(
         self: Self,
@@ -199,8 +207,14 @@ class WorkflowEventManager:
         payload_id: str,
         state: StateEnum,
         payload_url: str | None = None,
+        message: str | None = "",
     ):
-        self.logger.info("Skipping %s already in %s state: ", payload_id, state)
+        self.logger.info(
+            "Skipping %s already in %s state%s.",
+            payload_id,
+            state,
+            f"({message})" if message else message,
+        )
         self.announce(
             WorkflowEvent(
                 event_type=WFEventType(f"ALREADY_{state}"),

@@ -189,3 +189,9 @@ def test_items_to_sns_messages(base_payload):
         },
     ]
     assert messages == expected
+
+
+def test_fail_and_raise(base_payload):
+    payload = ProcessPayload(**base_payload)
+    with pytest.raises(Exception):
+        payload._fail_and_raise()

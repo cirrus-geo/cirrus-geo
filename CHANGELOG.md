@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `CLAIMED` state to StateDB, along with associated `ALREADY_CLAIMED`
+  WorkflowEvent. ([#281])
+
+### Changed
+
+- StepFunctions executions now use a deterministic UUID5, derived from the
+  payload ID and execution history ([#281])
+- Upgrade `moto` to enable testing of `process` lambda race conditions ([#281])
+
 ## [v1.0.0a1] - 2025-02-28
 
 ### Fixed
