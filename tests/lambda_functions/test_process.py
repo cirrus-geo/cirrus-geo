@@ -164,6 +164,8 @@ def test_simulate_race_to_in_process_client_error(
     workflow_event_topic,
     mocker,
 ):
+    """Loses the race to claim"""
+
     def raises_client_error(*args, **kwargs):
         raise botocore.exceptions.ClientError(
             error_response={"Error": {"Code": "ConditionalCheckFailedException"}},
@@ -193,6 +195,58 @@ def test_simulate_race_to_in_process_client_error(
 
     assert_sns_message_sequence(
         ["ALREADY_PROCESSING"],
+        workflow_event_topic,
+    )
+
+
+@pytest.mark.parametrize("racey_state", ["PROCESSING", "CLAIMED"])
+def test_failure_to_set_processing(
+    payload,
+    stepfunctions,
+    workflow,
+    eventdb,
+    workflow_event_topic,
+    racey_state,
+    mocker,
+):
+    """claimed, and executed, but failed to set processing.  The ALREADY_CLAIMED case
+    seems to be one which there is not a graceful recovery."""
+
+    def raises_client_error(*args, **kwargs):
+        raise botocore.exceptions.ClientError(
+            error_response={
+                "Error": {"Code": "ConditionalCheckFailedException"},
+                "Item": {
+                    "state_updated": {"S": f"{racey_state}_2025-03-31T21:36:41+00:00"},
+                },
+            },
+            operation_name="monkeying around",
+        )
+
+    wfem_claim = mocker.patch(
+        "cirrus.lib.events.WorkflowEventManager.started_processing",
+    )
+    wfem_claim.side_effect = raises_client_error
+
+    result = process(payload, {})
+
+    assert result == 0
+
+    # we should see the one step function
+    # execution from the invocation
+    exec_count = len(
+        stepfunctions.list_executions(
+            stateMachineArn=workflow["stateMachineArn"],
+        )["executions"],
+    )
+
+    assert exec_count == 1
+
+    # And we should get a WorkflowEvent for CLAIMED_PROCESSING and ALREADY_{racey_state}
+    # Note that this can be "ALREADY_CLAIMED", which is an unlikely, and alarming
+    # WorkflowEvent message, IMO.
+    assert_sns_message_sequence(
+        ["CLAIMED_PROCESSING", f"ALREADY_{racey_state}"],
         workflow_event_topic,
     )
 

@@ -342,11 +342,16 @@ class ProcessPayload(dict):
                 payload_url=url,
             )
         except ClientError as e:
-            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                db_state = e.response.get("Item", "dbitem not found in response")
+            if (
+                e.response["Error"]["Code"] == "ConditionalCheckFailedException"
+                and "Item" in e.response
+            ):
+                db_state = StateEnum(
+                    e.response["Item"]["state_updated"]["S"].split("_")[0],
+                )
                 wfem.skipping(
                     self["id"],
-                    state=StateEnum.PROCESSING,
+                    state=db_state,
                     payload_url=url,
                     message=(
                         "started stepfunction, but could not set processing "
