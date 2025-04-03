@@ -25,6 +25,11 @@ def query_filters(func):
     # reverse order because not using decorators to keep command clean
     """Available inputs to filter stateDB query"""
     func = optgroup.option(
+        "--collection-workflow",
+        help="The collection to filter on",
+        required=True,
+    )(func)
+    func = optgroup.option(
         "--state",
         help="Execution state to filter on",
     )(func)
@@ -36,6 +41,7 @@ def query_filters(func):
         "--limit",
         help="limit the options returned ",
         default=100,
+        max=50000,
     )(func)
     func = optgroup.option(
         "--error-prefix",

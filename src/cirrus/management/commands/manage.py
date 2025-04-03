@@ -287,14 +287,10 @@ def list_lambdas(ctx, deployment: Deployment, session: Session):
 
 @manage.command("get-records")
 @query_filters
-@click.argument(
-    "collections-workflow",
-    help="a '/' separated list of collection workflows to filter on",
-)
 @pass_deployment
 def get_records(
     deployment: Deployment,
-    collections_workflow: str,
+    collection_workflow: str,
     state: str | None,
     since: str | None,
     error_prefix: str | None,
@@ -304,7 +300,6 @@ def get_records(
     Query multiple records from state DB using filter options and pipe to
     stdout as new line json to facilitate stream processig/xargs piping
     """
-    click.echo(collections_workflow)
     os.environ.update(deployment.environment)
     statedb = StateDB()
 
@@ -315,7 +310,7 @@ def get_records(
     }
 
     items = statedb.get_items_page(
-        collections_workflow=collections_workflow,
+        collections_workflow=collection_workflow,
         limit=limit,
         **query_args,
     )
