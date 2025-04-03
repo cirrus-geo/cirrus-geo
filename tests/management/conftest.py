@@ -146,7 +146,7 @@ def create_records(s3, put_parameters, statedb, payloads, st_func_execution_arn)
             s3.upload_fileobj(f, bucket_name, f"{payload_id}/input.json")
 
     payload_ids = {
-        "processing": [
+        "completed": [
             "sar-test-panda/workflow-test/completed-0",
             "sar-test-panda/workflow-test/completed-1",
         ],
@@ -157,9 +157,8 @@ def create_records(s3, put_parameters, statedb, payloads, st_func_execution_arn)
     }
 
     # add to mock statedb first then to mock payload bucket
-    # repeat use of st_func_execution_arn for get execution tests
-    # set_processing used to get executio arn in mock statedb for other tests
-    for index, id in enumerate(payload_ids["processing"]):
+    # first set_processing to ensure execution arn in mock statedb
+    for index, id in enumerate(payload_ids["completed"]):
         (
             statedb.set_processing(
                 id,

@@ -5,6 +5,7 @@ import pytest
 from cirrus.management.deployment import (
     Deployment,
 )
+from click.testing import Result
 
 from tests.management.conftest import mock_parameters
 
@@ -129,10 +130,25 @@ def test_call_cli_return_values(deployment, command, expect_exit_zero, put_param
     assert result.exit_code == 0 if expect_exit_zero else result.exit_code != 0
 
 
+def assert_get_records(
+    result: Result,
+    create_records: dict[str, list[str]],
+    state: str,
+):
+    assert result.exit_code == 0
+    output = result.stdout.strip().split("\n")
+    assert len(create_records[state]) == len(output)
+    for payload in output:
+        assert json.loads(payload)["payload_id"] in create_records[state]
+
+
 def test_get_records(deployment, create_records, statedb):
     result = deployment(
-        "get-records 'sar-test-panda_test' --state 'COMPLETED'",
+        "get-records --collection-workflow 'sar-test-panda_test' --state 'COMPLETED'",
     )
-    assert result.exit_code == 0
-    assert json.loads(result.stdout.strip()) == json.dumps({})
-    assert 1 == 2
+    assert_get_records(result, create_records, "completed")
+
+    result = deployment(
+        "get-records --collection-workflow 'sar-test-panda_test' --state 'FAILED'",
+    )
+    assert_get_records(result, create_records, "failed")
