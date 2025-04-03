@@ -48,25 +48,25 @@ def statedb_schema(fixtures) -> dict[str, Any]:
 
 @pytest.fixture()
 def s3():
-    with moto.mock_s3():
+    with moto.mock_aws():
         yield get_client("s3", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def sqs():
-    with moto.mock_sqs():
+    with moto.mock_aws():
         yield get_client("sqs", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def sns():
-    with moto.mock_sns():
+    with moto.mock_aws():
         yield get_client("sns", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def ssm():
-    with moto.mock_ssm():
+    with moto.mock_aws():
         yield get_client("ssm", region=MOCK_REGION)
 
 
@@ -78,31 +78,31 @@ def sts():
 
 @pytest.fixture()
 def lambdas():
-    with moto.mock_lambda():
+    with moto.mock_aws():
         yield get_client("lambda", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def dynamo():
-    with moto.mock_dynamodb():
+    with moto.mock_aws():
         yield get_client("dynamodb", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def stepfunctions():
-    with moto.mock_stepfunctions():
+    with moto.mock_aws():
         yield get_client("stepfunctions", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def iam():
-    with moto.mock_iam():
+    with moto.mock_aws():
         yield get_client("iam", region=MOCK_REGION)
 
 
 @pytest.fixture()
 def timestream_write_client():
-    with moto.mock_timestreamwrite():
+    with moto.mock_aws():
         yield get_client("timestream-write", region=MOCK_REGION)
 
 
