@@ -159,8 +159,7 @@ def create_records(s3, put_parameters, statedb, payloads, st_func_execution_arn)
     }
 
     # add to mock statedb first then to mock payload bucket
-    # repeat use of st_func_execution_arn for get execution tests
-    # set processing to executio arn is also in mock statedb for other tests
+    # claim_processing to set execution arn needed in tests
     for index, id in enumerate(payload_ids["processing"]):
         (
             statedb.claim_processing(
