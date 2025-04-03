@@ -137,7 +137,13 @@ def make_lambdas(lambdas, iam_role):
 
 
 @pytest.fixture()
-def create_records(s3, put_parameters, statedb, payloads, st_func_execution_arn):
+def create_records(
+    s3,
+    put_parameters,
+    statedb,
+    payloads,
+    st_func_execution_arn,
+):
     def upload_mock_payload(bucket_name: str, payload_id: str):
         payload = {"payload_id": payload_id, "properties": {"a": "property"}}
         with BytesIO() as f:
@@ -157,19 +163,17 @@ def create_records(s3, put_parameters, statedb, payloads, st_func_execution_arn)
     }
 
     # add to mock statedb first then to mock payload bucket
-    # first set_processing to ensure execution arn in mock statedb
+    # claim_processing to set execution arn needed in tests
     for index, id in enumerate(payload_ids["completed"]):
         (
-            statedb.set_processing(
+            statedb.claim_processing(
                 id,
                 st_func_execution_arn,
-                (datetime.now(UTC) + timedelta(days=index)).isoformat(),
             ),
         )
         statedb.set_completed(
             id,
             [f"item-{id}_completed-{index}"],
-            (datetime.now(UTC) + timedelta(days=index)).isoformat(),
         )
         upload_mock_payload(payloads, id)
     for index, id in enumerate(payload_ids["failed"]):
