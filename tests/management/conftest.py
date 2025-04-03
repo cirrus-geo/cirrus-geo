@@ -18,7 +18,7 @@ from click.testing import CliRunner
 
 @pytest.fixture()
 def timestream_write_client():
-    with moto.mock_timestreamwrite():
+    with moto.mock_aws():
         yield boto3.client("timestream-write", region_name="us-east-1")
 
 
