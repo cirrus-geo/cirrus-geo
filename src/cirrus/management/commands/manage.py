@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 
+from io import BytesIO
 from subprocess import CalledProcessError
 
 import botocore.exceptions
@@ -104,9 +105,7 @@ def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
     if raw:
         download_payload(deployment, payload_id, sys.stdout.buffer)
     else:
-        import io
-
-        with io.BytesIO() as b:
+        with BytesIO() as b:
             download_payload(deployment, payload_id, b)
             b.seek(0)
             json.dump(json.load(b), sys.stdout, indent=4)
@@ -286,67 +285,51 @@ def list_lambdas(ctx, deployment: Deployment, session: Session):
     )
 
 
-# set each to option or try and set up a dictionary with typing for cleaner input
 @manage.command("get-records")
 @query_filters
-@raw_option
-@pass_session
+@click.argument(
+    "collections-workflow",
+    help="a '/' separated list of collection workflows to filter on",
+)
 @pass_deployment
-@click.pass_context
 def get_records(
-    ctx,
     deployment: Deployment,
-    session: Session,
     collections_workflow: str,
-    workflow_name: str,
-    state: str,
-    since: str,
-    error_prefix: str,
+    state: str | None,
+    since: str | None,
+    error_prefix: str | None,
     limit: int = 100,
-    raw: bool = False,
 ):
-    """Query multiple records from state DB using filter options"""
-    # click.echo(f"filters: limit: {limit} state: {state}")
+    """
+    Query multiple records from state DB using filter options and pipe to
+    stdout as new line json to facilitate stream processig/xargs piping
+    """
+    click.echo(collections_workflow)
     os.environ.update(deployment.environment)
     statedb = StateDB()
+
     query_args = {
-        # "workflow-name": workflow_name,
         "state": state,
         "since": since,
         "error_begins_with": error_prefix,
     }
-    # get-records | xargs cirrus manage process
-    # get items and make query
+
     items = statedb.get_items_page(
         collections_workflow=collections_workflow,
         limit=limit,
         **query_args,
     )
 
-    # loop through returned items, get each item and send to stdout for piping,
     for item in items["items"]:
         try:
-            import io
-
-            with io.BytesIO() as b:
-                download_payload(deployment, "payload_id", b)
+            with BytesIO() as b:
+                download_payload(deployment, item["payload_id"], b)
                 b.seek(0)
                 payload = json.load(b)
-                # TODO: set payload 'replace' to true
-                payload["replace"] = True
-                json.dump(
-                    payload,
-                    sys.stdout,
-                    indent=4,
-                )  # instead of dump look into ndJSON new line delimited json
-                # read man page xargs ndjson
+
+            payload["replace"] = True
+
+            # echo sends to stdout as NDJSON for piping into xargs
+            click.echo(json.dumps(payload, default=str))
         except botocore.exceptions.ClientError as e:
-            # TODO: understand why this is a ClientError even
-            #   when it seems like it should be a NoKeyError
             logger.error(e)
-
-
-# check-pipeline
-#   - this is like failmgr check
-#   - not sure how to reconcile with cache above
-#   - maybe need subcommand for everything it can do

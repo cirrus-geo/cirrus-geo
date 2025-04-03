@@ -11,7 +11,6 @@ import moto
 import pytest
 
 from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
-from cirrus.lib.statedb import StateDB
 from cirrus.management.cli import cli
 from cirrus.management.deployment_pointer import DEPLOYMENTS_PREFIX
 from click.testing import CliRunner
@@ -138,39 +137,48 @@ def make_lambdas(lambdas, iam_role):
 
 
 @pytest.fixture()
-def create_records(s3, put_parameters, statedb: StateDB, payloads):
-    def upload_payload(bucket_name: str, payload_id: str):
+def create_records(s3, put_parameters, statedb, payloads, st_func_execution_arn):
+    def upload_mock_payload(bucket_name: str, payload_id: str):
         payload = {"payload_id": payload_id, "properties": {"a": "property"}}
         with BytesIO() as f:
             f.write(json.dumps(payload, indent=4).encode("utf-8"))
             f.seek(0)
-            s3.upload_fileobj(f, bucket_name, f"{payload_id}_input.json")
+            s3.upload_fileobj(f, bucket_name, f"{payload_id}/input.json")
 
     payload_ids = {
-        "completed": [
-            "sar-test-panda/workflow-test/completed-01",
-            "sar-test-panda/workflow-test/completed-02",
+        "processing": [
+            "sar-test-panda/workflow-test/completed-0",
+            "sar-test-panda/workflow-test/completed-1",
         ],
         "failed": [
-            "sar-test-panda/workflow-test/failed-01",
-            "sar-test-panda/workflow-test/failed-02",
+            "sar-test-panda/workflow-test/failed-0",
+            "sar-test-panda/workflow-test/failed-1",
         ],
     }
 
-    # add to mock statedb first then mock payload bucket
-    for index, id in enumerate(payload_ids["completed"]):
+    # add to mock statedb first then to mock payload bucket
+    # repeat use of st_func_execution_arn for get execution tests
+    # set_processing used to get executio arn in mock statedb for other tests
+    for index, id in enumerate(payload_ids["processing"]):
+        (
+            statedb.set_processing(
+                id,
+                st_func_execution_arn,
+                (datetime.now(UTC) + timedelta(days=index)).isoformat(),
+            ),
+        )
         statedb.set_completed(
             id,
             [f"item-{id}_completed-{index}"],
             (datetime.now(UTC) + timedelta(days=index)).isoformat(),
         )
-        upload_payload(payloads, id)
+        upload_mock_payload(payloads, id)
     for index, id in enumerate(payload_ids["failed"]):
         statedb.set_failed(
             id,
             f"failed-message-{index}",
             (datetime.now(UTC) + timedelta(days=index)).isoformat(),
         )
-        upload_payload(payloads, id)
+        upload_mock_payload(payloads, id)
 
-    return s3
+    return payload_ids

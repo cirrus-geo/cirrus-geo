@@ -6,7 +6,6 @@ import botocore
 import click
 
 from click_option_group import (
-    RequiredAnyOptionGroup,
     RequiredMutuallyExclusiveOptionGroup,
     optgroup,
 )
@@ -26,14 +25,6 @@ def query_filters(func):
     # reverse order because not using decorators to keep command clean
     """Available inputs to filter stateDB query"""
     func = optgroup.option(
-        "--collections-workflow",
-        help="/- separated list of collection_workflows names to filter on",
-    )(func)
-    func = optgroup.option(
-        "--workflow-name",
-        help="Workflow name to filter on",
-    )(func)
-    func = optgroup.option(
         "--state",
         help="Execution state to filter on",
     )(func)
@@ -52,7 +43,6 @@ def query_filters(func):
     )(func)
     func = optgroup.group(
         "StateDB Query Filters",
-        cls=RequiredAnyOptionGroup,
         help="Parameters that can be used to filter your search query of state DB",
     )(func)
     return func  # noqa: RET504
