@@ -41,7 +41,7 @@ def query_filters(func):
         "--limit",
         help="limit the options returned ",
         default=100,
-        max=50000,
+        type=click.IntRange(1, 50000),
     )(func)
     func = optgroup.option(
         "--error-prefix",
