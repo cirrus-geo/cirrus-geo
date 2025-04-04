@@ -1,16 +1,17 @@
 import json
 import logging
+import os
 import sys
 
-from functools import wraps
+from io import BytesIO
 from subprocess import CalledProcessError
 
 import botocore.exceptions
 import click
 
 from boto3 import Session
-from click_option_group import RequiredMutuallyExclusiveOptionGroup, optgroup
 
+from cirrus.lib.statedb import StateDB
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.utils.click import (
     AliasedShortMatchGroup,
@@ -18,60 +19,18 @@ from cirrus.management.utils.click import (
     pass_session,
     silence_templating_errors,
 )
+from cirrus.management.utils.manage import (
+    _get_execution,
+    download_payload,
+    execution_arn,
+    include_user_vars,
+    query_filters,
+    raw_option,
+)
 
 logger = logging.getLogger(__name__)
 
 pass_deployment = click.make_pass_decorator(Deployment)
-
-
-def _get_execution(
-    deployment: Deployment,
-    arn: str | None = None,
-    payload_id: str | None = None,
-):
-    if payload_id:
-        return deployment.get_execution_by_payload_id(payload_id)
-    return deployment.get_execution(arn)
-
-
-def execution_arn(func):
-    # reverse order because not using decorators
-    func = optgroup.option(
-        "--payload-id",
-        help="payload ID (resolves to latest execution ARN)",
-    )(func)
-    func = optgroup.option(
-        "--arn",
-        help="Execution ARN",
-    )(func)
-    func = optgroup.group(
-        "Identifier",
-        cls=RequiredMutuallyExclusiveOptionGroup,
-        help="Identifer type and value to get execution",
-    )(func)
-    return func  # noqa: RET504
-
-
-def raw_option(func):
-    return click.option(
-        "-r",
-        "--raw",
-        is_flag=True,
-        help="Do not pretty-format the response",
-    )(func)
-
-
-def include_user_vars(func):
-    @click.option(
-        "--include-user-vars/--exclude-user-vars",
-        default=True,
-        help="Whether or not to load deployment's user vars into environment",
-    )
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 @click.group(
@@ -152,21 +111,11 @@ def run_workflow(
 def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
     """Get a payload from S3 using its ID"""
 
-    def download(output_fileobj):
-        try:
-            deployment.get_payload_by_id(payload_id, output_fileobj)
-        except botocore.exceptions.ClientError as e:
-            # TODO: understand why this is a ClientError even
-            #   when it seems like it should be a NoKeyError
-            logger.error(e)
-
     if raw:
-        download(sys.stdout.buffer)
+        download_payload(deployment, payload_id, sys.stdout.buffer)
     else:
-        import io
-
-        with io.BytesIO() as b:
-            download(b)
+        with BytesIO() as b:
+            download_payload(deployment, payload_id, b)
             b.seek(0)
             json.dump(json.load(b), sys.stdout, indent=4)
     click.echo("")
@@ -343,3 +292,48 @@ def list_lambdas(ctx, deployment: Deployment, session: Session):
             default=str,
         ),
     )
+
+
+@manage.command("get-records")
+@query_filters
+@pass_deployment
+def get_records(
+    deployment: Deployment,
+    collection_workflow: str,
+    state: str | None,
+    since: str | None,
+    error_prefix: str | None,
+    limit: int = 100,
+):
+    """
+    Query multiple records from state DB using filter options and pipe to
+    stdout as new line json to facilitate stream processig/xargs piping
+    """
+    os.environ.update(deployment.environment)
+    statedb = StateDB()
+
+    query_args = {
+        "state": state,
+        "since": since,
+        "error_begins_with": error_prefix,
+    }
+
+    items = statedb.get_items_page(
+        collections_workflow=collection_workflow,
+        limit=limit,
+        **query_args,
+    )
+
+    for item in items["items"]:
+        try:
+            with BytesIO() as b:
+                download_payload(deployment, item["payload_id"], b)
+                b.seek(0)
+                payload = json.load(b)
+
+            payload["replace"] = True
+
+            # echo sends to stdout as NDJSON for piping into xargs
+            click.echo(json.dumps(payload, default=str))
+        except botocore.exceptions.ClientError as e:
+            logger.error(e)
