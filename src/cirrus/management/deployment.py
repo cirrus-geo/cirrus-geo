@@ -14,7 +14,7 @@ import backoff
 import boto3
 
 from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.utils import get_client
+from cirrus.lib.utils import assume_role, get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
 from cirrus.management.exceptions import (
     NoExecutionsError,
@@ -44,11 +44,23 @@ class Deployment:
         name: str,
         environment: dict,
         session: boto3.Session | None = None,
+        iam_role_arn: str | None = None,
+        region: str | None = None,
     ) -> None:
         self.name = name
         self.environment = environment
-        self.session = session if session else boto3.Session()
         self._functions: list[str] | None = None
+        self.iam_role_arm = iam_role_arn
+        self.region = region
+
+        if session is None:
+            session = boto3.Session()
+        session = assume_role(
+            session,
+            self.environment.get("CIRRUS_CLI_IAM_ARN", self.iam_role_arm),
+            self.environment.get("AWS_REGION", session.region_name),
+        )
+        self.session = session
 
     @staticmethod
     def yield_deployments(
@@ -60,27 +72,34 @@ class Deployment:
     def from_pointer(
         cls,
         pointer: DeploymentPointer,
-        session: boto3.Session,
+        session: boto3.Session | None,
+        iam_role_arn: str | None = None,
     ):
         return cls(
             session=session,
             environment=pointer.get_environment(session=session),
             name=pointer.name,
+            iam_role_arn=iam_role_arn,
         )
 
     @classmethod
-    def from_name(cls, name: str, session: boto3.Session) -> Deployment:
+    def from_name(
+        cls,
+        name: str,
+        session: boto3.Session,
+        iam_role_arn: str | None = None,
+    ) -> Deployment:
         dp = DeploymentPointer.get_pointer(name, session=session)
-        return cls.from_pointer(dp, session=session)
+        return cls.from_pointer(dp, session=session, iam_role_arn=iam_role_arn)
 
-    def get_lambda_functions(self, session):
+    def get_lambda_functions(self, session: boto3.Session | None = None):
         if self._functions is None:
-            aws_lambda = get_client("lambda", session)
+            aws_lambda = get_client("lambda", self.session if self.session else session)
 
             def deployment_functions_filter(response):
                 return [
                     f["FunctionName"].replace(
-                        f"{self.environment["CIRRUS_PREFIX"]}",
+                        f"{self.environment['CIRRUS_PREFIX']}",
                         "",
                     )
                     for f in response["Functions"]
@@ -152,11 +171,17 @@ class Deployment:
             url = f"s3://{bucket}/{key}"
             logger.warning("Message exceeds SQS max length.")
             logger.warning("Uploading to '%s'", url)
-            s3 = get_client("s3", session=self.session)
+            s3 = get_client(
+                "s3",
+                session=self.session,
+            )
             s3.upload_fileobj(stream, bucket, key)
             payload = json.dumps({"url": url})
 
-        sqs = get_client("sqs", session=self.session)
+        sqs = get_client(
+            "sqs",
+            session=self.session,
+        )
         return sqs.send_message(
             QueueUrl=self.environment["CIRRUS_PROCESS_QUEUE_URL"],
             MessageBody=payload,
@@ -172,12 +197,18 @@ class Deployment:
         )
         logger.debug("bucket: '%s', key: '%s'", bucket, key)
 
-        s3 = get_client("s3", session=self.session)
+        s3 = get_client(
+            "s3",
+            session=self.session,
+        )
 
         return s3.download_fileobj(bucket, key, output_fileobj)
 
     def get_execution(self, arn):
-        sfn = get_client("stepfunctions", session=self.session)
+        sfn = get_client(
+            "stepfunctions",
+            session=self.session,
+        )
         return sfn.describe_execution(executionArn=arn)
 
     def get_execution_by_payload_id(self, payload_id):
@@ -189,13 +220,21 @@ class Deployment:
 
         return self.get_execution(exec_arn)
 
-    def invoke_lambda(self, event, function_name, session):
-        aws_lambda = get_client("lambda", session=self.session)
-        if function_name not in self.get_lambda_functions(session):
+    def invoke_lambda(
+        self,
+        event: str,
+        function_name: str,
+        session: boto3.Session = None,
+    ):
+        aws_lambda = get_client(
+            "lambda",
+            session=self.session if self.session else session,
+        )
+        if function_name not in self.get_lambda_functions():
             raise ValueError(
                 f"lambda named '{function_name}' not found in deployment '{self.name}'",
             )
-        full_name = f"{self.environment['CIRRUS_PREFIX']}-{function_name}"
+        full_name = f"{self.environment['CIRRUS_PREFIX']}{function_name}"
         response = aws_lambda.invoke(FunctionName=full_name, Payload=event)
         if response["StatusCode"] < 200 or response["StatusCode"] > 299:
             raise RuntimeError(response)

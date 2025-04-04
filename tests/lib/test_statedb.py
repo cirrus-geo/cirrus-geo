@@ -80,11 +80,11 @@ def test_since_to_timedelta():
 def state_table(statedb: StateDB):
     statedb.limit = RECORD_LIMIT
     statedb.claim_processing(
-        f'{test_item["id"]}_claimed',
+        f"{test_item['id']}_claimed",
         execution_arn="arn::notexecuted",
     )
     statedb.claim_processing(
-        f'{test_item["id"]}_processing',
+        f"{test_item['id']}_processing",
         execution_arn="arn::test",
     )
     statedb.set_processing(

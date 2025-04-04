@@ -26,7 +26,7 @@ jobs:
           pip install -r requirements-dev.txt
           pip install '.[cli]'
       - name: pre-commit
-        run: pre-commit run --all-files
+        run: pre-commit run --all-files --verbose
       - name: Test with pytest
         run: pytest --cov=cirrus --cov-report=xml
       - name: "Upload coverage to Codecov"

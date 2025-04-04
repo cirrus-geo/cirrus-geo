@@ -41,13 +41,22 @@ pass_deployment = click.make_pass_decorator(Deployment)
     "deployment",
     metavar="DEPLOYMENT_NAME",
 )
+@click.option(
+    "--iam-arn",
+    metavar="IAM_ROLE_ARN",
+)
 @pass_session
 @click.pass_context
-def manage(ctx, session: Session, deployment: str, profile: str | None = None):
+def manage(
+    ctx,
+    session: Session,
+    deployment: str,
+    iam_arn: str | None = None,
+):
     """
     Commands to run management operations against a cirrus deployment.
     """
-    ctx.obj = Deployment.from_name(deployment, session=session)
+    ctx.obj = Deployment.from_name(deployment, session=session, iam_role_arn=iam_arn)
 
 
 @manage.command()
@@ -185,7 +194,7 @@ def get_state(deployment: Deployment, payload_id: str):
 @pass_deployment
 def process(deployment: Deployment):
     """Enqueue a payload (from stdin) for processing"""
-    click.echo(json.dumps(deployment.process_payload(sys.stdin), indent=4))
+    click.echo(json.dumps(deployment.process_payload(sys.stdin.read()), indent=4))
 
 
 @manage.command()

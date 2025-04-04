@@ -75,7 +75,7 @@ def basic_payloads(fixtures, statedb):
     )
 
 
-def mock_parameters(queue, payloads, statedb, workflow, deployment_name):
+def mock_parameters(queue, payloads, statedb, workflow, deployment_name, iam_role):
     return {
         "CIRRUS_PAYLOAD_BUCKET": payloads,
         "CIRRUS_BASE_WORKFLOW_ARN": workflow["stateMachineArn"].replace(
@@ -85,11 +85,12 @@ def mock_parameters(queue, payloads, statedb, workflow, deployment_name):
         "CIRRUS_PROCESS_QUEUE_URL": queue["QueueUrl"],
         "CIRRUS_STATE_DB": statedb.table_name,
         "CIRRUS_PREFIX": f"fd-{deployment_name}-dev-cirrus-",
+        "CIRRUS_CLI_IAM_ARN": iam_role,
     }
 
 
 @pytest.fixture()
-def put_parameters(ssm, queue, payloads, statedb, workflow):
+def put_parameters(ssm, queue, payloads, statedb, workflow, iam_role):
     for deployment_name in ["lion", "squirrel-dev"]:
         # put pointer parameters
         deployment_key = f"/deployment/{deployment_name}/"
@@ -110,6 +111,7 @@ def put_parameters(ssm, queue, payloads, statedb, workflow):
             statedb,
             workflow,
             deployment_name,
+            iam_role,
         ).items():
             name = f"{deployment_key}{param_name}"
             ssm.put_parameter(
