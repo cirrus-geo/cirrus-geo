@@ -1,6 +1,8 @@
 import json
 import shlex
 
+from datetime import UTC, datetime, timedelta
+from io import BytesIO
 from unittest.mock import patch
 
 import boto3
@@ -73,7 +75,7 @@ def basic_payloads(fixtures, statedb):
     )
 
 
-def mock_parameters(queue, payloads, statedb, workflow, deployment_name):
+def mock_parameters(queue, payloads, statedb, workflow, deployment_name, iam_role):
     return {
         "CIRRUS_PAYLOAD_BUCKET": payloads,
         "CIRRUS_BASE_WORKFLOW_ARN": workflow["stateMachineArn"].replace(
@@ -83,11 +85,12 @@ def mock_parameters(queue, payloads, statedb, workflow, deployment_name):
         "CIRRUS_PROCESS_QUEUE_URL": queue["QueueUrl"],
         "CIRRUS_STATE_DB": statedb.table_name,
         "CIRRUS_PREFIX": f"fd-{deployment_name}-dev-cirrus-",
+        "CIRRUS_CLI_IAM_ARN": iam_role,
     }
 
 
 @pytest.fixture()
-def put_parameters(ssm, queue, payloads, statedb, workflow):
+def put_parameters(ssm, queue, payloads, statedb, workflow, iam_role):
     for deployment_name in ["lion", "squirrel-dev"]:
         # put pointer parameters
         deployment_key = f"/deployment/{deployment_name}/"
@@ -108,6 +111,7 @@ def put_parameters(ssm, queue, payloads, statedb, workflow):
             statedb,
             workflow,
             deployment_name,
+            iam_role,
         ).items():
             name = f"{deployment_key}{param_name}"
             ssm.put_parameter(
@@ -132,3 +136,54 @@ def make_lambdas(lambdas, iam_role):
         Description="mock process lambda for unit testing",
     )
     return lambdas
+
+
+@pytest.fixture()
+def create_records(
+    s3,
+    put_parameters,
+    statedb,
+    payloads,
+    st_func_execution_arn,
+):
+    def upload_mock_payload(bucket_name: str, payload_id: str):
+        payload = {"payload_id": payload_id, "properties": {"a": "property"}}
+        with BytesIO() as f:
+            f.write(json.dumps(payload, indent=4).encode("utf-8"))
+            f.seek(0)
+            s3.upload_fileobj(f, bucket_name, f"{payload_id}/input.json")
+
+    payload_ids = {
+        "processing": [
+            "sar-test-panda/workflow-test/completed-0",
+            "sar-test-panda/workflow-test/completed-1",
+        ],
+        "failed": [
+            "sar-test-panda/workflow-test/failed-0",
+            "sar-test-panda/workflow-test/failed-1",
+        ],
+    }
+
+    # add to mock statedb first then to mock payload bucket
+    # claim_processing to set execution arn needed in tests
+    for index, id in enumerate(payload_ids["processing"]):
+        (
+            statedb.claim_processing(
+                id,
+                st_func_execution_arn,
+            ),
+        )
+        statedb.set_completed(
+            id,
+            [f"item-{id}_completed-{index}"],
+        )
+        upload_mock_payload(payloads, id)
+    for index, id in enumerate(payload_ids["failed"]):
+        statedb.set_failed(
+            id,
+            f"failed-message-{index}",
+            (datetime.now(UTC) + timedelta(days=index)).isoformat(),
+        )
+        upload_mock_payload(payloads, id)
+
+    return payload_ids

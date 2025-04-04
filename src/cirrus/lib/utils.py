@@ -9,6 +9,7 @@ from typing import Any, Generic, Protocol, Self, TypeVar
 
 import boto3
 
+from boto3 import Session
 from boto3utils import s3
 
 from cirrus.lib.errors import NoUrlError
@@ -59,8 +60,10 @@ def get_client(
     service: str,
     session: boto3.Session | None = None,
     region: str | None = None,
-):
-    """Wrapper around boto3 which implements singleton pattern via @cache"""
+) -> boto3.client:
+    """
+    Wrapper around boto3 which implements singleton pattern via @cache
+    """
     if session is None:
         session = boto3.Session()
     return session.client(
@@ -82,6 +85,35 @@ def get_resource(
         service_name=service,
         region_name=region,
     )
+
+
+def assume_role(
+    session: Session,
+    iam_role_arn: str | None,
+    region: str | None = None,
+) -> boto3.Session:
+    """
+    Acquire and assign new IAM credentials to session if IAM role is available
+    """
+    if iam_role_arn:
+        creds = boto3.client("sts").assume_role(
+            RoleArn=iam_role_arn,
+            RoleSessionName="CLIrrus_iam_session",
+        )["Credentials"]
+
+        session._session.set_config_variable(
+            "region",
+            region if region else session.region_name,
+        )
+
+        session._session.set_credentials(
+            access_key=creds["AccessKeyId"],
+            secret_key=creds["SecretAccessKey"],
+            token=creds["SessionToken"],
+        )
+        return session
+
+    return session
 
 
 def recursive_compare(  # noqa: C901
