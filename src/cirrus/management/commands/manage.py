@@ -92,7 +92,6 @@ def manage(
     ctx,
     session: Session,
     deployment: str,
-    profile: str | None = None,
     iam_arn: str | None = None,
 ):
     """
