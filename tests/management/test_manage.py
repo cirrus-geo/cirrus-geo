@@ -73,14 +73,14 @@ def test_get_payload(
     deployment,
     create_records,
 ):
-    for payload_id in create_records["processing"]:
+    for payload_id in create_records["completed"]:
         result = deployment(f"get-payload {payload_id}")
         assert result.exit_code == 0
         assert json.loads(result.stdout.strip())["payload_id"] == payload_id
 
 
 def test_get_state(deployment, create_records):
-    for payload_id in create_records["processing"]:
+    for payload_id in create_records["completed"]:
         result = deployment(f"get-state {payload_id}")
         assert result.exit_code == 0
         output = json.loads(result.stdout.strip())
