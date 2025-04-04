@@ -16,17 +16,17 @@ def read_json_fixture(filename):
         return json.load(f)
 
 
-@pytest.fixture()
+@pytest.fixture
 def base_payload():
     return read_json_fixture("test-payload.json")
 
 
-@pytest.fixture()
+@pytest.fixture
 def sqs_event():
     return read_json_fixture("sqs-event.json")
 
 
-@pytest.fixture()
+@pytest.fixture
 def chain_payload(base_payload):
     # need to convert process and add filter
     base_payload["process"] = base_payload["process"] * 2
@@ -49,7 +49,7 @@ def chain_payload(base_payload):
     return base_payload
 
 
-@pytest.fixture()
+@pytest.fixture
 def chain_filter_payload(chain_payload):
     # should only have the last feature and second process def
     chain_filter_result = copy.deepcopy(chain_payload)

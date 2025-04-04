@@ -77,7 +77,7 @@ MOCK_PAYLOAD = {
 }
 
 
-@pytest.fixture()
+@pytest.fixture
 def payload(invoke):
     def _payload(cmd):
         return invoke("payload " + cmd)
