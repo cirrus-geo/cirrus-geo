@@ -99,7 +99,7 @@ class Deployment:
             def deployment_functions_filter(response):
                 return [
                     f["FunctionName"].replace(
-                        f"{self.environment['CIRRUS_PREFIX']}",
+                        f"{self.environment["CIRRUS_PREFIX"]}",
                         "",
                     )
                     for f in response["Functions"]

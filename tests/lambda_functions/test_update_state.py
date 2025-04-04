@@ -4,17 +4,16 @@ from itertools import product
 
 import pytest
 
-from moto.core.models import DEFAULT_ACCOUNT_ID
-from moto.sns.models import sns_backends
-
 from cirrus.lambda_functions.update_state import lambda_handler as update_state
 from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEvent
+from moto.core.models import DEFAULT_ACCOUNT_ID
+from moto.sns.models import sns_backends
 
 EVENT_PAYLOAD_ID = "test-collection/workflow-test-workflow/test-id"
 
 
-@pytest.fixture
+@pytest.fixture()
 def event():
     return {
         "asctime": "2022-11-09T00:18:35+0000",
