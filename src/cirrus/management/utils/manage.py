@@ -2,7 +2,6 @@ import logging
 
 from functools import wraps
 
-import botocore
 import click
 
 from click_option_group import (
@@ -10,6 +9,7 @@ from click_option_group import (
     optgroup,
 )
 
+from cirrus.lib.enums import StateEnum
 from cirrus.management.deployment import Deployment
 
 logger = logging.getLogger(__name__)
@@ -25,22 +25,22 @@ def query_filters(func):
     # reverse order because not using decorators to keep command clean
     """Available inputs to filter stateDB query"""
     func = optgroup.option(
-        "--collection-workflow",
-        help="The collection to filter on",
+        "--collections-workflow",
+        help="The collections-workflow field to filter on",
         required=True,
     )(func)
     func = optgroup.option(
         "--state",
         help="Execution state to filter on",
+        type=click.Choice([state.value for state in StateEnum]),
     )(func)
     func = optgroup.option(
         "--since",
-        help="Time filter of how far back to search records",
+        help="ISO formatted UTC time filter of how far back to search records i.e.",
     )(func)
     func = optgroup.option(
         "--limit",
-        help="limit the options returned ",
-        default=100,
+        help="Maximum number of payloads to return",
         type=click.IntRange(1, 50000),
     )(func)
     func = optgroup.option(
@@ -92,12 +92,3 @@ def include_user_vars(func):
         return func(*args, **kwargs)
 
     return wrapper
-
-
-def download_payload(deployment: Deployment, payload_id, output_fileobj):
-    try:
-        deployment.get_payload_by_id(payload_id, output_fileobj)
-    except botocore.exceptions.ClientError as e:
-        # TODO: understand why this is a ClientError even
-        #   when it seems like it should be a NoKeyError
-        logger.error(e)

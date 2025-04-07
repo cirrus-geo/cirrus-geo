@@ -48,3 +48,7 @@ repos:
         'types_or': [python, pyi]
         args: []
         require_serial: true
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.42.0
+    hooks:
+    - id: markdownlint

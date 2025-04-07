@@ -5,6 +5,7 @@ import sys
 
 from io import BytesIO
 from subprocess import CalledProcessError
+from typing import BinaryIO
 
 import botocore.exceptions
 import click
@@ -21,7 +22,6 @@ from cirrus.management.utils.click import (
 )
 from cirrus.management.utils.manage import (
     _get_execution,
-    download_payload,
     execution_arn,
     include_user_vars,
     query_filters,
@@ -110,6 +110,16 @@ def run_workflow(
 @pass_deployment
 def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
     """Get a payload from S3 using its ID"""
+
+    def download_payload(
+        deployment: Deployment,
+        payload_id: str,
+        output_fileobj: BinaryIO,
+    ):
+        try:
+            deployment.get_payload_by_id(payload_id, output_fileobj)
+        except botocore.exceptions.ClientError as e:
+            logger.error(e)
 
     if raw:
         download_payload(deployment, payload_id, sys.stdout.buffer)
@@ -299,11 +309,11 @@ def list_lambdas(ctx, deployment: Deployment, session: Session):
 @pass_deployment
 def get_records(
     deployment: Deployment,
-    collection_workflow: str,
+    collections_workflow: str,
     state: str | None,
     since: str | None,
     error_prefix: str | None,
-    limit: int = 100,
+    limit: int | None,
 ):
     """
     Query multiple records from state DB using filter options and pipe to
@@ -318,8 +328,8 @@ def get_records(
         "error_begins_with": error_prefix,
     }
 
-    items = statedb.get_items_page(
-        collections_workflow=collection_workflow,
+    items = statedb.get_items(
+        collections_workflow=collections_workflow,
         limit=limit,
         **query_args,
     )
@@ -327,11 +337,11 @@ def get_records(
     for item in items["items"]:
         try:
             with BytesIO() as b:
-                download_payload(deployment, item["payload_id"], b)
+                deployment.get_payload_by_id(item["payload_id"], b)
                 b.seek(0)
                 payload = json.load(b)
 
-            payload["replace"] = True
+            payload["process"]["replace"] = True
 
             # echo sends to stdout as NDJSON for piping into xargs
             click.echo(json.dumps(payload, default=str))
