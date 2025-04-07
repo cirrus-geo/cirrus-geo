@@ -7,10 +7,10 @@ from io import BytesIO
 from subprocess import CalledProcessError
 from typing import BinaryIO
 
-import botocore.exceptions
 import click
 
 from boto3 import Session
+from botocore.exceptions import ClientError
 
 from cirrus.lib.statedb import StateDB
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
@@ -118,7 +118,7 @@ def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
     ):
         try:
             deployment.get_payload_by_id(payload_id, output_fileobj)
-        except botocore.exceptions.ClientError as e:
+        except ClientError as e:
             logger.error(e)
 
     if raw:
@@ -345,5 +345,6 @@ def get_records(
 
             # echo sends to stdout as NDJSON for piping into xargs
             click.echo(json.dumps(payload, default=str))
-        except botocore.exceptions.ClientError as e:
-            logger.error(e)
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                logger.error(item["payload_id"])

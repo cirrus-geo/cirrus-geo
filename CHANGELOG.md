@@ -11,14 +11,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - `CLAIMED` state to StateDB, along with associated `ALREADY_CLAIMED`
   WorkflowEvent. ([#281])
-- `get_records` command to `manage` command group to facilitate bulk retrieval of payloads to be piped into other commands for bulk reruns of failed jobs ([#305])
+- `get_records` command to `manage` command group to facilitate bulk
+retrieval of payloads to be piped into other commands for bulk reruns
+of failed jobs ([#305])
 
 ### Changed
 
 - StepFunctions executions now use a deterministic UUID5, derived from the
   payload ID and execution history ([#281])
 - Upgrade `moto` to enable testing of `process` lambda race conditions ([#281])
-- Moved some utility functions for management commands into their own utils file ([#305])
+- Moved some utility functions for management commands into own utils file ([#305])
 
 ## [v1.0.0a1] - 2025-02-28
 
@@ -841,7 +843,8 @@ cleanup steps.
 - `lambda-as-batch` and `geolambda-as-batch` Batch tasks fixed to properly
   return newly returned STAC Catalog rather than the original one (which may
   have been modified as it is passed by reference to handler)
-- `convert-to-cog` now properly populates `derived_from` link in newly created STAC Item
+- `convert-to-cog` now properly populates `derived_from` link in newly
+  created STAC Item
 
 ## [v0.1.0] - 2020-08-07
 
