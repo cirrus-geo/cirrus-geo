@@ -36,7 +36,7 @@ def query_filters(func):
     )(func)
     func = optgroup.option(
         "--since",
-        help="ISO formatted UTC time filter of how far back to search records i.e.",
+        help="Time filter. Integer followed by a unit letter (d=days, h=hours, m=minutes) i.e '10 d'",  # noqa: E501
     )(func)
     func = optgroup.option(
         "--limit",
@@ -48,8 +48,8 @@ def query_filters(func):
         help="The error prefix to filter on",
     )(func)
     func = optgroup.group(
-        "StateDB Query Filters",
-        help="Parameters that can be used to filter your search query of state DB",
+        "Query Filters",
+        help="Parameters to filter query of state DB to retrieve payloads",
     )(func)
     return func  # noqa: RET504
 

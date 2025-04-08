@@ -304,10 +304,10 @@ def list_lambdas(ctx, deployment: Deployment, session: Session):
     )
 
 
-@manage.command("get-records")
+@manage.command("get-payloads")
 @query_filters
 @pass_deployment
-def get_records(
+def get_payloads(
     deployment: Deployment,
     collections_workflow: str,
     state: str | None,
@@ -316,8 +316,10 @@ def get_records(
     limit: int | None,
 ):
     """
-    Query multiple records from state DB using filter options and pipe to
-    stdout as new line json to facilitate stream processig/xargs piping
+    Use query filters to bulk retrieve payloads.
+    Query multiple records from state DB using filter options, retrieve
+    payloads from s3 using payload-id and pipe to stdout as new line json
+    to facilitate stream processig/xargs piping
     """
     os.environ.update(deployment.environment)
     statedb = StateDB()
