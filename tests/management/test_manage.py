@@ -190,6 +190,6 @@ def assert_get_records(
 )
 def test_get_records(deployment, create_records, statedb, state, parameter, limit):
     result = deployment(
-        f"get-records --collections-workflow 'sar-test-panda_test' {parameter}",
+        f"get-payloads --collections-workflow 'sar-test-panda_test' {parameter}",
     )
     assert_get_records(result, create_records, state, limit)
