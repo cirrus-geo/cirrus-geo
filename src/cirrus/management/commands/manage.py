@@ -333,17 +333,16 @@ def get_records(
         limit=limit,
         **query_args,
     )
-
-    for item in items["items"]:
+    for item in items:
         try:
             with BytesIO() as b:
                 deployment.get_payload_by_id(item["payload_id"], b)
                 b.seek(0)
                 payload = json.load(b)
 
-            payload["process"]["replace"] = True
+            payload["process"][0]["replace"] = True
 
-            # echo sends to stdout as NDJSON for piping into xargs
+            # send to stdout as NDJSON for piping
             click.echo(json.dumps(payload, default=str))
         except ClientError as e:
             if e.response["Error"]["Code"] == "404":

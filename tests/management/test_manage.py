@@ -149,21 +149,47 @@ def assert_get_records(
     result: Result,
     create_records: dict[str, list[str]],
     state: str,
+    limit: int | None,
 ):
     assert result.exit_code == 0
     output = result.stdout.strip().split("\n")
-    assert len(create_records[state]) == len(output)
+
+    expected_record_count = len(create_records[state])
+    if limit:
+        expected_record_count = limit
+    assert expected_record_count == len(output)
+
     for payload in output:
         assert json.loads(payload)["payload_id"] in create_records[state]
 
 
-def test_get_records(deployment, create_records, statedb):
+@pytest.mark.parametrize(
+    ("state", "parameter", "limit"),
+    [
+        pytest.param(
+            "completed",
+            "--state 'COMPLETED'",
+            None,
+            id="state=COMPLETED flag",
+        ),
+        pytest.param("failed", "--state 'FAILED'", None, id="state=FAILED flag"),
+        pytest.param(
+            "completed",
+            "--since '10 d' --state 'COMPLETED'",
+            None,
+            id="since flag",
+        ),
+        pytest.param(
+            "failed",
+            "--state 'FAILED' --error-prefix 'failed-error-message'",
+            None,
+            id="error prefix flag",
+        ),
+        pytest.param("completed", "--state 'COMPLETED' --limit 1", 1, id="limit flag"),
+    ],
+)
+def test_get_records(deployment, create_records, statedb, state, parameter, limit):
     result = deployment(
-        "get-records --collection-workflow 'sar-test-panda_test' --state 'COMPLETED'",
+        f"get-records --collections-workflow 'sar-test-panda_test' {parameter}",
     )
-    assert_get_records(result, create_records, "completed")
-
-    result = deployment(
-        "get-records --collection-workflow 'sar-test-panda_test' --state 'FAILED'",
-    )
-    assert_get_records(result, create_records, "failed")
+    assert_get_records(result, create_records, state, limit)
