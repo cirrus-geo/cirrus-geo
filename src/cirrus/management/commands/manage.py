@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import sys
 
 from io import BytesIO
@@ -12,7 +11,6 @@ import click
 from boto3 import Session
 from botocore.exceptions import ClientError
 
-from cirrus.lib.statedb import StateDB
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.utils.click import (
     AliasedShortMatchGroup,
@@ -26,6 +24,7 @@ from cirrus.management.utils.manage import (
     include_user_vars,
     query_filters,
     raw_option,
+    rerun_option,
 )
 
 logger = logging.getLogger(__name__)
@@ -305,6 +304,7 @@ def list_lambdas(ctx, deployment: Deployment, session: Session):
 
 
 @manage.command("get-payloads")
+@rerun_option
 @query_filters
 @pass_deployment
 def get_payloads(
@@ -314,45 +314,23 @@ def get_payloads(
     since: str | None,
     error_prefix: str | None,
     limit: int | None,
+    rerun: bool = False,
 ):
     """
     Retrieve a filtered set of payloads from S3 via querying the state DB for
     matching payload IDs, altering paylods to enable rerun.
     """
-    os.environ["CIRRUS_STATE_DB"] = deployment.environment["CIRRUS_STATE_DB"]
-    statedb = StateDB()
-
     query_args = {
         "state": state,
         "since": since,
         "error_begins_with": error_prefix,
     }
 
-    items = statedb.get_items(
-        collections_workflow=collections_workflow,
-        limit=limit,
-        **query_args,
-    )
-    for item in items:
-        with BytesIO() as b:
-            try:
-                deployment.get_payload_by_id(item["payload_id"], b)
-            except ClientError as e:
-                if e.response["Error"]["Code"] == "404":
-                    logger.error(
-                        "Payload ID: '%s' was not found in S3",
-                        item["payload_id"],
-                    )
-                else:
-                    logger.error(
-                        "Error retrieving payload ID '%s': '%s'",
-                        item["payload_id"],
-                        e,
-                    )
-            b.seek(0)
-            payload = json.load(b)
-
-        payload["process"][0]["replace"] = True
-
-        # send to stdout as NDJSON for piping
+    # send to stdout as NDJSON for piping
+    for payload in deployment.yield_payloads(
+        collections_workflow,
+        limit,
+        query_args,
+        rerun,
+    ):
         click.echo(json.dumps(payload, default=str))

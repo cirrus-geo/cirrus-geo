@@ -81,6 +81,14 @@ def raw_option(func):
     )(func)
 
 
+def rerun_option(func):
+    return click.option(
+        "--rerun",
+        is_flag=True,
+        help="Rerun payloads",
+    )(func)
+
+
 def include_user_vars(func):
     @click.option(
         "--include-user-vars/--exclude-user-vars",
