@@ -346,4 +346,13 @@ def get_payloads(
             click.echo(json.dumps(payload, default=str))
         except ClientError as e:
             if e.response["Error"]["Code"] == "404":
-                logger.error(item["payload_id"])
+                logger.error(
+                    "Payload ID '%s' not found in State DB",
+                    item["payload_id"],
+                )
+            else:
+                logger.error(
+                    "Error retrieving payload ID '%s': '%s'",
+                    item["payload_id"],
+                    e,
+                )
