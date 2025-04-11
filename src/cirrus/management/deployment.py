@@ -330,7 +330,7 @@ class Deployment:
             if payload:
                 yield payload
 
-    def fetch_payload(self, item: dict, rerun: bool) -> dict | None:
+    def fetch_payload(self, item: dict, rerun: bool):
         with BytesIO() as b:
             try:
                 self.get_payload_by_id(item["payload_id"], b)
@@ -352,4 +352,3 @@ class Deployment:
                         item["payload_id"],
                         e,
                     )
-                return None
