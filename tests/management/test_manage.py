@@ -145,7 +145,7 @@ def test_call_cli_return_values(deployment, command, expect_exit_zero, put_param
     assert result.exit_code == 0 if expect_exit_zero else result.exit_code != 0
 
 
-def assert_get_records(
+def assert_get_payloads(
     result: Result,
     create_records: dict[str, list[str]],
     state: str,
@@ -159,8 +159,10 @@ def assert_get_records(
         expected_record_count = limit
     assert expected_record_count == len(output)
 
-    for payload in output:
-        assert json.loads(payload)["payload_id"] in create_records[state]
+    for obj in output:
+        payload = json.loads(obj)
+        assert payload["payload_id"] in create_records[state]
+        assert payload["process"][0]["replace"]
 
 
 @pytest.mark.parametrize(
@@ -188,8 +190,8 @@ def assert_get_records(
         pytest.param("completed", "--state 'COMPLETED' --limit 1", 1, id="limit flag"),
     ],
 )
-def test_get_records(deployment, create_records, statedb, state, parameter, limit):
+def test_get_payloads(deployment, create_records, statedb, state, parameter, limit):
     result = deployment(
         f"get-payloads --collections-workflow 'sar-test-panda_test' {parameter}",
     )
-    assert_get_records(result, create_records, state, limit)
+    assert_get_payloads(result, create_records, state, limit)

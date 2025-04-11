@@ -316,12 +316,10 @@ def get_payloads(
     limit: int | None,
 ):
     """
-    Use query filters to bulk retrieve payloads.
-    Query multiple records from state DB using filter options, retrieve
-    payloads from s3 using payload-id and pipe to stdout as new line json
-    to facilitate stream processig/xargs piping
+    Retrieve a filtered set of payloads from S3 via querying the state DB for
+    matching payload IDs, altering paylods to enable rerun.
     """
-    os.environ.update(deployment.environment)
+    os.environ["CIRRUS_STATE_DB"] = deployment.environment["CIRRUS_STATE_DB"]
     statedb = StateDB()
 
     query_args = {

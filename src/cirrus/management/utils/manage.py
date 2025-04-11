@@ -36,7 +36,7 @@ def query_filters(func):
     )(func)
     func = optgroup.option(
         "--since",
-        help="Time filter. Integer followed by a unit letter (d=days, h=hours, m=minutes) i.e '10 d'",  # noqa: E501
+        help="Time filter. Integer followed by a unit letter (d=days, h=hours, m=minutes), e.g., '10 d'",  # noqa: E501
     )(func)
     func = optgroup.option(
         "--limit",
