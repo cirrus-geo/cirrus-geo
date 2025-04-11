@@ -334,25 +334,25 @@ def get_payloads(
         **query_args,
     )
     for item in items:
-        try:
-            with BytesIO() as b:
+        with BytesIO() as b:
+            try:
                 deployment.get_payload_by_id(item["payload_id"], b)
-                b.seek(0)
-                payload = json.load(b)
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "404":
+                    logger.error(
+                        "Payload ID: '%s' was not found in S3",
+                        item["payload_id"],
+                    )
+                else:
+                    logger.error(
+                        "Error retrieving payload ID '%s': '%s'",
+                        item["payload_id"],
+                        e,
+                    )
+            b.seek(0)
+            payload = json.load(b)
 
-            payload["process"][0]["replace"] = True
+        payload["process"][0]["replace"] = True
 
-            # send to stdout as NDJSON for piping
-            click.echo(json.dumps(payload, default=str))
-        except ClientError as e:
-            if e.response["Error"]["Code"] == "404":
-                logger.error(
-                    "Payload ID '%s' not found in State DB",
-                    item["payload_id"],
-                )
-            else:
-                logger.error(
-                    "Error retrieving payload ID '%s': '%s'",
-                    item["payload_id"],
-                    e,
-                )
+        # send to stdout as NDJSON for piping
+        click.echo(json.dumps(payload, default=str))
