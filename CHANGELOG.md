@@ -11,12 +11,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - `CLAIMED` state to StateDB, along with associated `ALREADY_CLAIMED`
   WorkflowEvent. ([#281])
+- `get_paylaods` command to `manage` command group to facilitate bulk
+  retrieval of payloads to be piped into other commands for bulk reruns
+  of failed jobs ([#305])
 
 ### Changed
 
 - StepFunctions executions now use a deterministic UUID5, derived from the
   payload ID and execution history ([#281])
 - Upgrade `moto` to enable testing of `process` lambda race conditions ([#281])
+- Moved some utility functions for management commands into own utils file ([#305])
 
 ## [v1.0.0a1] - 2025-02-28
 
@@ -839,7 +843,8 @@ cleanup steps.
 - `lambda-as-batch` and `geolambda-as-batch` Batch tasks fixed to properly
   return newly returned STAC Catalog rather than the original one (which may
   have been modified as it is passed by reference to handler)
-- `convert-to-cog` now properly populates `derived_from` link in newly created STAC Item
+- `convert-to-cog` now properly populates `derived_from` link in newly
+  created STAC Item
 
 ## [v0.1.0] - 2020-08-07
 
@@ -971,6 +976,7 @@ Initial release
 [#280]: https://github.com/cirrus-geo/cirrus-geo/pull/280
 [#294]: https://github.com/cirrus-geo/cirrus-geo/pull/294
 [#297]: https://github.com/cirrus-geo/cirrus-geo/pull/297
+[#305]: https://github.com/cirrus-geo/cirrus-geo/pull/305
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c

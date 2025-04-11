@@ -147,14 +147,18 @@ def create_records(
     st_func_execution_arn,
 ):
     def upload_mock_payload(bucket_name: str, payload_id: str):
-        payload = {"payload_id": payload_id, "properties": {"a": "property"}}
+        payload = {
+            "payload_id": payload_id,
+            "process": [{"workflow": "test"}],
+            "properties": {"a": "property"},
+        }
         with BytesIO() as f:
             f.write(json.dumps(payload, indent=4).encode("utf-8"))
             f.seek(0)
             s3.upload_fileobj(f, bucket_name, f"{payload_id}/input.json")
 
     payload_ids = {
-        "processing": [
+        "completed": [
             "sar-test-panda/workflow-test/completed-0",
             "sar-test-panda/workflow-test/completed-1",
         ],
@@ -166,7 +170,7 @@ def create_records(
 
     # add to mock statedb first then to mock payload bucket
     # claim_processing to set execution arn needed in tests
-    for index, id in enumerate(payload_ids["processing"]):
+    for index, id in enumerate(payload_ids["completed"]):
         (
             statedb.claim_processing(
                 id,
@@ -181,7 +185,7 @@ def create_records(
     for index, id in enumerate(payload_ids["failed"]):
         statedb.set_failed(
             id,
-            f"failed-message-{index}",
+            f"failed-error-message-{index}",
             (datetime.now(UTC) + timedelta(days=index)).isoformat(),
         )
         upload_mock_payload(payloads, id)

@@ -5,6 +5,7 @@ import pytest
 from cirrus.management.deployment import (
     Deployment,
 )
+from click.testing import Result
 
 from tests.management.conftest import mock_parameters
 
@@ -72,14 +73,14 @@ def test_get_payload(
     deployment,
     create_records,
 ):
-    for payload_id in create_records["processing"]:
+    for payload_id in create_records["completed"]:
         result = deployment(f"get-payload {payload_id}")
         assert result.exit_code == 0
         assert json.loads(result.stdout.strip())["payload_id"] == payload_id
 
 
 def test_get_state(deployment, create_records):
-    for payload_id in create_records["processing"]:
+    for payload_id in create_records["completed"]:
         result = deployment(f"get-state {payload_id}")
         assert result.exit_code == 0
         output = json.loads(result.stdout.strip())
@@ -142,3 +143,55 @@ def test_manage_show_deployment(deployment, put_parameters):
 def test_call_cli_return_values(deployment, command, expect_exit_zero, put_parameters):
     result = deployment(f"call {command}")
     assert result.exit_code == 0 if expect_exit_zero else result.exit_code != 0
+
+
+def assert_get_payloads(
+    result: Result,
+    create_records: dict[str, list[str]],
+    state: str,
+    limit: int | None,
+):
+    assert result.exit_code == 0
+    output = result.stdout.strip().split("\n")
+
+    expected_record_count = len(create_records[state])
+    if limit:
+        expected_record_count = limit
+    assert expected_record_count == len(output)
+
+    for obj in output:
+        payload = json.loads(obj)
+        assert payload["payload_id"] in create_records[state]
+        assert payload["process"][0]["replace"]
+
+
+@pytest.mark.parametrize(
+    ("state", "parameter", "limit"),
+    [
+        pytest.param(
+            "completed",
+            "--state 'COMPLETED'",
+            None,
+            id="state=COMPLETED flag",
+        ),
+        pytest.param("failed", "--state 'FAILED'", None, id="state=FAILED flag"),
+        pytest.param(
+            "completed",
+            "--since '10 d' --state 'COMPLETED'",
+            None,
+            id="since flag",
+        ),
+        pytest.param(
+            "failed",
+            "--state 'FAILED' --error-prefix 'failed-error-message'",
+            None,
+            id="error prefix flag",
+        ),
+        pytest.param("completed", "--state 'COMPLETED' --limit 1", 1, id="limit flag"),
+    ],
+)
+def test_get_payloads(deployment, create_records, statedb, state, parameter, limit):
+    result = deployment(
+        f"get-payloads --collections-workflow 'sar-test-panda_test' {parameter} --rerun",
+    )
+    assert_get_payloads(result, create_records, state, limit)

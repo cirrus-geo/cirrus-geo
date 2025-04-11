@@ -6,6 +6,7 @@ import os
 
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from io import BytesIO
 from subprocess import check_call
 from time import sleep, time
 from typing import IO, Any
@@ -13,7 +14,10 @@ from typing import IO, Any
 import backoff
 import boto3
 
+from botocore.exceptions import ClientError
+
 from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import assume_role, get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
 from cirrus.management.exceptions import (
@@ -306,3 +310,48 @@ class Deployment:
             silence_templating_errors,
             **(additional_vars or {}),
         )
+
+    def yield_payloads(
+        self,
+        collections_workflow: str,
+        limit: int | None,
+        query_args: dict[str, str | None],
+        rerun: bool,
+    ) -> Iterator[str]:
+        os.environ["CIRRUS_STATE_DB"] = self.environment["CIRRUS_STATE_DB"]
+        statedb = StateDB()
+
+        yield from (
+            self.fetch_payloads(
+                statedb.get_items(
+                    collections_workflow=collections_workflow,
+                    limit=limit,
+                    **query_args,
+                ),
+                rerun,
+            )
+        )
+
+    def fetch_payloads(self, items: dict, rerun: bool) -> Iterator[str]:
+        for item in items:
+            with BytesIO() as b:
+                try:
+                    self.get_payload_by_id(item["payload_id"], b)
+                    b.seek(0)
+                    payload = json.load(b)
+                    if rerun:
+                        payload["process"][0]["replace"] = True
+                    yield payload
+
+                except ClientError as e:
+                    if e.response["Error"]["Code"] == "404":
+                        logger.error(
+                            "Payload ID: '%s' was not found in S3",
+                            item["payload_id"],
+                        )
+                    else:
+                        logger.error(
+                            "Error retrieving payload ID '%s': '%s'",
+                            item["payload_id"],
+                            e,
+                        )

@@ -9,7 +9,7 @@ implemented using a scalable architecture deployed on AWS. Cirrus provides the g
 infrastructure for processing, allowing a user to focus on implementing the specific
 processing logic for their data.
 
-![](src/cirrus/docs/images/arch-overview.png)
+![architecture-overview](docs/src/cirrus/images/arch-overview.png)
 
 As input, Cirrus takes a STAC ItemCollection, with a process definition block.
 That input is called a Cirrus `ProcessPayload` (CPP).
