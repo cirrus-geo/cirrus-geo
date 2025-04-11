@@ -1,8 +1,6 @@
 # Process
 
-The process lambda is a core piece of Cirrus infrastructure, and an essential piece of the architecture to support the execution of cirrus tasks and workflows.
-
-It processes messages, extracts and prepares Cirrus Process Payloads from these messages and then uses these payloads to trigger execution of pre-defined AWS Step Function workflows.  This process can also involve simple administrative work like setting payload ids, and updating the state db to avoid duplicative executions.
+The process lambda is a core piece of Cirrus infrastructure.  It processes messages, extracts and prepares Cirrus Process Payloads from these messages and then uses these payloads to trigger execution of pre-defined AWS Step Function workflows.  This process can also involve simple administrative work like setting payload ids, and updating the state db to avoid duplicative executions.
 
 ## Trigger
 
@@ -19,3 +17,7 @@ The core function of the process lambda is to handle and process inputs and to t
 ## State Management
 
 The Process lambda also makes select updates the state table when workflows are claimed and started to prevent duplicate workflows running the same payload.  Failure to trigger a step function execution is also logged in the state table.
+
+### CLI
+
+This lambda can be invoked using the included CLIrrus CLI tools to send a payload to the `Process` queue.
