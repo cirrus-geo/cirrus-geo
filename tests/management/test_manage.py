@@ -192,6 +192,6 @@ def assert_get_payloads(
 )
 def test_get_payloads(deployment, create_records, statedb, state, parameter, limit):
     result = deployment(
-        f"get-payloads --collections-workflow 'sar-test-panda_test' {parameter}",
+        f"get-payloads --collections-workflow 'sar-test-panda_test' {parameter} --rerun",
     )
     assert_get_payloads(result, create_records, state, limit)

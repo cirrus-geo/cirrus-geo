@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - `CLAIMED` state to StateDB, along with associated `ALREADY_CLAIMED`
   WorkflowEvent. ([#281])
-- `get_records` command to `manage` command group to facilitate bulk
+- `get_paylaods` command to `manage` command group to facilitate bulk
   retrieval of payloads to be piped into other commands for bulk reruns
   of failed jobs ([#305])
 
