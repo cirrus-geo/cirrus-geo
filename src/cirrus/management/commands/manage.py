@@ -320,17 +320,12 @@ def get_payloads(
     Retrieve a filtered set of payloads from S3 via querying the state DB for
     matching payload IDs, altering paylods to enable rerun.
     """
-    query_args = {
-        "state": state,
-        "since": since,
-        "error_begins_with": error_prefix,
-    }
 
     # send to stdout as NDJSON for piping
     for payload in deployment.yield_payloads(
         collections_workflow,
         limit,
-        query_args,
+        {"state": state, "since": since, "error_begins_with": error_prefix},
         rerun,
     ):
         click.echo(json.dumps(payload, default=str))

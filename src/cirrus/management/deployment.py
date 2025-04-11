@@ -317,41 +317,39 @@ class Deployment:
         limit: int | None,
         query_args: dict[str, str | None],
         rerun: bool,
-    ) -> Iterator[str]:
+    ) -> Iterator[dict]:
         os.environ["CIRRUS_STATE_DB"] = self.environment["CIRRUS_STATE_DB"]
         statedb = StateDB()
 
-        yield from (
-            self.fetch_payloads(
-                statedb.get_items(
-                    collections_workflow=collections_workflow,
-                    limit=limit,
-                    **query_args,
-                ),
-                rerun,
-            )
-        )
+        for item in statedb.get_items(
+            collections_workflow=collections_workflow,
+            limit=limit,
+            **query_args,
+        ):
+            payload = self.fetch_payload(item, rerun)
+            if payload:
+                yield payload
 
-    def fetch_payloads(self, items: dict, rerun: bool) -> Iterator[str]:
-        for item in items:
-            with BytesIO() as b:
-                try:
-                    self.get_payload_by_id(item["payload_id"], b)
-                    b.seek(0)
-                    payload = json.load(b)
-                    if rerun:
-                        payload["process"][0]["replace"] = True
-                    yield payload
+    def fetch_payload(self, item: dict, rerun: bool) -> dict | None:
+        with BytesIO() as b:
+            try:
+                self.get_payload_by_id(item["payload_id"], b)
+                b.seek(0)
+                payload = json.load(b)
+                if rerun:
+                    payload["process"][0]["replace"] = True
+                return payload
 
-                except ClientError as e:
-                    if e.response["Error"]["Code"] == "404":
-                        logger.error(
-                            "Payload ID: '%s' was not found in S3",
-                            item["payload_id"],
-                        )
-                    else:
-                        logger.error(
-                            "Error retrieving payload ID '%s': '%s'",
-                            item["payload_id"],
-                            e,
-                        )
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "404":
+                    logger.error(
+                        "Payload ID: '%s' was not found in S3",
+                        item["payload_id"],
+                    )
+                else:
+                    logger.error(
+                        "Error retrieving payload ID '%s': '%s'",
+                        item["payload_id"],
+                        e,
+                    )
+                return None
