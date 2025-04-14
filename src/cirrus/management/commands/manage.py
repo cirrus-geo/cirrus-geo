@@ -2,14 +2,11 @@ import json
 import logging
 import sys
 
-from io import BytesIO
 from subprocess import CalledProcessError
-from typing import BinaryIO
 
 import click
 
 from boto3 import Session
-from botocore.exceptions import ClientError
 
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.utils.click import (
@@ -110,24 +107,11 @@ def run_workflow(
 def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
     """Get a payload from S3 using its ID"""
 
-    def download_payload(
-        deployment: Deployment,
-        payload_id: str,
-        output_fileobj: BinaryIO,
-    ):
-        try:
-            deployment.get_payload_by_id(payload_id, output_fileobj)
-        except ClientError as e:
-            logger.error(e)
-
     if raw:
-        download_payload(deployment, payload_id, sys.stdout.buffer)
+        click.echo(deployment.fetch_payload(payload_id))
     else:
-        with BytesIO() as b:
-            download_payload(deployment, payload_id, b)
-            b.seek(0)
-            json.dump(json.load(b), sys.stdout, indent=4)
-    click.echo("")
+        json.dump(deployment.fetch_payload(payload_id), sys.stdout, indent=4)
+        click.echo("")
 
 
 @manage.command("get-execution")

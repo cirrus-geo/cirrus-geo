@@ -318,22 +318,21 @@ class Deployment:
         query_args: dict[str, str | None],
         rerun: bool,
     ) -> Iterator[dict]:
-        os.environ["CIRRUS_STATE_DB"] = self.environment["CIRRUS_STATE_DB"]
-        statedb = StateDB()
+        statedb = StateDB(table_name=self.environment["CIRRUS_STATE_DB"])
 
         for item in statedb.get_items(
             collections_workflow=collections_workflow,
             limit=limit,
             **query_args,
         ):
-            payload = self.fetch_payload(item, rerun)
+            payload = self.fetch_payload(item["payload_id"], rerun)
             if payload:
                 yield payload
 
-    def fetch_payload(self, item: dict, rerun: bool):
+    def fetch_payload(self, payload_id: str, rerun: bool | None = None):
         with BytesIO() as b:
             try:
-                self.get_payload_by_id(item["payload_id"], b)
+                self.get_payload_by_id(payload_id, b)
                 b.seek(0)
                 payload = json.load(b)
                 if rerun:
@@ -344,11 +343,11 @@ class Deployment:
                 if e.response["Error"]["Code"] == "404":
                     logger.error(
                         "Payload ID: '%s' was not found in S3",
-                        item["payload_id"],
+                        payload_id,
                     )
                 else:
                     logger.error(
                         "Error retrieving payload ID '%s': '%s'",
-                        item["payload_id"],
+                        payload_id,
                         e,
                     )
