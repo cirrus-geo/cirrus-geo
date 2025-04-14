@@ -235,6 +235,18 @@ cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w
 </dd>
 </dl>
 </li>
+<li><dl>
+<dt><em>get-payloads</em></dt><dd><p>Bulk retrieve payloads as NDJSON.  Can be filtered on fields available in
+StateDB - ‘collections-workflow’, ‘state’, ‘since’, ‘limit’,
+‘error-prefix’.  Output may be piped into additional commands to rerun payloads using ‘rerun’ flag which alters payload to allow rerunning</p>
+<p>piping with xargs to resubmit failed workflows
+.. code-block:: bash</p>
+<blockquote>
+<div><p>cirrus manage name-dev get-payloads –collections-workflow “sar-test_flow” –state “FAILED” –since “10 d” –rerun | xargs -0 -L 1 echo |  cirrus manage name-dev process</p>
+</div></blockquote>
+</dd>
+</dl>
+</li>
 </ul>
 </section>
 <section id="payload-commands">
