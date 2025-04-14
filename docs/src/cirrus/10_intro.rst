@@ -48,10 +48,6 @@ Cirrus Components
 Cirrus is organized into reusable blocks called :doc:`Components
 <60_components>`. There are four types of Components:
 
-* :doc:`Feeders <components/feeders>` accept arbitrary input, and output a
-  Cirrus Process Payload, which is enqueued for processing. These can be used to initiate
-  processing from any source, for example, an SNS topic message indicating a new scene is
-  available or an S3 Inventory of existing scenes.
 * :doc:`Tasks <components/tasks/index>` are the basic unit of work in a Workflow and use a
   Cirrus Process Payload for both input and output. This is where specific processing,
   for example, transforming data to data (e.g., JPEG200 to COG), data to metadata
@@ -60,7 +56,7 @@ Cirrus is organized into reusable blocks called :doc:`Components
   implementing a processing pipeline that coordinate transforming a given input into one
   or more output STAC items
 * :doc:`Functions <components/functions>` provide internal services that are used by
-  Feeders, Tasks, and Workflows, and are less commonly extended by users.
+  Tasks, and Workflows, and are less commonly extended by users.
 
 
 Horizontal and vertical scaling
@@ -124,9 +120,9 @@ Cirrus is built on top of a number of AWS services that allow its serverless and
 scalable architecture, including:
 
 * Step Functions: workflow implementation
-* Lambda: scalable compute for tasks, feeders, and functions
+* Lambda: scalable compute for tasks, and functions
 * Batch, ECS, and EC2 (spot or on-demand): supports longer runtimes and/or custom resource requirements for
-  feeders and tasks
+  tasks
 * DynamoDB: Payload state-tracking database
 * SQS: message queuing for reliability
 * SNS: messages to multiple subscribers
@@ -158,8 +154,6 @@ Framework Users
 ^^^^^^^^^^^^^^^
 
 *Those that are configuring, operating, and monitoring pipeline workflows.*
-
-
 
 
 Algorithm Developers
