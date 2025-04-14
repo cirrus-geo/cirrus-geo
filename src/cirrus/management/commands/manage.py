@@ -302,7 +302,8 @@ def get_payloads(
 ):
     """
     Retrieve a filtered set of payloads from S3 via querying the state DB for
-    matching payload IDs, altering paylods to enable rerun.
+    matching payload IDs
+    Rerun flag alters payloads to enable rerunning payload
     """
 
     # send to stdout as NDJSON for piping

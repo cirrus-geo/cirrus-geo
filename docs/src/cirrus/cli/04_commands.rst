@@ -129,7 +129,7 @@ Manage commands
 - *get-payloads*
     Bulk retrieve payloads as NDJSON.  Can be filtered on fields available in
     StateDB - 'collections-workflow', 'state', 'since', 'limit',
-    'error-prefix'.  Output may be piped into additional commands to rerun payloads using 'rerun' flag
+    'error-prefix'.  Output may be piped into additional commands to rerun payloads using 'rerun' flag which alters payload to allow rerunning
 
     piping with xargs to resubmit failed workflows
     .. code-block:: bash
