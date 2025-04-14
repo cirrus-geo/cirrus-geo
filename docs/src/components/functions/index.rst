@@ -12,7 +12,7 @@ In typical use, most Cirrus projects will not require any additional
 function-type components. However, they can be occasionally be useful for
 lambda utility functions required to manage a given deployment.
 
-As a component with a Lambda base, the :doc:`Lambda-based components <lambdas>`
+The :doc:`Lambda-based components <lambdas>`
 documentation contains relevant information for this and other Lambda
 components.
 
