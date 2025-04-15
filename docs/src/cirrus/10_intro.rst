@@ -55,7 +55,7 @@ Cirrus is organized into reusable blocks called :doc:`Components
 * :doc:`Workflows <components/workflows/index>` are a composition of one or more Tasks
   implementing a processing pipeline that coordinate transforming a given input into one
   or more output STAC items
-* :doc:`Functions <components/functions>` provide internal services that are used by
+* :doc:`Functions <components/functions/index>` provide internal services that are used by
   Tasks, and Workflows, and are less commonly extended by users.
 
 
