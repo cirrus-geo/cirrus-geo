@@ -1,12 +1,12 @@
 # API
 
-An AWS Lambda intended to function in a REST-like fashion for building Cirrus monitoring dashboards.
+An AWS Lambda intended to function in a REST-like fashion to facilitate querying general information about the Dynamo DB and TimeStream Event Tables.  This can be used for building Cirrus monitoring dashboards, like hourly or daily events aggregate statistics.
 
-This differentiates it from the other lambdas which function more as traffic managers and handlers, the `API` lambda exists outside of the standard cirrus workflow as laid out in the architecture diagram in [cirrus_overview](/docs/src//cirrus/10_intro.rst)
+This differentiates it from the other lambdas which are more like traffic managers and handlers, while the `API` lambda exists outside of the standard cirrus workflow as laid out in the architecture diagram in [cirrus_overview](/docs/src//cirrus/10_intro.rst)
 
 ## Trigger
 
-A lambda intended to facilitate querying general information about the Dynamo DB and TimeStream Event Tables. This lambada is intended to respond in a REST-like fashion.  The result can be used to generate dashboards of cirrus statistics, like hourly or daily events or runs, or different filters.
+Triggered by sending valid HTTTP requests.
 
 Query parameters can be passed in to control the behavior of the response.  A query param not in the following list will have no effect as it goes un unanalzyed, only a specific set of params are examined.
 
@@ -18,13 +18,15 @@ Query parameters can be passed in to control the behavior of the response.  A qu
 
 A REST-like response containing a status_code, headers, and body that can be parsed like any REST response.
 
+### "Endpoints"
+
 ### "GET" Root
 
-A call to the root 'endpoint' will return a STAC-like object with links to all the outputs from the cirrus S3 data bucket
+Return a STAC-like object with links to all the outputs from the cirrus S3 data bucket.
 
 ### "GET" Stats
 
-Return a summary of statistics of events from the TimeStream database to get a picture of cirrus events daily, hourly, and hourly rolling
+Return a summary statistics of events from the TimeStream database to get a picture of cirrus events on a daily, hourly, and hourly rolling basis
 
 ### "GET" Items
 
