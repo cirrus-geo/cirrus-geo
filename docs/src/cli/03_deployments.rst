@@ -1,4 +1,4 @@
-CLIrrus and Cirrus deployments
+CLIrrus and Cirrus Deployments
 ==============================
 
 CLIrrus is designed around interacting with a different cirrus deployments. Many

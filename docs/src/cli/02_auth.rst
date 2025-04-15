@@ -1,5 +1,5 @@
-CLIrrus Authentication
-=========================
+Authentication
+==============
 
 Because CLIrrus interacts directly with AWS resources via the
 AWS python API with the boto3 library, you will have to be authenticated with AWS.  We recommend folllowing your organizations best practice recommendations for authentication. One way you could do so is to use the `AWS CLI tool`_.

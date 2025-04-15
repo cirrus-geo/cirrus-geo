@@ -17,3 +17,11 @@
    :caption: Component READMEs
 
    components/*/index
+
+.. toctree::
+   :maxdepth: 2
+   :glob:
+   :titlesonly:
+   :caption: Cirrus CLI READMEs
+
+   cli/*

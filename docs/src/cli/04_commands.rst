@@ -1,4 +1,4 @@
-CLIrrus commands
+Command Examples
 ================
 
 CLIrrus currently support a number of commands.

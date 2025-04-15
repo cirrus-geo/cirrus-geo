@@ -1,5 +1,5 @@
-CLIrrus - The Cirrus CLI management Tool
-========================================
+CLIrrus Overview
+====================
 
 Introduction
 ------------
@@ -7,10 +7,12 @@ Cirrus itself is `STAC`_-based geospatial processing pipeline platform deployed
 on AWS and is a constellation of associated pieces of AWS infrastructure.  The
 pieces of a Cirrus deployment like the lambdas, SQS, S3 buckets and other can be
 managed and interacted with using common AWS management tools like the AWS GUI
-or AWS CLI.  However the nature of a Cirrus deployment can make direct
+or AWS CLI.
+
+However the nature of a Cirrus deployment can make direct
 management via AWS tools difficult to do things like batch reruns, manage
 deployments, individual lambda invocations, and more.  There can be multiple
-cirrus deployments and Cirrus infrastructure may co-exist in an AWS account with non Cirrus resources further complicating this management.
+cirrus deployments and Cirrus infrastructure may co-exist in an AWS account with non Cirrus resources further complicating this management.  The Cirrus CLI tool (CLIrrus) was built to simplify dealing with these issues.
 
 What Is CLIrrus?
 ----------------
