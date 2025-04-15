@@ -9,9 +9,7 @@ An overall picture of Cirrus looks like this:
 .. image:: images/arch-overview.png
 
 As shown in that diagram, input Cirrus Process Payloads are published into an
-input SQS queue, either manually by a user or by automated :doc:`Feeder <components/feeders>`
-processes. Feeder functions can either be invoked manually (e.g., the Re-run Feeder), or
-from an externals source such as an SNS notification. These enqueued messages are
+input SQS queue, either manually by a user or from an externals source such as an SNS notification. These enqueued messages are
 then processed by
 the ``process`` Lambda Function. The ``process`` function creates or updates the
 :doc:`State DB <70_statedb>` record for the payload and starts a
@@ -59,8 +57,6 @@ Glossary
 --------
 
 **execution**: An individual run of a workflow on a payload
-
-**feeder**: A function that generates payload and adds them to the Cirrus process queue
 
 **payload**: A Cirrus Process Payload used as input to a workflow
 

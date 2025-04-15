@@ -41,28 +41,22 @@ One of the most common actions to to re-run failed tasks. For example, it it com
 running the task to discover code bugs that cause the task to fail, fix them, and then want
 to re-run the task.
 
-The can be done with the `feed-rerun` feeder lambda. This should be invoked with a JSON body
+The can be done with the `get-paylaods` CLIrrus command. This command offers a way to retrieve payloads in bulk based on user supplied query parameters.  The output of `get-payloads` can then be passed into the `process` command to rerun the tasks that meet your conditions.  Remember to use the `--rerun` flag when retrieving payloads or the paylaod replace flag will not be present and Cirrus will recognize the payloads as already run and will skip them.
 like::
 
-  {
-    "collections": "roda-sentinel-2-c1-l2a",
-    "workflow": "sentinel-2-c1-l2a-to-stac",
-    "state": "FAILED",
-    "error_begins_with": "Exception: Unable to get error log",
-    "limit": 1000,
-    "since": "1d"
-  }
+  cirrus manage deployment-name get-payloads --collectons-workflow "sar-test_workflow" --state "FAILED" --rerun | xargs -0 -L 1 echo | cirrus manage deployment-name process
 
-The fields `collections` and `workflow` are mandatory. The `state` indicates the state that items
-in the the state database should have to be re-run, which will typically be `FAILED`. The
-field `error_begins_with` can restrict the items within those that are `FAILED` to only those
-where the error message matches, e.g., you had many scenes fail with the same bug (now fixed)
-and only want to re-run those. If there are many items that match, the `limit` can be used to
-only run a subset of these. If there are more than 20,000, this should be set so that the
-item can be retrieved and then rerun with the 15 minute lambda time limit. The `since` field
-takes an integer and then a value of 'd' for days, 'h' for hours, or 'm' for minutes and
-only runs items that were last updated in the state database within that time period.
+Under the hood CLIrrus searches the AWS DynamoDB state database for records
+matching the query parameters.  Using these state database records, the
+original payloads are retrieved from the Cirrus deployment S3 bucket.
+The `--rerun` flag adds a flag to the process block of the payload.  These
+payloads are returned as new line delimited JSONs for easier stream
+processing.
 
+The available query parameters are:
 
-Using the stac-api feeder
--------------------------
+* collections-workflow (string): collections workflow field in StateDB
+* since (string): takes an integer and then a value of 'd' for days, 'h' for hours, or 'm' for minutes and only runs items that were last updated in the state database within that time period.  e.g. "10 h" looks back 10 hours.
+* limit (int): limit how many records are returned from stateDB query
+* error-prefix (string): a string prefix in an error string.  Useful if multiple records failed as a result of the same bug.
+* state (string): the state of the record.  Must be one of the following: PROCESSING, COMPLETED, FAILED, INVALID, ABORTED
