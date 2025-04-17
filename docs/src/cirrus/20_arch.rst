@@ -68,6 +68,8 @@ Glossary
 
 **workflow**: An AWS Step Function consisting of 1 or more tasks
 
+**feeder**: Anything that generates a :doc:`Cirrus Process Payload <../30_payload>` and queues it for processing.
+
 
 Naming conventions
 ------------------
