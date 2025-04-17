@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - `CLAIMED` state to StateDB, along with associated `ALREADY_CLAIMED`
   WorkflowEvent. ([#281])
-- `get-payloads` command added to CLI module ([#305])
+- `get-payloads` command added to CLI module to bulk retrieve input payloads
+  based on user-supplied filters ([#305])
 - documentation for setup, authorization, and commands for CLI tool ([#300])
 
 ### Changed
