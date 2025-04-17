@@ -54,8 +54,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - Build a dist zip for all cirrus lambdas ([#276])
   - Fix package build and switch to trusted publishers ([#277])
 
-### Changed
-
 ## [v0.15.0] - 2024-05-06
 
 ### ⚠️ Deprecations
