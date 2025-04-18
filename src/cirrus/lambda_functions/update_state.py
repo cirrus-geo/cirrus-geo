@@ -66,7 +66,7 @@ class Execution:
             if status == SfnStatus.SUCCEEDED:
                 pass
             elif status == SfnStatus.FAILED:
-                error = get_execution_error(arn)
+                error = get_execution_error(event)
             elif status == SfnStatus.ABORTED:
                 pass
             elif status == SfnStatus.TIMED_OUT:
@@ -175,36 +175,17 @@ def workflow_failed(
         raise
 
 
-def get_execution_error(arn: str) -> dict[str, str]:
+def get_execution_error(event: dict) -> dict[str, str]:
     error = None
 
+    # depends on user correctly configuring error handling
+    # in state-machine.json definiton to pass error out
     try:
-        history = SFN_CLIENT.get_execution_history(
-            executionArn=arn,
-            maxResults=MAX_EXECUTION_EVENTS,
-            reverseOrder=True,
+        error = event["detail"]["error"]
+    except KeyError:
+        logger.exception(
+            "Failed to get error.  Check state-machine.json definition to ensure error is correctly passed out of FAIL state",  # noqa: E501
         )
-        for event in history["events"]:
-            try:
-                if "stateEnteredEventDetails" in event:
-                    details = event["stateEnteredEventDetails"]
-                    error = json.loads(details["input"])["error"]
-                    break
-
-                if "lambdaFunctionFailedEventDetails" in event:
-                    error = event["lambdaFunctionFailedEventDetails"]
-                    # for some dumb reason these errors have lowercase key names
-                    error = {key.capitalize(): val for key, val in error.items()}
-                    break
-            except KeyError:
-                pass
-        else:
-            logger.warning(
-                "Could not find execution error in last %s events",
-                MAX_EXECUTION_EVENTS,
-            )
-    except Exception:
-        logger.exception("Failed to get stepfunction execution history")
 
     if error:
         logger.debug("Error found: '%s'", error)
