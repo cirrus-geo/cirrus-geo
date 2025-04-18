@@ -181,14 +181,28 @@ then 2400, etc. With jitter, retry will wait a random amount of time between 0 a
 0 and 1200, 0 and 2400, etc. This randomness means that sudden spike of requests that results
 in errors won't continue to create a periodic spike of errors as they all retry on exactly
 the same cycle. `MaxAttempts` defines the total number of attempts to run the task, and
-`MaxDelaySeconds`` puts a reasonable cap on the delay period, for example, making the
+`MaxDelaySeconds` puts a reasonable cap on the delay period, for example, making the
 maximum delay one 1 day instead of 10 years (600 * 2 ^ 19 seconds).
+
+Passing Out Errors
+^^^^^^^^^^^^^^^^^^
+
+Containers running in a step function can fail for a variety of reasons.
+Having access to error messages from processes inside the step function is
+essential to accurately diagnosing issues that can cause execution
+failures.
+
+To access these errors, they must be passed out of the step function so they can be picked up and logged by the `update-state` lambda, which then inserts the errors into the DynamoDB state database where they can be analyzed in bulk to determine failure patterns.
+
+To accomplish this task you must ensure that the `Fail` state contains `Cause` and `Error` keys with the values coming from the error message.  Examples can be found in the AWS documentation for `Fail State Defintion Example`_
 
 Also see the AWS documentation for `error handling in Step Functions`_.
 
 .. _error handling in Step Functions:
   https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
 
+.. _Fail State Definition Example:
+  https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html
 
 Workflow best practices
 -----------------------

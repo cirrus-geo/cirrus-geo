@@ -133,6 +133,7 @@ Manage commands
 
     piping with xargs to resubmit failed workflows
     .. code-block:: bash
+
         cirrus manage name-dev get-payloads --collections-workflow "sar-test_flow" --state "FAILED" --since "10 d" --rerun | xargs -0 -L 1 echo |  cirrus manage name-dev process
 
 Payload commands
