@@ -9,18 +9,11 @@ from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start, get_client
+from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start
 
 cold_start()
 
 logger = get_task_logger("function.update-state", payload=())
-
-# boto3 clients
-SFN_CLIENT = get_client("stepfunctions")
-
-# how many execution events to request/check
-# for an error cause in a FAILED state
-MAX_EXECUTION_EVENTS = 10
 
 INVALID_EXCEPTIONS = (
     "cirrus.lib.errors.InvalidInput",
