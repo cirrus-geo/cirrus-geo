@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v1.0.0] - 2025-04-17
 
+### ⚠️ Breaking changes
+
+- `update-state` lambda now retrieves error messages from FAIL state output payload
+  instead of searching step function execution istory ([#311])
+
 ### Added
 
 - `CLAIMED` state to StateDB, along with associated `ALREADY_CLAIMED`
@@ -25,6 +30,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - CLI required env vars are stored/retrieved from AWS Parameter Store ([#295])
 - CLI tool may now assume an IAM role and update session with IAM credentials
   if IAM role is available in parameter store config ([#303])
+- Updated documentation for default cirrus lambda functions,
+  documenting each current lambda-function ([#306])
 
 ## [v0.15.4] - 2024-12-03
 
@@ -1033,6 +1040,8 @@ Initial release
 [#300]: https://github.com/cirrus-geo/cirrus-geo/pull/300
 [#303]: https://github.com/cirrus-geo/cirrus-geo/pull/303
 [#305]: https://github.com/cirrus-geo/cirrus-geo/pull/305
+[#306]: https://github.com/cirrus-geo/cirrus-geo/pull/306
+[#311]: https://github.com/cirrus-geo/cirrus-geo/pull/311
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
