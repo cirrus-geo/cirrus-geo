@@ -9,18 +9,11 @@ from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start, get_client
+from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start
 
 cold_start()
 
 logger = get_task_logger("function.update-state", payload=())
-
-# boto3 clients
-SFN_CLIENT = get_client("stepfunctions")
-
-# how many execution events to request/check
-# for an error cause in a FAILED state
-MAX_EXECUTION_EVENTS = 10
 
 INVALID_EXCEPTIONS = (
     "cirrus.lib.errors.InvalidInput",
@@ -176,23 +169,16 @@ def workflow_failed(
 
 
 def get_execution_error(event: dict) -> dict[str, str]:
-    error = None
-
-    # depends on user correctly configuring error handling
-    # in state-machine.json definiton to pass error out
-    try:
-        error = event["detail"]["error"]
-    except KeyError:
-        logger.exception(
-            "Failed to get error.  Check state-machine.json definition to ensure error is correctly passed out of FAIL state",  # noqa: E501
-        )
-
+    error = event["detail"].get("error")
     if error:
-        logger.debug("Error found: '%s'", error)
+        logger.debug("Error found: '%s'", json.dumps(error))
+        error = mk_error(error["Error"], error["Cause"])
     else:
+        msg = "no error was found in event.  Check that 'state-machine.json' schema is configured to pass out errors from FAIL state"  # noqa: E501
+        logger.exception(msg)
         error = mk_error(
             "Unknown",
-            "update-state failed to find a specific error condition.",
+            msg,
         )
     return error
 
