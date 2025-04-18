@@ -26,6 +26,36 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - CLI tool may now assume an IAM role and update session with IAM credentials
   if IAM role is available in parameter store config ([#303])
 
+## [v0.15.4] - 2024-12-03
+
+### Fixed
+
+- Pass payload, not string version of payload, when string version is larger
+  than `MAX_PAYLOAD_LENGTH` is exceeded. ([#292])
+
+## [v0.15.3] - 2024-11-15
+
+### Fixed
+
+- Fixed issue [#225] where default string is treated as a list when input
+  collection is specified neither via `payload.collections` nor on the items in
+  `payload.features[].collection`. ([#279])
+- Fixed issue [#255] for the `release/v0` branch by using a heuristic to select
+  only the libs that cirrus.lib2 needs for injection into the python lambda
+  requirements files. ([#283])
+- Use `importlib.resources._legacy` module for compatiblity with python version
+  3.12. ([#290])
+
+### Changed
+
+- Loosened requirement `rich~=10.6` to `rich`, and bumped python-dateutil from
+  `~2.8.2` to `~2.9.0`. Note, the sum total of `rich` usage is printing
+  escaped character sequences to the console. ([#283])
+
+### Removed
+
+- Removed slimPatterns for `boto*` and `dateutil` packages, per [#242]. ([#283])
+
 ## [v1.0.0a1] - 2025-02-28
 
 ### Fixed
@@ -43,6 +73,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Workflow events of type `SUCCEEDED` now include the step function execution ARN in
   the event. ([#297])
 
+## [v0.15.2] - 2024-11-08
+
+Deleted due to github release workflow misconfiguration.
+
 ## [v1.0.0a0] - 2024-08-13
 
 ### ⚠️ Breaking changes
@@ -53,6 +87,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - Initial work for v1 ([#268])
   - Build a dist zip for all cirrus lambdas ([#276])
   - Fix package build and switch to trusted publishers ([#277])
+
+## [v0.15.1] - 2024-05-09
+
+### Fixed
+
+- Stop `SNSPublisher` and `SQSPublisher` from overwriting `dest_name`. ([#274])
 
 ## [v0.15.0] - 2024-05-06
 
@@ -853,8 +893,11 @@ cleanup steps.
 
 Initial release
 
-[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0a1...main
+[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0...main
+[v0.15.4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.3...v0.15.4
+[v0.15.3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.1...v0.15.3
 [v1.0.0a1]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0a0...v1.0.0a1
+[v0.15.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.0...v0.15.1
 [v1.0.0a0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.0...v1.0.0a0
 [v0.15.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.14.0...v0.15.0
 [v0.14.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.13.0...v0.14.0
@@ -941,6 +984,8 @@ Initial release
 [#193]: https://github.com/cirrus-geo/cirrus-geo/issues/193
 [#202]: https://github.com/cirrus-geo/cirrus-geo/issues/202
 [#225]: https://github.com/cirrus-geo/cirrus-geo/issues/225
+[#242]: https://github.com/cirrus-geo/cirrus-geo/issues/242
+[#255]: https://github.com/cirrus-geo/cirrus-geo/issues/255
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73
@@ -973,10 +1018,15 @@ Initial release
 [#268]: https://github.com/cirrus-geo/cirrus-geo/pull/268
 [#270]: https://github.com/cirrus-geo/cirrus-geo/pull/270
 [#272]: https://github.com/cirrus-geo/cirrus-geo/pull/272
+[#274]: https://github.com/cirrus-geo/cirrus-geo/pull/274
 [#276]: https://github.com/cirrus-geo/cirrus-geo/pull/276
 [#277]: https://github.com/cirrus-geo/cirrus-geo/pull/277
 [#278]: https://github.com/cirrus-geo/cirrus-geo/pull/278
+[#279]: https://github.com/cirrus-geo/cirrus-geo/pull/279
 [#280]: https://github.com/cirrus-geo/cirrus-geo/pull/280
+[#283]: https://github.com/cirrus-geo/cirrus-geo/pull/283
+[#290]: https://github.com/cirrus-geo/cirrus-geo/pull/290
+[#292]: https://github.com/cirrus-geo/cirrus-geo/pull/292
 [#294]: https://github.com/cirrus-geo/cirrus-geo/pull/294
 [#295]: https://github.com/cirrus-geo/cirrus-geo/pull/295
 [#297]: https://github.com/cirrus-geo/cirrus-geo/pull/297
