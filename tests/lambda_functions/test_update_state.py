@@ -161,7 +161,7 @@ def test_get_execution_error(event, error):
         extracted_error = get_execution_error(event)
         assert extracted_error == {
             "Error": "Unknown",
-            "Cause": "update-state failed to find a specific error condition.",
+            "Cause": "no error was found in event.  Check that 'state-machine.json' schema is configured to pass out errors from FAIL state",  # noqa: E501
         }
 
 
