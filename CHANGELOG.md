@@ -901,6 +901,7 @@ cleanup steps.
 Initial release
 
 [unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0...main
+[v1.0.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.4...v1.0.0
 [v0.15.4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.3...v0.15.4
 [v0.15.3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.1...v0.15.3
 [v1.0.0a1]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0a0...v1.0.0a1
