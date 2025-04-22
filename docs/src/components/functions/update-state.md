@@ -1,4 +1,4 @@
-# Update-State
+# update-state
 
 Updates the dynamoDB state database with the State Function execution results.
 

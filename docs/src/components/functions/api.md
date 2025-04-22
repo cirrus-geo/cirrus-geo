@@ -1,4 +1,4 @@
-# API
+# api
 
 An AWS Lambda intended to function as an HTTP API to facilitate querying general information about the Dynamo DB and TimeStream Event Tables.  This can be used for building Cirrus monitoring dashboards, like hourly or daily events aggregate statistics.
 

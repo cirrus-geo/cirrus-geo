@@ -1,4 +1,4 @@
-# Post Batch
+# post-batch
 
 A lambda related to running Batch tasks, required to work around limitations of AWS Batch.
 
