@@ -31,7 +31,5 @@ CLIrrus utilizes the parameter store to store these critical environment variabl
 
 A pointer system is used to identify the parameter store prefix for a given deployment to ensure that we can search and retrieve only the enviroment variables for a given deployment without having to parse a large amount of returned parameters.  Using this pointer CLIrrus can then retrieve the related environment variables.
 
-These environment variables are automatically created in the parameter store by the terraform code that also deploys cirrus resources.
-
 .. _AWS Parameter Store: https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html
 .. _AWS Parameter store documentation: https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-hierarchies.html

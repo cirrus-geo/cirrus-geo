@@ -10,7 +10,7 @@ The `update-state` lambda listens for terminal events output by a State Function
 - "SUCCEEDED": the successful completion of a cirrus workflow
 - "FAILED": A failed execution.  This can occur for a variety of reasons
 - "ABORTED": The state machinea was forced to abort execution.  Can be triggered by manual termination of a workflow.
-- "TIMED OUT": State machine terminated due to time out.  Can occur if a third party resource involved in a tast hangs.
+- "TIMED OUT": State machine terminated due to time out.  Can occur if a third party resource involved in a test hangs, or a workflow configuration did not allow sufficient time for a task to complete.
 
 ## StateDB Updates
 
@@ -20,4 +20,4 @@ In addition to updating DynamoDB the `update-state` lambda also fires off events
 
 The `update-state` lambda additionally logs any errors that come from the StateMachine so they can be captured and anlyzed in the log stream.
 
-Successful completions of workflows can also trigger sending messages to either SNS or SQS for additional steps as configured by users.
+`update-state can also send messages to configured SNS topics to provide notifications to users or downstream services when events and/or output items are produced

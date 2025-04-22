@@ -48,15 +48,24 @@ Cirrus Components
 Cirrus is organized into reusable blocks called :doc:`Components
 <60_components>`. There are four types of Components:
 
-* :doc:`Tasks <components/tasks/index>` are the basic unit of work in a Workflow and use a
-  Cirrus Process Payload for both input and output. This is where specific processing,
-  for example, transforming data to data (e.g., JPEG200 to COG), data to metadata
-  (e.g., COG to STAC), or metadata to metadata (e.g., MTL to STAC).
+* :doc:`Feeders <components/feeders/index>` are the entrance to Cirrus.  They
+   accept arbitrary input, and output a Cirrus Process Payload, which is
+   enqueued for processing. These can be used to initiate processing from any
+   source, for example, an SNS topic message indicating a new scene is
+   available or an S3 Inventory of existing scenes.  The default Cirrus
+   deployment no longer comes pre-loaded with a feeder and must be set up by
+   users.
+* :doc:`Tasks <components/tasks/index>` are the basic unit of work in a
+  Workflow and use a Cirrus Process Payload for both input and output. This is
+  where specific processing, for example, transforming data to data (e.g.
+  JPEG200 to COG), data to metadata (e.g., COG to STAC), or metadata to
+  metadata (e.g., MTL to STAC).
 * :doc:`Workflows <components/workflows/index>` are a composition of one or more Tasks
   implementing a processing pipeline that coordinate transforming a given input into one
   or more output STAC items
 * :doc:`Functions <components/functions/index>` provide internal services that are used by
   Tasks, and Workflows, and are less commonly extended by users.
+
 
 
 Horizontal and vertical scaling

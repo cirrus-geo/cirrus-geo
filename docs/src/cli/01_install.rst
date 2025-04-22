@@ -1,17 +1,17 @@
 Installing
 ==========
 
-Installing the CLIrrus CLI tool is quick and easy.  Built using python `click`_ library and included in the broader `cirrus-geo`_ library, to install CLIrrus you just need to install the ``cirrus-geo`` project requirements.
-
-For superior environment management we recommend you create a specific virtual environment.  This can be accomplised using your preferred environment management tools.  One way might be as follows:
+Built using python `click`_ library and included in the broader `cirrus-geo`_ library, you can install the CLI tool on its own or alongside other project requirements
 
 .. code-block:: bash
 
-    python3.12 -m venv .venv
+   pip install  'cirrus-geo[cli]'
 
-    source .venv/bin/activate
+Another way is to use a more modern tool like `uv` to run specific CLI commands in an ephemeral environment.
 
-    pip install .
+.. code-block:: bash
+
+    uvx --from 'cirrus-geo[cli]' cirrus [COMMAND]
 
 .. _click: https://click.palletsprojects.com/en/stable/
 .. _cirrus-geo: https://github.com/cirrus-geo/cirrus-geo

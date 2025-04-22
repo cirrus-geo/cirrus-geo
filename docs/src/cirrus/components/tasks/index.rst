@@ -26,10 +26,6 @@ constraints can be prohibitive or untenable for some task workloads. In those
 cases, Batch allows for extended runtimes, greater resource limits, and
 specialized instance types.
 
-In a Cirrus project, tasks are stored inside the ``tasks/`` directory, each in a
-subdirectory named for the task. Each task requires a ``definition.yml`` file with
-the task's configuration, and a ``README.md`` file documenting the task's usage.
-
 
 Anatomy of a task
 -----------------
@@ -41,22 +37,20 @@ Generally speaking, every task should do a few key things:
   * In the case of Batch tasks and/or large payloads, tasks should support
     receiving a ``url`` input parameter pointing to a payload object in S3
 
-* Instantiate a ``cirrus.lib.ProcessPayload`` instance from the input payload
-  JSON
-* Download all required assets from the items in the input payload
+* Download any/all required assets from the items in the input payload
 * Perform any asset metadata manipulation and/or derived product processing
 * Update/replace payload items based on task outputs
-* Upload any output assets to S3 for persistence
+* Upload any output assets/items to S3 for persistence
 * Return the output Cirrus Process Payload
 
   * In the case of Batch tasks and/or large payloads, tasks should support
     uploading the output payload to S3 and returning an output ``url`` parameter
     pointing to that payload object in S3
 
-Certain tasks may deviate from this pattern, but the vast majoity of tasks will
-follow this flow. ``cirrus-lib`` provides convenince classes/methods to help with
-these common needs.
-
+Certain tasks may deviate from this pattern, but the vast majority of tasks will
+follow this flow, either in part or in full. The python ``stac-task`` library
+provides convenience classes/methods to help build tasks and easily facilitate
+these common actions.
 
 Lambda tasks
 ^^^^^^^^^^^^
@@ -154,57 +148,6 @@ When to chose Batch
 
     .. _cirrus-task-image: https://github.com/cirrus-geo/cirrus-task-images
 
-
-Creating a new task
--------------------
-
-Creating a new task involves creating a directory with the task name under
-``tasks/`` and the required files inside it. Getting everything setup with all
-the requisite boiler-plate takes some minor work. The ``cirrus`` cli includes
-a convenience function to automate getting started with a new task.
-
-Lambda-only
-^^^^^^^^^^^
-
-To create a lambda-only task, simply create a new task with a description and
-the option ``--type lambda``::
-
-    ❯ cirrus create task --has-lambda --no-batch <TaskName> "<task description>"
-
-This command will create the task directory and required files from a minimal
-template. The new task will obviously need to have the custom handler code
-added, and the ``definition.yml`` configuration will need to be validated to
-ensure it matches the task requirements. Any usage information should also be
-added to the ``README.md`` file.
-
-Batch-only
-^^^^^^^^^^
-
-To create a Batch-only task, simply create a new task with a description, but
-add the ``--type batch`` option::
-
-    ❯ cirrus create task --type batch <TaskName> "<task description>"
-
-The task directory and required files will be created from a minimal template.
-The templated Batch configuration in the ``definition.yml`` should be
-considered a rough starting point, and will require fairly significant
-modification for most uses. Be sure to also update the ``README.md`` file with
-usage information.
-
-Lambda and Batch
-^^^^^^^^^^^^^^^^
-
-For tasks that should support both Lambda and Batch, run the ``create``
-command, this time using the options ``--type lambda`` and ``--type batch``::
-
-    ❯ cirrus create task --type lambda --type batch <TaskName> "<task description>"
-
-This command does the same as both of the above ``create`` command examples, so
-the listed caveats of both apply here: ensure the handler code is completed,
-and the batch configuration is updated to match the task requirements.
-
-* :doc:`Conditionally Using Batch or Lambda <../workflows/batch>`
-
 Docker Image
 ---------------
 
@@ -301,21 +244,4 @@ Task parameters
 ---------------
 
 Tasks can take arguments at runtime via process definition parameters. See the
-:doc:`Cirrus Process Payload <../../30_payload>` docs for more information. When
-authoring a task, be sure to document all supported task parameters in the
-task's ``README.md``. In using an existing task, the task README can always be
-view via the cli::
-
-    ❯ cirrus show task <TaskName> readme
-
-This will dump the ``README.md`` contents to the terminal with appropriate
-markup applied.
-
-
-Running tasks locally
----------------------
-
-We are working to standardize task code and ``cirrus`` cli tooling to provide
-an easy and consistent means to execute tasks locally. This feature is still
-under development, so for now please consult the project or task documentation
-for further information (if available).
+:doc:`Cirrus Process Payload <../../30_payload>` docs for more information.

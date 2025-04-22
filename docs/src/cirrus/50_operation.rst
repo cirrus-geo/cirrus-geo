@@ -41,7 +41,10 @@ One of the most common actions to to re-run failed tasks. For example, it it com
 running the task to discover code bugs that cause the task to fail, fix them, and then want
 to re-run the task.
 
-The can be done with the `get-paylaods` CLIrrus command. This command offers a way to retrieve payloads in bulk based on user supplied query parameters.  The output of `get-payloads` can then be passed into the `process` command to rerun the tasks that meet your conditions.  Remember to use the `--rerun` flag when retrieving payloads or the paylaod replace flag will not be present and Cirrus will recognize the payloads as already run and will skip them.
+This can be done with the `get-paylaods` CLIrrus command. This command offers a way to retrieve payloads in bulk based on user supplied query parameters.  The output of `get-payloads` can then be passed into the `process` command to rerun the tasks that meet your conditions.  The `--rerun` flag can be passed to `get-payloads` to add the `.process.replace: true` parameter.
+
+Adding this parameter when queuing a payload will result in the payload being rerun if the payload is in the following states in the StateDB: `COMPLETED`, `FAILED`, `ABORTED`, `INVALID`.  A state of `CLAIMED` or `PROCESSING` will result in the payload being skipped.
+
 like::
 
   cirrus manage deployment-name get-payloads --collectons-workflow "sar-test_workflow" --state "FAILED" --rerun | xargs -0 -L 1 echo | cirrus manage deployment-name process
