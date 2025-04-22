@@ -5,9 +5,9 @@ Built using python `click`_ library and included in the broader `cirrus-geo`_ li
 
 .. code-block:: bash
 
-   pip install  'cirrus-geo[cli]'
+   pip install 'cirrus-geo[cli]'
 
-Another way is to use a more modern tool like `uv` to run specific CLI commands in an ephemeral environment.
+Another way is to use a more modern tool like ``uv`` to run specific CLI commands in an ephemeral environment.
 
 .. code-block:: bash
 

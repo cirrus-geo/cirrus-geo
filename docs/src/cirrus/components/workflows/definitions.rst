@@ -180,7 +180,7 @@ Without jitter, in our example above, the retry would simply wait 600 seconds, t
 then 2400, etc. With jitter, retry will wait a random amount of time between 0 and 600,
 0 and 1200, 0 and 2400, etc. This randomness means that sudden spike of requests that results
 in errors won't continue to create a periodic spike of errors as they all retry on exactly
-the same cycle. `MaxAttempts` defines the total number of attempts to run the task, and
+the same cycle. ``MaxAttempts`` defines the total number of attempts to run the task, and
 `MaxDelaySeconds` puts a reasonable cap on the delay period, for example, making the
 maximum delay one 1 day instead of 10 years (600 * 2 ^ 19 seconds).
 
