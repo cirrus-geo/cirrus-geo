@@ -161,7 +161,7 @@ def test_get_execution_error(event, error):
         extracted_error = get_execution_error(event)
         assert extracted_error == {
             "Error": "Unknown",
-            "Cause": "no error was found in event.  Check that 'state-machine.json' schema is configured to pass out errors from FAIL state",  # noqa: E501
+            "Cause": "No error was found in event.  Check Fail is configured to pass error/cause",  # noqa: E501
         }
 
 

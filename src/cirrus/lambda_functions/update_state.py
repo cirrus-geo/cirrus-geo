@@ -20,6 +20,11 @@ INVALID_EXCEPTIONS = (
     "stactask.exceptions.InvalidInput",
 )
 
+DEFAULT_ERROR = {
+    "Error": "Unknown",
+    "Cause": "No error was found in event.  Check Fail is configured to pass error/cause",  # noqa: E501
+}
+
 
 @dataclass
 class Execution:
@@ -63,10 +68,10 @@ class Execution:
             elif status == SfnStatus.ABORTED:
                 pass
             elif status == SfnStatus.TIMED_OUT:
-                error = mk_error(
-                    "TimedOutError",
-                    "The step function execution timed out.",
-                )
+                error = {
+                    "Error": "TimedOutError",
+                    "Cause": "The step function execution timed out.",
+                }
             else:
                 logger.warning("Unknown status: %s", status)
 
@@ -84,13 +89,6 @@ class Execution:
             )
         except Exception as e:
             raise Exception(f"Unknown event: {json.dumps(event)}") from e
-
-
-def mk_error(error: str, cause: str) -> dict[str, str]:
-    return {
-        "Error": error,
-        "Cause": cause,
-    }
 
 
 def workflow_completed(
@@ -169,18 +167,7 @@ def workflow_failed(
 
 
 def get_execution_error(event: dict) -> dict[str, str]:
-    error = event["detail"].get("error")
-    if error:
-        logger.debug("Error found: '%s'", json.dumps(error))
-        error = mk_error(error["Error"], error["Cause"])
-    else:
-        msg = "no error was found in event.  Check that 'state-machine.json' schema is configured to pass out errors from FAIL state"  # noqa: E501
-        logger.exception(msg)
-        error = mk_error(
-            "Unknown",
-            msg,
-        )
-    return error
+    return event["detail"].get("error") or DEFAULT_ERROR
 
 
 @WorkflowEventManager.with_wfem(logger=logger)
