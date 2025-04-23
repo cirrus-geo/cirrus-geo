@@ -45,12 +45,12 @@ Cirrus Components
 Cirrus is organized into reusable blocks called :doc:`Components
 <60_components>`. There are four types of Components:
 
-* :doc:`Feeders <components/feeders/index>` are the entrance to Cirrus.  They
-   accept arbitrary input, and output a Cirrus Process Payload which is
-   enqueued for processing. These can be used to initiate processing from any
-   source, for example, an SNS topic message indicating a new scene is
-   available or an S3 Inventory of existing scenes.  Cirrus does not come
-   pre-loaded with feeders, and must be set up by users.
+* :doc:`Feeders <components/feeders/index>` accept arbitrary input, and
+  output a Cirrus Process Payload which is enqueued for processing. These can
+  be used to initiate processing from any source, for example, an SNS topic
+  message indicating a new scene is available or an S3 Inventory of existing
+  scenes.  Cirrus does not come pre-loaded with feeders, and they must be
+  set up by users.
 * :doc:`Tasks <components/tasks/index>` are the basic unit of work in a
   Workflow and use a Cirrus Process Payload for both input and output. This is
   where specific processing, for example, transforming data to data (e.g.

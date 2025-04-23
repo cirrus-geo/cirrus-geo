@@ -9,11 +9,11 @@ Tasks
 
 
 Tasks in Cirrus implement a unit of processing, to be composed together into a
-:doc:`Workflow <../workflows/index>`. Tasks are expected to support both input and
-output formatted as a :doc:`Cirrus Process Payload <../../30_payload>`. As part of its
-processing, a task can make any requisite modifications to its input payload
-and/or derive any output assets, pushing them to the canonical storage location
-in S3.
+:doc:`Workflow <../workflows/index>`. Tasks are expected to support both input
+and output formatted as a :doc:`Cirrus Process Payload <../../30_payload>`. As
+part of it's processing, a task can make any requisite modifications to its
+input payload and/or derive any output assets, pushing them to the canonical
+storage location in S3.
 
 In other other words, to implement custom processing routines for a pipeline,
 use a task. The best tasks are modular, simple, focused, and composable. Most
@@ -25,7 +25,6 @@ are simpler to manage and quicker to start up, but the Lambda runtime
 constraints can be prohibitive or untenable for some task workloads. In those
 cases, Batch allows for extended runtimes, greater resource limits, and
 specialized instance types.
-
 
 Anatomy of a task
 -----------------
@@ -60,8 +59,7 @@ advantage of quick startup and easy management, but has many restrictions like
 short timeouts and significant resource limits.
 
 Lambda-only tasks follow the specifications outlined in the :doc:`Lambda-based
-components <../lambdas>` documentation. Refer there for specifics on what files
-are requried for Lambda tasks and how to structure the ``definition.yml`` file.
+components <../lambdas>` documentation.
 
 .. _AWS Lambda: https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
 
@@ -156,8 +154,8 @@ intended to run in Lambda and has few dependencies, which is rarely the case wit
 geospatial processing.
 
 The easiest way to do this is to create a Python class that extends stactask.task.Task
-and implements the abstract method `def process(self, **kwargs: Any) -> List[Dict[str, Any]]`.
-This class should be put in the file `src/task/task.py`, and can then be invoked by
+and implements the abstract method ``def process(self, **kwargs: Any) -> List[Dict[str, Any]]``.
+This class should be put in the file ``src/task/task.py``, and can then be invoked by
 Docker with directives::
 
   FROM public.ecr.aws/lambda/python:3.11
@@ -167,13 +165,13 @@ Docker with directives::
   CMD [ "task.handler" ]
 
 If you choose to use your own container that is not based on a standard Lambda image,
-you must add the `lambda-entrypoint.sh` file to your image and set `ENTRYPOINT` explicitly.
+you must add the ``lambda-entrypoint.sh`` file to your image and set ``ENTRYPOINT`` explicitly.
 
 Unfortuantely, the same Docker image cannot be used by both Batch and Lambda, as they
-have slightly different requirements for the `CMD` and `ENTRYPOINT` parameters. The
+have slightly different requirements for the ``CMD`` and ``ENTRYPOINT`` parameters. The
 solution to this is to have one base image definition that has all directives exception
-`CMD` and `ENTRYPOINT`, and then create two image definitions that use the base image
-but set `CMD` and `ENTRYPOINT`. For example, if we had a image that used a standard
+``CMD`` and ``ENTRYPOINT``, and then create two image definitions that use the base image
+but set ``CMD`` and ``ENTRYPOINT``. For example, if we had a image that used a standard
 AWS lambda image (public.ecr.aws/lambda/python:3.11), we would use these directives for
 Batch and Lambda.
 
@@ -182,14 +180,14 @@ Batch::
   COPY src/task/task.py ${LAMBDA_TASK_ROOT}/task.py
   ENTRYPOINT []
 
-(any prior `CMD` will be reset by the ENTRYPOINT change, and the command is set by the Batch Job Definition)
+(any prior ``CMD`` will be reset by the ENTRYPOINT change, and the command is set by the Batch Job Definition)
 
 Lambda::
 
   COPY src/task/task.py ${LAMBDA_TASK_ROOT}/task.py
   CMD [ "task.handler" ]
 
-(base image sets `ENTRYPOINT ["/lambda-entrypoint.sh"]`)
+(base image sets ``ENTRYPOINT ["/lambda-entrypoint.sh"]``)
 
 Thereby, an example base image that needed geospatial tools could look like this::
 
@@ -236,8 +234,8 @@ Lambda::
 
   CMD [ "task.handler" ]
 
-Of course, if only one of the Batch or Lambda is needed, these commands can be combined into
-a single definition.
+Of course, if only one of the Batch or Lambda is needed, these commands can be
+into a single definition.
 
 
 Task parameters

@@ -12,11 +12,11 @@ for more complex use cases.
 Required
 --------
 
-* Process: Listens for payloads on the SQS queue and then transforms these
-    payloads and kicks off a pre-defined task or workflow.  Performs some state
+* ``process``: Listens for payloads on the SQS queue and then transforms these
+    payloads and kicks off a pre-defined workflows.  Performs state
     management by updating state as workflows are claimed and begin processing
-    to place effective locks and prevent duplicate workflows.
-* Update-State: Handles step function completion events, updating state
+    to place effective locks and prevent duplicate workflows, and updates state for step function executions that fail to start
+* ``update-state``: Handles step function completion events, updating state
     database and sending notification to downstream systems.
 
 Optional
@@ -25,11 +25,13 @@ Optional
 These lambda functions offer more advanced functionality for heavier use cases
 like longer running jobs and Cirrus dashboards.
 
-* Pre-batch: Runs only for batch tasks.  Takes input payloads and sends them to
-    S3 to then pass the S3 payload URL to the Step Function
-* Post-batch: Runs only for batch tasks.  Takes batch output payloads from S3
-    and passes payloads to next task in the workflow.
-* API: Offers a read-only HTTP API clients can leverage to search and fetch
+* ``pre-batch``: Runs only for batch tasks.  Takes input payloads and sends
+    them to S3 to then pass the S3 payload URL to the Step Function
+* ``post-batch``: Runs only for batch tasks.  Takes batch output payloads from
+    S3 and passes payloads to next task in the workflow.  Also retrieves and
+    errors from failed batch tasks and re-raises them in the step-functon
+    context.
+* ``api``: Offers a read-only HTTP API clients can leverage to search and fetch
     data from state databse and event database.
 
 Additional documentation on each lambda can be found in component READMEs

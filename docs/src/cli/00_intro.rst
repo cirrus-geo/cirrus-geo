@@ -24,7 +24,7 @@ CLIrrus is a python CLI tool built using the `click`_ library with commmands
 specific to Cirrus.  Example use cases would be to list all available cirrus
 deployments, list lambdas in a given deployment, and even directly trigger a
 workflow with an input Payload by sending the payload directly to the SQS queue
-monitored by the Process lambda, and more.
+monitored by the ``process`` lambda, and more.
 
 What if I'm using an older version of Cirrus?
 ---------------------------------------------

@@ -37,9 +37,9 @@ Inspect output STAC Items
 Rerun tasks
 -----------
 
-One of the most common actions to to re-run failed tasks. For example, it it common when
-running the task to discover code bugs that cause the task to fail, fix them, and then want
-to re-run the task.
+One of the most common actions to to re-run failed tasks. For example, it it
+common when running the task to discover code bugs that cause the task to fail,
+fix them, and then want to re-run the task.
 
 This can be done with the ``get-payloads`` CLIrrus command. This command offers
 a way to retrieve payloads in bulk based on user supplied query parameters.
@@ -49,8 +49,8 @@ passed to ``get-payloads`` to add the ``.process.replace: true`` parameter.
 
 Adding this parameter when queuing a payload will result in the payload being
 rerun if the payload is in the following states in the StateDB: ``COMPLETED``,
-``FAILED``, ``ABORTED``, ``INVALID``.  Checks are in place so that a state of
-``CLAIMED`` or ``PROCESSING`` will result in the payload being skipped.
+``FAILED``, ``ABORTED``, or ``CLAIMED``.  Checks are in place so that a state of
+``PROCESSING`` will result in the payload being skipped.
 
 like::
 
