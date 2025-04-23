@@ -19,10 +19,6 @@ constraints can be prohibitive or untenable for some task workloads. In those
 cases, Batch allows for extended runtimes, greater resource limits, and
 specialized instance types.
 
-In a Cirrus project, tasks are stored inside the ``tasks/`` directory, each in a
-subdirectory named for the task. Each task requires a ``definition.yml`` file with
-the task's configuration, and a ``README.md`` file documenting the task's usage.
-
 
 Anatomy of a task
 -----------------
