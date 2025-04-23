@@ -3,7 +3,7 @@ Installing
 
 Built using python `click`_ library and included in the broader `cirrus-geo`_
 library, you can install the CLI tool on its own or alongside other project
-requirements
+requirements.  A standalone CLI installation might look like
 
 .. code-block:: bash
 
