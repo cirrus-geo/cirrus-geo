@@ -290,15 +290,7 @@ Task parameters
 ---------------
 
 Tasks can take arguments at runtime via process definition parameters. See the
-:doc:`Cirrus Process Payload <../../30_payload>` docs for more information. When
-authoring a task, be sure to document all supported task parameters in the
-task's ``README.md``. In using an existing task, the task README can always be
-view via the cli::
-
-    ❯ cirrus show task <TaskName> readme
-
-This will dump the ``README.md`` contents to the terminal with appropriate
-markup applied.
+:doc:`Cirrus Process Payload <../../30_payload>` docs for more information.
 
 
 Running tasks locally
