@@ -140,57 +140,6 @@ When to chose Batch
 
     .. _cirrus-task-image: https://github.com/cirrus-geo/cirrus-task-images
 
-
-Creating a new task
--------------------
-
-Creating a new task involves creating a directory with the task name under
-``tasks/`` and the required files inside it. Getting everything setup with all
-the requisite boiler-plate takes some minor work. The ``cirrus`` cli includes
-a convenience function to automate getting started with a new task.
-
-Lambda-only
-^^^^^^^^^^^
-
-To create a lambda-only task, simply create a new task with a description and
-the option ``--type lambda``::
-
-    ❯ cirrus create task --has-lambda --no-batch <TaskName> "<task description>"
-
-This command will create the task directory and required files from a minimal
-template. The new task will obviously need to have the custom handler code
-added, and the ``definition.yml`` configuration will need to be validated to
-ensure it matches the task requirements. Any usage information should also be
-added to the ``README.md`` file.
-
-Batch-only
-^^^^^^^^^^
-
-To create a Batch-only task, simply create a new task with a description, but
-add the ``--type batch`` option::
-
-    ❯ cirrus create task --type batch <TaskName> "<task description>"
-
-The task directory and required files will be created from a minimal template.
-The templated Batch configuration in the ``definition.yml`` should be
-considered a rough starting point, and will require fairly significant
-modification for most uses. Be sure to also update the ``README.md`` file with
-usage information.
-
-Lambda and Batch
-^^^^^^^^^^^^^^^^
-
-For tasks that should support both Lambda and Batch, run the ``create``
-command, this time using the options ``--type lambda`` and ``--type batch``::
-
-    ❯ cirrus create task --type lambda --type batch <TaskName> "<task description>"
-
-This command does the same as both of the above ``create`` command examples, so
-the listed caveats of both apply here: ensure the handler code is completed,
-and the batch configuration is updated to match the task requirements.
-
-* :doc:`Conditionally Using Batch or Lambda <../workflows/batch>`
-
 Docker Image
 ---------------
 
