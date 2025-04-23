@@ -200,20 +200,17 @@ failures.
 To access these errors, they must be passed out of the step function so they
 can be picked up and logged by the ``update-state`` lambda, which then inserts
 the errors into the DynamoDB state database where they can be analyzed in bulk
- to determine failure patterns.
+to determine failure patterns.
 
 To accomplish this task you must ensure that the ``Fail`` state contains
 ``Cause`` and ``Error`` keys with the values coming from the error message.
-Examples can be found in the AWS documentation for `Fail State Defintion
-Example`_
+Examples can be found in the AWS documentation for `fail state definition example`_.
 
 Also see the AWS documentation for `error handling in Step Functions`_.
 
-.. _error handling in Step Functions:
-  https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
+.. _error handling in Step Functions: https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
 
-.. _Fail State Definition Example:
-  https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html
+.. _fail state definition example: https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html
 
 Workflow best practices
 -----------------------

@@ -98,16 +98,11 @@ Example Earth Search use case
 
 One prominent use case of Cirrus is as the processing pipeline for `Earth Search`_.
 
-- Landsat scenes are processed via Lambda Functions, triggered notifications
-from the USGS SNS topic.
-- Sentinel-2 Collection 1 Level-2A scenes are processed via Batch, triggered by
-  notifications from the ESA/Singergize SNS topic.
-- Sentinel-1 GRD scenes are processed via Lambda, triggered by
-  notifications from an SNS topic.
-- NAIP scenes are processed using Lambda, and triggered manually
-  once a year when released
-- Copernicus DEM - Global and European Digital Elevation Model (COP-DEM) was
-  processed with Lambda, and triggered once manually.
+* Landsat scenes are processed via Lambda Functions, triggered notifications from the USGS SNS topic.
+* Sentinel-2 Collection 1 Level-2A scenes are processed via Batch, triggered by notifications from the ESA/Singergize SNS topic.
+* Sentinel-1 GRD scenes are processed via Lambda, triggered by notifications from an SNS topic.
+* NAIP scenes are processed using Lambda, and triggered manually once a year when released
+* Copernicus DEM - Global and European Digital Elevation Model (COP-DEM) was processed with Lambda, and triggered once manually.
 
 While triggering from SNS notifications is best practice, this is not always
 possible, and there are numerous other ways to initiate ingest.  Previously,
