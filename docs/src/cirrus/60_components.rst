@@ -30,3 +30,4 @@ Additonal documentation on each compoent type is available.
    components/tasks/index
    components/workflows/index
    components/functions/index
+   components/feeders/index
