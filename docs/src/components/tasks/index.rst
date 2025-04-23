@@ -30,21 +30,18 @@ Generally speaking, every task should do a few key things:
   * In the case of Batch tasks and/or large payloads, tasks should support
     receiving a ``url`` input parameter pointing to a payload object in S3
 
-* Instantiate a ``cirrus.lib.ProcessPayload`` instance from the input payload
-  JSON
-* Download all required assets from the items in the input payload
+* Download any/all required assets from the items in the input payload
 * Perform any asset metadata manipulation and/or derived product processing
 * Update/replace payload items based on task outputs
-* Upload any output assets to S3 for persistence
+* Upload any output assets/items to S3 for persistence
 * Return the output Cirrus Process Payload
 
   * In the case of Batch tasks and/or large payloads, tasks should support
     uploading the output payload to S3 and returning an output ``url`` parameter
     pointing to that payload object in S3
 
-Certain tasks may deviate from this pattern, but the vast majoity of tasks will
-follow this flow. ``cirrus-lib`` provides convenince classes/methods to help with
-these common needs.
+Certain tasks may deviate from this pattern, but the vast majority of tasks will
+follow this flow, either in part or in full. The python ``stac-task`` library provides convenience classes/methods to help build tasks and easily facilitate these common actions.
 
 
 Lambda tasks
