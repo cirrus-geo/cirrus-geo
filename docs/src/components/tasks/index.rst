@@ -293,14 +293,6 @@ Tasks can take arguments at runtime via process definition parameters. See the
 :doc:`Cirrus Process Payload <../../30_payload>` docs for more information.
 
 
-Running tasks locally
----------------------
-
-We are working to standardize task code and ``cirrus`` cli tooling to provide
-an easy and consistent means to execute tasks locally. This feature is still
-under development, so for now please consult the project or task documentation
-for further information (if available).
-
 
 .. toctree::
    :maxdepth: 1
