@@ -4,6 +4,7 @@ from itertools import product
 
 import pytest
 
+from cirrus.lambda_functions.update_state import get_execution_error
 from cirrus.lambda_functions.update_state import lambda_handler as update_state
 from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEvent
@@ -128,11 +129,40 @@ def test_success(event, statedb, publish_topic, publish_enabled, monkeypatch):
 
 def test_failed(event, statedb):
     event["detail"]["status"] = "FAILED"
+    event["detail"]["error"] = {
+        "Error": "UnknownError",
+        "Cause": '{"errorMessage": "/usr/local/bin/python: No module named name-delivery-to-stac", "errorType": "UnknownError", "requestId": "fake-request-id-djdj10102jd", "stackTrace": ["  File \\"/var/task/post_batch.py\\", line 66, in lambda_handler\\n    raise exception_class(error_msg)\\n"]}',  # noqa: E501
+    }
     update_state(event, {})
 
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("FAILED")
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        {
+            "Error": "UnknownError",
+            "Cause": '{"errorMessage": "/usr/local/bin/python: No module named umbra-delivery-to-stac", "errorType": "UnknownError", "requestId": "20df8b93-a10f-44b2-8b50-72d82b01569d", "stackTrace": ["  File \\"/var/task/post_batch.py\\", line 66, in lambda_handler\\n    raise exception_class(error_msg)\\n"]}',  # noqa: E501
+        },
+        None,
+    ],
+)
+def test_get_execution_error(event, error):
+    event["detail"]["status"] = "FAILED"
+    event["detail"]["error"] = error
+
+    if error:
+        extracted_error = get_execution_error(event)
+        assert extracted_error == error
+    else:
+        extracted_error = get_execution_error(event)
+        assert extracted_error == {
+            "Error": "Unknown",
+            "Cause": "No error was found in event.  Check Fail is configured to pass error/cause",  # noqa: E501
+        }
 
 
 def test_timed_out(event, statedb):

@@ -9,23 +9,21 @@ from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start, get_client
+from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start
 
 cold_start()
 
 logger = get_task_logger("function.update-state", payload=())
 
-# boto3 clients
-SFN_CLIENT = get_client("stepfunctions")
-
-# how many execution events to request/check
-# for an error cause in a FAILED state
-MAX_EXECUTION_EVENTS = 10
-
 INVALID_EXCEPTIONS = (
     "cirrus.lib.errors.InvalidInput",
     "stactask.exceptions.InvalidInput",
 )
+
+DEFAULT_ERROR = {
+    "Error": "Unknown",
+    "Cause": "No error was found in event.  Check Fail is configured to pass error/cause",  # noqa: E501
+}
 
 
 @dataclass
@@ -66,14 +64,14 @@ class Execution:
             if status == SfnStatus.SUCCEEDED:
                 pass
             elif status == SfnStatus.FAILED:
-                error = get_execution_error(arn)
+                error = get_execution_error(event)
             elif status == SfnStatus.ABORTED:
                 pass
             elif status == SfnStatus.TIMED_OUT:
-                error = mk_error(
-                    "TimedOutError",
-                    "The step function execution timed out.",
-                )
+                error = {
+                    "Error": "TimedOutError",
+                    "Cause": "The step function execution timed out.",
+                }
             else:
                 logger.warning("Unknown status: %s", status)
 
@@ -91,13 +89,6 @@ class Execution:
             )
         except Exception as e:
             raise Exception(f"Unknown event: {json.dumps(event)}") from e
-
-
-def mk_error(error: str, cause: str) -> dict[str, str]:
-    return {
-        "Error": error,
-        "Cause": cause,
-    }
 
 
 def workflow_completed(
@@ -175,45 +166,8 @@ def workflow_failed(
         raise
 
 
-def get_execution_error(arn: str) -> dict[str, str]:
-    error = None
-
-    try:
-        history = SFN_CLIENT.get_execution_history(
-            executionArn=arn,
-            maxResults=MAX_EXECUTION_EVENTS,
-            reverseOrder=True,
-        )
-        for event in history["events"]:
-            try:
-                if "stateEnteredEventDetails" in event:
-                    details = event["stateEnteredEventDetails"]
-                    error = json.loads(details["input"])["error"]
-                    break
-
-                if "lambdaFunctionFailedEventDetails" in event:
-                    error = event["lambdaFunctionFailedEventDetails"]
-                    # for some dumb reason these errors have lowercase key names
-                    error = {key.capitalize(): val for key, val in error.items()}
-                    break
-            except KeyError:
-                pass
-        else:
-            logger.warning(
-                "Could not find execution error in last %s events",
-                MAX_EXECUTION_EVENTS,
-            )
-    except Exception:
-        logger.exception("Failed to get stepfunction execution history")
-
-    if error:
-        logger.debug("Error found: '%s'", error)
-    else:
-        error = mk_error(
-            "Unknown",
-            "update-state failed to find a specific error condition.",
-        )
-    return error
+def get_execution_error(event: dict) -> dict[str, str]:
+    return event["detail"].get("error") or DEFAULT_ERROR
 
 
 @WorkflowEventManager.with_wfem(logger=logger)
