@@ -22,7 +22,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Lambda-based components" href="components/lambdas.html" />
+    <link rel="next" title="Tasks" href="components/tasks/index.html" />
     <link rel="prev" title="Basic Operation" href="50_operation.html" /> 
 </head>
 
@@ -56,11 +56,10 @@
 <li class="toctree-l1"><a class="reference internal" href="40_config-deploy.html">Configuration and Deployment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="50_operation.html">Basic Operation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Cirrus Components</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="components/lambdas.html">Lambda-based components</a></li>
-<li class="toctree-l2"><a class="reference internal" href="components/feeders.html">Feeders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="components/tasks/index.html">Tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="components/workflows/index.html">Workflows</a></li>
-<li class="toctree-l2"><a class="reference internal" href="components/functions.html">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/functions/index.html">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/feeders/index.html">Feeders</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="65_cloudformation.html">Cloudformation Support</a></li>
@@ -68,13 +67,21 @@
 <li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="95_tips_and_tricks.html">Tips and Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="96_deploying.html">Deploying</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../components/feeders/index.html">Feeders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../components/functions/index.html">Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../components/tasks/index.html">Tasks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../components/workflows/index.html">Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Cirrus CLI READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli/00_intro.html">CLIrrus Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/01_install.html">Installing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/02_auth.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/03_deployments.html">CLIrrus and Cirrus Deployments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/04_commands.html">Command Examples</a></li>
 </ul>
 
         </div>
@@ -105,56 +112,25 @@
 <h1>Cirrus Components<a class="headerlink" href="#cirrus-components" title="Link to this heading"></a></h1>
 <p>Cirrus features several component types, which each represent a specific role
 within the Cirrus architecture.</p>
-<p>A single component is made up of a collection of files, minimally a
-<code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> file containing the component configuration, and a
-<code class="docutils literal notranslate"><span class="pre">README.md</span></code> file outlining the component usage and any other necessary
-documentation for the component. Additional required files vary per component
-type. All the files for a given component are stored in a single directory named for the component instance:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">component_name</span><span class="o">&gt;/</span>
-    <span class="n">definition</span><span class="o">.</span><span class="n">yml</span>
-    <span class="n">README</span><span class="o">.</span><span class="n">md</span>
-    <span class="o">...</span>
-</pre></div>
-</div>
-<p>Within a Cirrus project directory, components are organized in subdirectories
-named for their respective component types, like so:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">project_dir</span><span class="o">&gt;/</span>
-    <span class="n">feeders</span><span class="o">/</span>
-        <span class="n">feeder1</span><span class="o">/</span>
-        <span class="n">feeder2</span><span class="o">/</span>
-    <span class="n">functions</span><span class="o">/</span>
-    <span class="n">tasks</span><span class="o">/</span>
-        <span class="n">atask</span><span class="o">/</span>
-    <span class="n">workflows</span><span class="o">/</span>
-        <span class="n">aworkflow</span><span class="o">/</span>
-</pre></div>
-</div>
-<p>Each component types has in-depth documentation detailing any supported files
-and the <code class="docutils literal notranslate"><span class="pre">definition.yml</span></code> format. Some components share a common set of
-required files and configuration format, such as all <a class="reference internal" href="components/lambdas.html"><span class="doc">Lambda-based
-components</span></a>.</p>
+<p>These primary types of Cirrus components are:</p>
+<ul class="simple">
+<li><p><strong>lambda functions</strong>: AWS Lambda functions used to manage payload flow into and out of cirrus, and manage state updates</p></li>
+<li><p><strong>tasks</strong>: a unit of processing that can be executed on its own or composed together into a workflow.</p></li>
+<li><p><strong>workflows</strong>: The ‘pipe’ in ‘pipeline.’  Workflows are what transforms input into output using process definition blocks from input payloads and executed in an AWS Step Function.</p></li>
+</ul>
+<p>There is one more component type, that while not explicitly defined in <code class="docutils literal notranslate"><span class="pre">cirrus-geo</span></code>, is critical to a cirrus deployment - feeders</p>
+<ul class="simple">
+<li><p><strong>feeders</strong>: Conceptually, anything that generates a <span class="xref std std-doc">Cirrus Process Payload</span> and queues it for processing. In practice this is open ended and could be anything from a user pasting JSON into the AWS console to an automated process that turns external events into process payloads and publishes them to the Cirrus process topic.</p></li>
+</ul>
+<p>Additonal documentation on each compoent type is available.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Component documentation:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/lambdas.html">Lambda-based components</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="components/lambdas.html#required-files">Required files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="components/lambdas.html#definition-file">Definition file</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="components/feeders.html">Feeders</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="components/feeders.html#lambda-batch-local">Lambda, Batch, Local?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="components/feeders.html#anatomy-of-a-feeder">Anatomy of a Feeder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="components/feeders.html#creating-new-feeder">Creating new feeder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="components/feeders.html#spawning-batch-feeders-with-a-lambda-feeder">Spawning Batch feeders with a Lambda feeder</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="components/tasks/index.html">Tasks</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="components/tasks/index.html#anatomy-of-a-task">Anatomy of a task</a></li>
 <li class="toctree-l2"><a class="reference internal" href="components/tasks/index.html#lambda-vs-batch">Lambda vs Batch</a></li>
-<li class="toctree-l2"><a class="reference internal" href="components/tasks/index.html#creating-a-new-task">Creating a new task</a></li>
 <li class="toctree-l2"><a class="reference internal" href="components/tasks/index.html#docker-image">Docker Image</a></li>
 <li class="toctree-l2"><a class="reference internal" href="components/tasks/index.html#task-parameters">Task parameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="components/tasks/index.html#running-tasks-locally">Running tasks locally</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="components/workflows/index.html">Workflows</a><ul>
@@ -164,7 +140,17 @@ components</span></a>.</p>
 <li class="toctree-l2"><a class="reference internal" href="components/workflows/callbacks.html">Workflow callbacks</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="components/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components/functions/index.html">Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="components/functions/index.html#required">Required</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/functions/index.html#optional">Optional</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="components/feeders/index.html">Feeders</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="components/feeders/index.html#lambda-batch-local">Lambda, Batch, Local?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/feeders/index.html#anatomy-of-a-feeder">Anatomy of a Feeder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/feeders/index.html#creating-new-feeder">Creating new feeder</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </section>
@@ -174,7 +160,7 @@ components</span></a>.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="50_operation.html" class="btn btn-neutral float-left" title="Basic Operation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="components/lambdas.html" class="btn btn-neutral float-right" title="Lambda-based components" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="components/tasks/index.html" class="btn btn-neutral float-right" title="Tasks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

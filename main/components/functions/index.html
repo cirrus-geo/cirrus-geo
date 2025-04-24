@@ -23,7 +23,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="api" href="api.html" />
-    <link rel="prev" title="Rerun Feeder" href="../feeders/feed-rerun.html" /> 
+    <link rel="prev" title="Deploying" href="../../cirrus/96_deploying.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -61,18 +61,28 @@
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/90_examples.html">Cirrus Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/95_tips_and_tricks.html">Tips and Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cirrus/96_deploying.html">Deploying</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../feeders/index.html">Feeders</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Functions</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api.html">api</a></li>
 <li class="toctree-l2"><a class="reference internal" href="process.html">process</a></li>
 <li class="toctree-l2"><a class="reference internal" href="update-state.html">update-state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="post_batch.html">post_batch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_batch.html">pre_batch</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tasks/index.html">Tasks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../workflows/index.html">Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Cirrus CLI READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../cli/00_intro.html">CLIrrus Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli/01_install.html">Installing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli/02_auth.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli/03_deployments.html">CLIrrus and Cirrus Deployments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli/04_commands.html">Command Examples</a></li>
 </ul>
 
         </div>
@@ -101,11 +111,25 @@
              
   <section id="functions">
 <h1>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">function</span></code> component type is mainly used by the Cirrus built-ins required
+to implement the core Cirrus functionality. Examples include the <code class="docutils literal notranslate"><span class="pre">process</span></code>
+lambda function, which processes all incoming Cirrus Process Payloads and
+dispatches them to their specified workflows, or the <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda
+function that updates the <a class="reference internal" href="../../cirrus/70_statedb.html"><span class="doc">state database</span></a> on
+workflow completion events.</p>
+<p>In typical use, most Cirrus projects will not require any additional
+function-type components. However, they can be occasionally be useful for
+lambda utility functions required to manage a given deployment.</p>
+<p>The <a class="reference internal" href="../../cirrus/components/functions/index.html"><span class="doc">Lambdas component documentation</span></a> component
+documentation contains relevant information for this and other Lambda
+components.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="api.html">api</a></li>
 <li class="toctree-l1"><a class="reference internal" href="process.html">process</a></li>
 <li class="toctree-l1"><a class="reference internal" href="update-state.html">update-state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="post_batch.html">post_batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_batch.html">pre_batch</a></li>
 </ul>
 </div>
 </section>
@@ -114,7 +138,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../feeders/feed-rerun.html" class="btn btn-neutral float-left" title="Rerun Feeder" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../cirrus/96_deploying.html" class="btn btn-neutral float-left" title="Deploying" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="api.html" class="btn btn-neutral float-right" title="api" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

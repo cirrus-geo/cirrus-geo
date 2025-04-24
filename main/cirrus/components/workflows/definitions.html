@@ -56,8 +56,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../40_config-deploy.html">Configuration and Deployment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../50_operation.html">Basic Operation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../60_components.html">Cirrus Components</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../lambdas.html">Lambda-based components</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../feeders.html">Feeders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tasks/index.html">Tasks</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Workflows</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Writing workflow definitions</a><ul>
@@ -73,7 +71,8 @@
 <li class="toctree-l3"><a class="reference internal" href="callbacks.html">Workflow callbacks</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../functions.html">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../functions/index.html">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../feeders/index.html">Feeders</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../65_cloudformation.html">Cloudformation Support</a></li>
@@ -81,13 +80,21 @@
 <li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../95_tips_and_tricks.html">Tips and Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../96_deploying.html">Deploying</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/feeders/index.html">Feeders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../components/functions/index.html">Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../components/tasks/index.html">Tasks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../components/workflows/index.html">Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Cirrus CLI READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli/00_intro.html">CLIrrus Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli/01_install.html">Installing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli/02_auth.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli/03_deployments.html">CLIrrus and Cirrus Deployments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli/04_commands.html">Command Examples</a></li>
 </ul>
 
         </div>
@@ -226,7 +233,8 @@ workflow, but can also model merging the output of multiple workflows
 together.</p>
 <p>Callbacks are most useful when a workflow has a dependency on the
 output items from multiple other workflow executions.</p>
-<p>See the <a class="reference internal" href="callbacks.html"><span class="doc">workflow callback documentation</span></a> for further details.</p>
+<p>See the <a class="reference internal" href="callbacks.html"><span class="doc">workflow callback documentation</span></a> for further
+details.</p>
 </li>
 <li><p><strong>Publish topic subscriptions</strong>: custom Lambda functions or other such
 listeners can be subscribed to the <code class="docutils literal notranslate"><span class="pre">cirrus-&lt;stage&gt;-publish</span></code> SNS topic to
@@ -241,14 +249,15 @@ conditions don’t quite fit with the in-the-box approaches.</p>
 </section>
 <section id="error-handling">
 <h2>Error handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h2>
-<p>A critical aspect of scalable workflows is the ability to tolerate and properly recover
-from errors.</p>
-<p>Some errors can occur prior to even executing a task, for example,
-a Lambda.TooManyRequestsException occurs when too many Lambda requests are being made
-(a quota that defaults to 1,000 and can be set to tens of thousands) or an AWSBatchException
-can occur when the AWS Batch API SubmitJob quota of 50/sec is breached. In both cases, these
-steps should be retried; however, they are likely to fail again if retried immediately, and
-the accumulating load will result in an increased failure rate.</p>
+<p>A critical aspect of scalable workflows is the ability to tolerate and properly
+recover from errors.</p>
+<p>Some errors can occur prior to even executing a task, for example
+a Lambda.TooManyRequestsException occurs when too many Lambda requests are
+being made (a quota that defaults to 1,000 and can be set to tens of thousands)
+or an AWSBatchException can occur when the AWS Batch API SubmitJob quota of 50/
+sec is breached. In both cases, these steps should be retried; however, they
+are likely to fail again if retried immediately, and the accumulating load will
+result in an increased failure rate.</p>
 <p>Because of this, it is important
 to have a well-designed retry definition for each task in a workflow.</p>
 <p>A robust retry definition looks like the following:</p>
@@ -259,19 +268,35 @@ to have a well-designed retry definition for each task in a workflow.</p>
 <span class="n">JitterStrategy</span><span class="p">:</span> <span class="n">FULL</span>
 </pre></div>
 </div>
-<p>The <cite>JitterStrategy</cite> setting of <cite>FULL</cite> indicates that the next retry should be a random
-amount of time between 0 and the current delay interval. The <cite>JitterStrategy</cite> of <cite>NONE</cite>
-(which is also the default if undefined) simply multiplies the current delay interval by
-the <cite>BackoffRate</cite> parameter on each attempt. <cite>IntervalSeconds</cite> defines what the first
-delay period should be, and then for each retry, this is multiplied by the <cite>BackoffRate</cite>.
-Without jitter, in our example above, the retry would simply wait 600 seconds, then 1200,
-then 2400, etc. With jitter, retry will wait a random amount of time between 0 and 600,
-0 and 1200, 0 and 2400, etc. This randomness means that sudden spike of requests that results
-in errors won’t continue to create a periodic spike of errors as they all retry on exactly
-the same cycle. <cite>MaxAttempts</cite> defines the total number of attempts to run the task, and
-<cite>MaxDelaySeconds`</cite> puts a reasonable cap on the delay period, for example, making the
-maximum delay one 1 day instead of 10 years (600 * 2 ^ 19 seconds).</p>
+<p>The <cite>JitterStrategy</cite> setting of <cite>FULL</cite> indicates that the next retry should be
+a random amount of time between 0 and the current delay interval. The
+<cite>JitterStrategy</cite> of <cite>NONE</cite> (which is also the default if undefined) simply
+multiplies the current delay interval by the <cite>BackoffRate</cite> parameter on each
+attempt. <cite>IntervalSeconds</cite> defines what the first delay period should be, and
+then for each retry, this is multiplied by the <cite>BackoffRate</cite>.</p>
+<p>Without jitter, in our example above, the retry would simply wait 600 seconds,
+then 1200, then 2400, etc. With jitter, retry will wait a random amount of time
+between 0 and 600, 0 and 1200, 0 and 2400, etc. This randomness means that
+sudden spike of requests that results in errors won’t continue to create a
+periodic spike of errors as they all retry on exactly the same cycle.
+<code class="docutils literal notranslate"><span class="pre">MaxAttempts</span></code> defines the total number of attempts to run the task, and
+<cite>MaxDelaySeconds</cite> puts a reasonable cap on the delay period, for example,
+making the maximum delay one 1 day instead of 10 years (600 * 2 ^ 19 seconds).</p>
+<section id="passing-out-errors">
+<h3>Passing Out Errors<a class="headerlink" href="#passing-out-errors" title="Link to this heading"></a></h3>
+<p>Containers running in a step function can fail for a variety of reasons.
+Having access to error messages from processes inside the step function is
+essential to accurately diagnosing issues that can cause execution
+failures.</p>
+<p>To access these errors, they must be passed out of the step function so they
+can be picked up and logged by the <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda, which then inserts
+the errors into the DynamoDB state database where they can be analyzed in bulk
+to determine failure patterns.</p>
+<p>To accomplish this task you must ensure that the <code class="docutils literal notranslate"><span class="pre">Fail</span></code> state contains
+<code class="docutils literal notranslate"><span class="pre">Cause</span></code> and <code class="docutils literal notranslate"><span class="pre">Error</span></code> keys with the values coming from the error message.
+Examples can be found in the AWS documentation for <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html">fail state definition example</a>.</p>
 <p>Also see the AWS documentation for <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html">error handling in Step Functions</a>.</p>
+</section>
 </section>
 <section id="workflow-best-practices">
 <h2>Workflow best practices<a class="headerlink" href="#workflow-best-practices" title="Link to this heading"></a></h2>
@@ -285,8 +310,8 @@ ensure a Cirrus deployment remains easy to manage and administer.</p>
 to understand the how and why behind a rule before deciding to break it.</p>
 <section id="aws-step-function-best-practices">
 <h3>AWS step function best practices<a class="headerlink" href="#aws-step-function-best-practices" title="Link to this heading"></a></h3>
-<p>AWS maintains their own list of <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/sfn-best-practices.html">best practices for step functions</a>. Review this
-list for general step function considerations.</p>
+<p>AWS maintains their own list of <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/sfn-best-practices.html">best practices for step functions</a>. Review
+this list for general step function considerations.</p>
 <p>One such example from the list is to be sure to handle lambda quota limits. The
 <code class="docutils literal notranslate"><span class="pre">publish-only</span></code> example has an <code class="docutils literal notranslate"><span class="pre">Retry</span></code> error handler for that purpose.</p>
 </section>
@@ -316,11 +341,11 @@ ones.</p>
 </section>
 <section id="workflows-should-not-produce-different-outputs-from-the-same-set-of-inputs">
 <span id="one-output-set"></span><h3>Workflows should not produce different outputs from the same set of inputs<a class="headerlink" href="#workflows-should-not-produce-different-outputs-from-the-same-set-of-inputs" title="Link to this heading"></a></h3>
-<p>See the <a class="reference internal" href="../../30_payload.html"><span class="doc">Cirrus Process Payload docs</span></a> for additional details on
-how Cirrus’s idempotency check works. Generally speaking, cirrus will use the
-set of input items as a proxy for the outputs produced by a given workflow.
-Don’t rely on workflow/task parameters to change the set outputs, as those
-settings are not referenced as part of the idempotency check.</p>
+<p>See the <a class="reference internal" href="../../30_payload.html"><span class="doc">Cirrus Process Payload docs</span></a> for additional
+details on how Cirrus’s idempotency check works. Generally speaking, cirrus
+will use the set of input items as a proxy for the outputs produced by a given
+workflow. Don’t rely on workflow/task parameters to change the set outputs, as
+those settings are not referenced as part of the idempotency check.</p>
 <p>This also leads into the next best practice…</p>
 </section>
 <section id="make-workflows-specific-not-flexible">

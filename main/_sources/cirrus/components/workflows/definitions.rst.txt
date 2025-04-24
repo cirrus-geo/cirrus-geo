@@ -134,7 +134,8 @@ workflows. Cirrus allows several means of building such multi-stage pipelines:
   Callbacks are most useful when a workflow has a dependency on the
   output items from multiple other workflow executions.
 
-  See the :doc:`workflow callback documentation <callbacks>` for further details.
+  See the :doc:`workflow callback documentation <callbacks>` for further
+  details.
 
 * **Publish topic subscriptions**: custom Lambda functions or other such
   listeners can be subscribed to the ``cirrus-<stage>-publish`` SNS topic to
@@ -150,15 +151,16 @@ workflows. Cirrus allows several means of building such multi-stage pipelines:
 Error handling
 --------------
 
-A critical aspect of scalable workflows is the ability to tolerate and properly recover
-from errors.
+A critical aspect of scalable workflows is the ability to tolerate and properly
+recover from errors.
 
-Some errors can occur prior to even executing a task, for example,
-a Lambda.TooManyRequestsException occurs when too many Lambda requests are being made
-(a quota that defaults to 1,000 and can be set to tens of thousands) or an AWSBatchException
-can occur when the AWS Batch API SubmitJob quota of 50/sec is breached. In both cases, these
-steps should be retried; however, they are likely to fail again if retried immediately, and
-the accumulating load will result in an increased failure rate.
+Some errors can occur prior to even executing a task, for example
+a Lambda.TooManyRequestsException occurs when too many Lambda requests are
+being made (a quota that defaults to 1,000 and can be set to tens of thousands)
+or an AWSBatchException can occur when the AWS Batch API SubmitJob quota of 50/
+sec is breached. In both cases, these steps should be retried; however, they
+are likely to fail again if retried immediately, and the accumulating load will
+result in an increased failure rate.
 
 Because of this, it is important
 to have a well-designed retry definition for each task in a workflow.
@@ -171,24 +173,44 @@ A robust retry definition looks like the following::
   MaxAttempts: 20
   JitterStrategy: FULL
 
-The `JitterStrategy` setting of `FULL` indicates that the next retry should be a random
-amount of time between 0 and the current delay interval. The `JitterStrategy` of `NONE`
-(which is also the default if undefined) simply multiplies the current delay interval by
-the `BackoffRate` parameter on each attempt. `IntervalSeconds` defines what the first
-delay period should be, and then for each retry, this is multiplied by the `BackoffRate`.
-Without jitter, in our example above, the retry would simply wait 600 seconds, then 1200,
-then 2400, etc. With jitter, retry will wait a random amount of time between 0 and 600,
-0 and 1200, 0 and 2400, etc. This randomness means that sudden spike of requests that results
-in errors won't continue to create a periodic spike of errors as they all retry on exactly
-the same cycle. `MaxAttempts` defines the total number of attempts to run the task, and
-`MaxDelaySeconds`` puts a reasonable cap on the delay period, for example, making the
-maximum delay one 1 day instead of 10 years (600 * 2 ^ 19 seconds).
+The `JitterStrategy` setting of `FULL` indicates that the next retry should be
+a random amount of time between 0 and the current delay interval. The
+`JitterStrategy` of `NONE` (which is also the default if undefined) simply
+multiplies the current delay interval by the `BackoffRate` parameter on each
+attempt. `IntervalSeconds` defines what the first delay period should be, and
+then for each retry, this is multiplied by the `BackoffRate`.
+
+Without jitter, in our example above, the retry would simply wait 600 seconds,
+then 1200, then 2400, etc. With jitter, retry will wait a random amount of time
+between 0 and 600, 0 and 1200, 0 and 2400, etc. This randomness means that
+sudden spike of requests that results in errors won't continue to create a
+periodic spike of errors as they all retry on exactly the same cycle.
+``MaxAttempts`` defines the total number of attempts to run the task, and
+`MaxDelaySeconds` puts a reasonable cap on the delay period, for example,
+making the maximum delay one 1 day instead of 10 years (600 * 2 ^ 19 seconds).
+
+Passing Out Errors
+^^^^^^^^^^^^^^^^^^
+
+Containers running in a step function can fail for a variety of reasons.
+Having access to error messages from processes inside the step function is
+essential to accurately diagnosing issues that can cause execution
+failures.
+
+To access these errors, they must be passed out of the step function so they
+can be picked up and logged by the ``update-state`` lambda, which then inserts
+the errors into the DynamoDB state database where they can be analyzed in bulk
+to determine failure patterns.
+
+To accomplish this task you must ensure that the ``Fail`` state contains
+``Cause`` and ``Error`` keys with the values coming from the error message.
+Examples can be found in the AWS documentation for `fail state definition example`_.
 
 Also see the AWS documentation for `error handling in Step Functions`_.
 
-.. _error handling in Step Functions:
-  https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
+.. _error handling in Step Functions: https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
 
+.. _fail state definition example: https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html
 
 Workflow best practices
 -----------------------
@@ -207,8 +229,8 @@ to understand the how and why behind a rule before deciding to break it.
 AWS step function best practices
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-AWS maintains their own list of `best practices for step functions`_. Review this
-list for general step function considerations.
+AWS maintains their own list of `best practices for step functions`_. Review
+this list for general step function considerations.
 
 One such example from the list is to be sure to handle lambda quota limits. The
 ``publish-only`` example has an ``Retry`` error handler for that purpose.
@@ -253,11 +275,11 @@ ones.
 Workflows should not produce different outputs from the same set of inputs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-See the :doc:`Cirrus Process Payload docs <../../30_payload>` for additional details on
-how Cirrus's idempotency check works. Generally speaking, cirrus will use the
-set of input items as a proxy for the outputs produced by a given workflow.
-Don't rely on workflow/task parameters to change the set outputs, as those
-settings are not referenced as part of the idempotency check.
+See the :doc:`Cirrus Process Payload docs <../../30_payload>` for additional
+details on how Cirrus's idempotency check works. Generally speaking, cirrus
+will use the set of input items as a proxy for the outputs produced by a given
+workflow. Don't rely on workflow/task parameters to change the set outputs, as
+those settings are not referenced as part of the idempotency check.
 
 This also leads into the next best practice...
 
