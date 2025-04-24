@@ -8,9 +8,8 @@ more tasks.
 
 Cirrus also provides several mechanisms for modeling workflow dependencies.
 
-The :doc:`state database <../../70_statedb>` tracks the state of items processed at
-the workflow level.
-
+The :doc:`state database <../../70_statedb>` tracks the state of items
+processed at the workflow level.
 
 .. toctree::
    :maxdepth: 2
