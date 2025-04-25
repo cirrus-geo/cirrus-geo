@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v1.0.0] - 2025-04-25
 
+This release rebuilds cirrus-geo to support a "bring-your-own-IaC" deployment model.
+The changeset is extensive. Refer to the following PRs:
+
+- Initial work for v1 ([#268])
+- Build a dist zip for all cirrus lambdas ([#276])
+- Fix package build and switch to trusted publishers ([#277])
+
+This is a breaking change, as documented below.
+
 ### ⚠️ Breaking changes
 
 - MAJOR: cirrus v1.0.0 no longer includes the idea of a project
@@ -41,6 +50,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   if IAM role is available in parameter store config ([#303])
 - Updated documentation for default cirrus lambda functions,
   documenting each current lambda-function ([#306])
+- The `update_state` lambda now pushes each Item in output Cirrus Process Payloads to
+  the `CIRRUS_PUBLISH_TOPIC_ARN`, if set, with SNS messages derived from the Item.
+  ([#294])
+- Workflow events of type `SUCCEEDED` now include the step function execution ARN in
+  the event. ([#297])
 
 ## [v0.15.4] - 2024-12-03
 
