@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### ⚠️ Breaking changes
 
 - `update-state` lambda now retrieves error messages from FAIL state output payload
-  instead of searching step function execution istory ([#311])
+  instead of searching step function execution history ([#311])
 
 ### Added
 
