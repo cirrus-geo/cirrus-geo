@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   disconnected from a deployment mechanism. Serverless Framework is gone
   entirely. Existing projects will need to  migrate to a new externally-managed
   deployment mechanism--such as the [FilmDrop Terraform
-  modules] (https://github.com/Element84/filmdrop-aws-tf-modules/tree/main),
+  modules](https://github.com/Element84/filmdrop-aws-tf-modules/tree/main),
   which includes a cirrus module--or will need stick with the v0 releases.
   Note that support for v0 is not guaranteed, so consider that branch
   effectively deprecated.
