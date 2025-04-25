@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### ⚠️ Breaking changes
 
+- MAJOR: cirrus v1.0.0 no longer includes the idea of a project
+  or the project-based CLI--it is just a collection of lambda definitions
+  disconnected from a deployment mechanism. Serverless Framework is gone
+  entirely. Existing projects will need to  migrate to a new externally-managed
+  deployment mechanism--such as the [FilmDrop Terraform
+  modules] (https://github.com/Element84/filmdrop-aws-tf-modules/tree/main),
+  which includes a cirrus module--or will need stick with the v0 releases.
+  Note that support for v0 is not guaranteed, so consider that branch
+  effectively deprecated.
 - `update-state` lambda now retrieves error messages from FAIL state output payload
   instead of searching step function execution history ([#311])
 
