@@ -1,59 +1,60 @@
 State Database
 ==============
 
-The state database (DB) is a Amazon Web Services (AWS) Dynamo DB table used to track the state of workflows and executions.  It is a critical component of cirrus, ensuring that executions are properly tracked, duplicate runs are not executing, ensuring duplicate payloads are skipped, and a place to query.  This
-state tracking is also critical to tracking failed or aborted workflows, or
-flagging invalid payloads, as essential tool for monitoring pipeline success
-and failures.
+The state database (stateDB) is a serverless Amazon Web Services (AWS) Dynamo DB table used to track the state of workflows and executions  It is a critical component of cirrus that ensurse executions and execution state are properly tracked.  Accurate state management is essential for monitoring pipeline success, failures and errors.  State management is also essential for avoiding duplicate workflows, tracking failed or aborted workflows, and flagging invalid payloads.
 
-Interactions are primarily conducted via the StateDB class, which handles transformations of CPP payloads and pipeline events into neccessary format for the Dynamo DB table.
+The stateDB is accessed by cirrus at different stages of workflow execution.  Some non exhaustive examples are as follows:
 
-The stateDB is accessed by cirrus at many different stages of workflow execution.  Some non exhaustive examples are as follows:
-
-    * ``process`` lambda: accesses the stateDB to check existing states and skip payloads that have successfully completed, or fire off TimeStream events in the event of encountering an already "failed" or "invalid" payload.  It will also make state updates if say encountering an invalid payload or starting an execution.
-    * ``api`` lambda: when queried for aggregate statistics, the lambada will call the stateDB to get counts based on query inputs.
-    * ``update_state`` lambda: updates stateDB table after execution complete successfully or not.
-
+    * ``process`` lambda: acesses the stateDB to check existing states and skip payloads that have successfully completed, and fire off TimeStream events in the event of encountering an already "failed" or "invalid" payload.  It will also make state updates if encountering an invalid payload or initializing a workflow execution.
+    * ``api`` lambda: when queried for aggregate statistics, the lambada will call the stateDB to get execution summary counts based on query inputs.
+    * ``update_state`` lambda: updates stateDB table after step function workflow execution termination
 
 Why Dynamo DB?
 --------------
 
-Dynamo DB is what is commonly known as a NoSQL database provided by AWS.  Unlike
-other common databases like Postgres or AWS, it is NOT a relational database.
-As a non-relational database, and never having to caluclate complex query and
-joins it has enhanced performance for read and write, critical when running
-large pipelines with potentially tens of thousands of runs simultaneously.
+- serverless
+- scalability
+- optimized for scalable read/write
+- non-relational
 
-The ``cirrus-geo`` Dynamo DB instanced is designed on a ``key-value`` principle.
-This enable quick and efficent look ups on a given key-value, or combining
-multiple key value pairs into a query.
+Dynamo DB is a serverless non-relational (NoSQL) database provisioned and managed by AWS.
+
+Unlike other common databases like Postgres or AWS RDS, DynamoDB is a "key-value" database, NOT a relational database. In a relational database data is stored as rows in tables with columnar attributes and relationships exist between rows in different tables. In a NoSQL database like Dynamo DB there are instead 'items' and each item has 'attributes'.
+
+Additionally as a NoSQL database, Dynamo DB does not require a predefined schema and in fact permits diferent items to have different attributes while the rigid schema of relational databases means there can be no variaton of the data stored in a given table.  At no point does cirrus state management necessitate complex relational queries, we are simply reading or writing items to the state DB instead of exploring complex relationships between items.  In fact each entry and its attributes in the cirrus state DB is completely independant of other items in the state DB.
+
+Managed Serverless Service
+--------------------------
+
+As a managed AWS service Dynamo DB handles provisoning and maintaining   underlying storage and scaling infrastructure as your data scales up or down.  This allows cirrus to focus simply on the business logic of state management.  Additonally, Dynamo DB is optimized for rapid read/writes at any scale.
+
 
 Schema
 ------
-There are core attributes that are required by existing cirrus functionality.
-You may add additional fields if necessary.  A nice feature of Dynamo DB is that there is no predefined schema and you may simply add another attribute to a call when updating a record.
+While Dynamo DB does not necessitate a predefined schema like a relational databse, there are attributes that are required by cirrus functionality.
+Users may add additional fields if necessary.  Because Dynamo DB does not require a predefined schema users may add additonal attributes as needed.
 
 Required Fields:
-These fields are required for out of the box
-- ``collections_workflow`` (*string*):  a unique "partition key" constructed from a CPP ``payload_id``
-- ``itemIDs`` (*string*): a unique ID field extrated from a payload ID
-- ``created`` (*string*): UTC time when record was created
-- ``executions`` (*list[string]*): ARNs of state machine executions.  May have multiple records in this field if a payload is submitted multiple time, or part of chained workflows
-- ``state_updated`` (*string*): Concatenated string of state + UTC of last updated
-- ``updated`` (*string*): UTC time when the record was most recently updated
+These fields are required for out of the box functionality of cirrus
+
+* ``collections_workflow`` (*string*):  a unique "partition key" constructed from a CPP ``payload_id``
+* ``itemIDs`` (*string*): a unique ID field extrated from a payload ID
+* ``created`` (*string*): UTC time when record was created
+* ``executions`` (*list[string]*): ARNs of state machine executions.  May have multiple records in this field if a payload is submitted multiple time, or part of chained workflows
+* ``state_updated`` (*string*): Concatenated string of state + UTC of last updated
+* ``updated`` (*string*): UTC time when the record was most recently updated
 
 
-Using the Cirrus CLI
---------------------
+State DB and Cirrus CLI
+-----------------------
 
-Selected Cirrus CLI commands interact with the state database.
+Selected Cirrus CLI commands interact with the state DB.
 
 The ``get-payloads`` command take in query parameters that can be used as query
-filters against the DB to retrieve records matching certain criteria, like
+filters against the state DB to retrieve records matching certain criteria, like
 entires with a ``FAILED`` workflow status that occured in the past week.  These
-returned records are then transformed to extract the payloads from the S3
-payload bucket.  These returned payloads can be handled as desired, for example
-usig other CLI commands to rerun these failed payloads.
+returned state DB records are used to retrieve input payloads from the S3
+payload bucket.  One common use for these returned bulk payloads is to pipe them into another cirrus CLI command to rerun failed payloads, perhaps in the event of a third party serice failure that resulted in failed executons.
 
 Deleting items from database
 ----------------------------
