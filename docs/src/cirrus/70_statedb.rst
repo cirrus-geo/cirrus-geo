@@ -37,7 +37,6 @@ schema and permits different items to have different attributes unlike the
 rigid schemas of relational databases, providing flexibility for users to add
 attributes if needed.
 
-
 Why DynamoDB?
 --------------
 
