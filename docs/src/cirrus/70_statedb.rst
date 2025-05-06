@@ -18,7 +18,6 @@ Why Dynamo DB?
 --------------
 
 - serverless
-- scalable
 - optimized for scalable read/write
 - non-relational
 
