@@ -1,7 +1,8 @@
 Batch tasks in workflows
 ========================
 
-Using Batch tasks in workflows requires a few additional steps than using Lambda tasks.
+Using Batch tasks in workflows requires a few additional steps than using
+Lambda tasks.
 
 Lambdas integrate more directly with Step Functions than Batch, which has
 additional layer of infrastructure in-between. As a result, users must keep a
@@ -22,7 +23,7 @@ Similarly, Batch does not integrate returned payloads with step functions nearly
 as well as Lambda, so Cirrus has a built-in ``post-batch`` task to help with,
 well, post-batch operations. Specifically, ``post-batch`` can pull the Batch
 payload from S3 and return that in the case of a successful Batch execution. In
-the case of a Batch error, ``post-batch`` will scrape the batch logs for an
+the case of a Batch error, ``post-batch`` will scrape the container logs for an
 exception or other error message, and raise it within the step function. This
 helps "bubble" Batch task errors up to the step function. Errors can then be
 handled within the step function semantics or used to fail the step function
@@ -62,7 +63,13 @@ should occur so the Batch Job is attempted again. This is why it is recommended
 to use a Parallel block with retry to wrap the Batch steps.
 
 It is also critical to ensure that errors are properly passed out of the state
-machine so that they can be accessed by the ``update-state`` lambda via the EventBridge event.  This is done by properly confiuring the fail state to contain errors so that stack track information from say a failure in a container is passed out to the step function for proper preservation in the state database.  The example below demonstrates how the ``Fail`` state in your ``state-machine.json`` should be configured to pass out errors.  More information can be found in AWS documentation for `Fail state definition examples`_
+machine so that they can be accessed by the ``update-state`` lambda via the
+EventBridge event.  This is done by properly confiuring the fail state to
+contain errors so that stack track information from say a failure in a
+container is passed out to the step function for proper preservation in the
+state database.  The example below demonstrates how the ``Fail`` state in your
+``state-machine.json`` should be configured to pass out errors.  More
+information can be found in AWS documentation for `Fail state definition examples`_
 
 .. _Fail state definition examples: https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html
 
@@ -70,7 +77,11 @@ machine so that they can be accessed by the ``update-state`` lambda via the Even
 Additional considerations
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Batch does not perform well when there are many jobs that run quickly. For example, if a task filters out a significant number of payloads quickly, the overhead of placing the jobs onto compute resources will dominate the runtime, and will result in a slow and inefficient pipeline. A few examples in Earth Search are:
+Batch does not perform well when there are many jobs that run quickly. For
+example, if a task filters out a significant number of payloads quickly, the
+overhead of placing the jobs onto compute resources will dominate the runtime,
+and will result in a slow and inefficient pipeline. A few examples in Earth
+Search are:
 
 * **Landsat SNS topic (public-c2-notify-v2)**: Includes many "Real-Time" (RT)   scenes that are ignored. These result in a runtime of only a few seconds. If these were run  with Batch, there would be a few minute overhead for job placement (incurring the cost of the EC2 instances for that time) for only a few seconds of actual use.
 
