@@ -1,19 +1,25 @@
 State Database
 ==============
 
-The state database (StateDB) is a serverless Amazon Web Services (AWS) Dynamo
-DB table used by Cirrus to track the state of workflows and executions  It is a
-critical of Cirrus that ensurse workflow executions and execution state are
+The state database (StateDB) is a serverless Amazon Web Services (AWS) DynamoDB
+table used by Cirrus to track the state of workflows and executions.  It is a
+critical component of Cirrus that ensures workflow state and executions are
 properly tracked.  Accurate state management is essential for monitoring
 pipeline success, failure, errors, avoiding duplicate workflows, and flagging
 invalid payloads.
 
 The StateDB is accessed by Cirrus at different stages of workflow execution.
 
-    * ``process`` lambda: acesses the StateDB to check existing states and skip payloads that have successfully completed, and fire off TimeStream events in the event of encountering an already "failed" or "invalid" payload.  It will also make state updates upon initializing a workflow execution.
-    * ``api`` lambda: when queried for aggregate statistics, the lambada will call the StateDB to get execution summary counts based on query inputs.
-    * ``update_state`` lambda: updates StateDB table after step function workflow execution termination, successful or not.
-    * ``management`` cli: directly connects to the StateDB to get workflow status, inputs, and outputs.
+* ``process`` lambda: acesses the StateDB to check existing states and skip
+  payloads that have successfully completed, and fire off TimeStream events in
+  the event of encountering an already "failed" or "invalid" payload.  It will
+  also make state updates upon initializing a workflow execution.
+* ``api`` lambda: when queried for aggregate statistics, the lambada will call
+  the StateDB to get execution summary counts based on query inputs.
+* ``update_state`` lambda: updates StateDB table after step function workflow
+  execution termination, successful or not.
+* ``management`` cli: directly connects to the StateDB to get workflow status,
+  inputs, and outputs.
 
 Why DynamoDB?
 --------------
@@ -62,11 +68,15 @@ require a predefined schema users may add additonal attributes as needed.
 Required Fields:
 These fields are required for out of the box functionality of Cirrus
 
-* ``collections_workflow`` (*string*):  a unique "partition key" constructed from a Cirrus payload's ``payload_id``
+* ``collections_workflow`` (*string*):  a unique "partition key" constructed
+  from a Cirrus payload's ``payload_id``
 * ``itemIDs`` (*string*): a unique ID field extrated from a payload ID
 * ``created`` (*string*): UTC time when record was created
-* ``executions`` (*list[string]*): ARNs of state machine executions.  May have multiple records in this field if a payload is submitted multiple time, or part of chained workflows
-* ``state_updated`` (*string*): Concatenated string of state + UTC of last updated
+* ``executions`` (*list[string]*): ARNs of state machine executions.  May have
+  multiple records in this field if a payload is submitted multiple time, or
+  part of chained workflows
+* ``state_updated`` (*string*): Concatenated string of state + UTC of last
+  updated
 * ``updated`` (*string*): UTC time when the record was most recently updated
 
 State DB and Cirrus CLI
@@ -74,7 +84,8 @@ State DB and Cirrus CLI
 
 Selected Cirrus CLI commands interact with the state DB.
 
-The ``get-payloads`` command takes in query parameters to retrieve input payloads in bulk, returned as new line delimited JSON.
+The ``get-payloads`` command takes in query parameters to retrieve input
+payloads in bulk, returned as new line delimited JSON.
 
 Input query parameters are used as filters against the state DB to retrieve
 records matching certain criteria, like entires with a ``FAILED`` workflow
