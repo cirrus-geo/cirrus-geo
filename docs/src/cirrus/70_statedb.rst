@@ -2,11 +2,12 @@ State Database
 ==============
 
 The state database (StateDB) is a serverless Amazon Web Services (AWS) DynamoDB
-table used by Cirrus to track the state of workflows and executions.  It is a
-critical component of Cirrus that ensures workflow state and executions are
-properly tracked.  Accurate state management is essential for monitoring
-pipeline success, failure, errors, avoiding duplicate workflows, and flagging
-invalid payloads.
+table used by Cirrus to track the state of workflows and executions.  As seen
+in the :doc:`architecture <20_arch>` the StateDB is an independant piece of AWS
+infrastructure.  It is a critical component of Cirrus that ensures workflow
+state and executions are properly tracked as part of :doc:`monitoring
+<80_monitoring>` pipeline success, failure, errors, avoiding duplicate
+workflows, and flagging invalid payloads.
 
 The StateDB is accessed by Cirrus at different stages of workflow execution.
 
@@ -24,10 +25,17 @@ The StateDB is accessed by Cirrus at different stages of workflow execution.
 What is DynamoDB?
 -----------------
 
-DynamoDB is a serverless, highly scalable non-relational (NoSQL) database provisioned and managed by AWS.  This means that DynamoDB is a "key-value" database, not a relational database like Postgres or AWS RDS.  In a NoSQL database like DynamoDB there are 'items' and each item has 'attributes', and items are independant of each other.  This simplified structures allows DynamoDB to be optimized for read/write at any scale.
+DynamoDB is a serverless, highly scalable non-relational (NoSQL) database
+provisioned and managed by AWS.  This means that DynamoDB is a "key-value"
+database, not a relational database like Postgres or AWS RDS.  In a NoSQL
+database like DynamoDB there are 'items' and each item has 'attributes', and
+items are independant of each other.  This simplified structures allows
+DynamoDB to be optimized for read/write at any scale.
 
 Additionally as a NoSQL database, DynamoDB does not require a predefined
-schema and permits different items to have different attributes unlike the rigid schemas of relational databases.  In fact each entry and its attributes in the Cirrus StateDB is completely independant of other items in the StateDB.
+schema and permits different items to have different attributes unlike the
+rigid schemas of relational databases, providing flexibility for users to add
+attributes if needed.
 
 
 Why DynamoDB?
@@ -37,7 +45,10 @@ Why DynamoDB?
 - optimized for scalable read/write
 - non-relational
 
-Cirrus itself handles business logic regarding when and how to make updates to the StateDB, and thus the StateDB only needs a "key-value" store for lookup.  As a managed, scalabale "key-value" store DynamoDB is the AWS service that best meets Cirrus needs.
+Cirrus itself handles business logic regarding when and how to make updates to
+the StateDB, and thus the StateDB only needs a "key-value" store for lookup.
+As a managed, scalabale "key-value" store DynamoDB is the AWS service that best
+meets Cirrus needs.
 
 Managed Serverless Service
 --------------------------
