@@ -2,7 +2,7 @@ State Database
 ==============
 
 The state database (StateDB) is a serverless Amazon Web Services (AWS) DynamoDB
-table used by Cirrus to track the state of workflows and executions.  As seen
+table used by Cirrus to track the state of workflows executions.  As seen
 in the :doc:`architecture <20_arch>` the StateDB is an independant piece of AWS
 infrastructure.  It is a critical component of Cirrus that ensures workflow
 state and executions are properly tracked as part of :doc:`monitoring
@@ -45,28 +45,27 @@ Why DynamoDB?
 - non-relational
 
 Cirrus itself handles business logic regarding when and how to make updates to
-the StateDB, and thus the StateDB only needs a "key-value" store for lookup.
-As a managed, scalabale "key-value" store DynamoDB is the AWS service that best
-meets Cirrus needs.
+the StateDB and with no relationships between distinct workflow executions, the
+StateDB only needs a "key-value" store for lookup.  As a managed, scalabale
+"key-value" store DynamoDB is the AWS service that best meets Cirrus needs.
 
-Managed Serverless Service
---------------------------
+Managed Service
+---------------
 
 As a managed AWS service DynamoDB handles provisoning and maintaining the
-underlying storage and scaling infrastructure for your tables as your data
-scales up or down.  This allows Cirrus to focus on the business logic of state
-management.  Additonally, DynamoDB is optimized by AWS for rapid read/writes
-at any scale.
+underlying storage and scaling infrastructure as your data scales up or down.
+This allows Cirrus to focus on the business logic of state management.
+Additonally, DynamoDB is optimized by AWS for rapid read/writes at any scale.
 
 Schema
 ------
 While DynamoDB does not necessitate a predefined schema like a relational
 databse, there are attributes that are required for core Cirrus functionality.
-Users may add additional fields if necessary.  Because DynamoDB does not
-require a predefined schema users may add additonal attributes as needed.
+Because DynamoDB does not require a predefined schema users may add additional
+fields if necessary.
 
 Required Fields:
-These fields are required for out of the box functionality of Cirrus
+These fields are required for out-of-the-box functionality of Cirrus
 
 * ``collections_workflow`` (*string*):  a unique "partition key" constructed
   from a Cirrus payload's ``payload_id``
@@ -75,7 +74,7 @@ These fields are required for out of the box functionality of Cirrus
 * ``executions`` (*list[string]*): ARNs of state machine executions.  May have
   multiple records in this field if a payload is submitted multiple time, or
   part of chained workflows
-* ``state_updated`` (*string*): Concatenated string of state + UTC of last
+* ``state_updated`` (*string*): Concatenated string of state + UTC time of last
   updated
 * ``updated`` (*string*): UTC time when the record was most recently updated
 
@@ -92,10 +91,6 @@ records matching certain criteria, like entires with a ``FAILED`` workflow
 status that occured in the past week.  These returned StateDB records are used
 to retrieve input payloads from the S3 payload bucket which are returned to the
 user.
-
-One use for these returned bulk payloads is to pipe them into another
-Cirrus CLI command to rerun failed payloads, perhaps in the event of a third
-party service failure that resulted in failed workflow executons.
 
 More information about the ``get-payloads`` command can be found in the CLI
 documentation
