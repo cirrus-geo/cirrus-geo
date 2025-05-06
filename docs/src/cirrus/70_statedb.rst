@@ -21,6 +21,20 @@ The StateDB is accessed by Cirrus at different stages of workflow execution.
 * ``management`` cli: directly connects to the StateDB to get workflow status,
   inputs, and outputs.
 
+What is DynamoDB?
+-----------------
+
+DynamoDB is a serverless non-relational (NoSQL) database provisioned and
+managed by AWS.  This means that DynamoDB is a "key-value" database, not a relational database like Postgres or
+AWS RDS.  In a
+NoSQL database like DynamoDB there are 'items' and each item has
+'attributes', and items are independant of each other.  This simplified
+structures allows DynamoDB to be optimized for read/writing at any scale.
+
+Additionally as a NoSQL database, DynamoDB does not require a predefined
+schema and permits diferent items to have different attributes unlike the rigid schemas of relational databases.  In fact each entry and its attributes in the Cirrus state DB is completely independant of other items in the state DB.
+
+
 Why DynamoDB?
 --------------
 
@@ -28,26 +42,7 @@ Why DynamoDB?
 - optimized for scalable read/write
 - non-relational
 
-DynamoDB is a serverless non-relational (NoSQL) database provisioned and
-managed by AWS.  This means that unlike other common databases like Postgres or
-AWS RDS, DynamoDB is a "key-value" database, NOT a relational database. In a
-relational database data in tables is stored as rows with columnar attributes
-and relationships are understood by shared attributes across tables.  In a
-NoSQL database like DynamoDB there are instead 'items' and each item has
-'attributes', and items are independant of each other.
-
-While relational databases are optimized for understanding and exploring
-relationships between data, NoSQL databases are often optimized for specific
-requirements, in this case rapid read/write operations.  At no point does
-Cirrus state management necessitate complex relational queries, Cirrus is only
-reading or writing items to the state DB instead of exploring complex
-relationships between between executions.
-
-Additionally as a NoSQL database, DynamoDB does not require a predefined
-schema and permits diferent items to have different attributes while the rigid
-schema of relational databases means there can be no variaton of the data
-stored in a given table.  In fact each entry and its attributes in the Cirrus
-state DB is completely independant of other items in the state DB.
+Cirrus itself handles business logic of when and how to make updates to the StateDB, and thus the StateDB only needs a "key-value" store for lookup.  DynamoDB is the fast, scalable managed AWS service that best meets Cirrus needs.
 
 Managed Serverless Service
 --------------------------
@@ -104,10 +99,6 @@ Deleting state DB items
 -----------------------
 
 The deletion of records from the StateDB is strongly discouraged, and almost
-certainly unnecessary.  For the unlikely case it is required, there is a 
-``delete_item`` method of the ``StateDB`` class.  That can be used to delete 
+certainly unnecessary.  For the unlikely case it is required, there is a
+``delete_item`` method of the ``StateDB`` class.  That can be used to delete
 a record, based on its ``payload_id``.
-
-However as the StateDB is the primary record keeping tool for Cirrus, and is
-used by almost all components, users are strongly discouraged from manually
-altering/removing records in the state table
