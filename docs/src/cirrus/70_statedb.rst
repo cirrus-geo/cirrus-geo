@@ -103,8 +103,10 @@ documentation
 Deleting state DB items
 -----------------------
 
-There is a ``delete_item`` method in the "StateDB" class that can be used to
-delete a given item based on using ``payload_id``.
+The deletion of records from the StateDB is strongly discouraged, and almost
+certainly unnecessary.  For the unlikely case it is required, there is a 
+``delete_item`` method of the ``StateDB`` class.  That can be used to delete 
+a record, based on its ``payload_id``.
 
 However as the StateDB is the primary record keeping tool for Cirrus, and is
 used by almost all components, users are strongly discouraged from manually
