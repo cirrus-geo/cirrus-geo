@@ -24,15 +24,10 @@ The StateDB is accessed by Cirrus at different stages of workflow execution.
 What is DynamoDB?
 -----------------
 
-DynamoDB is a serverless non-relational (NoSQL) database provisioned and
-managed by AWS.  This means that DynamoDB is a "key-value" database, not a relational database like Postgres or
-AWS RDS.  In a
-NoSQL database like DynamoDB there are 'items' and each item has
-'attributes', and items are independant of each other.  This simplified
-structures allows DynamoDB to be optimized for read/writing at any scale.
+DynamoDB is a serverless, highly scalable non-relational (NoSQL) database provisioned and managed by AWS.  This means that DynamoDB is a "key-value" database, not a relational database like Postgres or AWS RDS.  In a NoSQL database like DynamoDB there are 'items' and each item has 'attributes', and items are independant of each other.  This simplified structures allows DynamoDB to be optimized for read/write at any scale.
 
 Additionally as a NoSQL database, DynamoDB does not require a predefined
-schema and permits diferent items to have different attributes unlike the rigid schemas of relational databases.  In fact each entry and its attributes in the Cirrus state DB is completely independant of other items in the state DB.
+schema and permits different items to have different attributes unlike the rigid schemas of relational databases.  In fact each entry and its attributes in the Cirrus StateDB is completely independant of other items in the StateDB.
 
 
 Why DynamoDB?
@@ -42,7 +37,7 @@ Why DynamoDB?
 - optimized for scalable read/write
 - non-relational
 
-Cirrus itself handles business logic of when and how to make updates to the StateDB, and thus the StateDB only needs a "key-value" store for lookup.  DynamoDB is the fast, scalable managed AWS service that best meets Cirrus needs.
+Cirrus itself handles business logic regarding when and how to make updates to the StateDB, and thus the StateDB only needs a "key-value" store for lookup.  As a managed, scalabale "key-value" store DynamoDB is the AWS service that best meets Cirrus needs.
 
 Managed Serverless Service
 --------------------------
@@ -74,17 +69,17 @@ These fields are required for out of the box functionality of Cirrus
   updated
 * ``updated`` (*string*): UTC time when the record was most recently updated
 
-State DB and Cirrus CLI
+StateDB and Cirrus CLI
 -----------------------
 
-Selected Cirrus CLI commands interact with the state DB.
+Selected Cirrus CLI commands interact with the StateDB.
 
 The ``get-payloads`` command takes in query parameters to retrieve input
 payloads in bulk, returned as new line delimited JSON.
 
-Input query parameters are used as filters against the state DB to retrieve
+Input query parameters are used as filters against the StateDB to retrieve
 records matching certain criteria, like entires with a ``FAILED`` workflow
-status that occured in the past week.  These returned state DB records are used
+status that occured in the past week.  These returned StateDB records are used
 to retrieve input payloads from the S3 payload bucket which are returned to the
 user.
 
@@ -95,7 +90,7 @@ party service failure that resulted in failed workflow executons.
 More information about the ``get-payloads`` command can be found in the CLI
 documentation
 
-Deleting state DB items
+Deleting StateDB items
 -----------------------
 
 The deletion of records from the StateDB is strongly discouraged, and almost
