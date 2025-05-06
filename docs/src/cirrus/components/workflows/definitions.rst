@@ -2,7 +2,7 @@ Writing workflow definitions
 ============================
 
 Cirrus workflows, being implemented via `AWS Step Functions`_, are written in
-the `AWS States Language`_. Workflows are defined in ``state-machine.json`` files and require a companion ``README.md``
+the `AWS States Language`_.
 
 .. _AWS Step Functions:
    https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html
