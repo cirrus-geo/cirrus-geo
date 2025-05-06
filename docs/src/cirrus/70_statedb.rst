@@ -12,7 +12,8 @@ The stateDB is accessed by cirrus at different stages of workflow execution.
 
     * ``process`` lambda: acesses the stateDB to check existing states and skip payloads that have successfully completed, and fire off TimeStream events in the event of encountering an already "failed" or "invalid" payload.  It will also make state updates upon initializing a workflow execution.
     * ``api`` lambda: when queried for aggregate statistics, the lambada will call the stateDB to get execution summary counts based on query inputs.
-    * ``update_state`` lambda: updates stateDB table after step function workflow execution termination, successful or not.
+    * ``update_state`` lambda: updates StateDB table after step function workflow execution termination, successful or not.
+    * ``management`` cli: directly connects to the StateDB to get workflow status, inputs, and outputs.
 
 Why Dynamo DB?
 --------------
