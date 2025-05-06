@@ -1,9 +1,9 @@
 State Database
 ==============
 
-The state database (StateDB) is a serverless Amazon Web Services (AWS) Dynamo
-DB table used by Cirrus to track the state of workflows and executions  It is a
-critical of Cirrus that ensurse workflow executions and execution state are
+The state database (StateDB) is a serverless Amazon Web Services (AWS) DynamoDB
+table used by Cirrus to track the state of workflows and executions.  It is a
+critical component of Cirrus that ensures workflow state and executions are
 properly tracked.  Accurate state management is essential for monitoring
 pipeline success, failure, errors, avoiding duplicate workflows, and flagging
 invalid payloads.
