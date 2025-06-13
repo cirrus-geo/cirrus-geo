@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v1.0.1] -- 2025-06-18
 
 ### Added
 
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Removed
 
-- markdownlint-cli pulled due to dependency bitrot
+- `markdownlint-cli` pulled due to dependency bitrot
 
 ## [v1.0.0] - 2025-04-25
 
@@ -938,7 +938,8 @@ cleanup steps.
 
 Initial release
 
-[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0...main
+[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.1...main
+[v1.0.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0...v1.0.1
 [v1.0.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.4...v1.0.0
 [v0.15.4]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.3...v0.15.4
 [v0.15.3]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.1...v0.15.3
@@ -1081,6 +1082,7 @@ Initial release
 [#305]: https://github.com/cirrus-geo/cirrus-geo/pull/305
 [#306]: https://github.com/cirrus-geo/cirrus-geo/pull/306
 [#311]: https://github.com/cirrus-geo/cirrus-geo/pull/311
+[#315]: https://github.com/cirrus-geo/cirrus-geo/pull/315
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
