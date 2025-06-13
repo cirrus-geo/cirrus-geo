@@ -229,7 +229,7 @@ def test_multi_item_publication(
     # Event needs an output payload to publish, so just use the input payload
     payload = json.loads(event["detail"]["input"])
     assert len(payload["features"]) == 1
-    payload["features"].append(payload["features"] * 10)
+    payload["features"] = payload["features"] * 11
     event["detail"]["output"] = json.dumps(payload)
 
     update_state(event, {})
