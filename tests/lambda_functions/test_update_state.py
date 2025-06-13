@@ -1,3 +1,4 @@
+import json
 import sys
 
 from itertools import product
@@ -214,6 +215,32 @@ def test_invalid(event, statedb, monkeypatch, error, expected_state) -> None:
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
     assert len(items) == 1
     assert items[0]["state_updated"].startswith(expected_state)
+
+
+def test_multi_item_publication(
+    event,
+    statedb,
+    publish_topic,
+    monkeypatch,
+):
+    expected_msg_count = 11
+    monkeypatch.setenv("CIRRUS_PUBLISH_TOPIC_ARN", publish_topic)
+
+    # Event needs an output payload to publish, so just use the input payload
+    payload = json.loads(event["detail"]["input"])
+    assert len(payload["features"]) == 1
+    payload["features"] = payload["features"] * 11
+    event["detail"]["output"] = json.dumps(payload)
+
+    update_state(event, {})
+    items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
+
+    assert len(items) == 1
+    assert items[0]["state_updated"].startswith("COMPLETED")
+
+    sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
+    all_sent_notifications = sns_backend.topics[publish_topic].sent_notifications
+    assert len(all_sent_notifications) == expected_msg_count
 
 
 # TODO: test URL input

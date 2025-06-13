@@ -506,13 +506,15 @@ class SNSPublisher(BatchHandler[SNSMessage]):
         logger: DebugLogger | None = None,
     ) -> None:
         """extend BatchHandler constructor to add topic_arn and setup SNS Client"""
-        super().__init__(batchable=self.send, batch_size=batch_size)
+        super().__init__(batchable=self._send, batch_size=batch_size)
         self.topic_arn = topic_arn
         self.dest_name = topic_arn.split(":")[-1]
         self._sns_client = boto3.client("sns")
         self._logger = logger
 
-    def send(self: Self, batch: list[SNSMessage]) -> dict[str, Any]:
+    def _send(self: Self, batch: list[SNSMessage]) -> dict[str, Any]:
+        """This method is intended to be used with message batches by the
+        BatchHandler.execute method.  Use directly with extreme caution"""
         resp = self._sns_client.publish_batch(
             TopicArn=self.topic_arn,
             PublishBatchRequestEntries=self.prepare_batch(batch),
@@ -541,14 +543,14 @@ class SQSPublisher(BatchHandler[str]):
         logger: DebugLogger | None = None,
     ) -> None:
         """extend BatchHandler constructor to add queue_url and setup SQS Queue"""
-        super().__init__(batchable=self.send, batch_size=batch_size)
+        super().__init__(batchable=self._send, batch_size=batch_size)
         self.queue_url = queue_url
         self.dest_name = queue_url.split("/")[-1]
         self._sqs_client = get_resource("sqs")
         self._queue = self._sqs_client.Queue(self.queue_url)
         self._logger = logger
 
-    def send(self: Self, batch: list[str]) -> dict[str, Any]:
+    def _send(self: Self, batch: list[str]) -> dict[str, Any]:
         resp = self._queue.send_messages(Entries=self.prepare_batch(batch))
         if self._logger:
             self._logger.debug(
