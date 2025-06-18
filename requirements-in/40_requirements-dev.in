@@ -9,5 +9,6 @@ mypy
 pip-tools
 pre-commit
 pre-commit-hooks
+pymarkdownlnt
 ruff
 types-python-dateutil

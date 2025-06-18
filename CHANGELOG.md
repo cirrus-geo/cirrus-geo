@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- `pymarkdownlnt` via pre-commit hook
+
+### Fixed
+
+- `SNSPublisher.send` being used directly with more than 10 messages in a call was
+  failing at the SNS API.  As direct usage of `send` was not intended, that method
+  has been moved to `_send`, for alignment with its purpose as an internal message
+  sending function. ([#315])
+
+### Removed
+
+- markdownlint-cli pulled due to dependency bitrot
+
 ## [v1.0.0] - 2025-04-25
 
 This release rebuilds cirrus-geo to support a "bring-your-own-IaC" deployment model.

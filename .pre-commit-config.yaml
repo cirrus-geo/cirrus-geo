@@ -35,6 +35,14 @@ repos:
         language: system
         types: [text]
         stages: [pre-commit, pre-push, manual]
+      - id: pymarkdown
+        name: PyMarkdown
+        description: "PyMarkdown - GitHub Flavored Markdown and CommonMark Compliant Linter"
+        language: python
+        language_version: python3
+        entry: pymarkdown
+        args: [fix]
+        types: [markdown]
       - id: trailing-whitespace
         name: Trim Trailing Whitespace
         entry: trailing-whitespace-fixer
