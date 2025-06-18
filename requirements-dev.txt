@@ -4,6 +4,8 @@
 #
 #    ./bin/compile-requirements.bash
 #
+application-properties==0.8.3
+    # via pymarkdownlnt
 boto3==1.34.96
     # via
     #   -c requirements-in/../requirements.txt
@@ -28,6 +30,8 @@ click==8.1.7
     # via
     #   -c requirements-in/../requirements-cli.txt
     #   pip-tools
+columnar==1.4.1
+    # via pymarkdownlnt
 coverage==7.5.0
     # via pytest-cov
 cryptography==42.0.5
@@ -79,6 +83,8 @@ pre-commit-hooks==4.6.0
     # via -r requirements-in/40_requirements-dev.in
 pycparser==2.22
     # via cffi
+pymarkdownlnt==0.9.30
+    # via -r requirements-in/40_requirements-dev.in
 pyproject-hooks==1.1.0
     # via
     #   build
@@ -99,6 +105,7 @@ python-dateutil==2.9.0.post0
     #   moto
 pyyaml==6.0.1
     # via
+    #   application-properties
     #   pre-commit
     #   responses
 requests==2.31.0
@@ -121,10 +128,17 @@ six==1.16.0
     # via
     #   -c requirements-in/../requirements.txt
     #   python-dateutil
+tomli==2.2.1
+    # via application-properties
+toolz==1.0.0
+    # via columnar
 types-python-dateutil==2.9.0.20240316
     # via -r requirements-in/40_requirements-dev.in
 typing-extensions==4.11.0
-    # via mypy
+    # via
+    #   application-properties
+    #   mypy
+    #   pymarkdownlnt
 urllib3==2.2.1
     # via
     #   -c requirements-in/../requirements.txt
@@ -133,6 +147,8 @@ urllib3==2.2.1
     #   responses
 virtualenv==20.26.1
     # via pre-commit
+wcwidth==0.2.13
+    # via columnar
 werkzeug==3.0.2
     # via moto
 wheel==0.43.0

@@ -95,6 +95,15 @@ exclude = [
 [tool.ruff.lint.isort]
 lines-between-types = 1
 
+[tool.pymarkdown]
+plugins.md007.enabled = true
+plugins.md007.code_block_line_length = 160
+plugins.md013.line_length = 88
+plugins.md013.heading_line_length = 88
+plugins.md013.code_block_line_length = 100
+plugins.md024.siblings_only = true
+extensions.front-matter.enabled = true
+
 [tool.mypy]
 ignore_missing_imports = true
 scripts_are_modules = true
