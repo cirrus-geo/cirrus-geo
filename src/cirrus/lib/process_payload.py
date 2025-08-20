@@ -230,7 +230,10 @@ class ProcessPayload(dict):
         if not payload_bucket:
             raise ValueError("env var CIRRUS_PAYLOAD_BUCKET must be defined")
 
-        state_machine_arn, _, execution_name = execution_arn.rpartition(":")
+        (
+            state_machine_arn,
+            execution_name,
+        ) = ProcessPayloads.get_state_machine_arn_and_execution_name(execution_arn)
         url = f"s3://{payload_bucket}/{self['id']}/input.json"
 
         # claim workflow
@@ -270,8 +273,12 @@ class ProcessPayload(dict):
                                 "planned_exec_arn": execution_arn,
                             },
                         )
-                        execution_arn = db_exec
-                        state_machine_arn, _, execution_name = db_exec.rpartition(":")
+                        (
+                            state_machine_arn,
+                            execution_name,
+                        ) = ProcessPayloads.get_state_machine_arn_and_execution_name(
+                            db_exec,
+                        )
                 else:
                     wfem.skipping(
                         self["id"],
@@ -445,7 +452,20 @@ class ProcessPayloads:
         if executions is None:
             executions = []
         execution_name = uuid.uuid5(uuid.NAMESPACE_URL, f"{payload_id}/{executions}")
-        return f"{os.environ['CIRRUS_BASE_WORKFLOW_ARN']}{workflow}:{execution_name}"
+        workflow_execution_base = os.environ["CIRRUS_BASE_WORKFLOW_ARN"].replace(
+            ":stateMachine:",
+            ":execution:",
+        )
+        return f"{workflow_execution_base}{workflow}:{execution_name}"
+
+    @staticmethod
+    def get_state_machine_arn_and_execution_name(execution_arn: str) -> tuple[str, str]:
+        base_execution_arn, _, execution_name = execution_arn.rpartition(":")
+
+        return base_execution_arn.replace(
+            ":execution:",
+            ":stateMachine:",
+        ), execution_name
 
     def process(
         self: Self,

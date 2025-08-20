@@ -947,6 +947,17 @@ def test_finding_claimed_item(
     assert item["executions"][0].rpartition(":")[2] == "from_db_entry"
 
 
+def test_execution_arn_format(payload):
+    actual = ProcessPayloads.gen_execution_arn(
+        payload["id"],
+        payload["process"][0]["workflow"],
+    )
+    pfx, _, execution_name = actual.rpartition(":")
+    _, _, state_machine_name = pfx.rpartition(":")
+    assert execution_name == "a4201f97-6557-5f4e-ae88-6542ef800708"
+    assert state_machine_name == "test-workflow1"
+
+
 def test_execution_name_idempotence(payload):
     first_execution_name = ProcessPayloads.gen_execution_arn(
         payload["id"],
