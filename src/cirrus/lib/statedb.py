@@ -367,13 +367,11 @@ class StateDB:
     def set_processing(
         self,
         payload_id: str,
-        execution_arn: str,
         isotimestamp: str | None = None,
     ) -> dict[str, Any]:
         """Adds execution to existing item or creates new.
         Args:
             payload_id (str): The Cirrus Payload
-            execution_arn (Optional[str]): The Step Function execution ARN.
             isotimestamp (Optional[str]): ISO format UTC timestamp for this action.
 
         Raises:
@@ -391,7 +389,6 @@ class StateDB:
             ExpressionAttributeValues={
                 ":state_updated": f"{StateEnum.PROCESSING}_{now}",
                 ":updated": now,
-                ":exec": execution_arn,
                 ":claim": StateEnum.CLAIMED,
             },
             ReturnValuesOnConditionCheckFailure="ALL_OLD",

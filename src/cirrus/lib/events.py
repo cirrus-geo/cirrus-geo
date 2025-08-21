@@ -185,7 +185,7 @@ class WorkflowEventManager:
     ):
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
-        self.statedb.set_processing(payload_id, execution_arn, isotimestamp)
+        self.statedb.set_processing(payload_id, isotimestamp)
         self._write_timeseries_record(
             payload_id,
             state=StateEnum.PROCESSING,

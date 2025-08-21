@@ -97,7 +97,6 @@ def test_api_collection_summary(statedb):
     )
     statedb.set_processing(
         f"{itemid}_processing",
-        execution_arn="arn::uuid5",
     )
     statedb.set_completed(
         f"{itemid}_completed",

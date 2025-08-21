@@ -32,13 +32,10 @@ RECORD_LIMIT = 10
 STATES = list(StateEnum._member_names_)
 
 
-def create_items_bulk(item_count, fns, **kwargs):
-    if callable(fns):
-        fns = [fns]
+def create_items_bulk(item_count, fn, **kwargs):
     for index in range(item_count):
-        for fn in fns:
-            newitem = deepcopy(test_item)
-            fn(f"{newitem['id']}{index}", **kwargs)
+        newitem = deepcopy(test_item)
+        fn(f"{newitem['id']}{index}", **kwargs)
 
 
 TESTKEY = {"collections_workflow": "col1_wf1", "itemids": "item1/item2"}
@@ -89,7 +86,6 @@ def state_table(statedb: StateDB):
     )
     statedb.set_processing(
         f"{test_item['id']}_processing",
-        execution_arn="arn::test",
     )
     statedb.set_completed(
         f"{test_item['id']}_completed",
@@ -121,11 +117,8 @@ def test_get_items(state_table: StateDB):
 
 def test_get_items_bulk(state_table: StateDB):
     _count = 25
-    create_items_bulk(
-        _count,
-        [state_table.claim_processing, state_table.set_processing],
-        execution_arn="arn::test",
-    )
+    create_items_bulk(_count, state_table.claim_processing, execution_arn="arn::test")
+    create_items_bulk(_count, state_table.set_processing)
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
@@ -145,11 +138,9 @@ def test_get_items_limit_1(state_table: StateDB):
 
 
 def test_get_items_limit_1_bulk(state_table: StateDB):
-    create_items_bulk(
-        20,
-        [state_table.claim_processing, state_table.set_processing],
-        execution_arn="arn::test",
-    )
+    count = 20
+    create_items_bulk(count, state_table.claim_processing, execution_arn="arn::test")
+    create_items_bulk(count, state_table.set_processing)
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
@@ -198,11 +189,8 @@ def test_get_dbitem_noitem(state_table: StateDB):
 
 def test_get_dbitems(state_table: StateDB):
     count = 5
-    create_items_bulk(
-        count,
-        [state_table.claim_processing, state_table.set_processing],
-        execution_arn="arn::test",
-    )
+    create_items_bulk(count, state_table.claim_processing, execution_arn="arn::test")
+    create_items_bulk(count, state_table.set_processing)
     ids = [test_item["id"] + str(i) for i in range(count)]
     dbitems = state_table.get_dbitems(ids)
     assert len(dbitems) == len(ids)
@@ -212,11 +200,8 @@ def test_get_dbitems(state_table: StateDB):
 
 def test_get_dbitems_duplicates(state_table: StateDB):
     count = 5
-    create_items_bulk(
-        count,
-        [state_table.claim_processing, state_table.set_processing],
-        execution_arn="arn::test",
-    )
+    create_items_bulk(count, state_table.claim_processing, execution_arn="arn::test")
+    create_items_bulk(count, state_table.set_processing)
     ids = [test_item["id"] + str(i) for i in range(count)]
     ids.append(ids[0])
     dbitems = state_table.get_dbitems(ids)
@@ -247,11 +232,8 @@ def test_get_states(state_table: StateDB):
 
 def test_get_counts(state_table: StateDB):
     _count = 3
-    create_items_bulk(
-        _count,
-        [state_table.claim_processing, state_table.set_processing],
-        execution_arn="arn::test",
-    )
+    create_items_bulk(_count, state_table.claim_processing, execution_arn="arn::test")
+    create_items_bulk(_count, state_table.set_processing)
     count = state_table.get_counts(test_dbitem["collections_workflow"])
     assert count == _count + len(STATES)
     for s in STATES:
@@ -334,7 +316,7 @@ def test_claim_processing(state_table: StateDB):
 
 def test_set_processing(state_table: StateDB):
     state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
-    state_table.set_processing(test_item["id"], execution_arn="arn::test1")
+    state_table.set_processing(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert StateDB.key_to_payload_id(dbitem) == test_item["id"]
     assert dbitem["executions"] == ["arn::test1"]
@@ -342,7 +324,7 @@ def test_set_processing(state_table: StateDB):
 
 def test_set_processing_without_claim(state_table: StateDB):
     with pytest.raises(ClientError) as ce:
-        state_table.set_processing(test_item["id"], execution_arn="arn::test1")
+        state_table.set_processing(test_item["id"])
     assert ce.value.response["Error"]["Code"] == "ConditionalCheckFailedException"
 
 
@@ -361,10 +343,10 @@ def test_double_claim(state_table: StateDB):
 def test_second_execution(state_table: StateDB):
     # check that processing adds new execution to list
     state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
-    state_table.set_processing(test_item["id"], execution_arn="arn::test1")
+    state_table.set_processing(test_item["id"])
     state_table.set_failed(test_item["id"], msg="because testing")
     state_table.claim_processing(test_item["id"], execution_arn="arn::test2")
-    state_table.set_processing(test_item["id"], execution_arn="arn::test2")
+    state_table.set_processing(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert len(dbitem["executions"]) == 2
     assert dbitem["executions"][-1] == "arn::test2"
