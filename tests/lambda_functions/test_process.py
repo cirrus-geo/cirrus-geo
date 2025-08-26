@@ -947,6 +947,18 @@ def test_finding_claimed_item(
     assert item["executions"][0].rpartition(":")[2] == "from_db_entry"
 
 
+def test_execution_arn_format(payload):
+    actual = ProcessPayloads.gen_execution_arn(
+        payload["id"],
+        payload["process"][0]["workflow"],
+    )
+    tokens = actual.split(":")
+
+    assert tokens[-3] == "execution"
+    assert tokens[-2] == "test-workflow1"
+    assert tokens[-1] == "a4201f97-6557-5f4e-ae88-6542ef800708"
+
+
 def test_execution_name_idempotence(payload):
     first_execution_name = ProcessPayloads.gen_execution_arn(
         payload["id"],
