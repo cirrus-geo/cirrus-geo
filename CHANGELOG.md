@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - StepFunctions Execution ARN stored in `StateDB` was incorrect, but format was
   unchecked.  Moto mock testing did not complain that the State Machine ARN
   provided was invalid for StepFunctions execution. ([#317])
+- Dynamo DB fails to update with extraneous parameters in the
+  `ExpressionAttributeValues` argument.  Issue not surfaced by Moto. (#318)
 
 ## [v1.0.1] -- 2025-06-18
 
@@ -1092,6 +1094,7 @@ Initial release
 [#311]: https://github.com/cirrus-geo/cirrus-geo/pull/311
 [#315]: https://github.com/cirrus-geo/cirrus-geo/pull/315
 [#317]: https://github.com/cirrus-geo/cirrus-geo/pull/317
+[#318]: https://github.com/cirrus-geo/cirrus-geo/pull/318
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
