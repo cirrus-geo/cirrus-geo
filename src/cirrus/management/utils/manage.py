@@ -15,9 +15,14 @@ from cirrus.management.deployment import Deployment
 logger = logging.getLogger(__name__)
 
 
-def _get_execution(deployment: Deployment, arn=None, payload_id=None):
+def _get_execution(
+    deployment: Deployment,
+    arn=None,
+    payload_id=None,
+    execution_number=None,
+):
     if payload_id:
-        return deployment.get_execution_by_payload_id(payload_id)
+        return deployment.get_execution_by_payload_id(payload_id, execution_number)
     return deployment.get_execution(arn)
 
 
@@ -55,6 +60,15 @@ def query_filters(func):
 
 
 def execution_arn(func):
+    func = optgroup.option(
+        "--execution-number",
+        type=click.IntRange(min=1),
+        help="Number specifying which execution to get",
+    )(func)
+    func = optgroup.group(
+        "Additional option for retrieval by payload ID",
+        help="Use only if --payload-id has been provided",
+    )(func)
     # reverse order because not using decorators
     func = optgroup.option(
         "--payload-id",

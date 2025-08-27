@@ -21,6 +21,7 @@ from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import assume_role, get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
 from cirrus.management.exceptions import (
+    InvalidExecutionsNumberError,
     NoExecutionsError,
     PayloadNotFoundError,
 )
@@ -215,10 +216,20 @@ class Deployment:
         )
         return sfn.describe_execution(executionArn=arn)
 
-    def get_execution_by_payload_id(self, payload_id):
+    def get_execution_by_payload_id(self, payload_id, execution_number=None):
         execs = self.get_payload_state(payload_id).get("executions", [])
+        exec_idx = -1
+        exec_ct = len(execs)
+        if execution_number is not None:
+            if execution_number > exec_ct or execution_number < 1:
+                raise InvalidExecutionsNumberError(
+                    payload_id,
+                    execution_number,
+                    exec_ct,
+                )
+            exec_idx = execution_number - 1
         try:
-            exec_arn = execs[-1]
+            exec_arn = execs[exec_idx]
         except IndexError as e:
             raise NoExecutionsError(payload_id) from e
 

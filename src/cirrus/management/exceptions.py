@@ -27,6 +27,15 @@ class NoExecutionsError(CirrusError):
         super().__init__(msg, *args, **kwargs)
 
 
+class InvalidExecutionsNumberError(CirrusError):
+    def __init__(self, payload_id, execution_number, execution_count, *args, **kwargs):
+        msg = (
+            f"Requested execution {execution_number}, but payload only has"
+            f" {execution_count} executions: {payload_id}"
+        )
+        super().__init__(msg, *args, **kwargs)
+
+
 class MissingParameterError(CirrusError):
     def __init__(self, missing: str, *extra_missing: str, **kwargs):
         msg = f"A required environment variable(s) was not found: {

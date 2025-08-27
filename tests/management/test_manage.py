@@ -68,6 +68,53 @@ def test_manage_get_execution_by_payload_id(
     assert json.loads(result.stdout.strip())["executionArn"] == st_func_execution_arn
 
 
+def test_manage_get_first_execution_by_payload_id(
+    deployment,
+    create_records,
+    put_parameters,
+    st_func_execution_arn,
+) -> None:
+    result = deployment(
+        "get-execution --payload-id sar-test-panda/workflow-test/completed-0"
+        " --execution-number 1",
+    )
+    assert result.exit_code == 0
+    assert json.loads(result.stdout.strip())["executionArn"] == st_func_execution_arn
+
+
+def test_manage_get_input_of_first_execution_by_payload_id(
+    deployment,
+    create_records,
+    put_parameters,
+    st_func_execution_arn,
+) -> None:
+    result = deployment(
+        "get-execution-input --payload-id sar-test-panda/workflow-test/completed-0"
+        " --execution-number 1",
+    )
+    breakpoint()
+    assert result.exit_code == 0
+    assert json.loads(result.stdout.strip())["executionArn"] == st_func_execution_arn
+
+
+def test_manage_fail_to_get_second_execution_by_payload_id(
+    deployment,
+    create_records,
+    put_parameters,
+    st_func_execution_arn,
+) -> None:
+    result = deployment(
+        "get-execution --payload-id sar-test-panda/workflow-test/completed-0"
+        " --execution-number 2",
+    )
+    assert result.exit_code == 1
+    err_mesg = (
+        "Requested execution 2, but payload only has 1 executions: "
+        "sar-test-panda/workflow-test/completed-0"
+    )
+    assert result.stderr.strip() == err_mesg
+
+
 # using non-stac payloads for simplier testing
 def test_get_payload(
     deployment,

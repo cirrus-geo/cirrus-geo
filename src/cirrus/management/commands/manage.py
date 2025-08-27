@@ -122,10 +122,12 @@ def get_execution(
     deployment: Deployment,
     arn: str | None,
     payload_id: str | None,
+    execution_number: int | None,
     raw: bool = False,
 ):
-    """Get a workflow execution using its ARN or its input payload ID"""
-    execution = _get_execution(deployment, arn, payload_id)
+    """Get a workflow execution using its ARN or its input payload ID (and optionally
+    the execution number 1..N)."""
+    execution = _get_execution(deployment, arn, payload_id, execution_number)
 
     if raw:
         click.echo(execution)
@@ -141,10 +143,13 @@ def get_execution_input(
     deployment: Deployment,
     arn: str | None,
     payload_id: str | None,
+    execution_number: int | None,
     raw: bool = False,
 ):
     """Get a workflow execution's input payload using its ARN or its input payload ID"""
-    _input = json.loads(_get_execution(deployment, arn, payload_id)["input"])
+    exc = _get_execution(deployment, arn, payload_id, execution_number)
+    breakpoint()
+    _input = json.loads(exc["input"])
 
     if raw:
         click.echo(_input)
@@ -160,11 +165,14 @@ def get_execution_output(
     deployment: Deployment,
     arn: str | None,
     payload_id: str | None,
+    execution_number: int | None,
     raw: bool = False,
 ):
     """Get a workflow execution's output payload using its ARN or its input
     payload ID"""
-    output = json.loads(_get_execution(deployment, arn, payload_id)["output"])
+    output = json.loads(
+        _get_execution(deployment, arn, payload_id, execution_number)["output"],
+    )
 
     if raw:
         click.echo(output)
