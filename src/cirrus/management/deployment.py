@@ -4,7 +4,8 @@ import json
 import logging
 import os
 
-from collections.abc import Iterator
+from collections import defaultdict
+from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
 from io import BytesIO
 from subprocess import check_call
@@ -14,8 +15,12 @@ from typing import IO, Any
 import backoff
 import boto3
 
+from boto3utils import s3
 from botocore.exceptions import ClientError
 
+from cirrus.lib.enums import StateEnum
+from cirrus.lib.errors import EventsDisabledError
+from cirrus.lib.eventdb import EventDB
 from cirrus.lib.process_payload import ProcessPayload
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import assume_role, get_client
@@ -23,6 +28,7 @@ from cirrus.management.deployment_pointer import DeploymentPointer
 from cirrus.management.exceptions import (
     NoExecutionsError,
     PayloadNotFoundError,
+    StatsUnavailableError,
 )
 
 logger = logging.getLogger(__name__)
@@ -351,3 +357,158 @@ class Deployment:
                         payload_id,
                         e,
                     )
+
+    def get_workflows(self) -> dict[str, Any]:
+        "Return available collections/workflow combinations"
+        # TODO: Add CIRRUS_DATA_BUCKET to SSM parameter store and deployment
+        # cat_url = f"s3://{self.environment["CIRRUS_DATA_BUCKET"]}/catalog.json"
+        cat_url = f"s3://{os.environ["CIRRUS_DATA_BUCKET"]}/catalog.json"
+
+        logger.debug("Root catalog: %s", cat_url)
+        cat = s3(session=self.session).read_json(cat_url)
+        workflows = cat.get("cirrus", {}).get("workflows", {})
+        result = []
+        for collections, wf_list in workflows.items():
+            for wf in wf_list:
+                result.append({"collections": collections, "workflow": wf})
+        return {"workflows": result}
+
+    def get_workflow_summary(
+        self,
+        collections: str,
+        workflow_name: str,
+        since: str | None = None,
+        limit: int = 100000,
+    ) -> dict[str, Any]:
+        "Get item counts by state for a collections/workflow from DynamoDB"
+        statedb = StateDB(
+            table_name=self.environment["CIRRUS_STATE_DB"],
+            session=self.session,
+        )
+        collections_workflow = f"{collections}_{workflow_name}"
+        logger.debug("Getting summary for %s", collections_workflow)
+        counts = {}
+        for s in StateEnum:
+            counts[s.value] = statedb.get_counts(
+                collections_workflow,
+                limit=limit,
+                state=s,
+                since=since,
+            )
+        return {
+            "collections": collections,
+            "workflow": workflow_name,
+            "counts": counts,
+        }
+
+    def get_workflow_stats(
+        self,
+    ) -> dict[str, Any] | None:
+        "Get aggregate workflow state transition stats from Timestream"
+        eventdb = EventDB(self.environment["CIRRUS_EVENT_DB_AND_TABLE"])
+        logger.debug("Getting stats")
+        try:
+            return {
+                "state_transitions": {
+                    "daily": _daily(eventdb.query_by_bin_and_duration("1d", "60d")),
+                    "hourly": _hourly(eventdb.query_by_bin_and_duration("1h", "36h")),
+                    "hourly_rolling": _hourly(
+                        eventdb.query_hour(1, 0),
+                        eventdb.query_hour(2, 1),
+                    ),
+                },
+            }
+        except EventsDisabledError as e:
+            raise StatsUnavailableError from e
+
+    def get_workflow_items(
+        self,
+        collections: str,
+        workflow_name: str,
+        state: str | None = None,
+        since: str | None = None,
+        limit: int = 100000,
+        nextkey: str | None = None,
+        sort_ascending: bool = False,
+        sort_index: str = "updated",
+    ):
+        "Get items for a collections/workflow from DynamoDB"
+        statedb = StateDB(
+            table_name=self.environment["CIRRUS_STATE_DB"],
+            session=self.session,
+        )
+        collections_workflow = f"{collections}_{workflow_name}"
+        logger.debug("Getting items for %s", collections_workflow)
+        items_page = statedb.get_items_page(
+            collections_workflow=collections_workflow,
+            limit=limit,
+            nextkey=nextkey,
+            state=state,
+            since=since,
+            sort_ascending=sort_ascending,
+            sort_index=sort_index,
+        )
+        return {"items": [_to_current(item) for item in items_page["items"]]}
+
+    def get_workflow_item(self, collections: str, workflow_name: str, itemid: str):
+        "Get individual item for a collections/workflow from DynamoDB"
+        statedb = StateDB(
+            table_name=self.environment["CIRRUS_STATE_DB"],
+            session=self.session,
+        )
+        payload_id = f"{collections}/workflow-{workflow_name}/{itemid}"
+        item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
+        return _to_current(item)
+
+
+def _daily(results: dict[str, Any]) -> list[dict[str, Any]]:
+    return _results_transform(results, lambda x: x.split(" ")[0], "day")
+
+
+def _hourly(*rs: dict[str, Any]) -> list[dict[str, Any]]:
+    combined_results: dict[str, Any] = {"Rows": []}
+    for result in rs:
+        combined_results["Rows"].extend(result.get("Rows", []))
+    return _results_transform(
+        combined_results,
+        lambda x: x.replace(" ", "T").split(".")[0] + "Z",
+        "hour",
+    )
+
+
+def _results_transform(
+    results: dict[str, Any],
+    timestamp_function: Callable[[str], str],
+    interval: str,
+) -> list[dict[str, Any]]:
+    intervals: dict[str, dict[str, tuple[int, int]]] = defaultdict(dict)
+
+    for row in results["Rows"]:
+        ts = timestamp_function(row["Data"][0]["ScalarValue"])
+        state = row["Data"][1]["ScalarValue"]
+        unique_count = int(row["Data"][2]["ScalarValue"])
+        total_count = int(row["Data"][3]["ScalarValue"])
+        intervals[ts][state] = (unique_count, total_count)
+
+    return [
+        {
+            "period": ts,
+            "interval": interval,
+            "states": [
+                {
+                    "state": state.value,
+                    "unique_count": state_val[0],
+                    "count": state_val[1],
+                }
+                for state in StateEnum
+                if (state_val := states.get(state, (0, 0)))
+            ],
+        }
+        for ts, states in intervals.items()
+    ]
+
+
+def _to_current(item):
+    item["catid"] = item["payload_id"]
+    item["catalog"] = item["payload"]
+    return item
