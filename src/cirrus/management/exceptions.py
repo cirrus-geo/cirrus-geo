@@ -33,3 +33,9 @@ class MissingParameterError(CirrusError):
             ', '.join((missing, *extra_missing))
         }"
         super().__init__(msg, **kwargs)
+
+
+class StatsUnavailableError(CirrusError):
+    def __init__(self, *args, **kwargs):
+        msg = "Stats not available because timeseries database is not configured"
+        super().__init__(msg, *args, **kwargs)

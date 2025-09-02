@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sys
 
 from subprocess import CalledProcessError
@@ -8,6 +9,13 @@ import click
 
 from boto3 import Session
 
+from cirrus.lib.workflow import (
+    get_collections_workflows,
+    get_item,
+    get_items,
+    get_stats,
+    get_summary,
+)
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.utils.click import (
     AliasedShortMatchGroup,
@@ -314,3 +322,138 @@ def get_payloads(
         rerun,
     ):
         click.echo(json.dumps(payload, default=str))
+
+
+@manage.command("list-workflows")
+@pass_deployment
+def list_workflows(deployment: Deployment):
+    "List available collections and workflows"
+
+    # Need to add CIRRUS_DATA_BUCKET to parameter store
+    # cirrus_data_bucket = f"s3://{deployment.environment['CIRRUS_DATA_BUCKET']}/catalog.json"
+    cirrus_data_bucket = os.environ["CIRRUS_DATA_BUCKET"]  # Temporary
+
+    collections_workflows = get_collections_workflows(cirrus_data_bucket)
+    click.echo(json.dumps({"workflows": collections_workflows}, indent=2))
+
+
+@manage.command("get-workflow-summary")
+@click.argument("collection")
+@click.argument("workflow_name")
+@click.option(
+    "--since",
+    default=None,
+    help=(
+        "Only include items updated since this relative duration (e.g., 7d, 36h, 15m)"
+    ),
+)
+@click.option(
+    "--limit",
+    default=100000,
+    show_default=True,
+    type=int,
+    help="Limit the number of items considered for counts",
+)
+@pass_deployment
+def get_workflow_summary(
+    deployment: Deployment,
+    collection,
+    workflow_name,
+    since,
+    limit,
+):
+    "Get item (DynamoDB record) counts by state for a workflow"
+    cirrus_state_db = deployment.environment["CIRRUS_STATE_DB"]
+    summary = get_summary(
+        cirrus_state_db,
+        collection,
+        workflow_name,
+        since,
+        limit,
+    )
+    click.echo(json.dumps(summary, indent=2))
+
+
+@manage.command("get-workflow-stats")
+@pass_deployment
+def get_workflow_stats(deployment: Deployment):
+    "Get workflow state transition stats"
+    cirrus_event_db_and_table = deployment.environment["CIRRUS_EVENT_DB_AND_TABLE"]
+    stats = get_stats(cirrus_event_db_and_table)
+    click.echo(json.dumps(stats, indent=2))
+
+
+@manage.command("get-workflow-items")
+@click.argument("collection")
+@click.argument("workflow_name")
+@click.option("--state", default=None, help="Filter by item state")
+@click.option(
+    "--since",
+    default=None,
+    help=(
+        "Only include items updated since this relative duration (e.g., 7d, 36h, 15m)"
+    ),
+)
+@click.option(
+    "--limit",
+    default=100000,
+    show_default=True,
+    type=int,
+    help="Limit the number of items returned",
+)
+@click.option("--nextkey", default=None, help="Pagination key for next page")
+@click.option(
+    "--sort-ascending",
+    is_flag=True,
+    default=False,
+    help="Sort results in ascending order",
+)
+@click.option("--sort-index", default="updated", help="Index to sort by")
+@pass_deployment
+def get_workflow_items(
+    deployment: Deployment,
+    collection,
+    workflow_name,
+    state,
+    since,
+    limit,
+    nextkey,
+    sort_ascending,
+    sort_index,
+):
+    """List items (DynamoDB records) for a workflow"""
+    cirrus_state_db = deployment.environment["CIRRUS_STATE_DB"]
+    result = get_items(
+        cirrus_state_db,
+        collection,
+        workflow_name,
+        state=state,
+        since=since,
+        limit=limit,
+        nextkey=nextkey,
+        sort_ascending=sort_ascending,
+        sort_index=sort_index,
+    )
+    click.echo(json.dumps(result, indent=2))
+
+
+@manage.command("get-workflow-item")
+@click.argument("collection")
+@click.argument("workflow_name")
+@click.argument("itemid")
+@pass_deployment
+def get_workflow_item(
+    deployment: Deployment,
+    collection,
+    workflow_name,
+    itemid,
+):
+    """Show details for a workflow item (DynamoDB record)"""
+    cirrus_state_db = deployment.environment["CIRRUS_STATE_DB"]
+    result = get_item(
+        cirrus_state_db,
+        collection,
+        workflow_name,
+        itemid,
+    )
+    click.echo(json.dumps(result, indent=2))
