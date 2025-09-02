@@ -40,11 +40,11 @@ CONFIG_VERSION = 0
 WORKFLOW_POLL_INTERVAL = 15  # seconds between state checks
 
 
-def now_isoformat():
+def now_isoformat() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def _maybe_use_buffer(fileobj: IO):
+def _maybe_use_buffer(fileobj: IO) -> IO:
     return fileobj.buffer if hasattr(fileobj, "buffer") else fileobj
 
 
@@ -431,7 +431,7 @@ class Deployment:
         nextkey: str | None = None,
         sort_ascending: bool = False,
         sort_index: str = "updated",
-    ):
+    ) -> dict[str, Any]:
         "Get items for a collections/workflow from DynamoDB"
         statedb = StateDB(
             table_name=self.environment["CIRRUS_STATE_DB"],
@@ -450,7 +450,12 @@ class Deployment:
         )
         return {"items": [_to_current(item) for item in items_page["items"]]}
 
-    def get_workflow_item(self, collections: str, workflow_name: str, itemid: str):
+    def get_workflow_item(
+        self,
+        collections: str,
+        workflow_name: str,
+        itemid: str,
+    ) -> dict[str, Any]:
         "Get individual item for a collections/workflow from DynamoDB"
         statedb = StateDB(
             table_name=self.environment["CIRRUS_STATE_DB"],
@@ -508,7 +513,7 @@ def _results_transform(
     ]
 
 
-def _to_current(item):
+def _to_current(item: dict[str, Any]) -> dict[str, Any]:
     item["catid"] = item["payload_id"]
     item["catalog"] = item["payload"]
     return item

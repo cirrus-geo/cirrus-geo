@@ -344,10 +344,10 @@ def list_workflows(deployment: Deployment):
 @pass_deployment
 def get_workflow_summary(
     deployment: Deployment,
-    collections,
-    workflow_name,
-    since,
-    limit,
+    collections: str,
+    workflow_name: str,
+    since: str | None,
+    limit: int,
 ):
     """Get item counts by state for a collections/workflow from DynamoDB"""
     summary = deployment.get_workflow_summary(
@@ -396,14 +396,14 @@ def get_workflow_stats(deployment: Deployment):
 @pass_deployment
 def get_workflow_items(
     deployment: Deployment,
-    collections,
-    workflow_name,
-    state,
-    since,
-    limit,
-    nextkey,
-    sort_ascending,
-    sort_index,
+    collections: str,
+    workflow_name: str,
+    state: str | None,
+    since: str | None,
+    limit: int,
+    nextkey: str | None,
+    sort_ascending: bool,
+    sort_index: str,
 ):
     """Get items for a collections/workflow from DynamoDB"""
     items_page = deployment.get_workflow_items(
@@ -426,9 +426,9 @@ def get_workflow_items(
 @pass_deployment
 def get_workflow_item(
     deployment: Deployment,
-    collections,
-    workflow_name,
-    itemid,
+    collections: str,
+    workflow_name: str,
+    itemid: str,
 ):
     """Get individual item for a collections/workflow from DynamoDB"""
     result = deployment.get_workflow_item(
