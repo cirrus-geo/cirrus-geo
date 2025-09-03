@@ -23,7 +23,7 @@ def manage(invoke):
 
 
 @pytest.fixture()
-def deployment(manage, queue, payloads, statedb, workflow, sts, iam_role):
+def deployment(manage, queue, payloads, data, statedb, workflow, sts, iam_role):
     def _manage(deployment, cmd):
         return manage(f"{deployment.name} {cmd}")
 
@@ -34,6 +34,7 @@ def deployment(manage, queue, payloads, statedb, workflow, sts, iam_role):
         mock_parameters(
             queue,
             payloads,
+            data,
             statedb,
             workflow,
             MOCK_DEPLYOMENT_NAME,
@@ -195,3 +196,129 @@ def test_get_payloads(deployment, create_records, statedb, state, parameter, lim
         f"get-payloads --collections-workflow 'sar-test-panda_test' {parameter} --rerun",
     )
     assert_get_payloads(result, create_records, state, limit)
+
+
+def test_list_workflows(deployment, s3, put_parameters):
+    mock_catalog = {
+        "cirrus": {
+            "workflows": {
+                "collection1": ["workflow1", "workflow2"],
+                "collection2": ["workflow3"],
+            },
+        },
+    }
+    s3.put_object(
+        Bucket="data",
+        Key="catalog.json",
+        Body=json.dumps(mock_catalog).encode(),
+    )
+
+    result = deployment("list-workflows")
+    assert result.exit_code == 0
+    output = json.loads(result.stdout.strip())
+
+    expected_workflows = [
+        {"collections": "collection1", "workflow": "workflow1"},
+        {"collections": "collection1", "workflow": "workflow2"},
+        {"collections": "collection2", "workflow": "workflow3"},
+    ]
+    assert output == {"workflows": expected_workflows}
+
+
+def test_get_workflow_summary(deployment, create_records, statedb):
+    result = deployment("get-workflow-summary sar-test-panda test")
+    assert result.exit_code == 0
+    output = json.loads(result.stdout.strip())
+
+    assert output["collections"] == "sar-test-panda"
+    assert output["workflow"] == "test"
+    assert "counts" in output
+
+    expected_states = [
+        "PROCESSING",
+        "COMPLETED",
+        "FAILED",
+        "INVALID",
+        "ABORTED",
+        "CLAIMED",
+    ]
+    for state in expected_states:
+        assert state in output["counts"]
+        if state in ["COMPLETED", "FAILED"]:
+            assert output["counts"][state] == 2
+        else:
+            assert output["counts"][state] == 0
+
+
+def test_get_workflow_summary_with_since_option(deployment, create_records, statedb):
+    result = deployment(
+        "get-workflow-summary sar-test-panda test --since 1d",
+    )
+    assert result.exit_code == 0
+    output = json.loads(result.stdout.strip())
+
+    expected_states = [
+        "PROCESSING",
+        "COMPLETED",
+        "FAILED",
+        "INVALID",
+        "ABORTED",
+        "CLAIMED",
+    ]
+    for state in expected_states:
+        assert state in output["counts"]
+        if state == "COMPLETED":
+            assert output["counts"][state] == 2
+        elif state == "FAILED":
+            assert output["counts"][state] == 1
+        else:
+            assert output["counts"][state] == 0
+
+
+def test_get_workflow_stats(deployment, put_parameters):
+    # we can't query timestream db data with moto, so just check the output structure
+    result = deployment("get-workflow-stats")
+    assert result.exit_code == 0
+    output = json.loads(result.stdout.strip())
+
+    # Verify the expected output structure
+    assert "state_transitions" in output
+    assert "daily" in output["state_transitions"]
+    assert "hourly" in output["state_transitions"]
+    assert "hourly_rolling" in output["state_transitions"]
+
+    # Each should be a list
+    assert isinstance(output["state_transitions"]["daily"], list)
+    assert isinstance(output["state_transitions"]["hourly"], list)
+    assert isinstance(output["state_transitions"]["hourly_rolling"], list)
+
+
+def test_get_workflow_items(deployment, create_records, statedb):
+    result = deployment("get-workflow-items sar-test-panda test")
+    assert result.exit_code == 0
+    output = json.loads(result.stdout.strip())
+
+    assert "items" in output
+    assert isinstance(output["items"], list)
+    assert len(output["items"]) == 4
+
+
+def test_get_workflow_items_with_state_filter(deployment, create_records, statedb):
+    result = deployment("get-workflow-items sar-test-panda test --state COMPLETED")
+    assert result.exit_code == 0
+    output = json.loads(result.stdout.strip())
+
+    assert len(output["items"]) == 2
+    for item in output["items"]:
+        assert item["state"] == "COMPLETED"
+
+
+def test_get_workflow_item(deployment, create_records, statedb):
+    # Use one of the completed items from our test data
+    result = deployment("get-workflow-item sar-test-panda test completed-0")
+    assert result.exit_code == 0
+    output = json.loads(result.stdout.strip())
+
+    assert output["item"]["collections"] == "sar-test-panda"
+    assert output["item"]["workflow"] == "test"
+    assert output["item"]["items"] == "completed-0"
