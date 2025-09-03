@@ -360,7 +360,7 @@ class Deployment:
 
     def get_workflows(self) -> dict[str, Any]:
         "Return available collections/workflow combinations"
-        # TODO: Add CIRRUS_DATA_BUCKET to SSM parameter store and deployment
+        # TODO: Add CIRRUS_DATA_BUCKET to SSM parameter store
         cat_url = f"s3://{self.environment["CIRRUS_DATA_BUCKET"]}/catalog.json"
         logger.debug("Root catalog: %s", cat_url)
         cat = s3(session=self.session).read_json(cat_url)
