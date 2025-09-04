@@ -130,39 +130,47 @@ def test_success(event, statedb, publish_topic, publish_enabled, monkeypatch):
 
 def test_failed(event, statedb):
     event["detail"]["status"] = "FAILED"
-    event["detail"]["error"] = {
-        "Error": "UnknownError",
-        "Cause": '{"errorMessage": "/usr/local/bin/python: No module named name-delivery-to-stac", "errorType": "UnknownError", "requestId": "fake-request-id-djdj10102jd", "stackTrace": ["  File \\"/var/task/post_batch.py\\", line 66, in lambda_handler\\n    raise exception_class(error_msg)\\n"]}',  # noqa: E501
-    }
+    event["detail"]["error"] = "UnknownError"
+    event["detail"]["cause"] = (
+        '{"errorMessage": "/usr/local/bin/python: No module named name-delivery-to-stac", "errorType": "UnknownError", "requestId": "fake-request-id-djdj10102jd", "stackTrace": ["  File \\"/var/task/post_batch.py\\", line 66, in lambda_handler\\n    raise exception_class(error_msg)\\n"]}'  # noqa: E501
+    )
     update_state(event, {})
 
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
     assert len(items) == 1
     assert items[0]["state_updated"].startswith("FAILED")
+    assert (
+        items[0]["last_error"]
+        == "UnknownError: /usr/local/bin/python: No module named name-delivery-to-stac"
+    )
 
 
 @pytest.mark.parametrize(
-    "error",
+    ("error", "cause"),
     [
-        {
-            "Error": "UnknownError",
-            "Cause": '{"errorMessage": "/usr/local/bin/python: No module named umbra-delivery-to-stac", "errorType": "UnknownError", "requestId": "20df8b93-a10f-44b2-8b50-72d82b01569d", "stackTrace": ["  File \\"/var/task/post_batch.py\\", line 66, in lambda_handler\\n    raise exception_class(error_msg)\\n"]}',  # noqa: E501
-        },
-        None,
+        (
+            "UnknownError",
+            '{"errorMessage": "/usr/local/bin/python: No module named umbra-delivery-to-stac", "errorType": "UnknownError", "requestId": "20df8b93-a10f-44b2-8b50-72d82b01569d", "stackTrace": ["  File \\"/var/task/post_batch.py\\", line 66, in lambda_handler\\n    raise exception_class(error_msg)\\n"]}',  # noqa: E501
+        ),
+        (None, None),
     ],
 )
-def test_get_execution_error(event, error):
+def test_get_execution_error(event, error, cause):
     event["detail"]["status"] = "FAILED"
     event["detail"]["error"] = error
+    event["detail"]["cause"] = cause
 
-    if error:
-        extracted_error = get_execution_error(event)
-        assert extracted_error == error
+    extracted_error = get_execution_error(event)
+    if error is not None:
+        assert extracted_error == {"Error": error, "Cause": cause}
     else:
-        extracted_error = get_execution_error(event)
         assert extracted_error == {
             "Error": "Unknown",
-            "Cause": "No error was found in event.  Check Fail is configured to pass error/cause",  # noqa: E501
+            "Cause": (
+                "No error cause was found in the event. Check that the 'Fail' state in "
+                "the workflow step function definition includes 'ErrorPath' and "
+                "'CausePath' fields that capture the error name and error cause."
+            ),
         }
 
 
