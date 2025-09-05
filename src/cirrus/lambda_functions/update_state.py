@@ -20,11 +20,6 @@ INVALID_EXCEPTIONS = (
     "stactask.exceptions.InvalidInput",
 )
 
-DEFAULT_ERROR = {
-    "Error": "Unknown",
-    "Cause": "No error was found in event.  Check Fail is configured to pass error/cause",  # noqa: E501
-}
-
 
 @dataclass
 class Execution:
