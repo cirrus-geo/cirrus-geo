@@ -10,9 +10,10 @@ both a cost-efficient and performance-efficient manner, regardless if
 processing takes seconds, hours, or longer.
 
 Cirrus consists of two primary pieces:
-- ``cirrus``, a CLI-based project management and deploy tool, and
-- ``cirrus-lib``, a Python library providing a number of useful
-abstractions solving common needs for users writing their own Cirrus components.
+
+- ``cirrus`` -  A CLI-based project management tool.
+- ``cirrus-lib`` - A Python library providing a number of useful
+  abstractions solving common needs for users writing their own Cirrus components.
 
 .. _STAC: https://stacspec.org/
 
