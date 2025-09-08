@@ -336,7 +336,7 @@ def list_workflows(deployment: Deployment):
 )
 @click.option(
     "--limit",
-    default=100000,
+    default=10000,
     show_default=True,
     type=int,
     help="Limit the number of items considered for counts",
@@ -380,7 +380,7 @@ def get_workflow_stats(deployment: Deployment):
 )
 @click.option(
     "--limit",
-    default=100000,
+    default=10,
     show_default=True,
     type=int,
     help="Limit the number of items returned",

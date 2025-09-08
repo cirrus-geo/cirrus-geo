@@ -376,7 +376,7 @@ class Deployment:
         collections: str,
         workflow_name: str,
         since: str | None = None,
-        limit: int = 100000,
+        limit: int = 10000,
     ) -> dict[str, Any]:
         "Get item counts by state for a collections/workflow from DynamoDB"
         statedb = StateDB(
@@ -425,7 +425,7 @@ class Deployment:
         workflow_name: str,
         state: str | None = None,
         since: str | None = None,
-        limit: int = 100000,
+        limit: int = 10,
         nextkey: str | None = None,
         sort_ascending: bool = False,
         sort_index: str = "updated",
