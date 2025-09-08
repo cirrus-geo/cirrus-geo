@@ -4,8 +4,7 @@ import json
 import logging
 import os
 
-from collections import defaultdict
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from io import BytesIO
 from subprocess import check_call
@@ -20,9 +19,9 @@ from botocore.exceptions import ClientError
 
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
-from cirrus.lib.eventdb import EventDB
+from cirrus.lib.eventdb import EventDB, daily, hourly
 from cirrus.lib.process_payload import ProcessPayload
-from cirrus.lib.statedb import StateDB
+from cirrus.lib.statedb import StateDB, to_current
 from cirrus.lib.utils import assume_role, get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
 from cirrus.management.exceptions import (
@@ -408,9 +407,9 @@ class Deployment:
         try:
             return {
                 "state_transitions": {
-                    "daily": _daily(eventdb.query_by_bin_and_duration("1d", "60d")),
-                    "hourly": _hourly(eventdb.query_by_bin_and_duration("1h", "36h")),
-                    "hourly_rolling": _hourly(
+                    "daily": daily(eventdb.query_by_bin_and_duration("1d", "60d")),
+                    "hourly": hourly(eventdb.query_by_bin_and_duration("1h", "36h")),
+                    "hourly_rolling": hourly(
                         eventdb.query_hour(1, 0),
                         eventdb.query_hour(2, 1),
                     ),
@@ -446,7 +445,7 @@ class Deployment:
             sort_ascending=sort_ascending,
             sort_index=sort_index,
         )
-        return {"items": [_to_current(item) for item in items_page["items"]]}
+        return {"items": [to_current(item) for item in items_page["items"]]}
 
     def get_workflow_item(
         self,
@@ -461,57 +460,4 @@ class Deployment:
         )
         payload_id = f"{collections}/workflow-{workflow_name}/{itemid}"
         item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
-        return {"item": _to_current(item)}
-
-
-def _daily(results: dict[str, Any]) -> list[dict[str, Any]]:
-    return _results_transform(results, lambda x: x.split(" ")[0], "day")
-
-
-def _hourly(*rs: dict[str, Any]) -> list[dict[str, Any]]:
-    combined_results: dict[str, Any] = {"Rows": []}
-    for result in rs:
-        combined_results["Rows"].extend(result.get("Rows", []))
-    return _results_transform(
-        combined_results,
-        lambda x: x.replace(" ", "T").split(".")[0] + "Z",
-        "hour",
-    )
-
-
-def _results_transform(
-    results: dict[str, Any],
-    timestamp_function: Callable[[str], str],
-    interval: str,
-) -> list[dict[str, Any]]:
-    intervals: dict[str, dict[str, tuple[int, int]]] = defaultdict(dict)
-
-    for row in results["Rows"]:
-        ts = timestamp_function(row["Data"][0]["ScalarValue"])
-        state = row["Data"][1]["ScalarValue"]
-        unique_count = int(row["Data"][2]["ScalarValue"])
-        total_count = int(row["Data"][3]["ScalarValue"])
-        intervals[ts][state] = (unique_count, total_count)
-
-    return [
-        {
-            "period": ts,
-            "interval": interval,
-            "states": [
-                {
-                    "state": state.value,
-                    "unique_count": state_val[0],
-                    "count": state_val[1],
-                }
-                for state in StateEnum
-                if (state_val := states.get(state, (0, 0)))
-            ],
-        }
-        for ts, states in intervals.items()
-    ]
-
-
-def _to_current(item: dict[str, Any]) -> dict[str, Any]:
-    item["catid"] = item["payload_id"]
-    item["catalog"] = item["payload"]
-    return item
+        return {"item": to_current(item)}

@@ -1,8 +1,6 @@
 import json
 import os
 
-from collections import defaultdict
-from collections.abc import Callable
 from copy import deepcopy
 from typing import Any
 from urllib.parse import urljoin
@@ -11,9 +9,9 @@ from boto3utils import s3
 
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
-from cirrus.lib.eventdb import EventDB
+from cirrus.lib.eventdb import EventDB, daily, hourly
 from cirrus.lib.logging import get_task_logger
-from cirrus.lib.statedb import StateDB
+from cirrus.lib.statedb import StateDB, to_current
 
 logger = get_task_logger("function.api", payload=())
 
@@ -85,53 +83,6 @@ def get_stats(_eventdb: EventDB) -> dict[str, Any] | None:
         }
     except EventsDisabledError:
         return None
-
-
-def _results_transform(
-    results: dict[str, Any],
-    timestamp_function: Callable[[str], str],
-    interval: str,
-) -> list[dict[str, Any]]:
-    intervals: dict[str, dict[str, tuple[int, int]]] = defaultdict(dict)
-
-    for row in results["Rows"]:
-        ts = timestamp_function(row["Data"][0]["ScalarValue"])
-        state = row["Data"][1]["ScalarValue"]
-        unique_count = int(row["Data"][2]["ScalarValue"])
-        total_count = int(row["Data"][3]["ScalarValue"])
-        intervals[ts][state] = (unique_count, total_count)
-
-    return [
-        {
-            "period": ts,
-            "interval": interval,
-            "states": [
-                {
-                    "state": state.value,
-                    "unique_count": state_val[0],
-                    "count": state_val[1],
-                }
-                for state in StateEnum
-                if (state_val := states.get(state, (0, 0)))
-            ],
-        }
-        for ts, states in intervals.items()
-    ]
-
-
-def daily(results: dict[str, Any]) -> list[dict[str, Any]]:
-    return _results_transform(results, lambda x: x.split(" ")[0], "day")
-
-
-def hourly(*rs: dict[str, Any]) -> list[dict[str, Any]]:
-    combined_results: dict[str, Any] = {"Rows": []}
-    for result in rs:
-        combined_results["Rows"].extend(result.get("Rows", []))
-    return _results_transform(
-        combined_results,
-        lambda x: x.replace(" ", "T").split(".")[0] + "Z",
-        "hour",
-    )
 
 
 def summary(collections_workflow, since, limit, statedb):
@@ -236,14 +187,10 @@ def lambda_handler(event, _context):
             sort_ascending=sort_ascending,
             sort_index=sort_index,
         )
-        return response({"items": [to_current(item) for item in items["items"]]})
+        return response(
+            {"items": [to_current(item) for item in items["items"]]},
+        )
 
     # get individual item
     item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
     return response(to_current(item))
-
-
-def to_current(item):
-    item["catid"] = item["payload_id"]
-    item["catalog"] = item["payload"]
-    return item

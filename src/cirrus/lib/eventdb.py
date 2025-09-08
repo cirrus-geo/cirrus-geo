@@ -1,6 +1,8 @@
 import logging
 import os
 
+from collections import defaultdict
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
@@ -192,3 +194,65 @@ class EventDB:
                 self.event_table_name,
             ),
         )
+
+
+def results_transform(
+    results: dict[str, Any],
+    timestamp_function: Callable[[str], str],
+    interval: str,
+) -> list[dict[str, Any]]:
+    """Transform TimeStream query results into standardized format.
+
+    Args:
+        results: Raw results from TimeStream query
+        timestamp_function: Function to transform timestamp strings
+        interval: Time interval type ("day" or "hour")
+
+    Returns:
+        List of transformed result dictionaries with period, interval, and states
+    """
+    intervals: dict[str, dict[str, tuple[int, int]]] = defaultdict(dict)
+
+    for row in results["Rows"]:
+        ts = timestamp_function(row["Data"][0]["ScalarValue"])
+        state = row["Data"][1]["ScalarValue"]
+        unique_count = int(row["Data"][2]["ScalarValue"])
+        total_count = int(row["Data"][3]["ScalarValue"])
+        intervals[ts][state] = (unique_count, total_count)
+
+    return [
+        {
+            "period": ts,
+            "interval": interval,
+            "states": [
+                {
+                    "state": state.value,
+                    "unique_count": state_val[0],
+                    "count": state_val[1],
+                }
+                for state in StateEnum
+                if (state_val := states.get(state, (0, 0)))
+            ],
+        }
+        for ts, states in intervals.items()
+    ]
+
+
+def daily(results: dict[str, Any]) -> list[dict[str, Any]]:
+    """Transform daily aggregated TimeStream results."""
+    return results_transform(results, lambda x: x.split(" ")[0], "day")
+
+
+def hourly(*rs: dict[str, Any]) -> list[dict[str, Any]]:
+    """Transform hourly aggregated TimeStream results.
+
+    Can handle multiple result sets by combining them.
+    """
+    combined_results: dict[str, Any] = {"Rows": []}
+    for result in rs:
+        combined_results["Rows"].extend(result.get("Rows", []))
+    return results_transform(
+        combined_results,
+        lambda x: x.replace(" ", "T").split(".")[0] + "Z",
+        "hour",
+    )

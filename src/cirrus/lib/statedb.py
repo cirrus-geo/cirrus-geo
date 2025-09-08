@@ -25,6 +25,12 @@ def get_state_db():
     return os.getenv("CIRRUS_STATE_DB")
 
 
+def to_current(item: dict[str, Any]) -> dict[str, Any]:
+    item["catid"] = item["payload_id"]
+    item["catalog"] = item["payload"]
+    return item
+
+
 class ValidStateChange:
     """Handle pre- and post- tasks which are common to all state-change functions in a
     wrapper.
