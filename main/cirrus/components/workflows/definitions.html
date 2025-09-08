@@ -282,20 +282,38 @@ periodic spike of errors as they all retry on exactly the same cycle.
 <code class="docutils literal notranslate"><span class="pre">MaxAttempts</span></code> defines the total number of attempts to run the task, and
 <cite>MaxDelaySeconds</cite> puts a reasonable cap on the delay period, for example,
 making the maximum delay one 1 day instead of 10 years (600 * 2 ^ 19 seconds).</p>
-<section id="passing-out-errors">
-<h3>Passing Out Errors<a class="headerlink" href="#passing-out-errors" title="Link to this heading"></a></h3>
-<p>Containers running in a step function can fail for a variety of reasons.
-Having access to error messages from processes inside the step function is
-essential to accurately diagnosing issues that can cause execution
-failures.</p>
-<p>To access these errors, they must be passed out of the step function so they
-can be picked up and logged by the <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda, which then inserts
-the errors into the DynamoDB state database where they can be analyzed in bulk
-to determine failure patterns.</p>
-<p>To accomplish this task you must ensure that the <code class="docutils literal notranslate"><span class="pre">Fail</span></code> state contains
-<code class="docutils literal notranslate"><span class="pre">Cause</span></code> and <code class="docutils literal notranslate"><span class="pre">Error</span></code> keys with the values coming from the error message.
-Examples can be found in the AWS documentation for <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html">fail state definition example</a>.</p>
-<p>Also see the AWS documentation for <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html">error handling in Step Functions</a>.</p>
+<section id="capturing-errors">
+<h3>Capturing errors<a class="headerlink" href="#capturing-errors" title="Link to this heading"></a></h3>
+<p>Step Function Tasks (e.g., a container running in AWS Batch or a Lambda Function) can
+fail for a variety of reasons. The ability to access Task error messages is important
+for diagnosing issues that cause Step Function execution failures.</p>
+<p>When a workflow’s failure state is properly defined, error messages are logged by the
+<code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda and inserted into the DynamoDB state database. The failure
+state must contain <code class="docutils literal notranslate"><span class="pre">CausePath</span></code> and <code class="docutils literal notranslate"><span class="pre">ErrorPath</span></code> keys with the values coming from the
+error message. For example, consider the following <code class="docutils literal notranslate"><span class="pre">Catch</span></code> block in a workflow
+definition.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;Catch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;States.ALL&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;failure&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ResultPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">ResultPath</span></code> key in the <code class="docutils literal notranslate"><span class="pre">Catch</span></code> block above indicates that error information
+will be placed into the <code class="docutils literal notranslate"><span class="pre">$.error</span></code> field of the failure state input. The failure
+state must then be defined to extract the error name and cause from its input.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;failure&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ErrorPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error.Error&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;CausePath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error.Cause&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>See the AWS documentation for the <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html">Fail workflow state</a>.</p>
 </section>
 </section>
 <section id="workflow-best-practices">
