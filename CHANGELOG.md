@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+- The update state lambda was not correctly parsing the error and cause from the Step
+  Functions event. This caused the lambda to fail on certain errors, leaving payloads
+  with incorrect states in the state database. ([#326])
+
 ## [v1.0.2] -- 2025-08-26
 
 ### Fixed
@@ -1096,6 +1104,7 @@ Initial release
 [#315]: https://github.com/cirrus-geo/cirrus-geo/pull/315
 [#317]: https://github.com/cirrus-geo/cirrus-geo/pull/317
 [#319]: https://github.com/cirrus-geo/cirrus-geo/pull/319
+[#326]: https://github.com/cirrus-geo/cirrus-geo/pull/326
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c

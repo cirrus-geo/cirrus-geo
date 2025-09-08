@@ -20,11 +20,6 @@ INVALID_EXCEPTIONS = (
     "stactask.exceptions.InvalidInput",
 )
 
-DEFAULT_ERROR = {
-    "Error": "Unknown",
-    "Cause": "No error was found in event.  Check Fail is configured to pass error/cause",  # noqa: E501
-}
-
 
 @dataclass
 class Execution:
@@ -167,7 +162,13 @@ def workflow_failed(
 
 
 def get_execution_error(event: dict) -> dict[str, str]:
-    return event["detail"].get("error") or DEFAULT_ERROR
+    error = event["detail"].get("error") or "Unknown"
+    cause = event["detail"].get("cause") or (
+        "No error cause was found in the event. Check that the 'Fail' state in the "
+        "workflow step function definition includes 'ErrorPath' and 'CausePath' fields "
+        "that capture the error name and error cause."
+    )
+    return {"Error": error, "Cause": cause}
 
 
 @WorkflowEventManager.with_wfem(logger=logger)

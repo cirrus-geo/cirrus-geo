@@ -189,28 +189,46 @@ periodic spike of errors as they all retry on exactly the same cycle.
 `MaxDelaySeconds` puts a reasonable cap on the delay period, for example,
 making the maximum delay one 1 day instead of 10 years (600 * 2 ^ 19 seconds).
 
-Passing Out Errors
-^^^^^^^^^^^^^^^^^^
+Capturing errors
+^^^^^^^^^^^^^^^^
 
-Containers running in a step function can fail for a variety of reasons.
-Having access to error messages from processes inside the step function is
-essential to accurately diagnosing issues that can cause execution
-failures.
+Step Function Tasks (e.g., a container running in AWS Batch or a Lambda Function) can
+fail for a variety of reasons. The ability to access Task error messages is important
+for diagnosing issues that cause Step Function execution failures.
 
-To access these errors, they must be passed out of the step function so they
-can be picked up and logged by the ``update-state`` lambda, which then inserts
-the errors into the DynamoDB state database where they can be analyzed in bulk
-to determine failure patterns.
+When a workflow's failure state is properly defined, error messages are logged by the
+``update-state`` lambda and inserted into the DynamoDB state database. The failure
+state must contain ``CausePath`` and ``ErrorPath`` keys with the values coming from the
+error message. For example, consider the following ``Catch`` block in a workflow
+definition.
 
-To accomplish this task you must ensure that the ``Fail`` state contains
-``Cause`` and ``Error`` keys with the values coming from the error message.
-Examples can be found in the AWS documentation for `fail state definition example`_.
+.. code-block:: json
 
-Also see the AWS documentation for `error handling in Step Functions`_.
+    "Catch": [
+      {
+        "ErrorEquals": [
+          "States.ALL"
+        ],
+        "Next": "failure",
+        "ResultPath": "$.error"
+      }
+    ]
 
-.. _error handling in Step Functions: https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
+The ``ResultPath`` key in the ``Catch`` block above indicates that error information
+will be placed into the ``$.error`` field of the failure state input. The failure
+state must then be defined to extract the error name and cause from its input.
 
-.. _fail state definition example: https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html
+.. code-block:: json
+
+    "failure": {
+        "Type": "Fail",
+        "ErrorPath": "$.error.Error",
+        "CausePath": "$.error.Cause"
+    }
+
+See the AWS documentation for the `Fail workflow state`_.
+
+.. _fail workflow state: https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html
 
 Workflow best practices
 -----------------------
