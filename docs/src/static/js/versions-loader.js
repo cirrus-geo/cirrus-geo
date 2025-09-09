@@ -1,6 +1,11 @@
-const dataRootUrl = document
-  .getElementById("documentation_options")
-  .getAttribute("data-url_root");
+let dataRootUrl = "";
+const docOptionsElm = document.getElementById("documentation_options");
+const htmlElm = document.getElementsByTagName("html")[0];
+if (docOptionsElm) {
+  dataRootUrl = docOptionsElm.getAttribute("data-url_root");
+} else {
+  dataRootUrl = htmlElm.getAttribute("data-content_root");
+}
 
 const findRoot = () => {
   const href = window.location.href;
