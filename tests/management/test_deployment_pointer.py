@@ -12,7 +12,6 @@ from cirrus.management.exceptions import MissingParameterError
 from tests.management.test_manage import MOCK_DEPLYOMENT_NAME
 
 VALID_ENV = {
-    "CIRRUS_DATA_BUCKET": "bucket",
     "CIRRUS_PAYLOAD_BUCKET": "bucket",
     "CIRRUS_BASE_WORKFLOW_ARN": "workflow-arn",
     "CIRRUS_PROCESS_QUEUE_URL": "queue-url",

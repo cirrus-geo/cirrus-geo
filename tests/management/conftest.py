@@ -76,7 +76,6 @@ def mock_parameters(
     iam_role,
 ):
     return {
-        "CIRRUS_DATA_BUCKET": data,
         "CIRRUS_PAYLOAD_BUCKET": payloads,
         "CIRRUS_BASE_WORKFLOW_ARN": workflow["stateMachineArn"].replace(
             "workflow1",

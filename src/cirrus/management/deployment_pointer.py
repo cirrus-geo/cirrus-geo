@@ -18,7 +18,6 @@ DEPLOYMENTS_PREFIX = "/cirrus/deployments/"
 
 # core required vars.  Not exclusive.
 REQUIRED_VARS = {
-    "CIRRUS_DATA_BUCKET",
     "CIRRUS_PAYLOAD_BUCKET",
     "CIRRUS_BASE_WORKFLOW_ARN",
     "CIRRUS_PROCESS_QUEUE_URL",

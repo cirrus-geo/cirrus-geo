@@ -14,7 +14,6 @@ from typing import IO, Any
 import backoff
 import boto3
 
-from boto3utils import s3
 from botocore.exceptions import ClientError
 
 from cirrus.lib.enums import StateEnum
@@ -356,19 +355,6 @@ class Deployment:
                         payload_id,
                         e,
                     )
-
-    def get_workflows(self) -> dict[str, Any]:
-        "Return available collections/workflow combinations"
-        # TODO: Add CIRRUS_DATA_BUCKET to SSM parameter store
-        cat_url = f"s3://{self.environment["CIRRUS_DATA_BUCKET"]}/catalog.json"
-        logger.debug("Root catalog: %s", cat_url)
-        cat = s3(session=self.session).read_json(cat_url)
-        workflows = cat.get("cirrus", {}).get("workflows", {})
-        result = []
-        for collections, wf_list in workflows.items():
-            for wf in wf_list:
-                result.append({"collections": collections, "workflow": wf})
-        return {"workflows": result}
 
     def get_workflow_summary(
         self,

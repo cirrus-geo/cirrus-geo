@@ -198,33 +198,6 @@ def test_get_payloads(deployment, create_records, statedb, state, parameter, lim
     assert_get_payloads(result, create_records, state, limit)
 
 
-def test_list_workflows(deployment, s3, put_parameters):
-    mock_catalog = {
-        "cirrus": {
-            "workflows": {
-                "collection1": ["workflow1", "workflow2"],
-                "collection2": ["workflow3"],
-            },
-        },
-    }
-    s3.put_object(
-        Bucket="data",
-        Key="catalog.json",
-        Body=json.dumps(mock_catalog).encode(),
-    )
-
-    result = deployment("list-workflows")
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-
-    expected_workflows = [
-        {"collections": "collection1", "workflow": "workflow1"},
-        {"collections": "collection1", "workflow": "workflow2"},
-        {"collections": "collection2", "workflow": "workflow3"},
-    ]
-    assert output == {"workflows": expected_workflows}
-
-
 def test_get_workflow_summary(deployment, create_records, statedb):
     result = deployment("get-workflow-summary sar-test-panda test")
     assert result.exit_code == 0

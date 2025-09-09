@@ -316,14 +316,6 @@ def get_payloads(
         click.echo(json.dumps(payload, default=str))
 
 
-@manage.command("list-workflows")
-@pass_deployment
-def list_workflows(deployment: Deployment):
-    """List available collections/workflows combinations"""
-    workflows = deployment.get_workflows()
-    click.echo(json.dumps(workflows, indent=2))
-
-
 @manage.command("get-workflow-summary")
 @click.argument("collections")
 @click.argument("workflow_name")
