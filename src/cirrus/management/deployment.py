@@ -437,13 +437,13 @@ class Deployment:
         self,
         collections: str,
         workflow_name: str,
-        itemid: str,
+        itemids: str,
     ) -> dict[str, Any]:
         "Get individual item for a collections/workflow from DynamoDB"
         statedb = StateDB(
             table_name=self.environment["CIRRUS_STATE_DB"],
             session=self.session,
         )
-        payload_id = f"{collections}/workflow-{workflow_name}/{itemid}"
+        payload_id = f"{collections}/workflow-{workflow_name}/{itemids}"
         item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
         return {"item": to_current(item)}
