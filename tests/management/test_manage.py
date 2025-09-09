@@ -178,7 +178,7 @@ def assert_get_payloads(
         pytest.param("failed", "--state 'FAILED'", None, id="state=FAILED flag"),
         pytest.param(
             "completed",
-            "--since '10 d' --state 'COMPLETED'",
+            "--since '10d' --state 'COMPLETED'",
             None,
             id="since flag",
         ),

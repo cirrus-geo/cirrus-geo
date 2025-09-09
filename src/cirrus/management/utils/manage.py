@@ -1,4 +1,5 @@
 import logging
+import re
 
 from functools import wraps
 
@@ -13,6 +14,55 @@ from cirrus.lib.enums import StateEnum
 from cirrus.management.deployment import Deployment
 
 logger = logging.getLogger(__name__)
+
+
+class SinceType(click.ParamType):
+    """Custom Click type for --since option.
+
+    Validates that the input is an integer followed by a unit letter:
+    - 'd' for days
+    - 'h' for hours
+    - 'm' for minutes
+
+    Examples: '7d', '24h', '30m'
+    """
+
+    name = "since"
+
+    def convert(self, value, param, ctx):
+        if value is None:
+            return value
+
+        # Check format: integer followed by unit letter
+        if not re.match(r"^\d+[dhm]$", value):
+            self.fail(
+                f"'{value}' is not a valid since format. "
+                f"Expected format: integer followed by 'd' (days), "
+                f"'h' (hours), or 'm' (minutes). "
+                f"Examples: '7d', '24h', '30m'",
+                param,
+                ctx,
+            )
+
+        try:
+            num = int(value[:-1])
+            if num <= 0:
+                self.fail(
+                    f"'{value}' must have a positive integer. Got: {num}",
+                    param,
+                    ctx,
+                )
+        except ValueError:
+            self.fail(
+                f"'{value}' does not contain a valid integer",
+                param,
+                ctx,
+            )
+
+        return value
+
+
+SINCE = SinceType()
 
 
 def _get_execution(deployment: Deployment, arn=None, payload_id=None):
@@ -36,7 +86,11 @@ def query_filters(func):
     )(func)
     func = optgroup.option(
         "--since",
-        help="Time filter. Integer followed by a unit letter (d=days, h=hours, m=minutes), e.g., '10 d'",  # noqa: E501
+        help=(
+            "Time filter. Integer followed by a unit letter "
+            "(d=days, h=hours, m=minutes), e.g., '7d', '24h', '30m'"
+        ),
+        type=SINCE,
     )(func)
     func = optgroup.option(
         "--limit",

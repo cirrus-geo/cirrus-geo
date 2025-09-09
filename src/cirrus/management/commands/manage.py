@@ -8,6 +8,7 @@ import click
 
 from boto3 import Session
 
+from cirrus.lib.enums import StateEnum
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.utils.click import (
     AliasedShortMatchGroup,
@@ -16,6 +17,7 @@ from cirrus.management.utils.click import (
     silence_templating_errors,
 )
 from cirrus.management.utils.manage import (
+    SINCE,
     _get_execution,
     execution_arn,
     include_user_vars,
@@ -67,14 +69,14 @@ def show(deployment: Deployment):
 @click.option(
     "-t",
     "--timeout",
-    type=int,
+    type=click.INT,
     default=3600,
     help="Maximum time (seconds) to allow for the workflow to complete",
 )
 @click.option(
     "-p",
     "--poll-interval",
-    type=int,
+    type=click.INT,
     default=WORKFLOW_POLL_INTERVAL,
     help="Time (seconds) to dwell between polling for workflow status",
 )
@@ -325,12 +327,13 @@ def get_payloads(
     help=(
         "Only include items updated since this relative duration (e.g., 7d, 36h, 15m)"
     ),
+    type=SINCE,
 )
 @click.option(
     "--limit",
     default=10000,
     show_default=True,
-    type=int,
+    type=click.INT,
     help="Limit the number of items considered for counts",
 )
 @pass_deployment
@@ -362,19 +365,25 @@ def get_workflow_stats(deployment: Deployment):
 @manage.command("get-workflow-items")
 @click.argument("collections")
 @click.argument("workflow_name")
-@click.option("--state", default=None, help="Filter by item state")
+@click.option(
+    "--state",
+    default=None,
+    help="Filter by item state",
+    type=click.Choice([state.value for state in StateEnum]),
+)
 @click.option(
     "--since",
     default=None,
     help=(
         "Only include items updated since this relative duration (e.g., 7d, 36h, 15m)"
     ),
+    type=SINCE,
 )
 @click.option(
     "--limit",
     default=10,
     show_default=True,
-    type=int,
+    type=click.IntRange(1, 50000),
     help="Limit the number of items returned",
 )
 @click.option("--nextkey", default=None, help="Pagination key for next page")
@@ -384,7 +393,12 @@ def get_workflow_stats(deployment: Deployment):
     default=False,
     help="Sort results in ascending order",
 )
-@click.option("--sort-index", default="updated", help="Index to sort by")
+@click.option(
+    "--sort-index",
+    default="updated",
+    help="Index to sort by",
+    type=click.Choice(["default", "updated", "state_updated"]),
+)
 @pass_deployment
 def get_workflow_items(
     deployment: Deployment,
