@@ -26,6 +26,7 @@ def get_state_db():
 
 
 def to_current(item: dict[str, Any]) -> dict[str, Any]:
+    """Compatiblity function for cirrus-dashboard"""
     item["catid"] = item["payload_id"]
     item["catalog"] = item["payload"]
     return item
