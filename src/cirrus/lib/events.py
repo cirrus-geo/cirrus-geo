@@ -1,17 +1,26 @@
 import json
 import os
+import uuid
 
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from functools import wraps
 from logging import Logger, getLogger
-from typing import Self
+from time import time
+from typing import Any, Self
 
 from .enums import StateEnum, WFEventType
 from .eventdb import EventDB
 from .statedb import StateDB
-from .utils import PAYLOAD_ID_REGEX, SNSMessage, SNSPublisher, execution_url
+from .utils import (
+    PAYLOAD_ID_REGEX,
+    BatchHandler,
+    SNSMessage,
+    SNSPublisher,
+    execution_url,
+    get_client,
+)
 
 
 @dataclass
@@ -48,7 +57,7 @@ class WorkflowEvent:
         attrs = {
             "event_type": {
                 "DataType": "String",
-                "StringValue": self.event_type,
+                "StringValue": str(self.event_type),
             },
         }
 
@@ -116,15 +125,15 @@ class WorkflowEventManager:
     @classmethod
     def with_wfem(cls: type[Self], *wfem_args, **wfem_kwargs):
         """
-        Decorator to inject WorkflowEvenManager (as `wfem`) into a function call, and
+        Decorator to inject WorkflowEventManager (as `wfem`) into a function call, and
         flush upon exit.
 
         Args:
-           See `help(WorkflowEvenManager.__init__)`
+           See `help(WorkflowEventManager.__init__)`
 
         Returns:
-           A function which runs the wrapped function in a WorkflowEvenManager context,
-           and passes in the WorkflowEvenManager instance to be used within the the
+           A function which runs the wrapped function in a WorkflowEventManager context,
+           and passes in the WorkflowEventManager instance to be used within the the
            function
         """
 
@@ -145,10 +154,8 @@ class WorkflowEventManager:
         Args:
             event (WorkflowEvent):
         """
-        if self.event_publisher is None:
-            return
-
-        self.event_publisher.add(event.to_message())
+        if self.event_publisher:
+            self.event_publisher.add(event.to_message())
 
     def claim_processing(
         self: Self,
@@ -207,8 +214,14 @@ class WorkflowEventManager:
         payload_id: str,
         state: StateEnum,
         payload_url: str | None = None,
-        message: str | None = "",
+        message: str = "",
     ):
+        state2event = {
+            StateEnum.INVALID: WFEventType.ALREADY_INVALID,
+            StateEnum.PROCESSING: WFEventType.ALREADY_PROCESSING,
+            StateEnum.CLAIMED: WFEventType.ALREADY_CLAIMED,
+            StateEnum.COMPLETED: WFEventType.ALREADY_COMPLETED,
+        }
         self.logger.info(
             "Skipping %s already in %s state%s.",
             payload_id,
@@ -217,7 +230,7 @@ class WorkflowEventManager:
         )
         self.announce(
             WorkflowEvent(
-                event_type=WFEventType(f"ALREADY_{state}"),
+                event_type=state2event[state],
                 payload_id=payload_id,
                 isotimestamp=datetime.now(UTC).isoformat(),
                 payload_url=payload_url,
@@ -397,3 +410,138 @@ class WorkflowEventManager:
     ) -> None:
         if self.eventdb:
             self.eventdb.write_timeseries_record(key, state, event_time, execution_arn)
+
+
+class WorkflowMetrics(BatchHandler[WorkflowEvent]):
+    """A class for surfacing workflow state changes to Cloudwatch
+    Logs, and retrieving metrics from Cloudwatch Metrics."""
+
+    def __init__(
+        self: Self,
+        logger: Logger | None = None,
+        log_group_name: str | None = None,
+        metric_name: str | None = None,
+        batch_size: int = 10,
+    ):
+        super().__init__(batchable=self._send, batch_size=batch_size)
+        self.logger = logger if logger is not None else getLogger(__name__)
+        self.log_group_name = (
+            log_group_name
+            if log_group_name is not None
+            else os.getenv("CIRRUS_WORKFLOW_LOG_GROUP", "")
+        )
+        self.metric_name = (
+            metric_name
+            if metric_name is not None
+            else os.getenv("CIRRUS_WORKFLOW_METRIC_NAME", "")
+        )
+        self.sequence_token = None
+
+        if self.log_group_name and self.metric_name:
+            self.logs_client = get_client("logs")
+            self.cw_client = get_client("cloudwatch")
+            # Generate a UUID-based log stream name
+            self.log_stream_name = f"workflow-{uuid.uuid4()}"
+            # Create log stream if it does not exist
+            try:
+                self.logs_client.create_log_stream(
+                    logGroupName=self.log_group_name,
+                    logStreamName=self.log_stream_name,
+                )
+                self.logger.info("Created new log stream: %s", self.log_stream_name)
+            except self.logs_client.exceptions.ResourceAlreadyExistsException:
+                self.logger.info("Log stream already exists: %s", self.log_stream_name)
+            # Retrieve sequence token
+            response = self.logs_client.describe_log_streams(
+                logGroupName=self.log_group_name,
+                logStreamNamePrefix=self.log_stream_name,
+            )
+            log_streams = response["logStreams"]
+            if not log_streams:
+                raise Exception("Log stream not found after creation.")
+            self.sequence_token = log_streams[0].get("uploadSequenceToken")
+        else:
+            self.logger.info(
+                "Workflow metrics not configured, "
+                "workflow state change metrics will not be recorded",
+            )
+
+    def enabled(self: Self) -> bool:
+        return self.sequence_token is not None
+
+    def _send(self: Self, batch: list[WorkflowEvent]) -> dict[str, Any]:
+        # build log events
+        params = {
+            "logGroupName": self.log_group_name,
+            "logStreamName": self.log_stream_name,
+            "logEvents": self.prepare_batch(batch),
+            "sequenceToken": self.sequence_token,
+        }
+        try:
+            response = self.logs_client.put_log_events(**params)
+            self.sequence_token = response["nextSequenceToken"]
+            return response
+        except self.logs_client.exceptions.InvalidSequenceTokenException as e:
+            self.sequence_token = e.response["expectedSequenceToken"]
+            # Retry once
+            response = self.logs_client.put_log_events(**params)
+            self.sequence_token = response["nextSequenceToken"]
+            return response
+
+    def add(self: Self, event: WorkflowEvent) -> None:
+        if self.enabled():
+            super().add(event)
+
+    def build_log_event(
+        self: Self,
+        event: WorkflowEvent,
+        timestamp: int,
+    ) -> dict[str, Any]:
+        if match := PAYLOAD_ID_REGEX.match(event.payload_id):
+            workflow = match.group("workflow")
+            source = match.group("collections")
+        else:
+            workflow = "unknown"
+            source = "unknown"
+
+        message = {
+            "event": event,
+            "workflow": workflow,
+            "source": source,
+            "execution_arn": event.execution_arn,
+        }
+        return {
+            "timestamp": timestamp,
+            "message": json.dumps(message),
+        }
+
+    def prepare_batch(self: Self, batch: list[WorkflowEvent]) -> list[dict[str, Any]]:
+        timestamp = int(time() * 1000)
+        return [
+            self.build_log_event(event, timestamp + i) for i, event in enumerate(batch)
+        ]
+
+    def retrieve_metric_statistics(
+        self: Self,
+        start_time: datetime,
+        end_time: datetime,
+        period: int = 300,
+        statistics: list[str] | None = None,
+        dimensions: list[dict[str, str]] | None = None,
+    ) -> dict[str, Any] | None:
+        if not self.enabled():
+            return None
+        if statistics is None:
+            statistics = ["SampleCount", "Average", "Sum", "Minimum", "Maximum"]
+        if dimensions is None:
+            dimensions = []
+
+        return self.cw_client.get_metric_statistics(
+            Namespace="log-cannon-metric-namespace",
+            MetricName=self.metric_name,
+            Dimensions=dimensions,
+            StartTime=start_time,
+            EndTime=end_time,
+            Period=period,
+            Statistics=statistics,
+        )
