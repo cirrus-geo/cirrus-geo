@@ -5,13 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased]
 
 ### Fixed
 
 - The update state lambda was not correctly parsing the error and cause from the Step
   Functions event. This caused the lambda to fail on certain errors, leaving payloads
   with incorrect states in the state database. ([#326])
+- Modified the `WFEventType` for succefully executed cirrus workflows.  It was
+  using "SUCCEEDED" as the string value, when for alignment with the values
+  used by the `StateDB`, it should be "COMPLETED". ([#328])
 
 ## [v1.0.2] -- 2025-08-26
 
