@@ -56,7 +56,7 @@ class WorkflowEvent:
         attrs = {
             "event_type": {
                 "DataType": "String",
-                "StringValue": self.event_type,
+                "StringValue": str(self.event_type),
             },
         }
 
@@ -124,15 +124,15 @@ class WorkflowEventManager:
     @classmethod
     def with_wfem(cls: type[Self], *wfem_args, **wfem_kwargs):
         """
-        Decorator to inject WorkflowEvenManager (as `wfem`) into a function call, and
+        Decorator to inject WorkflowEventManager (as `wfem`) into a function call, and
         flush upon exit.
 
         Args:
-           See `help(WorkflowEvenManager.__init__)`
+           See `help(WorkflowEventManager.__init__)`
 
         Returns:
-           A function which runs the wrapped function in a WorkflowEvenManager context,
-           and passes in the WorkflowEvenManager instance to be used within the the
+           A function which runs the wrapped function in a WorkflowEventManager context,
+           and passes in the WorkflowEventManager instance to be used within the the
            function
         """
 
@@ -153,10 +153,8 @@ class WorkflowEventManager:
         Args:
             event (WorkflowEvent):
         """
-        if self.event_publisher is None:
-            return
-
-        self.event_publisher.add(event.to_message())
+        if self.event_publisher:
+            self.event_publisher.add(event.to_message())
 
     def claim_processing(
         self: Self,
@@ -215,8 +213,14 @@ class WorkflowEventManager:
         payload_id: str,
         state: StateEnum,
         payload_url: str | None = None,
-        message: str | None = "",
+        message: str = "",
     ):
+        state2event = {
+            StateEnum.INVALID: WFEventType.ALREADY_INVALID,
+            StateEnum.PROCESSING: WFEventType.ALREADY_PROCESSING,
+            StateEnum.CLAIMED: WFEventType.ALREADY_CLAIMED,
+            StateEnum.COMPLETED: WFEventType.ALREADY_COMPLETED,
+        }
         self.logger.info(
             "Skipping %s already in %s state%s.",
             payload_id,
@@ -225,7 +229,7 @@ class WorkflowEventManager:
         )
         self.announce(
             WorkflowEvent(
-                event_type=WFEventType(f"ALREADY_{state}"),
+                event_type=state2event[state],
                 payload_id=payload_id,
                 isotimestamp=datetime.now(UTC).isoformat(),
                 payload_url=payload_url,
@@ -458,29 +462,26 @@ class WorkflowMetrics(BatchHandler[WorkflowEvent]):
         return self.sequence_token is not None
 
     def _send(self: Self, batch: list[WorkflowEvent]) -> dict[str, Any]:
-        # Send log events
-        kwargs = {
+        # build log events
+        params = {
             "logGroupName": self.log_group_name,
             "logStreamName": self.log_stream_name,
             "logEvents": self.prepare_batch(batch),
             "sequenceToken": self.sequence_token,
         }
-
-        response = self.logs_client.put_log_events(**kwargs)
-        self.sequence_token = response["nextSequenceToken"]
-        return response
+        try:
+            response = self.logs_client.put_log_events(**params)
+            self.sequence_token = response["nextSequenceToken"]
+            return response
+        except self.logs_client.exceptions.InvalidSequenceTokenException as e:
+            self.sequence_token = e.response["expectedSequenceToken"]
+            # Retry once
+            response = self.logs_client.put_log_events(**params)
+            self.sequence_token = response["nextSequenceToken"]
+            return response
 
     def add(self: Self, event: WorkflowEvent) -> None:
-        if not self.enabled():
-            return
-        if event.event_type in {
-            WFEventType.STARTED_PROCESSING,
-            WFEventType.COMPLETED,
-            WFEventType.FAILED,
-            WFEventType.ABORTED,
-            WFEventType.INVALID,
-            WFEventType.TIMED_OUT,
-        }:
+        if self.enabled():
             super().add(event)
 
     def build_log_event(
@@ -488,22 +489,17 @@ class WorkflowMetrics(BatchHandler[WorkflowEvent]):
         event: WorkflowEvent,
         timestamp: int,
     ) -> dict[str, Any]:
-        state = (
-            event.event_type
-            if event.event_type != WFEventType.STARTED_PROCESSING
-            else "PROCESSING"
-        )
         if match := PAYLOAD_ID_REGEX.match(event.payload_id):
             workflow = match.group("workflow")
-            feeder = match.group("collections")
+            source = match.group("collections")
         else:
             workflow = "unknown"
-            feeder = "unknown"
+            source = "unknown"
 
         message = {
-            "state": state,
+            "event": event,
             "workflow": workflow,
-            "feeder": feeder,
+            "source": source,
             "execution_arn": event.execution_arn,
         }
         return {
