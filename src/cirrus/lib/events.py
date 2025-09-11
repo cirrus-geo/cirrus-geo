@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -419,7 +420,6 @@ class WorkflowMetrics(BatchHandler[WorkflowEvent]):
         self: Self,
         logger: Logger | None = None,
         log_group_name: str | None = None,
-        log_stream_name: str | None = None,
         metric_name: str | None = None,
         batch_size: int = 10,
     ):
@@ -430,27 +430,35 @@ class WorkflowMetrics(BatchHandler[WorkflowEvent]):
             if log_group_name is not None
             else os.getenv("CIRRUS_WORKFLOW_LOG_GROUP", "")
         )
-        self.log_stream_name = (
-            log_stream_name
-            if log_stream_name is not None
-            else os.getenv("CIRRUS_WORKFLOW_LOG_STREAM", "")
-        )
         self.metric_name = (
             metric_name
             if metric_name is not None
             else os.getenv("CIRRUS_WORKFLOW_METRIC_NAME", "")
         )
         self.sequence_token = None
-        if self.log_group_name and self.log_stream_name and self.metric_name:
+
+        if self.log_group_name and self.metric_name:
             self.logs_client = get_client("logs")
             self.cw_client = get_client("cloudwatch")
+            # Generate a UUID-based log stream name
+            self.log_stream_name = f"workflow-{uuid.uuid4()}"
+            # Create log stream if it does not exist
+            try:
+                self.logs_client.create_log_stream(
+                    logGroupName=self.log_group_name,
+                    logStreamName=self.log_stream_name,
+                )
+                self.logger.info("Created new log stream: %s", self.log_stream_name)
+            except self.logs_client.exceptions.ResourceAlreadyExistsException:
+                self.logger.info("Log stream already exists: %s", self.log_stream_name)
+            # Retrieve sequence token
             response = self.logs_client.describe_log_streams(
                 logGroupName=self.log_group_name,
-                logStreamNamePrefix=log_stream_name,
+                logStreamNamePrefix=self.log_stream_name,
             )
             log_streams = response["logStreams"]
             if not log_streams:
-                raise Exception("Log stream not found.")
+                raise Exception("Log stream not found after creation.")
             self.sequence_token = log_streams[0].get("uploadSequenceToken")
         else:
             self.logger.info(
