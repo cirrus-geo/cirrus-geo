@@ -8,7 +8,7 @@ import pytest
 from cirrus.lambda_functions.update_state import get_execution_error
 from cirrus.lambda_functions.update_state import lambda_handler as update_state
 from cirrus.lib.enums import SfnStatus
-from cirrus.lib.events import WorkflowEvent
+from cirrus.lib.events import WFEventType, WorkflowEvent
 from moto.core.models import DEFAULT_ACCOUNT_ID
 from moto.sns.models import sns_backends
 
@@ -97,9 +97,13 @@ def test_workflow_event_notification(
     if wf_event_enabled:
         wfevent = WorkflowEvent.from_message_str(all_sent_notifications[0][1])
         # This works because update-state WFEventTypes happen to
-        # have the same value as the associated SfnStatus.  If this changes, a
-        # SfnStatus_to_WFEventType mapping would be needed.
-        assert wfevent.event_type == sfn_state
+        # have the same value as the associated SfnStatus, except for
+        # SUCCEEDED:COMPLETED.  If this changes, a SfnStatus_to_WFEventType mapping
+        # would be needed.
+        expected_event_string = (
+            sfn_state if sfn_state != SfnStatus.SUCCEEDED else WFEventType.COMPLETED
+        )
+        assert wfevent.event_type == expected_event_string
         assert wfevent.payload_id == EVENT_PAYLOAD_ID
         if sfn_state == SfnStatus.FAILED:
             assert wfevent.error is not None

@@ -323,7 +323,7 @@ class WorkflowEventManager:
         )
         self.announce(
             WorkflowEvent(
-                event_type=WFEventType.SUCCEEDED,
+                event_type=WFEventType.COMPLETED,
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
                 payload_url=payload_url,
