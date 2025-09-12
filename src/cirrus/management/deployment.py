@@ -5,7 +5,7 @@ import logging
 import os
 
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from subprocess import check_call
 from time import sleep, time
@@ -319,7 +319,7 @@ class Deployment:
         self,
         collections_workflow: str,
         limit: int | None,
-        query_args: dict[str, str | None],
+        query_args: dict[str, Any],
         rerun: bool,
     ) -> Iterator[dict]:
         statedb = StateDB(table_name=self.environment["CIRRUS_STATE_DB"])
@@ -360,7 +360,7 @@ class Deployment:
         self,
         collections: str,
         workflow_name: str,
-        since: str | None = None,
+        since: timedelta | None = None,
         limit: int = 10000,
     ) -> dict[str, Any]:
         "Get item counts by state for a collections/workflow from DynamoDB"
@@ -409,7 +409,7 @@ class Deployment:
         collections: str,
         workflow_name: str,
         state: str | None = None,
-        since: str | None = None,
+        since: timedelta | None = None,
         limit: int = 10,
         nextkey: str | None = None,
         sort_ascending: bool = False,

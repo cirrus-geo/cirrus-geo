@@ -2,6 +2,7 @@ import json
 import logging
 import sys
 
+from datetime import timedelta
 from subprocess import CalledProcessError
 
 import click
@@ -297,7 +298,7 @@ def get_payloads(
     deployment: Deployment,
     collections_workflow: str,
     state: str | None,
-    since: str | None,
+    since: timedelta | None,
     error_prefix: str | None,
     limit: int | None,
     rerun: bool = False,
@@ -341,7 +342,7 @@ def get_workflow_summary(
     deployment: Deployment,
     collections: str,
     workflow_name: str,
-    since: str | None,
+    since: timedelta | None,
     limit: int,
 ):
     """Get item counts by state for a collections/workflow from DynamoDB"""
@@ -405,7 +406,7 @@ def get_workflow_items(
     collections: str,
     workflow_name: str,
     state: str | None,
-    since: str | None,
+    since: timedelta | None,
     limit: int,
     nextkey: str | None,
     sort_ascending: bool,

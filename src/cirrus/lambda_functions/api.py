@@ -12,6 +12,7 @@ from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, daily, hourly
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.statedb import StateDB, to_current
+from cirrus.lib.utils import parse_since
 
 logger = get_task_logger("function.api", payload=())
 
@@ -131,7 +132,8 @@ def lambda_handler(event, _context):
     )
     logger.info("Query Parameters: %s", qparams)
     state = qparams.get("state", None)
-    since = qparams.get("since", None)
+    since_str = qparams.get("since", None)
+    since = parse_since(since_str) if since_str else None
     nextkey = qparams.get("nextkey", None)
     limit = int(qparams.get("limit", 100000))
     sort_ascending = bool(int(qparams.get("sort_ascending", 0)))
@@ -176,7 +178,7 @@ def lambda_handler(event, _context):
             "Getting items for %s, state=%s, since=%s",
             key["collections_workflow"],
             state,
-            since,
+            since_str,
         )
         items = statedb.get_items_page(
             key["collections_workflow"],

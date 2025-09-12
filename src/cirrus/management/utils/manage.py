@@ -1,6 +1,6 @@
 import logging
-import re
 
+from datetime import timedelta
 from functools import wraps
 
 import click
@@ -11,6 +11,7 @@ from click_option_group import (
 )
 
 from cirrus.lib.enums import StateEnum
+from cirrus.lib.utils import parse_since
 from cirrus.management.deployment import Deployment
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,8 @@ logger = logging.getLogger(__name__)
 class SinceType(click.ParamType):
     """Custom Click type for --since option.
 
-    Validates that the input is an integer followed by a unit letter:
+    Validates that the input is an integer followed by a unit letter and
+    converts it to a timedelta:
     - 'd' for days
     - 'h' for hours
     - 'm' for minutes
@@ -29,37 +31,15 @@ class SinceType(click.ParamType):
 
     name = "since"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value, param, ctx) -> timedelta | None:
         if value is None:
             return value
 
-        # Check format: integer followed by unit letter
-        if not re.match(r"^\d+[dhm]$", value):
-            self.fail(
-                f"'{value}' is not a valid since format. "
-                f"Expected format: integer followed by 'd' (days), "
-                f"'h' (hours), or 'm' (minutes). "
-                f"Examples: '7d', '24h', '30m'",
-                param,
-                ctx,
-            )
-
+        # Use shared parsing function which includes all validation
         try:
-            num = int(value[:-1])
-            if num <= 0:
-                self.fail(
-                    f"'{value}' must have a positive integer. Got: {num}",
-                    param,
-                    ctx,
-                )
-        except ValueError:
-            self.fail(
-                f"'{value}' does not contain a valid integer",
-                param,
-                ctx,
-            )
-
-        return value
+            return parse_since(value)
+        except ValueError as e:
+            self.fail(str(e), param, ctx)
 
 
 SINCE = SinceType()

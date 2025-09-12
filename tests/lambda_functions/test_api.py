@@ -4,6 +4,7 @@ import pytest
 
 from cirrus.lambda_functions import api
 from cirrus.lib.errors import EventsDisabledError
+from cirrus.lib.utils import parse_since
 
 
 def test_empty_event():
@@ -119,7 +120,7 @@ def test_api_collection_summary(statedb):
     )
     result = api.summary(
         "test-collection_test-workflow",
-        "1d",
+        parse_since("1d"),
         10,
         statedb=statedb,
     )
