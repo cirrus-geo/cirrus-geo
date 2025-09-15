@@ -34,8 +34,6 @@ class SinceType(click.ParamType):
     def convert(self, value, param, ctx) -> timedelta | None:
         if value is None:
             return value
-
-        # Use shared parsing function which includes all validation
         try:
             return parse_since(value)
         except ValueError as e:

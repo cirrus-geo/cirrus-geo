@@ -41,24 +41,18 @@ def parse_since(since: str) -> timedelta:
     match = SINCE_FORMAT_REGEX.match(since)
     if not match:
         raise ValueError(
-            f"'{since}' is not a valid since format. "
+            f"'{since}' is not a valid 'since' format. "
             f"Expected format: integer followed by 'd' (days), "
             f"'h' (hours), or 'm' (minutes). "
             f"Examples: '7d', '24h', '30m'",
         )
 
-    num_str, unit = match.groups()
-    num = int(num_str)
-    if num == 0:
-        raise ValueError(
-            f"'{since}' must have a positive integer. Got: {num}",
-        )
+    num, unit = match.groups()
 
-    if unit == "d":
-        return timedelta(days=num)
-    if unit == "h":
-        return timedelta(hours=num)
-    return timedelta(minutes=num)
+    days = int(num) if unit == "d" else 0
+    hours = int(num) if unit == "h" else 0
+    minutes = int(num) if unit == "m" else 0
+    return timedelta(days=days, hours=hours, minutes=minutes)
 
 
 def execution_url(execution_arn: str, region: str | None = None) -> str:
