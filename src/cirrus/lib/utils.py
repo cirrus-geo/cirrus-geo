@@ -73,6 +73,8 @@ def cold_start(
         "stepfunctions",
         "timestream-query",
         "timestream-write",
+        "logs",
+        "cloudwatch",
     ),
     resources=("dynamodb", "sqs"),
 ):
