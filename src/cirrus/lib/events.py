@@ -2,13 +2,16 @@ import json
 import os
 import uuid
 
+from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from functools import wraps
 from logging import Logger, getLogger
 from time import time
 from typing import Any, Self
+
+from botocore.exceptions import ParamValidationError
 
 from .enums import StateEnum, WFEventType
 from .eventdb import EventDB
@@ -20,6 +23,7 @@ from .utils import (
     SNSPublisher,
     execution_url,
     get_client,
+    parse_since,
 )
 
 
@@ -52,6 +56,21 @@ class WorkflowEvent:
             body=self.serialize(),
             attributes=self.sns_attributes(),
         )
+
+    def log_metric_format(self: Self) -> dict[str, Any]:
+        if match := PAYLOAD_ID_REGEX.match(self.payload_id):
+            workflow = match.group("workflow")
+            source = match.group("collections")
+        else:
+            workflow = "could not parse"
+            source = str(self.payload_id)
+
+        return {
+            "event": self.event_type,
+            "workflow": workflow,
+            "source": source,
+            "execution_arn": self.execution_arn,
+        }
 
     def sns_attributes(self: Self) -> dict[str, dict[str, str]]:
         attrs = {
@@ -412,36 +431,31 @@ class WorkflowEventManager:
             self.eventdb.write_timeseries_record(key, state, event_time, execution_arn)
 
 
-class WorkflowMetrics(BatchHandler[WorkflowEvent]):
+class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
     """A class for surfacing workflow state changes to Cloudwatch
-    Logs, and retrieving metrics from Cloudwatch Metrics."""
+    Logs, and retrieving metrics from Cloudwatch Metrics.
+
+    This defaults to a batch_size of 1, to make all logs immediate."""
 
     def __init__(
         self: Self,
         logger: Logger | None = None,
-        log_group_name: str | None = None,
-        metric_name: str | None = None,
-        batch_size: int = 10,
+        log_group_name: str = "",
+        batch_size: int = 1,
     ):
         super().__init__(batchable=self._send, batch_size=batch_size)
         self.logger = logger if logger is not None else getLogger(__name__)
         self.log_group_name = (
             log_group_name
-            if log_group_name is not None
+            if len(log_group_name) > 0
             else os.getenv("CIRRUS_WORKFLOW_LOG_GROUP", "")
-        )
-        self.metric_name = (
-            metric_name
-            if metric_name is not None
-            else os.getenv("CIRRUS_WORKFLOW_METRIC_NAME", "")
         )
         self.sequence_token = None
 
-        if self.log_group_name and self.metric_name:
+        if self.log_group_name != "":
             self.logs_client = get_client("logs")
-            self.cw_client = get_client("cloudwatch")
             # Generate a UUID-based log stream name
-            self.log_stream_name = f"workflow-{uuid.uuid4()}"
+            self.log_stream_name = f"workflow-metrics-{uuid.uuid4()}"
             # Create log stream if it does not exist
             try:
                 self.logs_client.create_log_stream(
@@ -456,18 +470,20 @@ class WorkflowMetrics(BatchHandler[WorkflowEvent]):
                 logGroupName=self.log_group_name,
                 logStreamNamePrefix=self.log_stream_name,
             )
-            log_streams = response["logStreams"]
-            if not log_streams:
-                raise Exception("Log stream not found after creation.")
-            self.sequence_token = log_streams[0].get("uploadSequenceToken")
+            self.log_stream = (
+                response["logStreams"][0] if len(response["logStreams"]) > 0 else None
+            )
+            if self.log_stream is None:
+                raise Exception("Log stream not found after attempted creation.")
+
         else:
             self.logger.info(
-                "Workflow metrics not configured, "
-                "workflow state change metrics will not be recorded",
+                "WorkflowMetricLogger not configured, "
+                "workflow state changes will not be logged",
             )
 
     def enabled(self: Self) -> bool:
-        return self.sequence_token is not None
+        return bool(self.log_group_name) and self.log_stream is not None
 
     def _send(self: Self, batch: list[WorkflowEvent]) -> dict[str, Any]:
         # build log events
@@ -475,13 +491,15 @@ class WorkflowMetrics(BatchHandler[WorkflowEvent]):
             "logGroupName": self.log_group_name,
             "logStreamName": self.log_stream_name,
             "logEvents": self.prepare_batch(batch),
-            "sequenceToken": self.sequence_token,
         }
+        if self.sequence_token is not None:
+            params["sequenceToken"] = self.sequence_token
+
         try:
             response = self.logs_client.put_log_events(**params)
             self.sequence_token = response["nextSequenceToken"]
             return response
-        except self.logs_client.exceptions.InvalidSequenceTokenException as e:
+        except ParamValidationError as e:
             self.sequence_token = e.response["expectedSequenceToken"]
             # Retry once
             response = self.logs_client.put_log_events(**params)
@@ -492,56 +510,217 @@ class WorkflowMetrics(BatchHandler[WorkflowEvent]):
         if self.enabled():
             super().add(event)
 
-    def build_log_event(
-        self: Self,
-        event: WorkflowEvent,
-        timestamp: int,
-    ) -> dict[str, Any]:
-        if match := PAYLOAD_ID_REGEX.match(event.payload_id):
-            workflow = match.group("workflow")
-            source = match.group("collections")
-        else:
-            workflow = "unknown"
-            source = "unknown"
-
-        message = {
-            "event": event,
-            "workflow": workflow,
-            "source": source,
-            "execution_arn": event.execution_arn,
-        }
-        return {
-            "timestamp": timestamp,
-            "message": json.dumps(message),
-        }
-
     def prepare_batch(self: Self, batch: list[WorkflowEvent]) -> list[dict[str, Any]]:
         timestamp = int(time() * 1000)
+
         return [
-            self.build_log_event(event, timestamp + i) for i, event in enumerate(batch)
+            {
+                "message": json.dumps(event.log_metric_format()),
+                "timestamp": timestamp + i,
+            }
+            for i, event in enumerate(batch)
         ]
 
-    def retrieve_metric_statistics(
-        self: Self,
+
+class WorkflowMetricReader:
+    """
+    A class for retrieving workflow metrics from CloudWatch.
+    """
+
+    _agg_statistic = "SampleCount"
+
+    def __init__(
+        self,
+        logger: Logger | None = None,
+        metric_namespace: str = "",
+        log_group_name: str = "",
+    ):
+        """
+
+        Args:
+           logger (Logger | None): Logger instance to use. If None is provided, the
+                default logger is used.
+            metric_namespace (str): Namespace of the CloudWatch metric.
+                If "", then use the CIRRUS_WORKFLOW_METRIC_NAMESPACE from environment.
+
+            log_group_name (str): Log Group associated with the CloudWatch metrics.
+                If "", then use the CIRRUS_WORKFLOW_METRIC_NAMESPACE from environment.
+        """
+
+        self.cw_client = get_client("cloudwatch")
+        self.logger = logger if logger is not None else getLogger(__name__)
+        self.metric_namespace = (
+            metric_namespace
+            if metric_namespace != ""
+            else os.getenv(
+                "CIRRUS_WORKFLOW_METRIC_NAMESPACE",
+                "",
+            )
+        )
+        self.log_group_name = (
+            log_group_name
+            if log_group_name != ""
+            else os.getenv("CIRRUS_WORKFLOW_LOG_GROUP", "")
+        )
+        self._enabled = metric_namespace is not None or self.metric_namespace != ""
+        self.metric_some_workflows = "a_workflow_by_event"
+        self.metric_all_workflows = "all_workflows_by_event"
+        if self._enabled:
+            resp = get_client("logs").describe_metric_filters(
+                logGroupName=self.log_group_name,
+            )
+            list_of_metrics = resp.get("metricFilters", [])
+            self._metrics = {metric["filterName"] for metric in list_of_metrics}
+            if self.metric_some_workflows not in self._metrics or (
+                self.metric_all_workflows not in self._metrics
+            ):
+                raise ValueError(
+                    f"No metrics found in namespace {self.metric_namespace}",
+                )
+
+    def enabled(self) -> bool:
+        return self._enabled
+
+    def aggregated_for_specified_workflows(
+        self,
+        workflows: list[str],
         start_time: datetime,
         end_time: datetime,
-        period: int = 300,
+        period: int = 3600,
+        event_types: list[WFEventType] | None = None,
         statistics: list[str] | None = None,
-        dimensions: list[dict[str, str]] | None = None,
-    ) -> dict[str, Any] | None:
-        if not self.enabled():
-            return None
-        if statistics is None:
-            statistics = ["SampleCount", "Average", "Sum", "Minimum", "Maximum"]
-        if dimensions is None:
-            dimensions = []
+    ) -> dict[datetime, dict[str, dict[str, float]]]:
+        """
+        Retrieve metric statistics from CloudWatch.
 
-        return self.cw_client.get_metric_statistics(
-            Namespace="log-cannon-metric-namespace",
-            MetricName=self.metric_name,
-            Dimensions=dimensions,
-            StartTime=start_time,
-            EndTime=end_time,
-            Period=period,
-            Statistics=statistics,
+        Args:
+            event_types (list[WFEventType]): List of workflow event types to filter.
+            workflows (list[str]): List of workflow names to filter.
+            start_time (datetime): Start of the time window.
+            end_time (datetime): End of the time window.
+            period (int): Granularity in seconds.
+            statistics (list[str]): List of statistics to retrieve.
+
+        Returns:
+            dict[str, Any] | None: Dictionary of metric statistics found, or None if
+            retrieval failed.
+        """
+        if statistics is None:
+            statistics = [WorkflowMetricReader._agg_statistic]
+        if event_types is None:
+            event_types = list(WFEventType)
+        cstats: dict[datetime, dict[str, dict[str, float]]] = defaultdict(
+            lambda: defaultdict(lambda: dict.fromkeys(statistics, 0.0)),
+        )
+
+        for workflow in workflows:
+            for event_type in event_types:
+                resp = self.cw_client.get_metric_statistics(
+                    Namespace=self.metric_namespace,
+                    MetricName=self.metric_some_workflows,
+                    Dimensions=[
+                        {"Name": "event", "Value": str(event_type)},
+                        {"Name": "workflow", "Value": workflow},
+                    ],
+                    StartTime=start_time,
+                    EndTime=end_time,
+                    Period=period,
+                    Statistics=statistics,
+                )
+                for datapoint in resp["Datapoints"]:
+                    tstamp = datapoint["Timestamp"].replace(second=0, microsecond=0)
+                    for statistic in statistics:
+                        stat = datapoint[statistic]
+                        cstats[tstamp][str(event_type)][statistic] += stat
+        # TODO: break this out by workflow, maybe
+        return {k: dict(v) for k, v in cstats.items()}
+
+    def aggregated_by_event_type(
+        self,
+        start_time: datetime,
+        end_time: datetime,
+        period: int = 3600,
+        event_types: list[WFEventType] | None = None,
+        statistics: list[str] | None = None,
+    ) -> dict[datetime, dict[str, dict[str, float]]]:
+        """
+        Retrieve metric statistics from CloudWatch.
+
+        Args:
+            event_types (list[WFEventType]): List of workflow event types to filter.
+            start_time (datetime): Start of the time window.
+            end_time (datetime): End of the time window.
+            period (int): Granularity in seconds.
+            statistics (list[str]): List of statistics to retrieve.
+
+        Returns:
+            dict[str, Any] | None: Dictionary of metric statistics found, or None if
+            retrieval failed.
+        """
+        if statistics is None:
+            statistics = [WorkflowMetricReader._agg_statistic]
+        if event_types is None:
+            event_types = list(WFEventType)
+        cstats: dict[datetime, dict[str, dict[str, float]]] = defaultdict(
+            lambda: defaultdict(lambda: dict.fromkeys(statistics, 0.0)),
+        )
+        for event_type in event_types:
+            resp = self.cw_client.get_metric_statistics(
+                Namespace=self.metric_namespace,
+                MetricName=self.metric_all_workflows,
+                Dimensions=[
+                    {"Name": "event", "Value": str(event_type)},
+                ],
+                StartTime=start_time,
+                EndTime=end_time,
+                Period=period,
+                Statistics=statistics,
+            )
+            for datapoint in resp["Datapoints"]:
+                tstamp = datapoint["Timestamp"].replace(second=0, microsecond=0)
+                for statistic in statistics:
+                    stat = datapoint[statistic]
+                    cstats[tstamp][str(event_type)][statistic] += stat
+
+        return {k: dict(v) for k, v in cstats.items()}
+
+    def query_hour(
+        self,
+        start: int,
+        end: int,
+    ) -> dict[datetime, dict[str, dict[str, float]]]:
+        """
+        Query CloudWatch metrics for a specific hour range.
+        """
+
+        end_time = datetime.now(UTC) - timedelta(hours=end)
+        start_time = datetime.now(UTC) - timedelta(hours=start)
+        return self.aggregated_by_event_type(
+            event_types=[WFEventType.SUCCEEDED, WFEventType.FAILED],
+            start_time=start_time,
+            end_time=end_time,
+            period=3600,
+        )
+
+    def query_by_bin_and_duration(
+        self,
+        bin_size: str,
+        duration: str,
+    ) -> dict[datetime, dict[str, dict[str, float]]]:
+        """
+        Query CloudWatch metrics for a given bin size and duration.
+        bin_size: e.g. '1d', '1h'
+        duration: e.g. '30d', '7d'
+        """
+        delta = parse_since(duration)
+
+        end_time = datetime.now(UTC)
+        start_time = end_time - delta
+
+        period = int(parse_since(bin_size).total_seconds())
+
+        return self.aggregated_by_event_type(
+            start_time=start_time,
+            end_time=end_time,
+            period=period,
         )
