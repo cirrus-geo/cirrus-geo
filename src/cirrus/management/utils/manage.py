@@ -1,5 +1,6 @@
 import logging
 
+from datetime import timedelta
 from functools import wraps
 
 import click
@@ -10,9 +11,36 @@ from click_option_group import (
 )
 
 from cirrus.lib.enums import StateEnum
+from cirrus.lib.utils import parse_since
 from cirrus.management.deployment import Deployment
 
 logger = logging.getLogger(__name__)
+
+
+class SinceType(click.ParamType):
+    """Custom Click type for --since option.
+
+    Validates that the input is an integer followed by a unit letter and
+    converts it to a timedelta:
+    - 'd' for days
+    - 'h' for hours
+    - 'm' for minutes
+
+    Examples: '7d', '24h', '30m'
+    """
+
+    name = "since"
+
+    def convert(self, value, param, ctx) -> timedelta | None:
+        if value is None:
+            return value
+        try:
+            return parse_since(value)
+        except ValueError as e:
+            self.fail(str(e), param, ctx)
+
+
+SINCE = SinceType()
 
 
 def _get_execution(deployment: Deployment, arn=None, payload_id=None):
@@ -36,7 +64,11 @@ def query_filters(func):
     )(func)
     func = optgroup.option(
         "--since",
-        help="Time filter. Integer followed by a unit letter (d=days, h=hours, m=minutes), e.g., '10 d'",  # noqa: E501
+        help=(
+            "Time filter. Integer followed by a unit letter "
+            "(d=days, h=hours, m=minutes), e.g., '7d', '24h', '30m'"
+        ),
+        type=SINCE,
     )(func)
     func = optgroup.option(
         "--limit",

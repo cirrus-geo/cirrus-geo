@@ -3,6 +3,7 @@ import logging
 import re
 
 from collections.abc import Callable
+from datetime import timedelta
 from functools import cache
 from os import getenv
 from typing import Any, Generic, Protocol, Self, TypeVar
@@ -23,6 +24,35 @@ QUEUE_ARN_REGEX = re.compile(
 PAYLOAD_ID_REGEX = re.compile(
     r"(?P<collections>.+)/workflow-(?P<workflow>[^/]+)/(?P<itemids>.+)",
 )
+
+SINCE_FORMAT_REGEX = re.compile(r"^(\d+)([dhm])$")
+
+
+def parse_since(since: str) -> timedelta:
+    """Convert a since string to a timedelta.
+
+    Args:
+        since (str): Contains an integer followed by a unit letter:
+            'd' for days, 'h' for hours, 'm' for minutes.
+
+    Returns:
+        timedelta object
+    """
+    match = SINCE_FORMAT_REGEX.match(since)
+    if not match:
+        raise ValueError(
+            f"'{since}' is not a valid 'since' format. "
+            f"Expected format: integer followed by 'd' (days), "
+            f"'h' (hours), or 'm' (minutes). "
+            f"Examples: '7d', '24h', '30m'",
+        )
+
+    num, unit = match.groups()
+
+    days = int(num) if unit == "d" else 0
+    hours = int(num) if unit == "h" else 0
+    minutes = int(num) if unit == "m" else 0
+    return timedelta(days=days, hours=hours, minutes=minutes)
 
 
 def execution_url(execution_arn: str, region: str | None = None) -> str:

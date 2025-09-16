@@ -1,7 +1,7 @@
 import os
 
 from copy import deepcopy
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -64,15 +64,6 @@ def test_dbitem_to_item():
     assert item["state"] == "QUEUED"
 
 
-def test_since_to_timedelta():
-    td = StateDB.since_to_timedelta("1d")
-    assert td.days == 1
-    td = StateDB.since_to_timedelta("1h")
-    assert td.seconds == 3600
-    td = StateDB.since_to_timedelta("10m")
-    assert td.seconds == 600
-
-
 @pytest.fixture()
 def state_table(statedb: StateDB):
     statedb.limit = RECORD_LIMIT
@@ -110,7 +101,7 @@ def test_get_items(state_table: StateDB):
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
-        since="1h",
+        since=timedelta(hours=1),
     )
     assert len(items) == 1
 
@@ -122,7 +113,7 @@ def test_get_items_bulk(state_table: StateDB):
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
-        since="1h",
+        since=timedelta(hours=1),
     )
     assert len(items) == _count + 1
 
@@ -131,7 +122,7 @@ def test_get_items_limit_1(state_table: StateDB):
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
-        since="1h",
+        since=timedelta(hours=1),
         limit=1,
     )
     assert len(items) == 1
@@ -144,7 +135,7 @@ def test_get_items_limit_1_bulk(state_table: StateDB):
     items = state_table.get_items(
         test_dbitem["collections_workflow"],
         state="PROCESSING",
-        since="1h",
+        since=timedelta(hours=1),
         limit=1,
     )
     assert len(items) == 1
@@ -242,7 +233,10 @@ def test_get_counts(state_table: StateDB):
             assert count == _count + 1
         else:
             assert count == 1
-    count = state_table.get_counts(test_dbitem["collections_workflow"], since="1h")
+    count = state_table.get_counts(
+        test_dbitem["collections_workflow"],
+        since=timedelta(hours=1),
+    )
 
 
 def test_get_counts_error(state_table: StateDB):
@@ -281,7 +275,7 @@ def test_get_counts_since_limit_under(state_table: StateDB):
     create_items_bulk(_count, state_table.set_failed, msg="failed")
     count = state_table.get_counts(
         test_dbitem["collections_workflow"],
-        since="1h",
+        since=timedelta(hours=1),
         limit=30,
     )
     assert count == _count + len(STATES)
@@ -292,7 +286,7 @@ def test_get_counts_since(state_table: StateDB):
     create_items_bulk(_count, state_table.set_failed, msg="failed")
     count = state_table.get_counts(
         test_dbitem["collections_workflow"],
-        since="1h",
+        since=timedelta(hours=1),
     )
     assert count == _count + len(STATES)
 
@@ -302,7 +296,7 @@ def test_get_counts_since_state(state_table: StateDB):
     create_items_bulk(_count, state_table.set_failed, msg="failed")
     count = state_table.get_counts(
         test_dbitem["collections_workflow"],
-        since="1h",
+        since=timedelta(hours=1),
         state="FAILED",
     )
     assert count == _count + 1

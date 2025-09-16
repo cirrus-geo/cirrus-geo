@@ -10,6 +10,7 @@ def verbosity(**kwargs):
     def _set_level(ctx, self, count):
         level = DEFAULT_LEVEL - count * 10
         logging.getLogger().setLevel(level)
+        logging.getLogger("cirrus.lib").setLevel(level)
 
     def wrapper(func):
         return click.option(

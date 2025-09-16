@@ -25,6 +25,13 @@ def get_state_db():
     return os.getenv("CIRRUS_STATE_DB")
 
 
+def to_current(item: dict[str, Any]) -> dict[str, Any]:
+    """Compatiblity function for cirrus-dashboard"""
+    item["catid"] = item["payload_id"]
+    item["catalog"] = item["payload"]
+    return item
+
+
 class ValidStateChange:
     """Handle pre- and post- tasks which are common to all state-change functions in a
     wrapper.
@@ -592,7 +599,7 @@ class StateDB:
         self,
         collections_workflow: str,
         state: str | None = None,
-        since: str | None = None,
+        since: timedelta | None = None,
         select: str = "ALL_ATTRIBUTES",
         sort_ascending: bool = False,
         sort_index: str = "updated",
@@ -605,7 +612,7 @@ class StateDB:
             collections_workflow (str): The complete has to query
             state (Optional[str], optional): State of Items to get. Defaults to None.
                 Valid values: PROCESSING, COMPLETED, FAILED, INVALID, ABORTED.
-            since (Optional[str], optional): Get Items since this amount of time
+            since (Optional[timedelta], optional): Get Items since this amount of time
                 in the past. Defaults to None.
             select (str, optional): DynamoDB Select statement (ALL_ATTRIBUTES, COUNT).
                 Defaults to 'ALL_ATTRIBUTES'.
@@ -631,7 +638,7 @@ class StateDB:
         # always use the hash of the table which is same in all Global Secondary Indices
         expr = Key("collections_workflow").eq(collections_workflow)
         if since:
-            start = datetime.now(UTC) - self.since_to_timedelta(since)
+            start = datetime.now(UTC) - since
             begin = f"{start.isoformat()}"
             end = f"{datetime.now(UTC).isoformat()}"
 
@@ -743,25 +750,3 @@ class StateDB:
             cls.key_to_payload_id(key),
             payload_bucket=payload_bucket,
         )
-
-    @staticmethod
-    def since_to_timedelta(since: str) -> timedelta:
-        """Convert a `since` field to a timedelta.
-
-        Args:
-            since (str): Contains an integer followed by a unit letter:
-                'd' for days, 'h' for hours, 'm' for minutes
-
-        Returns:
-            timedelta: [description]
-        """
-        unit = since[-1]
-
-        # days, hours, or minutes
-        if unit not in ["d", "h", "m"]:
-            raise ValueError(f"Unit must be 'd', 'h', or 'm'; got '{unit}'")
-
-        days = int(since[0:-1]) if unit == "d" else 0
-        hours = int(since[0:-1]) if unit == "h" else 0
-        minutes = int(since[0:-1]) if unit == "m" else 0
-        return timedelta(days=days, hours=hours, minutes=minutes)

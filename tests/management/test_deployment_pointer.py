@@ -16,6 +16,7 @@ VALID_ENV = {
     "CIRRUS_BASE_WORKFLOW_ARN": "workflow-arn",
     "CIRRUS_PROCESS_QUEUE_URL": "queue-url",
     "CIRRUS_STATE_DB": "state-db",
+    "CIRRUS_EVENT_DB_AND_TABLE": "db|tb",
     "CIRRUS_PREFIX": "prefix",
     "CIRRUS_CLI_IAM_ARN": "arn:aws:iam::000000000000:role/test-role-arn",
 }

@@ -2,12 +2,14 @@ import json
 import logging
 import sys
 
+from datetime import timedelta
 from subprocess import CalledProcessError
 
 import click
 
 from boto3 import Session
 
+from cirrus.lib.enums import StateEnum
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.utils.click import (
     AliasedShortMatchGroup,
@@ -16,6 +18,7 @@ from cirrus.management.utils.click import (
     silence_templating_errors,
 )
 from cirrus.management.utils.manage import (
+    SINCE,
     _get_execution,
     execution_arn,
     include_user_vars,
@@ -67,14 +70,14 @@ def show(deployment: Deployment):
 @click.option(
     "-t",
     "--timeout",
-    type=int,
+    type=click.INT,
     default=3600,
     help="Maximum time (seconds) to allow for the workflow to complete",
 )
 @click.option(
     "-p",
     "--poll-interval",
-    type=int,
+    type=click.INT,
     default=WORKFLOW_POLL_INTERVAL,
     help="Time (seconds) to dwell between polling for workflow status",
 )
@@ -295,7 +298,7 @@ def get_payloads(
     deployment: Deployment,
     collections_workflow: str,
     state: str | None,
-    since: str | None,
+    since: timedelta | None,
     error_prefix: str | None,
     limit: int | None,
     rerun: bool = False,
@@ -314,3 +317,130 @@ def get_payloads(
         rerun,
     ):
         click.echo(json.dumps(payload, default=str))
+
+
+@manage.command("get-workflow-summary")
+@click.argument("collections")
+@click.argument("workflow_name")
+@click.option(
+    "--since",
+    default=None,
+    help=(
+        "Only include items updated since this relative duration (e.g., 7d, 36h, 15m)"
+    ),
+    type=SINCE,
+)
+@click.option(
+    "--limit",
+    default=10000,
+    show_default=True,
+    type=click.INT,
+    help="Limit the number of items considered for counts",
+)
+@pass_deployment
+def get_workflow_summary(
+    deployment: Deployment,
+    collections: str,
+    workflow_name: str,
+    since: timedelta | None,
+    limit: int,
+):
+    """Get item counts by state for a collections/workflow from DynamoDB"""
+    summary = deployment.get_workflow_summary(
+        collections,
+        workflow_name,
+        since,
+        limit,
+    )
+    click.echo(json.dumps(summary, indent=2))
+
+
+@manage.command("get-workflow-stats")
+@pass_deployment
+def get_workflow_stats(deployment: Deployment):
+    """Get aggregate workflow state transition stats from Timestream"""
+    stats = deployment.get_workflow_stats()
+    click.echo(json.dumps(stats, indent=2))
+
+
+@manage.command("get-workflow-items")
+@click.argument("collections")
+@click.argument("workflow_name")
+@click.option(
+    "--state",
+    default=None,
+    help="Filter by item state",
+    type=click.Choice([state.value for state in StateEnum]),
+)
+@click.option(
+    "--since",
+    default=None,
+    help=(
+        "Only include items updated since this relative duration (e.g., 7d, 36h, 15m)"
+    ),
+    type=SINCE,
+)
+@click.option(
+    "--limit",
+    default=10,
+    show_default=True,
+    type=click.IntRange(1, 50000),
+    help="Limit the number of items returned",
+)
+@click.option("--nextkey", default=None, help="Pagination key for next page")
+@click.option(
+    "--sort-ascending",
+    is_flag=True,
+    default=False,
+    help="Sort results in ascending order",
+)
+@click.option(
+    "--sort-index",
+    default="updated",
+    help="Index to sort by",
+    type=click.Choice(["default", "updated", "state_updated"]),
+)
+@pass_deployment
+def get_workflow_items(
+    deployment: Deployment,
+    collections: str,
+    workflow_name: str,
+    state: str | None,
+    since: timedelta | None,
+    limit: int,
+    nextkey: str | None,
+    sort_ascending: bool,
+    sort_index: str,
+):
+    """Get items for a collections/workflow from DynamoDB"""
+    items_page = deployment.get_workflow_items(
+        collections,
+        workflow_name,
+        state,
+        since,
+        limit,
+        nextkey,
+        sort_ascending,
+        sort_index,
+    )
+    click.echo(json.dumps(items_page, indent=2))
+
+
+@manage.command("get-workflow-item")
+@click.argument("collections")
+@click.argument("workflow_name")
+@click.argument("itemid")
+@pass_deployment
+def get_workflow_item(
+    deployment: Deployment,
+    collections: str,
+    workflow_name: str,
+    itemid: str,
+):
+    """Get individual item for a collections/workflow from DynamoDB"""
+    result = deployment.get_workflow_item(
+        collections,
+        workflow_name,
+        itemid,
+    )
+    click.echo(json.dumps(result, indent=2))

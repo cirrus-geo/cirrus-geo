@@ -5,22 +5,13 @@ from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from unittest.mock import patch
 
-import boto3
 import botocore.client
-import moto
 import pytest
 
 from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
 from cirrus.management.cli import cli
 from cirrus.management.deployment_pointer import DEPLOYMENTS_PREFIX
 from click.testing import CliRunner
-
-
-@pytest.fixture()
-def timestream_write_client():
-    with moto.mock_aws():
-        yield boto3.client("timestream-write", region_name="us-east-1")
-
 
 # moto does not mock lambda GetFunctionConfiguration
 # see https://docs.getmoto.org/en/latest/docs/services/patching_other_services.html
@@ -75,7 +66,15 @@ def basic_payloads(fixtures, statedb):
     )
 
 
-def mock_parameters(queue, payloads, statedb, workflow, deployment_name, iam_role):
+def mock_parameters(
+    queue,
+    payloads,
+    data,
+    statedb,
+    workflow,
+    deployment_name,
+    iam_role,
+):
     return {
         "CIRRUS_PAYLOAD_BUCKET": payloads,
         "CIRRUS_BASE_WORKFLOW_ARN": workflow["stateMachineArn"].replace(
@@ -84,13 +83,14 @@ def mock_parameters(queue, payloads, statedb, workflow, deployment_name, iam_rol
         ),
         "CIRRUS_PROCESS_QUEUE_URL": queue["QueueUrl"],
         "CIRRUS_STATE_DB": statedb.table_name,
+        "CIRRUS_EVENT_DB_AND_TABLE": "event-db-1|event-table-1",
         "CIRRUS_PREFIX": f"fd-{deployment_name}-dev-cirrus-",
         "CIRRUS_CLI_IAM_ARN": iam_role,
     }
 
 
 @pytest.fixture()
-def put_parameters(ssm, queue, payloads, statedb, workflow, iam_role):
+def put_parameters(ssm, queue, payloads, data, statedb, workflow, iam_role):
     for deployment_name in ["lion", "squirrel-dev"]:
         # put pointer parameters
         deployment_key = f"/deployment/{deployment_name}/"
@@ -108,6 +108,7 @@ def put_parameters(ssm, queue, payloads, statedb, workflow, iam_role):
         for param_name, value in mock_parameters(
             queue,
             payloads,
+            data,
             statedb,
             workflow,
             deployment_name,

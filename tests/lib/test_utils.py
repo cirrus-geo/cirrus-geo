@@ -303,3 +303,12 @@ def test_assume_role(sts):
     assert updated_credentals.access_key != credentials.access_key
     assert updated_credentals.secret_key != credentials.secret_key
     assert updated_credentals.token != credentials.token
+
+
+def test_parse_since():
+    td = utils.parse_since("1d")
+    assert td.days == 1
+    td = utils.parse_since("1h")
+    assert td.seconds == 3600
+    td = utils.parse_since("10m")
+    assert td.seconds == 600
