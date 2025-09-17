@@ -1,4 +1,0 @@
--c ../requirements.txt
-backoff
-click
-click-option-group

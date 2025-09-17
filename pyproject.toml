@@ -26,10 +26,44 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dynamic = [
-  'version',
-  'readme',
-  'dependencies',
-  'optional-dependencies',
+    'version',
+    'readme',
+]
+dependencies = [
+    "boto3",
+    "boto3-utils",
+    "jsonpath-ng",
+    "python-json-logger",
+]
+
+[project.optional-dependencies]
+cli = [
+    "backoff",
+    "click>=8.2.0",
+    "click-option-group",
+]
+
+[dependency-groups]
+dev = [
+    "darglint",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "moto>=5",
+    "mypy",
+    "pip-tools",
+    "pre-commit",
+    "pre-commit-hooks",
+    "pymarkdownlnt",
+    "ruff",
+    "types-python-dateutil",
+]
+docs = [
+    "sphinx",
+    "myst_parser",
+    "sphinxcontrib-mermaid",
+    "sphinx-click",
+    "sphinx-rtd-theme==2.0.0",
 ]
 
 [project.urls]
@@ -43,8 +77,6 @@ cirrus = 'cirrus.management.__main__:main'
 
 [tool.setuptools.dynamic]
 readme = {file = "README.md"}
-dependencies = {file = "requirements.txt"}
-optional-dependencies = {cli = {file = "requirements-cli.txt"}}
 
 [tool.ruff.lint]
 # https://docs.astral.sh/ruff/rules/
@@ -76,7 +108,7 @@ select = [
 
 ]
 exclude = [
-  'docs/**/*',
+    'docs/**/*',
 ]
 
 [tool.ruff.lint.per-file-ignores]

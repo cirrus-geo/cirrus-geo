@@ -77,7 +77,7 @@ MOCK_PAYLOAD = {
 }
 
 
-@pytest.fixture()
+@pytest.fixture
 def payload(invoke):
     def _payload(cmd):
         return invoke("payload " + cmd)
@@ -87,7 +87,8 @@ def payload(invoke):
 
 def test_payload(payload):
     result = payload("")
-    assert result.exit_code == 0
+    assert result.exit_code == 2
+    assert result.output.startswith("Usage: cirrus payload ")
 
 
 def test_payload_get_id(runner):

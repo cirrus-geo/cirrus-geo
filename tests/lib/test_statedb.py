@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from botocore.exceptions import ClientError
+
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.statedb import StateDB
 
@@ -64,7 +65,7 @@ def test_dbitem_to_item():
     assert item["state"] == "QUEUED"
 
 
-@pytest.fixture()
+@pytest.fixture
 def state_table(statedb: StateDB):
     statedb.limit = RECORD_LIMIT
     statedb.claim_processing(
