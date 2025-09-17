@@ -2,11 +2,11 @@ import json
 
 import pytest
 
+from click.testing import Result
+
 from cirrus.management.deployment import (
     Deployment,
 )
-from click.testing import Result
-
 from tests.management.conftest import mock_parameters
 
 MOCK_DEPLYOMENT_NAME = "lion"
@@ -14,7 +14,7 @@ STACK_NAME = "cirrus-test"
 MOCK_CIRRUS_PREFIX = "ts-lion-dev-cirrus"
 
 
-@pytest.fixture()
+@pytest.fixture
 def manage(invoke):
     def _manage(cmd):
         return invoke("manage " + cmd)
@@ -22,7 +22,7 @@ def manage(invoke):
     return _manage
 
 
-@pytest.fixture()
+@pytest.fixture
 def deployment(manage, queue, payloads, data, statedb, workflow, sts, iam_role):
     def _manage(deployment, cmd):
         return manage(f"{deployment.name} {cmd}")
@@ -45,7 +45,8 @@ def deployment(manage, queue, payloads, data, statedb, workflow, sts, iam_role):
 
 def test_manage(manage):
     result = manage("")
-    assert result.exit_code == 0
+    assert result.exit_code == 2
+    assert result.output.startswith("Usage: cirrus manage ")
 
 
 def test_get_execution_by_arn(deployment, st_func_execution_arn, sts):
@@ -121,7 +122,7 @@ def test_list_lambdas(deployment, make_lambdas, put_parameters, iam_role):
     )
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 def test_process(deployment, manage, make_lambdas):
     result = deployment('process {"a": "payload to test process command"}')
     assert result.exit_code == 0

@@ -8,10 +8,11 @@ from unittest.mock import patch
 import botocore.client
 import pytest
 
+from click.testing import CliRunner
+
 from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
 from cirrus.management.cli import cli
 from cirrus.management.deployment_pointer import DEPLOYMENTS_PREFIX
-from click.testing import CliRunner
 
 # moto does not mock lambda GetFunctionConfiguration
 # see https://docs.getmoto.org/en/latest/docs/services/patching_other_services.html
@@ -20,7 +21,7 @@ orig = botocore.client.BaseClient._make_api_call
 LAMBDA_ENV_VARS = {"var": "value"}
 
 
-@pytest.fixture()
+@pytest.fixture
 def lambda_env():
     return LAMBDA_ENV_VARS
 
@@ -31,7 +32,7 @@ def mock_make_api_call(self, operation_name, kwarg):
     return orig(self, operation_name, kwarg)
 
 
-@pytest.fixture()
+@pytest.fixture
 def _mock_lambda_get_conf():
     with patch(
         "botocore.client.BaseClient._make_api_call",
@@ -42,7 +43,7 @@ def _mock_lambda_get_conf():
 
 @pytest.fixture(scope="session")
 def cli_runner():
-    return CliRunner(mix_stderr=False)
+    return CliRunner()
 
 
 @pytest.fixture(scope="session")
@@ -54,7 +55,7 @@ def invoke(cli_runner):
     return _invoke
 
 
-@pytest.fixture()
+@pytest.fixture
 def basic_payloads(fixtures, statedb):
     return ProcessPayloads(
         process_payloads=[
@@ -89,7 +90,7 @@ def mock_parameters(
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def put_parameters(ssm, queue, payloads, data, statedb, workflow, iam_role):
     for deployment_name in ["lion", "squirrel-dev"]:
         # put pointer parameters
@@ -123,7 +124,7 @@ def put_parameters(ssm, queue, payloads, data, statedb, workflow, iam_role):
     return ssm
 
 
-@pytest.fixture()
+@pytest.fixture
 def make_lambdas(lambdas, iam_role):
     lambda_code = """
     def lambda_handler(event, context):
@@ -139,7 +140,7 @@ def make_lambdas(lambdas, iam_role):
     return lambdas
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_records(
     s3,
     put_parameters,

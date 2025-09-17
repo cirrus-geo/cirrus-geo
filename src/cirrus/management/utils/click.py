@@ -76,10 +76,12 @@ class AliasedShortMatchGroup(click.Group):
 
         # otherwise the string matched but was not unique
         # to a single command and we have to bail out
-        ctx.fail(  # noqa: RET503
+        ctx.fail(
             f"Unknown command '{cmd_name}. Did you mean any of these: "
             f"{', '.join(sorted(matches))}?",
         )
+
+        return None
 
     def format_commands(self, ctx, formatter):
         rows = []

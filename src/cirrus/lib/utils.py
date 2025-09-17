@@ -6,7 +6,7 @@ from collections.abc import Callable
 from datetime import timedelta
 from functools import cache
 from os import getenv
-from typing import Any, Generic, Protocol, Self, TypeVar
+from typing import Any, Protocol, Self
 
 import boto3
 
@@ -442,10 +442,7 @@ def build_item_sns_attributes(item: dict) -> dict:  # noqa: C901
     return attrs
 
 
-T = TypeVar("T")
-
-
-class BatchHandler(Generic[T]):
+class BatchHandler[T]:
     def __init__(
         self: Self,
         batchable: Callable[[list[T]], Any],
