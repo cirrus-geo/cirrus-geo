@@ -28,12 +28,12 @@ jobs:
       - name: Build documentation
         run: |
           cd ./docs
-          make clean build CIRRUS_VERSION=$GITHUB_REF_NAME
+          uv run make clean build CIRRUS_VERSION=$GITHUB_REF_NAME
       - name: Copy documentation into gh-pages
         if: github.event_name != 'pull_request'
         run: |
           cd ./docs
-          make gh-pages-copy gh-pages-versions-update CIRRUS_VERSION=$GITHUB_REF_NAME
+          uv run make gh-pages-copy gh-pages-versions-update CIRRUS_VERSION=$GITHUB_REF_NAME
       - name: Commit gh-pages changes
         if: github.event_name != 'pull_request'
         run: |
