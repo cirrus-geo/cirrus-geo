@@ -272,10 +272,10 @@ class Deployment:
             dict containing output payload or error message
 
         """
-        payload = ProcessPayload(payload)
-        wf_id = payload["id"]
+        process_payload = ProcessPayload(payload)
+        wf_id = process_payload.payload["id"]
         logger.info("Submitting %s to %s", wf_id, self.name)
-        resp = self.process_payload(json.dumps(payload))
+        resp = self.process_payload(json.dumps(process_payload.payload))
         logger.debug(resp)
 
         state = "PROCESSING"
@@ -289,7 +289,7 @@ class Deployment:
         execution = self.get_execution_by_payload_id(wf_id)
 
         if state == "COMPLETED":
-            output = dict(ProcessPayload.from_event(json.loads(execution["output"])))
+            output = ProcessPayload.from_event(json.loads(execution["output"])).payload
         elif state == "PROCESSING":
             output = {"last_error": "Unkonwn: cirrus-mgmt polling timeout exceeded"}
         else:

@@ -933,7 +933,7 @@ def test_finding_claimed_item(
     proc_payload._claim(wfem, pre_cooked_exec_arn, None)
     proc_payloads = ProcessPayloads([ProcessPayload(**payload)], statedb=statedb)
     state_items = proc_payloads.get_states_and_exec_arn()
-    state, exec_arn = state_items[proc_payload["id"]]
+    state, exec_arn = state_items[proc_payload.payload["id"]]
     assert state.value == "CLAIMED"
     assert exec_arn == pre_cooked_exec_arn
     resp = proc_payload(wfem, pre_cooked_exec_arn, state)

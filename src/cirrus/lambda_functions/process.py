@@ -24,7 +24,7 @@ def is_sqs_message(message):
 def lambda_handler(event, context, *, wfem: WorkflowEventManager):
     logger.debug(json.dumps(event))
 
-    payloads: list[ProcessPayload] = []
+    process_payloads: list[ProcessPayload] = []
     failures: list[Any] = []
     messages: dict[str, list[dict[str, Any]]] = {}
     for message in utils.normalize_event(event):
@@ -51,7 +51,7 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
         logger.debug("payload: %s", defer(json.dumps, payload))
 
         try:
-            payload = ProcessPayload(payload, set_id_if_missing=True)
+            process_payload = ProcessPayload(payload, set_id_if_missing=True)
         except Exception as exc:
             logger.exception(
                 "Failed to convert to ProcessPayload: %s",
@@ -69,10 +69,10 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
             failures.append(payload)
             continue
 
-        payloads.append(payload)
+        process_payloads.append(process_payload)
 
         if is_sqs_message(message):
-            payload_id = payload["id"]
+            payload_id = process_payload.payload["id"]
             try:
                 messages[payload_id].append(message)
             except KeyError:
@@ -80,8 +80,8 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
 
     processed_ids: set[str] = set()
     processed: dict[str, list[str]] = {"started": []}
-    if len(payloads) > 0:
-        processed = ProcessPayloads(payloads, StateDB()).process(wfem)
+    if len(process_payloads) > 0:
+        processed = ProcessPayloads(process_payloads, StateDB()).process(wfem)
         processed_ids = {pid for state in processed for pid in processed[state]}
 
     successful_sqs_messages = [

@@ -13,6 +13,7 @@ import jsonpath_ng.ext as jsonpath
 
 from boto3utils import s3
 from botocore.exceptions import ClientError
+from stactask.payload import Payload
 
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import NoUrlError
@@ -36,7 +37,7 @@ class TerminalError(Exception):
     pass
 
 
-class ProcessPayload(dict):
+class ProcessPayload:
     def __init__(self, *args, set_id_if_missing=False, state_item=None, **kwargs):
         """Initialize a ProcessPayload, verify required fields, and assign an ID
 
@@ -44,49 +45,41 @@ class ProcessPayload(dict):
             state_item (Dict, optional): Dictionary of entry in StateDB.
                 Defaults to None.
         """
-        super().__init__(*args, **kwargs)
+        self.payload = Payload(*args, **kwargs)
+        self.payload.validate()
 
-        self.logger = get_task_logger(__name__, payload=self)
+        self.logger = get_task_logger(__name__, payload=self.payload)
 
-        if "process" not in self:
+        if "process" not in self.payload:
             raise ValueError(
-                "ProcessPayload must have a `process` array of process definintions",
+                "Payload must contain a 'process' array of process definitions",
             )
 
-        if not isinstance(self["process"], list) or len(self["process"]) == 0:
+        if (
+            not isinstance(self.payload["process"], list)
+            or len(self.payload["process"]) == 0
+        ):
             raise TypeError(
-                "ProcessPayload `process` must be an array "
+                "Payload 'process' field must be an array "
                 "with at least one process definition",
             )
 
-        self.process = self["process"][0]
+        self.process = self.payload.process_definition
 
-        self.features = self.get("features", [])
+        self.features = self.payload.items_as_dicts
 
-        if "id" not in self and set_id_if_missing:
+        if "id" not in self.payload and set_id_if_missing:
             self.set_id()
-
-        if "upload_options" not in self.process:
-            raise ValueError(
-                "ProcessPayload.process must have `upload_options` defined",
-            )
 
         if "workflow" not in self.process:
             raise ValueError(
-                "ProcessPayload.process must have `workflow` specifying workflow name",
+                "Payload must contain a 'workflow' field specifying the workflow name",
             )
 
-        if "tasks" not in self.process:
-            raise ValueError("ProcessPayload.process must have `tasks` defined")
-
-        self.tasks = self.process["tasks"]
-
-        if "workflow-" not in self["id"]:
-            raise ValueError(f"Invalid payload id: {self['id']}")
-
-        for item in self.features:
-            if "links" not in item:
-                item["links"] = []
+        if "workflow-" not in self.payload["id"]:
+            raise ValueError(
+                f"Payload 'id' field must contain 'workflow-': {self.payload['id']}",
+            )
 
         self.state_item = state_item
 
@@ -116,15 +109,15 @@ class ProcessPayload(dict):
         return cls(payload, **kwargs)
 
     def next_payloads(self):
-        if len(self["process"]) <= 1:
+        if len(self.payload["process"]) <= 1:
             return None
         next_processes = (
-            [self["process"][1]]
-            if isinstance(self["process"][1], dict)
-            else self["process"][1]
+            [self.payload["process"][1]]
+            if isinstance(self.payload["process"][1], dict)
+            else self.payload["process"][1]
         )
         for process in next_processes:
-            new = deepcopy(self)
+            new = deepcopy(self.payload)
             del new["id"]
             new["process"].pop(0)
             new["process"][0] = process
@@ -136,13 +129,13 @@ class ProcessPayload(dict):
             yield new
 
     def set_id(self):
-        if "id" in self:
+        if "id" in self.payload:
             return
 
         if not self.features:
             raise ValueError(
-                "ProcessPayload has no `id` specified and one "
-                "cannot be constructed without `features`.",
+                "Payload has no 'id' specified and one "
+                "cannot be constructed without 'features'.",
             )
 
         if "collections" in self.process:
@@ -156,13 +149,13 @@ class ProcessPayload(dict):
             collections_str = "/".join(cols) if len(cols) != 0 else "none"
 
         items_str = "/".join(sorted([i["id"] for i in self.features]))
-        self["id"] = (
+        self.payload["id"] = (
             f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
         )
 
     @staticmethod
     def upload_to_s3(payload: dict, bucket: str | None = None) -> str:
-        """Helper function to upload a dict (not necessarily a ProcessPayload) to s3"""
+        """Helper function to upload a dict (not necessarily a Payload) to s3"""
         # url-payloads do not need to be re-uploaded
         if "url" in payload:
             return payload["url"]
@@ -176,11 +169,11 @@ class ProcessPayload(dict):
         """Get original payload for this ProcessPayload
 
         Returns:
-            Dict: Cirrus Input ProcessPayload
+            Dict: Input payload
         """
-        payload_length = len(json.dumps(self).encode())
+        payload_length = len(json.dumps(self.payload).encode())
         if payload_length <= MAX_PAYLOAD_LENGTH:
-            return dict(self)
+            return dict(self.payload)
 
         payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
         if not payload_bucket:
@@ -190,7 +183,7 @@ class ProcessPayload(dict):
                 "To enable uploads oversized payloads define `CIRRUS_PAYLOAD_BUCKET`.",
             )
 
-        url = self.upload_to_s3(self, payload_bucket)
+        url = self.upload_to_s3(self.payload, payload_bucket)
         return {"url": url}
 
     def items_to_sns_messages(self: Self) -> list[SNSMessage]:
@@ -205,14 +198,14 @@ class ProcessPayload(dict):
 
     def _fail_and_raise(self, wfem, e, url):
         """
-        This function is to be to handle exceptions that we don't know why they
+        This function is to handle exceptions that we don't know why they
         happened. We'll be conservative, log+raise. Not raise a terminal failure, so it
         will get retried in case it was a transient failure. If we find terminal
         failures handled here, we should add terminal exception handlers for them.
         """
         msg = f"failed starting workflow ({e})"
         self.logger.exception(msg)
-        wfem.failed(self.get("id", "missing"), msg, payload_url=url)
+        wfem.failed(self.payload.get("id", "missing"), msg, payload_url=url)
         raise
 
     def _claim(
@@ -234,14 +227,14 @@ class ProcessPayload(dict):
             state_machine_arn,
             execution_name,
         ) = ProcessPayloads.get_state_machine_arn_and_execution_name(execution_arn)
-        url = f"s3://{payload_bucket}/{self['id']}/input.json"
+        url = f"s3://{payload_bucket}/{self.payload['id']}/input.json"
 
         # claim workflow
         try:
             # create or update DynamoDB record
             # -> overwrites states other than PROCESSING and CLAIMED
             wfem.claim_processing(
-                self["id"],
+                self.payload["id"],
                 payload_url=url,
                 execution_arn=execution_arn,
             )
@@ -268,7 +261,7 @@ class ProcessPayload(dict):
                         self.logger.warning(
                             msg="payload found in CLAIMED",
                             extra={
-                                "payload_id": self["id"],
+                                "payload_id": self.payload["id"],
                                 "db_exec_arn": db_exec,
                                 "planned_exec_arn": execution_arn,
                             },
@@ -281,7 +274,7 @@ class ProcessPayload(dict):
                         )
                 else:
                     wfem.skipping(
-                        self["id"],
+                        self.payload["id"],
                         state=db_state,
                         payload_url=url,
                         message=f"state before claim attempt was {previous_state}",
@@ -316,7 +309,7 @@ class ProcessPayload(dict):
 
         try:
             # add input payload to s3
-            s3().upload_json(self, url)
+            s3().upload_json(self.payload, url)
         except Exception as e:  # noqa: BLE001
             self._fail_and_raise(wfem, e, url)
 
@@ -336,7 +329,7 @@ class ProcessPayload(dict):
                 # so we can handle it specifically, to keep the payload
                 # falling through to the DLQ and alerting.
                 logger.error(e)
-                wfem.failed(self["id"], str(e), payload_url=url)
+                wfem.failed(self.payload["id"], str(e), payload_url=url)
                 raise TerminalError() from e
             if e.response["Error"]["Code"] != "ExecutionAlreadyExists":
                 self._fail_and_raise(wfem, e, url)
@@ -344,7 +337,7 @@ class ProcessPayload(dict):
 
         try:
             wfem.started_processing(
-                self["id"],
+                self.payload["id"],
                 execution_arn=execution_arn,
                 payload_url=url,
             )
@@ -357,7 +350,7 @@ class ProcessPayload(dict):
                     e.response["Item"]["state_updated"]["S"].split("_")[0],
                 )
                 wfem.skipping(
-                    self["id"],
+                    self.payload["id"],
                     state=db_state,
                     payload_url=url,
                     message=(
@@ -372,7 +365,7 @@ class ProcessPayload(dict):
                 )
                 return None
             self._fail_and_raise(wfem, e, url)
-        return self["id"]
+        return self.payload["id"]
 
 
 class ProcessPayloads:
@@ -382,17 +375,17 @@ class ProcessPayloads:
         statedb: StateDB,
         state_items=None,
     ) -> None:
-        self.payloads = process_payloads
+        self.process_payloads = process_payloads
         self.statedb = statedb
-        if state_items and len(state_items) != len(self.payloads):
+        if state_items and len(state_items) != len(self.process_payloads):
             raise ValueError(
                 "The number of state items does not match the number of payloads: "
-                f"{len(state_items)} != {len(self.payloads)}.",
+                f"{len(state_items)} != {len(self.process_payloads)}.",
             )
         self.state_items = state_items
 
     def __getitem__(self, index):
-        return self.payloads[index]
+        return self.process_payloads[index]
 
     @property
     def payload_ids(self) -> list[str]:
@@ -401,7 +394,7 @@ class ProcessPayloads:
         Returns:
             List[str]: List of Payload IDs
         """
-        return [c["id"] for c in self.payloads]
+        return [c.payload["id"] for c in self.process_payloads]
 
     def get_states_and_exec_arn(self) -> dict[str, tuple]:
         if self.state_items is None:
@@ -413,12 +406,12 @@ class ProcessPayloads:
         response = dict(self.get_process_attrs(self.state_items))
         response.update(
             {
-                p["id"]: (
+                p.payload["id"]: (
                     None,
-                    self.gen_execution_arn(p["id"], p.process["workflow"]),
+                    self.gen_execution_arn(p.payload["id"], p.process["workflow"]),
                 )
-                for p in self.payloads
-                if p["id"] not in response
+                for p in self.process_payloads
+                if p.payload["id"] not in response
             },
         )
         return response
@@ -483,48 +476,55 @@ class ProcessPayloads:
         # check existing states
         states = self.get_states_and_exec_arn()
 
-        for payload in self.payloads:
-            _replace = replace or payload.process.get("replace", False)
+        for process_payload in self.process_payloads:
+            _replace = replace or process_payload.process.get("replace", False)
 
             # check existing state for Item, if any
-            state, exec_arn = states[payload["id"]]
+            state, exec_arn = states[process_payload.payload["id"]]
 
             if (
-                payload["id"] in payload_ids["started"]
-                or payload["id"] in payload_ids["skipped"]
-                or payload["id"] in payload_ids["failed"]
+                process_payload.payload["id"] in payload_ids["started"]
+                or process_payload.payload["id"] in payload_ids["skipped"]
+                or process_payload.payload["id"] in payload_ids["failed"]
             ):
-                logger.warning("Dropping duplicated payload %s", payload["id"])
-                wfem.duplicated(
-                    payload["id"],
-                    payload_url=StateDB.payload_id_to_url(payload["id"]),
+                logger.warning(
+                    "Dropping duplicated payload %s",
+                    process_payload.payload["id"],
                 )
-                payload_ids["dropped"].append(payload["id"])
+                wfem.duplicated(
+                    process_payload.payload["id"],
+                    payload_url=StateDB.payload_id_to_url(
+                        process_payload.payload["id"],
+                    ),
+                )
+                payload_ids["dropped"].append(process_payload.payload["id"])
             elif (
                 state in (StateEnum.FAILED, StateEnum.ABORTED, StateEnum.CLAIMED, None)
                 or _replace
             ):
                 try:
-                    payload_id = payload(wfem, exec_arn, state)
+                    payload_id = process_payload(wfem, exec_arn, state)
                 except TerminalError:
-                    payload_ids["failed"].append(payload["id"])
+                    payload_ids["failed"].append(process_payload.payload["id"])
                 else:
                     if payload_id is not None:
                         payload_ids["started"].append(payload_id)
                     else:
-                        payload_ids["skipped"].append(payload["id"])
+                        payload_ids["skipped"].append(process_payload.payload["id"])
             else:
                 logger.info(
                     "Skipping %s, input already in %s state",
-                    payload["id"],
+                    process_payload.payload["id"],
                     state,
                 )
                 wfem.skipping(
-                    payload_id=payload["id"],
+                    payload_id=process_payload.payload["id"],
                     state=state,
-                    payload_url=StateDB.payload_id_to_url(payload["id"]),
+                    payload_url=StateDB.payload_id_to_url(
+                        process_payload.payload["id"],
+                    ),
                 )
-                payload_ids["skipped"].append(payload["id"])
+                payload_ids["skipped"].append(process_payload.payload["id"])
                 continue
 
         return payload_ids
