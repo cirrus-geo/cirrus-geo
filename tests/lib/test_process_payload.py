@@ -60,7 +60,7 @@ def chain_filter_payload(chain_payload):
 
 
 def test_open_payload(base_payload):
-    payload = ProcessPayload(**base_payload)
+    payload = ProcessPayload(**base_payload).payload
     assert (
         payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
     )
@@ -69,14 +69,14 @@ def test_open_payload(base_payload):
 def test_update_payload(base_payload):
     del base_payload["id"]
     del base_payload["features"][0]["links"]
-    payload = ProcessPayload(**base_payload, set_id_if_missing=True)
+    payload = ProcessPayload(**base_payload, set_id_if_missing=True).payload
     assert (
         payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
     )
 
 
 def test_from_event(sqs_event):
-    payload = ProcessPayload.from_event(sqs_event, set_id_if_missing=True)
+    payload = ProcessPayload.from_event(sqs_event, set_id_if_missing=True).payload
     assert len(payload["features"]) == 1
     assert (
         payload["id"]
@@ -152,7 +152,7 @@ def test_next_payloads_chain_filter(chain_payload, chain_filter_payload):
 
 def test_payload_no_process(base_payload):
     del base_payload["process"]
-    expected = "ProcessPayload must have a `process` array of process definintions"
+    expected = "Payload must contain a 'process' array of process definitions"
     with pytest.raises(ValueError, match=expected):
         ProcessPayload.from_event(base_payload)
 
@@ -160,7 +160,7 @@ def test_payload_no_process(base_payload):
 def test_payload_empty_process_array(base_payload):
     base_payload["process"] = []
     expected = (
-        "ProcessPayload `process` must be an array with at least one process definition"
+        "Payload 'process' field must be an array with at least one process definition"
     )
     with pytest.raises(TypeError, match=expected):
         ProcessPayload.from_event(base_payload)
@@ -169,7 +169,7 @@ def test_payload_empty_process_array(base_payload):
 def test_payload_process_not_an_array(base_payload):
     base_payload["process"] = base_payload["process"][0]
     expected = (
-        "ProcessPayload `process` must be an array with at least one process definition"
+        "Payload 'process' field must be an array with at least one process definition"
     )
     with pytest.raises(TypeError, match=expected):
         ProcessPayload.from_event(base_payload)

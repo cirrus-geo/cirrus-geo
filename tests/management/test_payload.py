@@ -114,5 +114,5 @@ def test_payload_validate_bad_payload(runner):
     assert result.exit_code == 1
     assert (
         result.exc_info[1].args[0]
-        == "ProcessPayload must have a `process` array of process definintions"
+        == "Payload must contain a 'process' array of process definitions"
     )

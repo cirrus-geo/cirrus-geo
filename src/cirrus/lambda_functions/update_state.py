@@ -76,7 +76,7 @@ class Execution:
                 url=(
                     event["url"]
                     if "url" in event
-                    else ProcessPayload.upload_to_s3(_input)
+                    else ProcessPayload.upload_to_s3(_input.payload)
                 ),
                 output=output,
                 status=status,
@@ -94,7 +94,10 @@ def workflow_completed(
     # trying the sns publish, but I could see it the other
     # way too. If we have issues here we might want to consider
     # a different order/behavior (fail on error or something?).
-    wf_event_manager.succeeded(execution.input["id"], execution_arn=execution.arn)
+    wf_event_manager.succeeded(
+        execution.input.payload["id"],
+        execution_arn=execution.arn,
+    )
 
     publish_topic_arn = getenv("CIRRUS_PUBLISH_TOPIC_ARN")
     if execution.output and publish_topic_arn:
@@ -114,7 +117,7 @@ def workflow_aborted(
     execution: Execution,
     wf_event_manager: WorkflowEventManager,
 ) -> None:
-    wf_event_manager.aborted(execution.input["id"], execution_arn=execution.arn)
+    wf_event_manager.aborted(execution.input.payload["id"], execution_arn=execution.arn)
 
 
 def workflow_failed(
@@ -140,19 +143,19 @@ def workflow_failed(
     try:
         if error_type in INVALID_EXCEPTIONS:
             wf_event_manager.invalid(
-                execution.input["id"],
+                execution.input.payload["id"],
                 error,
                 execution_arn=execution.arn,
             )
         elif error_type == "TimedOutError":
             wf_event_manager.timed_out(
-                execution.input["id"],
+                execution.input.payload["id"],
                 error,
                 execution_arn=execution.arn,
             )
         else:
             wf_event_manager.failed(
-                execution.input["id"],
+                execution.input.payload["id"],
                 error,
                 execution_arn=execution.arn,
             )

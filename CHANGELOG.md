@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Switch to `uv` for package management. ([#330])
+- Use the `Payload` model from `stac-task`. ([#331])
 
 ### Fixed
 
