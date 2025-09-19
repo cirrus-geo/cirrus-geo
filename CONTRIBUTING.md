@@ -78,3 +78,11 @@ To upgrade all dependencies:
 ```commandline
 uv sync --upgrade
 ```
+
+### Installing all dependencies
+
+To install all dependencies (base, dev, docs, and cli):
+
+```commandline
+uv sync --all-groups --all-extras
+```
