@@ -63,7 +63,7 @@ docs = [
     "myst_parser",
     "sphinxcontrib-mermaid",
     "sphinx-click",
-    "sphinx-rtd-theme==2.0.0",
+    "sphinx-rtd-theme",
 ]
 
 [project.urls]
