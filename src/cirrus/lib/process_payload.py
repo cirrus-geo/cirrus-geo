@@ -13,8 +13,8 @@ import jsonpath_ng.ext as jsonpath
 
 from boto3utils import s3
 from botocore.exceptions import ClientError
-from stactask.payload import Payload
 
+from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import NoUrlError
 from cirrus.lib.events import WorkflowEventManager
@@ -45,42 +45,12 @@ class ProcessPayload:
             state_item (Dict, optional): Dictionary of entry in StateDB.
                 Defaults to None.
         """
-        self.payload = Payload(*args, **kwargs)
-        self.payload.validate()
+        self.payload = CirrusPayload(*args, **kwargs)
+        self.payload.validate(set_id_if_missing)
 
         self.logger = get_task_logger(__name__, payload=self.payload)
-
-        if "process" not in self.payload:
-            raise ValueError(
-                "Payload must contain a 'process' array of process definitions",
-            )
-
-        if (
-            not isinstance(self.payload["process"], list)
-            or len(self.payload["process"]) == 0
-        ):
-            raise TypeError(
-                "Payload 'process' field must be an array "
-                "with at least one process definition",
-            )
-
         self.process = self.payload.process_definition
-
         self.features = self.payload.items_as_dicts
-
-        if "id" not in self.payload and set_id_if_missing:
-            self.set_id()
-
-        if "workflow" not in self.process:
-            raise ValueError(
-                "Payload must contain a 'workflow' field specifying the workflow name",
-            )
-
-        if "workflow-" not in self.payload["id"]:
-            raise ValueError(
-                f"Payload 'id' field must contain 'workflow-': {self.payload['id']}",
-            )
-
         self.state_item = state_item
 
     @classmethod
