@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
@@ -5,22 +7,24 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Workflow chaining &mdash; Cirrus  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script src="https://unpkg.com/mermaid@10.2.0/dist/mermaid.min.js"></script>
-        <script>mermaid.initialize({startOnLoad:true});</script>
-        <script src="../../../_static/js/versions-loader.js?v=d43487cb"></script>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+      <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+      <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+      <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+      <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
+      <script src="../../../_static/js/versions-loader.js?v=d43487cb"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -39,9 +43,6 @@
           <a href="../../../index.html" class="icon icon-home">
             Cirrus
           </a>
-              <div class="version">
-                main
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -137,12 +138,12 @@ would have a <code class="docutils literal notranslate"><span class="pre">proces
 </pre></div>
 </div>
 <p>This example models a simple chain:</p>
-<div class="mermaid">
-            flowchart LR
+<pre  class="mermaid">
+        flowchart LR
   1(Workflow 1)
   2(Workflow 2)
   1 --&gt; 2
-        </div><p>In this case, the Cirrus Process Payload output from <code class="docutils literal notranslate"><span class="pre">workflow</span> <span class="pre">1</span></code> is passed as
+    </pre><p>In this case, the Cirrus Process Payload output from <code class="docutils literal notranslate"><span class="pre">workflow</span> <span class="pre">1</span></code> is passed as
 the input to <code class="docutils literal notranslate"><span class="pre">workflow</span> <span class="pre">2</span></code> after</p>
 <ul class="simple">
 <li><p>popping the <code class="docutils literal notranslate"><span class="pre">workflow</span> <span class="pre">1</span></code> process definition from the array.</p></li>
@@ -160,8 +161,8 @@ separate workflow executions after the end of <code class="docutils literal notr
 </pre></div>
 </div>
 <p>This example would result in an execution chain that looks like this:</p>
-<div class="mermaid">
-            flowchart LR
+<pre  class="mermaid">
+        flowchart LR
   1(Workflow 1)
   2a(Workflow 2a)
   2b(Workflow 2b)
@@ -171,7 +172,7 @@ separate workflow executions after the end of <code class="docutils literal notr
   1  --&gt; 2b
   2a --&gt; 3a
   2b --&gt; 3b
-        </div><p>Note that chaining alone can effectively model one-to-one and one-to-many
+    </pre><p>Note that chaining alone can effectively model one-to-one and one-to-many
 dependency relationships. If needing to model many-to-one or many-to-many
 relationships, see <a class="reference internal" href="callbacks.html"><span class="doc">workflow callbacks</span></a> for an effective way
 to consolidate the outputs of multiple workflows together.</p>
