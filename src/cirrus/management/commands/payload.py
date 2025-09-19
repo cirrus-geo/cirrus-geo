@@ -38,7 +38,9 @@ def get_id():
     from cirrus.lib.process_payload import ProcessPayload
 
     payload = sys.stdin.read()
-    click.echo(ProcessPayload(**json.loads(payload), set_id_if_missing=True)["id"])
+    click.echo(
+        ProcessPayload(**json.loads(payload), set_id_if_missing=True).payload["id"],
+    )
 
 
 @payload.command()

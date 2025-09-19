@@ -11,26 +11,28 @@ processing logic for their data.
 
 ![architecture-overview](docs/src/cirrus/images/arch-overview.png)
 
-As input, Cirrus takes a STAC ItemCollection, with a process definition block.
-That input is called a Cirrus `ProcessPayload` (CPP).
+As input, Cirrus takes a STAC ItemCollection along with a `process` definition block.
+That input is called a "payload" and follows the `Payload` model defined in the
+[**stac-task**](https://github.com/stac-utils/stac-task) package, with slightly tighter requirements on the presence and content
+of the `process` definition block.
 
-An input is run through a workflow that generates one or more output STAC Items.
+An input payload is run through a workflow that generates one or more output STAC Items.
 These output Items are added to the Cirrus static STAC catalog in S3,
 and are also broadcast via an SNS topic. Subscriptions to that topic can
-triggering additional workflows or external processes, such as indexing into a
+trigger additional workflows or external processes, such as indexing into a
 STAC API catalog (e.g.,
 [stac-server](https://github.com/stac-utils/stac-server)).
 
-Cirrus workflows range from the simple publishing of unmodified input items to
-the complex transformation of input Items and generation of wholly-new output
-Items. The current state of CPP processing is tracked in a state database
-to prevent duplicate processing and allow for a user to follow the state of any
-input through the pipeline.
+Cirrus workflows range from the simple publishing of unmodified input items to the
+complex transformation of input Items and generation of wholly-new output Items. The
+current state of a payload in a processing pipeline is tracked in a state database to
+prevent duplicate processing and allow for a user to follow the state of any input
+payload through the pipeline.
 
 As shown in this high-level overview of Cirrus, users input data to Cirrus
 through the use of _feeders_. Feeders are simply programs that get/generate
 some type of STAC metadata, combine it with processing parameters, and pass it
-into Cirrus as a CPP.
+into Cirrus as a payload.
 
 ## Cirrus Development
 

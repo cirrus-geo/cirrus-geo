@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Adds the functionality from the cirrus api lambda to the `Deployment` class and
   the CLI. ([#324])
+- Adds a `CirrusPayload` model that extends `stac-task`'s `Payload` model with
+  Cirrus-specific validation and ID generation. ([#331])
 
 ### Changed
 
