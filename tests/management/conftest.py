@@ -10,7 +10,7 @@ import pytest
 
 from click.testing import CliRunner
 
-from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
+from cirrus.lib.payload_manager import PayloadManager, PayloadManagers
 from cirrus.management.cli import cli
 from cirrus.management.deployment_pointer import DEPLOYMENTS_PREFIX
 
@@ -56,15 +56,18 @@ def invoke(cli_runner):
 
 
 @pytest.fixture
-def basic_payloads(fixtures, statedb):
-    return ProcessPayloads(
-        process_payloads=[
-            ProcessPayload(
-                json.loads(fixtures.joinpath("basic_payload.json").read_text()),
-            ),
-        ],
-        statedb=statedb,
-    )
+def basic_payload_managers_factory(fixtures, statedb):
+    def _create_basic_payload_managers():
+        return PayloadManagers(
+            payload_managers=[
+                PayloadManager(
+                    json.loads(fixtures.joinpath("basic_payload.json").read_text()),
+                ),
+            ],
+            statedb=statedb,
+        )
+
+    return _create_basic_payload_managers
 
 
 def mock_parameters(
@@ -79,7 +82,7 @@ def mock_parameters(
     return {
         "CIRRUS_PAYLOAD_BUCKET": payloads,
         "CIRRUS_BASE_WORKFLOW_ARN": workflow["stateMachineArn"].replace(
-            "workflow1",
+            "test-workflow1",
             "",
         ),
         "CIRRUS_PROCESS_QUEUE_URL": queue["QueueUrl"],

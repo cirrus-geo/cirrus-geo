@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib.payload_manager import PayloadManager
 from cirrus.lib.utils import build_item_sns_attributes, recursive_compare
 
 fixtures = Path(__file__).parent.joinpath("fixtures")
@@ -60,7 +60,7 @@ def chain_filter_payload(chain_payload):
 
 
 def test_open_payload(base_payload):
-    payload = ProcessPayload(**base_payload).payload
+    payload = PayloadManager(**base_payload).payload
     assert (
         payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
     )
@@ -69,14 +69,14 @@ def test_open_payload(base_payload):
 def test_update_payload(base_payload):
     del base_payload["id"]
     del base_payload["features"][0]["links"]
-    payload = ProcessPayload(**base_payload, set_id_if_missing=True).payload
+    payload = PayloadManager(**base_payload, set_id_if_missing=True).payload
     assert (
         payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
     )
 
 
 def test_from_event(sqs_event):
-    payload = ProcessPayload.from_event(sqs_event, set_id_if_missing=True).payload
+    payload = PayloadManager.from_event(sqs_event, set_id_if_missing=True).payload
     assert len(payload["features"]) == 1
     assert (
         payload["id"]
@@ -85,12 +85,12 @@ def test_from_event(sqs_event):
 
 
 def test_next_payloads_no_list(base_payload):
-    payloads = list(ProcessPayload.from_event(base_payload).next_payloads())
+    payloads = list(PayloadManager.from_event(base_payload).next_payloads())
     assert len(payloads) == 0
 
 
 def test_next_payloads_list_of_one(base_payload):
-    payloads = list(ProcessPayload.from_event(base_payload).next_payloads())
+    payloads = list(PayloadManager.from_event(base_payload).next_payloads())
     assert len(payloads) == 0
 
 
@@ -107,11 +107,11 @@ def test_next_payloads_list_of_four(base_payload):
     #     - wf2
     #     - wf3
     #     - wf4
-    payloads = list(ProcessPayload.from_event(list_payload).next_payloads())
+    payloads = list(PayloadManager.from_event(list_payload).next_payloads())
 
     # When we call next_payloads, we find one next payload (wf2)
     # with two to follow. So the length of the list returned should be
-    # one, a process payload with a process array of length 3.
+    # one, a payload with a process array of length 3.
     assert len(payloads) == 1
     assert payloads[0]["process"] == base_payload["process"] * (length - 1)
 
@@ -130,11 +130,11 @@ def test_next_payloads_list_of_four_fork(base_payload):
     #     - [ wf2a, wf2b]  # noqa: ERA001
     #     - wf3
     #     - wf4
-    payloads = list(ProcessPayload.from_event(list_payload).next_payloads())
+    payloads = list(PayloadManager.from_event(list_payload).next_payloads())
 
     # When we call next_payloads, we find two next payloads
     # (wf2a and wf2b), each with two to follow. So the length of
-    # the list returned should be two, each a process payload
+    # the list returned should be two, each a payload
     # with a process array of length 3.
     assert len(payloads) == 2
     assert payloads[0]["process"] == base_payload["process"] * (length - 1)
@@ -143,7 +143,7 @@ def test_next_payloads_list_of_four_fork(base_payload):
 
 def test_next_payloads_chain_filter(chain_payload, chain_filter_payload):
     payloads = list(
-        ProcessPayload(chain_payload, set_id_if_missing=True).next_payloads(),
+        PayloadManager(chain_payload, set_id_if_missing=True).next_payloads(),
     )
     assert len(payloads) == 1
     assert not recursive_compare(payloads[0], chain_payload)
@@ -154,7 +154,7 @@ def test_payload_no_process(base_payload):
     del base_payload["process"]
     expected = "Payload must contain a 'process' array of process definitions"
     with pytest.raises(ValueError, match=expected):
-        ProcessPayload.from_event(base_payload)
+        PayloadManager.from_event(base_payload)
 
 
 def test_payload_empty_process_array(base_payload):
@@ -163,7 +163,7 @@ def test_payload_empty_process_array(base_payload):
         "Payload 'process' field must be an array with at least one process definition"
     )
     with pytest.raises(TypeError, match=expected):
-        ProcessPayload.from_event(base_payload)
+        PayloadManager.from_event(base_payload)
 
 
 def test_payload_process_not_an_array(base_payload):
@@ -172,7 +172,7 @@ def test_payload_process_not_an_array(base_payload):
         "Payload 'process' field must be an array with at least one process definition"
     )
     with pytest.raises(TypeError, match=expected):
-        ProcessPayload.from_event(base_payload)
+        PayloadManager.from_event(base_payload)
 
 
 def test_items_to_sns_messages(base_payload):
@@ -180,7 +180,7 @@ def test_items_to_sns_messages(base_payload):
     # compare the rendered message contents.
     messages = [
         message.render()
-        for message in ProcessPayload.from_event(base_payload).items_to_sns_messages()
+        for message in PayloadManager.from_event(base_payload).items_to_sns_messages()
     ]
     expected = [
         {
@@ -192,6 +192,6 @@ def test_items_to_sns_messages(base_payload):
 
 
 def test_fail_and_raise(base_payload):
-    payload = ProcessPayload(**base_payload)
+    payload = PayloadManager(**base_payload)
     with pytest.raises(Exception):
         payload._fail_and_raise()

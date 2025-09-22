@@ -8,7 +8,7 @@ from cirrus.management.deployment_pointer import (
     Pointer,
 )
 from cirrus.management.exceptions import MissingParameterError
-from tests.management.test_manage import MOCK_DEPLYOMENT_NAME
+from tests.management.test_manage import MOCK_DEPLOYMENT_NAME
 
 VALID_ENV = {
     "CIRRUS_PAYLOAD_BUCKET": "bucket",
@@ -48,7 +48,7 @@ def test_fetch(ssm, put_parameters):
     ],
 )
 def test_validate_vars(environment, expected):
-    dp = DeploymentPointer(MOCK_DEPLYOMENT_NAME, Pointer("parameter_store", "val"))
+    dp = DeploymentPointer(MOCK_DEPLOYMENT_NAME, Pointer("parameter_store", "val"))
     if isinstance(expected, Exception):
         with pytest.raises(MissingParameterError) as e:
             actual = dp.validate_vars(environment)

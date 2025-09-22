@@ -21,21 +21,23 @@
             "collection": "dummy-collection"
         }
     ],
-    "process": [{
-        "workflow": "workflow1",
-        "replace": true,
-        "upload_options": {
-            "path_template": "${collection}/${year}/${id}",
-            "collections": {
-                "mycollection": ".*"
-},
-            "s3_urls": true
-        },
-        "tasks": {
-            "task1": {
-                "param1": true
+    "process": [
+        {
+            "workflow": "test-workflow1",
+            "replace": true,
+            "upload_options": {
+                "path_template": "${collection}/${year}/${id}",
+                "collections": {
+                    "mycollection": ".*"
+                },
+                "s3_urls": true
+            },
+            "tasks": {
+                "task1": {
+                    "param1": true
+                }
             }
         }
-    }],
-    "id": "test/workflow-workflow1/test-item"
+    ],
+    "id": "test/workflow-test-workflow1/test-item"
 }
