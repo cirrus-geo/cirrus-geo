@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Switch to `uv` for package management. ([#330])
+- `ProcessPayload` class changed to `PayloadManager` to better reflect its
+  purpose. ([#331])
 
 ### Fixed
 
@@ -1118,6 +1120,7 @@ Initial release
 [#324]: https://github.com/cirrus-geo/cirrus-geo/pull/324
 [#326]: https://github.com/cirrus-geo/cirrus-geo/pull/326
 [#330]: https://github.com/cirrus-geo/cirrus-geo/pull/330
+[#331]: https://github.com/cirrus-geo/cirrus-geo/pull/331
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
