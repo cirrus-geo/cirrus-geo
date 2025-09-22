@@ -19,8 +19,9 @@ find_this () {
 setup_venv() {
     local venv
     venv="${1:?'provide path to directory for venv'}"
-    python -m venv "${venv}"
-    "${venv}/bin/pip" install "${THIS_DIR}"/..
+    uv venv "${venv}"
+    source "${venv}/bin/activate"
+    uv sync --locked --no-dev --active
 }
 
 
@@ -33,8 +34,10 @@ make_zip_base() {
     (
         cd "${site_packages}"
         zip -r "${dest}" .
-        # we don't need or want pip cluttering up our lambda zip
-        zip --delete "${dest}" 'pip/*'
+        # we don't need or want pip cluttering up our lambda zip (if it exists)
+        if zip -sf "${dest}" | grep -q "pip/"; then
+            zip --delete "${dest}" 'pip/*'
+        fi
     )
 }
 
