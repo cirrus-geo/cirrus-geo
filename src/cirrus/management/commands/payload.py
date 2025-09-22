@@ -26,20 +26,20 @@ def payload():
 @payload.command()
 def validate():
     """Validate an input payload (from stdin) is a valid cirrus payload"""
-    from cirrus.lib.process_payload import ProcessPayload
+    from cirrus.lib.cirrus_payload import CirrusPayload
 
     payload = sys.stdin.read()
-    ProcessPayload(**json.loads(payload))
+    CirrusPayload(**json.loads(payload)).validate()
 
 
 @payload.command("get-id")
 def get_id():
     """Retrieve or generate an ID for an input payload (from stdin)"""
-    from cirrus.lib.process_payload import ProcessPayload
+    from cirrus.lib.cirrus_payload import CirrusPayload
 
     payload = sys.stdin.read()
     click.echo(
-        ProcessPayload(**json.loads(payload), set_id_if_missing=True).payload["id"],
+        CirrusPayload(**json.loads(payload), set_id_if_missing=True)["id"],
     )
 
 

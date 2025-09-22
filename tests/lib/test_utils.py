@@ -262,32 +262,6 @@ def test_snsmessage_too_many_mesg_attrs() -> None:
         )
 
 
-@pytest.mark.xfail
-@pytest.mark.usefixtures("_environment")
-def test_manage_get_execution_by_payload_id(
-    deployment,
-    basic_payloads,
-    statedb,
-    wfem,
-    put_parameters,
-    st_func_execution_arn,
-) -> None:
-    """Adds causes two workflow executions, and confirms that the second call
-    to get_execution_by_payload_id gets a different executionArn value from the
-    first execution.
-    Checking that we are correcting getting MOST RECENT execution ARN from
-    dynamodb which requires a executon_arn[-1] call as new ones are simply
-    appended
-    """
-    basic_payloads.process(wfem)
-    pid = basic_payloads[0]["id"]
-    sfn_exe1 = deployment.get_execution_by_payload_id(pid)
-    statedb.set_aborted(pid, execution_arn=sfn_exe1["executionArn"])
-    basic_payloads.process(wfem)
-    sfn_exe2 = deployment.get_execution_by_payload_id(pid)
-    assert sfn_exe1["executionArn"] != sfn_exe2["executionArn"]
-
-
 def test_assume_role(sts):
     session = boto3.Session(region_name=MOCK_REGION)
     credentials = session._session.get_credentials()

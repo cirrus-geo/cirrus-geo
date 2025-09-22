@@ -8,7 +8,7 @@ from typing import Any
 from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import get_task_logger
-from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib.payload_manager import PayloadManager
 from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start
 
 cold_start()
@@ -24,9 +24,9 @@ INVALID_EXCEPTIONS = (
 @dataclass
 class Execution:
     arn: str
-    input: ProcessPayload
+    input: PayloadManager
     url: str
-    output: ProcessPayload | None
+    output: PayloadManager | None
     status: SfnStatus
     error: dict | None
 
@@ -48,10 +48,10 @@ class Execution:
         try:
             arn = event["detail"]["executionArn"]
 
-            _input = ProcessPayload.from_event(json.loads(event["detail"]["input"]))
+            _input = PayloadManager.from_event(json.loads(event["detail"]["input"]))
 
             eout = event["detail"].get("output", None)
-            output = ProcessPayload.from_event(json.loads(eout)) if eout else None
+            output = PayloadManager.from_event(json.loads(eout)) if eout else None
 
             status = event["detail"]["status"]
             error = None
@@ -76,7 +76,7 @@ class Execution:
                 url=(
                     event["url"]
                     if "url" in event
-                    else ProcessPayload.upload_to_s3(_input.payload)
+                    else PayloadManager.upload_to_s3(_input.payload)
                 ),
                 output=output,
                 status=status,

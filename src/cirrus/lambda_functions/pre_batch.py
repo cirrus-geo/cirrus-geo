@@ -5,14 +5,14 @@ from os import getenv
 from boto3utils import s3
 
 from cirrus.lib.logging import get_task_logger
-from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib.payload_manager import PayloadManager
 
 # envvars
 PAYLOAD_BUCKET = getenv("CIRRUS_PAYLOAD_BUCKET")
 
 
 def lambda_handler(event, context):
-    payload = ProcessPayload.from_event(event)
+    payload = PayloadManager.from_event(event).payload
     logger = get_task_logger("task.pre-batch", payload=payload)
 
     url = f"s3://{PAYLOAD_BUCKET}/batch/{payload['id']}/{uuid.uuid1()}.json"

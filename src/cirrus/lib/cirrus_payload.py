@@ -4,6 +4,11 @@ from stactask.payload import Payload
 class CirrusPayload(Payload):
     """Extends stac-task Payload with Cirrus-specific validation and ID setting."""
 
+    def __init__(self, *args, set_id_if_missing: bool = False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "id" not in self and set_id_if_missing:
+            self.set_id()
+
     def validate(self, set_id_if_missing: bool = False):
         super().validate()
 
@@ -23,9 +28,6 @@ class CirrusPayload(Payload):
                 "Payload must contain a 'workflow' field specifying the workflow name",
             )
 
-        if "id" not in self and set_id_if_missing:
-            self.set_id()
-
         if "workflow-" not in self["id"]:
             raise ValueError(
                 f"Payload 'id' field must contain 'workflow-': {self['id']}",
@@ -39,6 +41,12 @@ class CirrusPayload(Payload):
             raise ValueError(
                 "Payload has no 'id' specified and one "
                 "cannot be constructed without 'features'.",
+            )
+
+        if "workflow" not in self.process_definition:
+            raise ValueError(
+                "Payload has no 'id' specified and one cannot be "
+                "constructed without 'workflow' in the process definition.",
             )
 
         if "collections" in self.process_definition:

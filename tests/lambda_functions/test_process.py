@@ -10,7 +10,7 @@ from moto.sns.models import sns_backends
 
 from cirrus.lambda_functions.process import lambda_handler as process
 from cirrus.lib.events import WorkflowEventManager
-from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
+from cirrus.lib.payload_manager import PayloadManager, PayloadManagers
 
 
 def assert_sns_message_sequence(expected, topic):
@@ -921,22 +921,22 @@ def test_finding_claimed_item(
     workflow_event_topic,
 ):
     wfem = WorkflowEventManager()
-    proc_payload = ProcessPayload(**payload)
+    payload_manager = PayloadManager(**payload)
 
     pre_cooked_exec_arn = (
-        ProcessPayloads.gen_execution_arn(
+        PayloadManagers.gen_execution_arn(
             payload["id"],
             payload["process"][0]["workflow"],
         ).rpartition(":")[0]
         + ":from_db_entry"
     )
-    proc_payload._claim(wfem, pre_cooked_exec_arn, None)
-    proc_payloads = ProcessPayloads([ProcessPayload(**payload)], statedb=statedb)
-    state_items = proc_payloads.get_states_and_exec_arn()
-    state, exec_arn = state_items[proc_payload.payload["id"]]
+    payload_manager._claim(wfem, pre_cooked_exec_arn, None)
+    payload_managers = PayloadManagers([PayloadManager(**payload)], statedb=statedb)
+    state_items = payload_managers.get_states_and_exec_arn()
+    state, exec_arn = state_items[payload_manager.payload["id"]]
     assert state.value == "CLAIMED"
     assert exec_arn == pre_cooked_exec_arn
-    resp = proc_payload(wfem, pre_cooked_exec_arn, state)
+    resp = payload_manager(wfem, pre_cooked_exec_arn, state)
     assert resp is not None
     parts = resp.partition("/workflow-")
     collections_workflow = parts[0] + "_" + parts[2].partition("/")[0]
@@ -948,7 +948,7 @@ def test_finding_claimed_item(
 
 
 def test_execution_arn_format(payload):
-    actual = ProcessPayloads.gen_execution_arn(
+    actual = PayloadManagers.gen_execution_arn(
         payload["id"],
         payload["process"][0]["workflow"],
     )
@@ -960,11 +960,11 @@ def test_execution_arn_format(payload):
 
 
 def test_execution_name_idempotence(payload):
-    first_execution_name = ProcessPayloads.gen_execution_arn(
+    first_execution_name = PayloadManagers.gen_execution_arn(
         payload["id"],
         payload["process"][0]["workflow"],
     ).rpartition(":")[2]
-    second_execution_name = ProcessPayloads.gen_execution_arn(
+    second_execution_name = PayloadManagers.gen_execution_arn(
         payload["id"],
         payload["process"][0]["workflow"],
     ).rpartition(":")[2]
@@ -978,11 +978,11 @@ def test_missing_payload_bucket_raises(
     workflow_event_topic,
     monkeypatch,
 ):
-    payload = ProcessPayload(**payload)
+    payload_manager = PayloadManager(**payload)
     monkeypatch.delenv("CIRRUS_PAYLOAD_BUCKET")
     wfem = WorkflowEventManager()
     with pytest.raises(
         ValueError,
         match="env var CIRRUS_PAYLOAD_BUCKET must be defined",
     ):
-        payload._claim(wfem, "blah", None)
+        payload_manager._claim(wfem, "blah", None)

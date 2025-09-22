@@ -8,7 +8,7 @@ from cirrus.lib.enums import WFEventType
 from cirrus.lib.errors import NoUrlError
 from cirrus.lib.events import WorkflowEvent, WorkflowEventManager
 from cirrus.lib.logging import defer, get_task_logger
-from cirrus.lib.process_payload import ProcessPayload, ProcessPayloads
+from cirrus.lib.payload_manager import PayloadManager, PayloadManagers
 from cirrus.lib.statedb import StateDB
 
 utils.cold_start()
@@ -24,7 +24,7 @@ def is_sqs_message(message):
 def lambda_handler(event, context, *, wfem: WorkflowEventManager):
     logger.debug(json.dumps(event))
 
-    process_payloads: list[ProcessPayload] = []
+    payload_managers: list[PayloadManager] = []
     failures: list[Any] = []
     messages: dict[str, list[dict[str, Any]]] = {}
     for message in utils.normalize_event(event):
@@ -37,7 +37,7 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
                     event_type=WFEventType.RECORD_EXTRACT_FAILED,
                     payload_id="unknown",
                     isotimestamp=wfem.isotimestamp_now(),
-                    payload_url=ProcessPayload.upload_to_s3(message),
+                    payload_url=PayloadManager.upload_to_s3(message),
                     error=str(exc),
                 ),
             )
@@ -51,10 +51,10 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
         logger.debug("payload: %s", defer(json.dumps, payload))
 
         try:
-            process_payload = ProcessPayload(payload, set_id_if_missing=True)
+            payload_manager = PayloadManager(payload, set_id_if_missing=True)
         except Exception as exc:
             logger.exception(
-                "Failed to convert to ProcessPayload: %s",
+                "Failed to instantiate a PayloadManager: %s",
                 json.dumps(payload),
             )
             wfem.announce(
@@ -62,17 +62,17 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
                     event_type=WFEventType.NOT_A_PROCESS_PAYLOAD,
                     payload_id=payload.get("id", "unknown"),
                     isotimestamp=wfem.isotimestamp_now(),
-                    payload_url=ProcessPayload.upload_to_s3(payload),
+                    payload_url=PayloadManager.upload_to_s3(payload),
                     error=str(exc),
                 ),
             )
             failures.append(payload)
             continue
 
-        process_payloads.append(process_payload)
+        payload_managers.append(payload_manager)
 
         if is_sqs_message(message):
-            payload_id = process_payload.payload["id"]
+            payload_id = payload_manager.payload["id"]
             try:
                 messages[payload_id].append(message)
             except KeyError:
@@ -80,8 +80,8 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
 
     processed_ids: set[str] = set()
     processed: dict[str, list[str]] = {"started": []}
-    if len(process_payloads) > 0:
-        processed = ProcessPayloads(process_payloads, StateDB()).process(wfem)
+    if len(payload_managers) > 0:
+        processed = PayloadManagers(payload_managers, StateDB()).process(wfem)
         processed_ids = {pid for state in processed for pid in processed[state]}
 
     successful_sqs_messages = [

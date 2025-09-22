@@ -19,7 +19,7 @@ from botocore.exceptions import ClientError
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, daily, hourly
-from cirrus.lib.process_payload import ProcessPayload
+from cirrus.lib.payload_manager import PayloadManager
 from cirrus.lib.statedb import StateDB, to_current
 from cirrus.lib.utils import assume_role, get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
@@ -161,7 +161,7 @@ class Deployment:
             raise PayloadNotFoundError(payload_id)
         return state
 
-    def process_payload(self, payload):
+    def enqueue_payload(self, payload):
         stream = None
 
         if hasattr(payload, "read"):
@@ -272,10 +272,10 @@ class Deployment:
             dict containing output payload or error message
 
         """
-        process_payload = ProcessPayload(payload)
-        wf_id = process_payload.payload["id"]
+        payload_manager = PayloadManager(payload)
+        wf_id = payload_manager.payload["id"]
         logger.info("Submitting %s to %s", wf_id, self.name)
-        resp = self.process_payload(json.dumps(process_payload.payload))
+        resp = self.enqueue_payload(json.dumps(payload_manager.payload))
         logger.debug(resp)
 
         state = "PROCESSING"
@@ -289,7 +289,7 @@ class Deployment:
         execution = self.get_execution_by_payload_id(wf_id)
 
         if state == "COMPLETED":
-            output = ProcessPayload.from_event(json.loads(execution["output"])).payload
+            output = PayloadManager.from_event(json.loads(execution["output"])).payload
         elif state == "PROCESSING":
             output = {"last_error": "Unkonwn: cirrus-mgmt polling timeout exceeded"}
         else:

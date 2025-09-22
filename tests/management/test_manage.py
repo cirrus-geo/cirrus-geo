@@ -1,4 +1,5 @@
 import json
+import os
 
 import pytest
 
@@ -9,15 +10,15 @@ from cirrus.management.deployment import (
 )
 from tests.management.conftest import mock_parameters
 
-MOCK_DEPLYOMENT_NAME = "lion"
+MOCK_DEPLOYMENT_NAME = "lion"
 STACK_NAME = "cirrus-test"
 MOCK_CIRRUS_PREFIX = "ts-lion-dev-cirrus"
 
 
 @pytest.fixture
 def manage(invoke):
-    def _manage(cmd):
-        return invoke("manage " + cmd)
+    def _manage(cmd, **kwargs):
+        return invoke("manage " + cmd, **kwargs)
 
     return _manage
 
@@ -30,14 +31,14 @@ def deployment(manage, queue, payloads, data, statedb, workflow, sts, iam_role):
     Deployment.__call__ = _manage
 
     return Deployment(
-        MOCK_DEPLYOMENT_NAME,
+        MOCK_DEPLOYMENT_NAME,
         mock_parameters(
             queue,
             payloads,
             data,
             statedb,
             workflow,
-            MOCK_DEPLYOMENT_NAME,
+            MOCK_DEPLOYMENT_NAME,
             iam_role,
         ),
     )
@@ -70,7 +71,40 @@ def test_manage_get_execution_by_payload_id(
     assert json.loads(result.stdout.strip())["executionArn"] == st_func_execution_arn
 
 
-# using non-stac payloads for simplier testing
+@pytest.fixture
+def _management_env(_environment, payloads, workflow):
+    state_machine_arn = workflow["stateMachineArn"]
+    os.environ["CIRRUS_BASE_WORKFLOW_ARN"] = state_machine_arn[: -len("test-workflow1")]
+    os.environ["CIRRUS_PAYLOAD_BUCKET"] = payloads
+
+
+@pytest.mark.usefixtures("_management_env")
+def test_manage_get_execution_by_payload_id_twice(
+    deployment,
+    basic_payload_managers_factory,
+    wfem,
+) -> None:
+    """Causes two workflow executions of the same payload, and confirms that the second
+    call to get_execution_by_payload_id gets a different executionArn value from the
+    first execution. This confirms that we are getting the most recent execution ARN
+    from dynamodb, as new ones are simply appended.
+    """
+    basic_payload_managers1 = basic_payload_managers_factory()
+    basic_payload_managers1.process(wfem)
+    pid = basic_payload_managers1[0].payload["id"]
+    sfn_exe1 = deployment.get_execution_by_payload_id(pid)
+
+    # alter state to allow a new workflow execution of the same payload
+    wfem.aborted(pid, execution_arn=sfn_exe1["executionArn"])
+
+    # Create a new PayloadManagers object so it fetches fresh state
+    basic_payload_managers2 = basic_payload_managers_factory()
+    basic_payload_managers2.process(wfem)
+    sfn_exe2 = deployment.get_execution_by_payload_id(pid)
+    assert sfn_exe1["executionArn"] != sfn_exe2["executionArn"]
+
+
+# using non-stac payloads for simpler testing
 def test_get_payload(
     deployment,
     create_records,
@@ -122,11 +156,15 @@ def test_list_lambdas(deployment, make_lambdas, put_parameters, iam_role):
     )
 
 
-@pytest.mark.xfail
-def test_process(deployment, manage, make_lambdas):
-    result = deployment('process {"a": "payload to test process command"}')
+def test_process(deployment, manage, make_lambdas, put_parameters):
+    result = manage("lion process", input='{"a": "payload to test process command"}')
     assert result.exit_code == 0
-    assert result.stdout.strip == json.dumps('{"a": "check"}')
+
+    # The process command returns SQS metadata when the payload is successfully enqueued
+    output = json.loads(result.stdout.strip())
+    assert "MessageId" in output
+    assert "MD5OfMessageBody" in output
+    assert output["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
 def test_manage_show_deployment(deployment, put_parameters):
