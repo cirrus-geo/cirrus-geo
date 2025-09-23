@@ -2,6 +2,7 @@ import json
 import os
 import uuid
 
+from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -11,7 +12,6 @@ from time import time
 from typing import Any, Self
 
 from botocore.exceptions import ParamValidationError
-import boto3
 
 from .enums import StateEnum, WFEventType
 from .eventdb import EventDB
@@ -56,6 +56,21 @@ class WorkflowEvent:
             body=self.serialize(),
             attributes=self.sns_attributes(),
         )
+
+    def log_metric_format(self: Self) -> dict[str, Any]:
+        if match := PAYLOAD_ID_REGEX.match(self.payload_id):
+            workflow = match.group("workflow")
+            source = match.group("collections")
+        else:
+            workflow = "could not parse"
+            source = str(self.payload_id)
+
+        return {
+            "event": self.event_type,
+            "workflow": workflow,
+            "source": source,
+            "execution_arn": self.execution_arn,
+        }
 
     def sns_attributes(self: Self) -> dict[str, dict[str, str]]:
         attrs = {
@@ -425,19 +440,19 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
     def __init__(
         self: Self,
         logger: Logger | None = None,
-        log_group_name: str | None = None,
+        log_group_name: str = "",
         batch_size: int = 1,
     ):
         super().__init__(batchable=self._send, batch_size=batch_size)
         self.logger = logger if logger is not None else getLogger(__name__)
         self.log_group_name = (
             log_group_name
-            if log_group_name is not None
+            if len(log_group_name) > 0
             else os.getenv("CIRRUS_WORKFLOW_LOG_GROUP", "")
         )
         self.sequence_token = None
 
-        if self.log_group_name:
+        if self.log_group_name != "":
             self.logs_client = get_client("logs")
             # Generate a UUID-based log stream name
             self.log_stream_name = f"workflow-metrics-{uuid.uuid4()}"
@@ -495,114 +510,91 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
         if self.enabled():
             super().add(event)
 
-    def build_log_event(
-        self: Self,
-        event: WorkflowEvent,
-        timestamp: int,
-    ) -> dict[str, Any]:
-        if match := PAYLOAD_ID_REGEX.match(event.payload_id):
-            workflow = match.group("workflow")
-            source = match.group("collections")
-        else:
-            workflow = "unknown"
-            source = "unknown"
-
-        message = {
-            "event": event.event_type,
-            "workflow": workflow,
-            "source": source,
-            "execution_arn": event.execution_arn,
-        }
-        return {
-            "timestamp": timestamp,
-            "message": json.dumps(message),
-        }
-
     def prepare_batch(self: Self, batch: list[WorkflowEvent]) -> list[dict[str, Any]]:
         timestamp = int(time() * 1000)
+
         return [
-            self.build_log_event(event, timestamp + i) for i, event in enumerate(batch)
+            {
+                "message": json.dumps(event.log_metric_format()),
+                "timestamp": timestamp + i,
+            }
+            for i, event in enumerate(batch)
         ]
 
 
 class WorkflowMetricReader:
     """
     A class for retrieving workflow metrics from CloudWatch.
-
-    Args:
-        logger (Logger | None): Logger instance to use. If None, a default logger is used.
-        metric_name (str | None): Name of the CloudWatch metric to query. If None, uses the CIRRUS_WORKFLOW_METRIC_NAME environment variable.
-        metric_namespace (str | None): Namespace of the CloudWatch metric. If None, uses the CIRRUS_WORKFLOW_METRIC_NAMESPACE environment variable.
-
-    Attributes:
-        metric_name (str): The CloudWatch metric name.
-        metric_namespace (str): The CloudWatch metric namespace.
-        cw_client: The boto3 CloudWatch client.
-        logger: Logger instance.
-        _enabled (bool): Whether the metric reader is enabled (based on metric name and namespace).
-
-    Methods:
-        enabled() -> bool:
-            Returns True if the metric reader is enabled.
-
-        get_statistics(
-            states: list[WFEventType],
-            workflows: list[str],
-            start_time: datetime,
-            end_time: datetime,
-            period: int = 3600,
-            statistics: list[str] | None = None,
-        ) -> dict[str, Any] | None:
-            Retrieve metric statistics from CloudWatch.
-
-        query_hour(start: int, end: int) -> dict[str, Any]:
-            Query CloudWatch metrics for a specific hour range.
-
-        query_by_bin_and_duration(bin_size: str, duration: str) -> dict[str, Any]:
-            Query CloudWatch metrics for a given bin size and duration.
     """
+
+    _agg_statistic = "SampleCount"
 
     def __init__(
         self,
         logger: Logger | None = None,
-        metric_name: str | None = None,
-        metric_namespace: str | None = None,
+        metric_namespace: str = "",
+        log_group_name: str = "",
     ):
-        self.metric_name = (
-            metric_name
-            if metric_name is not None
-            else os.getenv("CIRRUS_WORKFLOW_METRIC_NAME", "")
-        )
+        """
+
+        Args:
+           logger (Logger | None): Logger instance to use. If None is provided, the
+                default logger is used.
+            metric_namespace (str): Namespace of the CloudWatch metric.
+                If "", then use the CIRRUS_WORKFLOW_METRIC_NAMESPACE from environment.
+
+            log_group_name (str): Log Group associated with the CloudWatch metrics.
+                If "", then use the CIRRUS_WORKFLOW_METRIC_NAMESPACE from environment.
+        """
+
         self.cw_client = get_client("cloudwatch")
         self.logger = logger if logger is not None else getLogger(__name__)
         self.metric_namespace = (
             metric_namespace
-            if metric_namespace
+            if metric_namespace != ""
             else os.getenv(
-                "CIRRUS_WORKFLOW_METRIC_NAMESPACE", "log-cannon-metric-namespace"
+                "CIRRUS_WORKFLOW_METRIC_NAMESPACE",
+                "",
             )
         )
-        self._enabled = (metric_name is not None or self.metric_name != "") and (
-            metric_namespace is not None or self.metric_namespace != ""
+        self.log_group_name = (
+            log_group_name
+            if log_group_name != ""
+            else os.getenv("CIRRUS_WORKFLOW_LOG_GROUP", "")
         )
+        self._enabled = metric_namespace is not None or self.metric_namespace != ""
+        self.metric_some_workflows = "a_workflow_by_event"
+        self.metric_all_workflows = "all_workflows_by_event"
+        if self._enabled:
+            resp = get_client("logs").describe_metric_filters(
+                logGroupName=self.log_group_name,
+            )
+            list_of_metrics = resp.get("metricFilters", [])
+            self._metrics = {metric["filterName"] for metric in list_of_metrics}
+            if self.metric_some_workflows not in self._metrics or (
+                self.metric_all_workflows not in self._metrics
+            ):
+                raise ValueError(
+                    f"No metrics found in namespace {self.metric_namespace}",
+                )
 
     def enabled(self) -> bool:
         return self._enabled
 
-    def get_statistics(
+    def aggregated_for_specified_workflows(
         self,
-        states: list[WFEventType],
         workflows: list[str],
         start_time: datetime,
         end_time: datetime,
         period: int = 3600,
+        event_types: list[WFEventType] | None = None,
         statistics: list[str] | None = None,
-    ) -> dict[str, Any] | None:
+    ) -> dict[datetime, dict[str, dict[str, float]]]:
         """
         Retrieve metric statistics from CloudWatch.
 
         Args:
-            states (list[WFEventType]): List of workflow event types (states) to filter.
+            event_types (list[WFEventType]): List of workflow event types to filter.
             workflows (list[str]): List of workflow names to filter.
             start_time (datetime): Start of the time window.
             end_time (datetime): End of the time window.
@@ -610,51 +602,111 @@ class WorkflowMetricReader:
             statistics (list[str]): List of statistics to retrieve.
 
         Returns:
-            dict[str, Any] | None: Dictionary of metric statistics found, or None if retrieval failed.
+            dict[str, Any] | None: Dictionary of metric statistics found, or None if
+            retrieval failed.
         """
         if statistics is None:
-            statistics = ["SampleCount", "Sum"]
-        if :
-            dimensions = [
-                {"Name": "state", "Value": "COMPLETED"},
-                {"Name": "workflow", "Value": "workflow"},
-            ]
-        try:
+            statistics = [WorkflowMetricReader._agg_statistic]
+        if event_types is None:
+            event_types = list(WFEventType)
+        cstats: dict[datetime, dict[str, dict[str, float]]] = defaultdict(
+            lambda: defaultdict(lambda: dict.fromkeys(statistics, 0.0)),
+        )
+
+        for workflow in workflows:
+            for event_type in event_types:
+                resp = self.cw_client.get_metric_statistics(
+                    Namespace=self.metric_namespace,
+                    MetricName=self.metric_some_workflows,
+                    Dimensions=[
+                        {"Name": "event", "Value": str(event_type)},
+                        {"Name": "workflow", "Value": workflow},
+                    ],
+                    StartTime=start_time,
+                    EndTime=end_time,
+                    Period=period,
+                    Statistics=statistics,
+                )
+                for datapoint in resp["Datapoints"]:
+                    tstamp = datapoint["Timestamp"].replace(second=0, microsecond=0)
+                    for statistic in statistics:
+                        stat = datapoint[statistic]
+                        cstats[tstamp][str(event_type)][statistic] += stat
+        # TODO: break this out by workflow, maybe
+        return {k: dict(v) for k, v in cstats.items()}
+
+    def aggregated_by_event_type(
+        self,
+        start_time: datetime,
+        end_time: datetime,
+        period: int = 3600,
+        event_types: list[WFEventType] | None = None,
+        statistics: list[str] | None = None,
+    ) -> dict[datetime, dict[str, dict[str, float]]]:
+        """
+        Retrieve metric statistics from CloudWatch.
+
+        Args:
+            event_types (list[WFEventType]): List of workflow event types to filter.
+            start_time (datetime): Start of the time window.
+            end_time (datetime): End of the time window.
+            period (int): Granularity in seconds.
+            statistics (list[str]): List of statistics to retrieve.
+
+        Returns:
+            dict[str, Any] | None: Dictionary of metric statistics found, or None if
+            retrieval failed.
+        """
+        if statistics is None:
+            statistics = [WorkflowMetricReader._agg_statistic]
+        if event_types is None:
+            event_types = list(WFEventType)
+        cstats: dict[datetime, dict[str, dict[str, float]]] = defaultdict(
+            lambda: defaultdict(lambda: dict.fromkeys(statistics, 0.0)),
+        )
+        for event_type in event_types:
             resp = self.cw_client.get_metric_statistics(
                 Namespace=self.metric_namespace,
-                MetricName=self.metric_name,
-                Dimensions=dimensions,
+                MetricName=self.metric_all_workflows,
+                Dimensions=[
+                    {"Name": "event", "Value": str(event_type)},
+                ],
                 StartTime=start_time,
                 EndTime=end_time,
                 Period=period,
                 Statistics=statistics,
             )
-        except Exception as e:
-            if self.logger:
-                self.logger.error("Failed to retrieve metric statistics: %s", e)
-            return None
+            for datapoint in resp["Datapoints"]:
+                tstamp = datapoint["Timestamp"].replace(second=0, microsecond=0)
+                for statistic in statistics:
+                    stat = datapoint[statistic]
+                    cstats[tstamp][str(event_type)][statistic] += stat
 
-        return resp.get("Datapoints")
+        return {k: dict(v) for k, v in cstats.items()}
 
-    def query_hour(self, start: int, end: int) -> dict[str, Any]:
+    def query_hour(
+        self,
+        start: int,
+        end: int,
+    ) -> dict[datetime, dict[str, dict[str, float]]]:
         """
         Query CloudWatch metrics for a specific hour range.
         """
 
         end_time = datetime.now(UTC) - timedelta(hours=end)
         start_time = datetime.now(UTC) - timedelta(hours=start)
-        return self.get_statistics(
+        return self.aggregated_by_event_type(
+            event_types=[WFEventType.SUCCEEDED, WFEventType.FAILED],
             start_time=start_time,
             end_time=end_time,
             period=3600,
-            statistics=["SampleCount", "Sum"],
         )
 
     def query_by_bin_and_duration(
         self,
         bin_size: str,
         duration: str,
-    ) -> dict[str, Any]:
+    ) -> dict[datetime, dict[str, dict[str, float]]]:
         """
         Query CloudWatch metrics for a given bin size and duration.
         bin_size: e.g. '1d', '1h'
@@ -665,36 +717,10 @@ class WorkflowMetricReader:
         end_time = datetime.now(UTC)
         start_time = end_time - delta
 
-        period = parse_since(bin_size).total_seconds
+        period = int(parse_since(bin_size).total_seconds())
 
-        return self.get_statistics(
+        return self.aggregated_by_event_type(
             start_time=start_time,
             end_time=end_time,
             period=period,
-            statistics=["SampleCount", "Sum"],
         )
-
-
-"""
-def transform_results(
-        results: dict[str, Any],
-        timestamp_function: Callable[[str], str],
-        interval: str,
-) -> list[dict[str, Any]]:
-    return [
-        {
-            "period": ts,
-            "interval": interval,
-            "states": [
-                {
-                    "state": state.value,
-                    "unique_count": state_val[0],
-                    "count": state_val[1],
-                }
-                for state in StateEnum
-                if (state_val := states.get(state, (0, 0)))
-            ],
-        }
-        for ts, states in results["Datapoints"]
-    ]
-"""
