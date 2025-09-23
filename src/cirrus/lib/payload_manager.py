@@ -47,14 +47,13 @@ class PayloadManager:
         """
         self.payload = CirrusPayload(
             *args,
-            **kwargs,
             set_id_if_missing=set_id_if_missing,
+            **kwargs,
         )
         self.payload.validate()
 
         self.logger = get_task_logger(__name__, payload=self.payload)
         self.process = self.payload.process_definition
-        self.features = self.payload.items_as_dicts
         self.state_item = state_item
 
     @classmethod
@@ -142,7 +141,7 @@ class PayloadManager:
                 body=json.dumps(item),
                 attributes=build_item_sns_attributes(item),
             )
-            for item in self.features
+            for item in self.payload.items_as_dicts
         ]
 
     def _fail_and_raise(self, wfem, e, url):
