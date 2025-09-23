@@ -102,31 +102,6 @@ class PayloadManager:
                 new["features"] = [match.value for match in jsonfilter.find(new)]
             yield new
 
-    def set_id(self):
-        if "id" in self.payload:
-            return
-
-        if not self.features:
-            raise ValueError(
-                "Payload has no 'id' specified and one "
-                "cannot be constructed without 'features'.",
-            )
-
-        if "collections" in self.process:
-            # allow overriding of collections name
-            collections_str = self.process["collections"]
-        else:
-            # otherwise, get from items
-            cols = sorted(
-                {i["collection"] for i in self.features if "collection" in i},
-            )
-            collections_str = "/".join(cols) if len(cols) != 0 else "none"
-
-        items_str = "/".join(sorted([i["id"] for i in self.features]))
-        self.payload["id"] = (
-            f"{collections_str}/workflow-{self.process['workflow']}/{items_str}"
-        )
-
     @staticmethod
     def upload_to_s3(payload: dict, bucket: str | None = None) -> str:
         """Helper function to upload a dict (not necessarily a payload) to s3"""

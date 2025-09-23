@@ -16,6 +16,7 @@ import boto3
 
 from botocore.exceptions import ClientError
 
+from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, daily, hourly
@@ -272,10 +273,11 @@ class Deployment:
             dict containing output payload or error message
 
         """
-        payload_manager = PayloadManager(payload)
-        wf_id = payload_manager.payload["id"]
+        input = CirrusPayload(payload)
+        input.validate()
+        wf_id = input["id"]
         logger.info("Submitting %s to %s", wf_id, self.name)
-        resp = self.enqueue_payload(json.dumps(payload_manager.payload))
+        resp = self.enqueue_payload(json.dumps(input))
         logger.debug(resp)
 
         state = "PROCESSING"

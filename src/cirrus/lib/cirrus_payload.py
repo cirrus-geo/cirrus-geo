@@ -4,12 +4,12 @@ from stactask.payload import Payload
 class CirrusPayload(Payload):
     """Extends stac-task Payload with Cirrus-specific validation and ID setting."""
 
-    def __init__(self, *args, set_id_if_missing: bool = False, **kwargs):
+    def __init__(self, *args, set_id_if_missing: bool = False, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         if "id" not in self and set_id_if_missing:
             self.set_id()
 
-    def validate(self, set_id_if_missing: bool = False):
+    def validate(self) -> None:
         super().validate()
 
         if "process" not in self:
@@ -33,7 +33,7 @@ class CirrusPayload(Payload):
                 f"Payload 'id' field must contain 'workflow-': {self['id']}",
             )
 
-    def set_id(self):
+    def set_id(self) -> None:
         if "id" in self:
             return
 
