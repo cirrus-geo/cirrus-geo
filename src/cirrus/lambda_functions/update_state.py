@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from os import getenv
 from typing import Any
 
+from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import get_task_logger
@@ -48,10 +49,18 @@ class Execution:
         try:
             arn = event["detail"]["executionArn"]
 
-            _input = PayloadManager.from_event(json.loads(event["detail"]["input"]))
+            _input = PayloadManager(
+                CirrusPayload.from_event(
+                    json.loads(event["detail"]["input"]),
+                ),
+            )
 
             eout = event["detail"].get("output", None)
-            output = PayloadManager.from_event(json.loads(eout)) if eout else None
+            output = (
+                PayloadManager(CirrusPayload.from_event(json.loads(eout)))
+                if eout
+                else None
+            )
 
             status = event["detail"]["status"]
             error = None

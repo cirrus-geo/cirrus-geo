@@ -5,6 +5,7 @@ from typing import Any
 
 import boto3
 
+from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.payload_manager import PayloadManager
 
@@ -18,7 +19,7 @@ ERROR_REGEX = re.compile(r"^(?:([\.\w]+):)?\s*(.*)")
 
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     if "error" not in event:
-        return PayloadManager.from_event(event).get_payload()
+        return PayloadManager(CirrusPayload.from_event(event)).get_payload()
 
     error = event.get("error", {})
     if "Cause" not in error:

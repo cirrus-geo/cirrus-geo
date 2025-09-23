@@ -59,38 +59,13 @@ def chain_filter_payload(chain_payload):
     return chain_filter_result
 
 
-def test_open_payload(base_payload):
-    payload = PayloadManager(**base_payload).payload
-    assert (
-        payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
-    )
-
-
-def test_update_payload(base_payload):
-    del base_payload["id"]
-    del base_payload["features"][0]["links"]
-    payload = PayloadManager(**base_payload, set_id_if_missing=True).payload
-    assert (
-        payload["id"] == "sentinel-s2-l2a/workflow-cog-archive/S2B_17HQD_20201103_0_L2A"
-    )
-
-
-def test_from_event(sqs_event):
-    payload = PayloadManager.from_event(sqs_event, set_id_if_missing=True).payload
-    assert len(payload["features"]) == 1
-    assert (
-        payload["id"]
-        == "sentinel-s2-l2a-aws/workflow-publish-sentinel/tiles-17-H-QD-2020-11-3-0"
-    )
-
-
 def test_next_payloads_no_list(base_payload):
-    payloads = list(PayloadManager.from_event(base_payload).next_payloads())
+    payloads = list(PayloadManager(base_payload).next_payloads())
     assert len(payloads) == 0
 
 
 def test_next_payloads_list_of_one(base_payload):
-    payloads = list(PayloadManager.from_event(base_payload).next_payloads())
+    payloads = list(PayloadManager(base_payload).next_payloads())
     assert len(payloads) == 0
 
 
@@ -107,7 +82,7 @@ def test_next_payloads_list_of_four(base_payload):
     #     - wf2
     #     - wf3
     #     - wf4
-    payloads = list(PayloadManager.from_event(list_payload).next_payloads())
+    payloads = list(PayloadManager(list_payload).next_payloads())
 
     # When we call next_payloads, we find one next payload (wf2)
     # with two to follow. So the length of the list returned should be
@@ -130,7 +105,7 @@ def test_next_payloads_list_of_four_fork(base_payload):
     #     - [ wf2a, wf2b]  # noqa: ERA001
     #     - wf3
     #     - wf4
-    payloads = list(PayloadManager.from_event(list_payload).next_payloads())
+    payloads = list(PayloadManager(list_payload).next_payloads())
 
     # When we call next_payloads, we find two next payloads
     # (wf2a and wf2b), each with two to follow. So the length of
@@ -150,37 +125,12 @@ def test_next_payloads_chain_filter(chain_payload, chain_filter_payload):
     assert recursive_compare(payloads[0], chain_filter_payload)
 
 
-def test_payload_no_process(base_payload):
-    del base_payload["process"]
-    expected = "Payload must contain a 'process' array of process definitions"
-    with pytest.raises(ValueError, match=expected):
-        PayloadManager.from_event(base_payload)
-
-
-def test_payload_empty_process_array(base_payload):
-    base_payload["process"] = []
-    expected = (
-        "Payload 'process' field must be an array with at least one process definition"
-    )
-    with pytest.raises(TypeError, match=expected):
-        PayloadManager.from_event(base_payload)
-
-
-def test_payload_process_not_an_array(base_payload):
-    base_payload["process"] = base_payload["process"][0]
-    expected = (
-        "Payload 'process' field must be an array with at least one process definition"
-    )
-    with pytest.raises(TypeError, match=expected):
-        PayloadManager.from_event(base_payload)
-
-
 def test_items_to_sns_messages(base_payload):
     # SNSMessage instances do not implement the equality dunder method; instead,
     # compare the rendered message contents.
     messages = [
         message.render()
-        for message in PayloadManager.from_event(base_payload).items_to_sns_messages()
+        for message in PayloadManager(base_payload).items_to_sns_messages()
     ]
     expected = [
         {
@@ -192,6 +142,6 @@ def test_items_to_sns_messages(base_payload):
 
 
 def test_fail_and_raise(base_payload):
-    payload = PayloadManager(**base_payload)
+    payload_manager = PayloadManager(base_payload)
     with pytest.raises(Exception):
-        payload._fail_and_raise()
+        payload_manager._fail_and_raise()

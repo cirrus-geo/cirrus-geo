@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import json
 import logging
 import os
@@ -16,16 +15,13 @@ from botocore.exceptions import ClientError
 
 from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.enums import StateEnum
-from cirrus.lib.errors import NoUrlError
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import (
     SNSMessage,
     build_item_sns_attributes,
-    extract_event_records,
     get_client,
-    payload_from_s3,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,12 +34,32 @@ class TerminalError(Exception):
 
 
 class PayloadManager:
-    def __init__(self, *args, set_id_if_missing=False, state_item=None, **kwargs):
-        """Initialize a PayloadManager, verify input payload fields, assign payload ID
+    def __init__(
+        self,
+        *args,
+        set_id_if_missing: bool = False,
+        state_item: dict | None = None,
+        **kwargs,
+    ):
+        """Create a PayloadManager wrapper around a CirrusPayload.
+
+        All positional and keyword arguments (other than set_id_if_missing and
+        state_item) are forwarded directly to CirrusPayload. After construction
+        the payload is validated, a task-scoped logger is created, and (optionally)
+        an existing StateDB item is attached for downstream state handling.
 
         Args:
-            state_item (Dict, optional): Dictionary of entry in StateDB.
-                Defaults to None.
+            *args: Positional arguments passed through to CirrusPayload (typically
+                a single payload dict).
+            set_id_if_missing (bool): If True, generate and assign an ID when the
+                incoming payload lacks one.
+            state_item (dict | None): Existing StateDB record for this payload, if
+                already persisted.
+            **kwargs: Additional keyword arguments forwarded to CirrusPayload.
+
+        Raises:
+            Exception: Propagates any validation or construction errors raised by
+                CirrusPayload.validate().
         """
         self.payload = CirrusPayload(
             *args,
@@ -54,31 +70,6 @@ class PayloadManager:
 
         self.logger = get_task_logger(__name__, payload=self.payload)
         self.state_item = state_item
-
-    @classmethod
-    def from_event(cls, event: dict, **kwargs) -> PayloadManager:
-        """Parse a Cirrus event and return a PayloadManager instance
-
-        Args:
-            event (Dict): An event from SNS, SQS, or containing an s3 URL to payload
-
-        Returns:
-            PayloadManager: A PayloadManager instance
-        """
-        records = list(extract_event_records(event))
-
-        if len(records) == 0:
-            raise ValueError("Failed to extract record: %s", json.dumps(event))
-        if len(records) > 1:
-            raise ValueError("Multiple payloads are not supported")
-
-        payload = records[0]
-
-        # if the payload has a URL in it then we'll fetch it from S3
-        with contextlib.suppress(NoUrlError):
-            payload = payload_from_s3(payload)
-
-        return cls(payload, **kwargs)
 
     def next_payloads(self):
         if len(self.payload["process"]) <= 1:
@@ -320,7 +311,7 @@ class PayloadManagers:
         self: Self,
         payload_managers: list[PayloadManager],
         statedb: StateDB,
-        state_items=None,
+        state_items: list[dict] | None = None,
     ) -> None:
         self.payload_managers = payload_managers
         self.statedb = statedb

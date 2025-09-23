@@ -1,4 +1,12 @@
+from __future__ import annotations
+
+import contextlib
+import json
+
 from stactask.payload import Payload
+
+from cirrus.lib.errors import NoUrlError
+from cirrus.lib.utils import extract_event_records, payload_from_s3
 
 
 class CirrusPayload(Payload):
@@ -63,3 +71,28 @@ class CirrusPayload(Payload):
         self["id"] = (
             f"{collections_str}/workflow-{self.process_definition['workflow']}/{items_str}"
         )
+
+    @classmethod
+    def from_event(cls, event: dict, **kwargs) -> CirrusPayload:
+        """Parse a Cirrus event and return a CirrusPayload instance
+
+        Args:
+            event (Dict): An event from SNS, SQS, or containing an s3 URL to payload
+
+        Returns:
+            CirrusPayload: A CirrusPayload instance
+        """
+        records = list(extract_event_records(event))
+
+        if len(records) == 0:
+            raise ValueError("Failed to extract record: %s", json.dumps(event))
+        if len(records) > 1:
+            raise ValueError("Multiple payloads are not supported")
+
+        payload = records[0]
+
+        # if the payload has a URL in it then we'll fetch it from S3
+        with contextlib.suppress(NoUrlError):
+            payload = payload_from_s3(payload)
+
+        return cls(payload, **kwargs)
