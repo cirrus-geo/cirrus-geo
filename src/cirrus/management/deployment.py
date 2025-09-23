@@ -20,7 +20,6 @@ from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, daily, hourly
-from cirrus.lib.payload_manager import PayloadManager
 from cirrus.lib.statedb import StateDB, to_current
 from cirrus.lib.utils import assume_role, get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
@@ -290,8 +289,9 @@ class Deployment:
 
         execution = self.get_execution_by_payload_id(wf_id)
 
+        output: dict[str, Any]
         if state == "COMPLETED":
-            output = PayloadManager.from_event(json.loads(execution["output"])).payload
+            output = CirrusPayload.from_event(json.loads(execution["output"]))
         elif state == "PROCESSING":
             output = {"last_error": "Unkonwn: cirrus-mgmt polling timeout exceeded"}
         else:
