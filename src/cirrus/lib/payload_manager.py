@@ -53,7 +53,6 @@ class PayloadManager:
         self.payload.validate()
 
         self.logger = get_task_logger(__name__, payload=self.payload)
-        self.process = self.payload.process_definition
         self.state_item = state_item
 
     @classmethod
@@ -356,7 +355,10 @@ class PayloadManagers:
             {
                 p.payload["id"]: (
                     None,
-                    self.gen_execution_arn(p.payload["id"], p.process["workflow"]),
+                    self.gen_execution_arn(
+                        p.payload["id"],
+                        p.payload.process_definition["workflow"],
+                    ),
                 )
                 for p in self.payload_managers
                 if p.payload["id"] not in response
@@ -425,7 +427,10 @@ class PayloadManagers:
         states = self.get_states_and_exec_arn()
 
         for payload_manager in self.payload_managers:
-            _replace = replace or payload_manager.process.get("replace", False)
+            _replace = replace or payload_manager.payload.process_definition.get(
+                "replace",
+                False,
+            )
 
             # check existing state for Item, if any
             state, exec_arn = states[payload_manager.payload["id"]]
