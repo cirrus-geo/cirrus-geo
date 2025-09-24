@@ -28,7 +28,7 @@ STAC-based workflows
 ^^^^^^^^^^^^^^^^^^^^
 
 A core design aspect of Cirrus is the use of the `STAC`_ metadata specification
-as a basis for the :doc:`Cirrus Process Payload <30_payload>` format. In this
+as a basis for the :doc:`Cirrus Payload <30_payload>` format. In this
 way Cirrus, encourages a highly-interoperable, metadata-first approach for both
 pipeline operators and end users alike.
 
@@ -46,13 +46,13 @@ Cirrus is organized into reusable blocks called :doc:`Components
 <60_components>`. There are four types of Components:
 
 * :doc:`Feeders <components/feeders/index>` accept arbitrary input, and
-  output a Cirrus Process Payload which is enqueued for processing. These can
+  output a Cirrus Payload which is enqueued for processing. These can
   be used to initiate processing from any source, for example, an SNS topic
   message indicating a new scene is available or an S3 Inventory of existing
   scenes.  Cirrus does not come pre-loaded with feeders, and they must be
   set up by users.
 * :doc:`Tasks <components/tasks/index>` are the basic unit of work in a
-  Workflow and use a Cirrus Process Payload for both input and output. This is
+  Workflow and use a Cirrus Payload for both input and output. This is
   where specific processing, for example, transforming data to data (e.g.
   JPEG200 to COG), data to metadata (e.g., COG to STAC), or metadata to
   metadata (e.g., MTL to STAC).
@@ -163,5 +163,5 @@ Algorithm Developers
 
 * :doc:`Components <60_components>`
 * :doc:`Tasks <components/tasks/index>`
-* :doc:`Cirrus Process Payload format <30_payload>`
+* :doc:`Cirrus Payload format <30_payload>`
 * ``cirrus-lib`` documentation
