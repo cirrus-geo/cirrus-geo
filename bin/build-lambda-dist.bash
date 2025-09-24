@@ -35,9 +35,7 @@ make_zip_base() {
         cd "${site_packages}"
         zip -r "${dest}" .
         # we don't need or want pip cluttering up our lambda zip (if it exists)
-        if zip -sf "${dest}" | grep -q "pip/"; then
-            zip --delete "${dest}" 'pip/*'
-        fi
+        zip --delete "${dest}" 'pip/*' ||:
     )
 }
 
