@@ -1,7 +1,6 @@
 import contextlib
 import os
 
-from datetime import UTC, datetime, timedelta
 from pprint import pformat
 from time import sleep
 
@@ -116,22 +115,20 @@ def test_workflow_metric_reader_get_statistics():
     metric_logger = WorkflowMetricLogger(log_group_name=log_group_name, batch_size=1)
     assert metric_logger.enabled()
     event = make_event()
-    mark = datetime.now(tz=UTC)
     metric_logger.add(event)
+    event.event_type = WFEventType.FAILED
     metric_logger.add(event)
-    sleep(20)  # wait for metrics to be available
+    sleep(15)  # wait for metrics to be available
 
     reader = WorkflowMetricReader(metric_namespace=metric_namespace)
     assert reader.enabled()
-    stats = reader.aggregated_for_specified_workflows(
-        workflows=["copier"],
-        start_time=mark - timedelta(seconds=30),
-        end_time=mark + timedelta(seconds=30),
-        period=1,
-    )
-    stats_str = pformat(stats)
-    assert type(stats) is dict
-    assert len(stats) == 1, f"stats = {stats_str}"
-    assert next(iter(stats.values()))["SUCCEEDED"]["SampleCount"] == 2.0, (
-        f"stats = {stats_str}"
-    )
+    stats = reader.query_by_bin_and_duration(duration="15m", bin_size="1m")
+    stats_str = "stats = " + pformat(stats)
+    assert type(stats) is list
+    assert len(stats) > 0, stats_str
+    assert type(stats[0]) is dict
+    assert len(stats[0]["events"]) == 2, stats_str
+    assert len(stats[0]["events"]["FAILED"]) == 1, stats_str
+    assert len(stats[0]["events"]["SUCCEEDED"]) == 1, stats_str
+    assert stats[0]["events"]["FAILED"]["SampleCount"] == 1.0, stats_str
+    assert stats[0]["events"]["SUCCEEDED"]["SampleCount"] == 1.0, stats_str
