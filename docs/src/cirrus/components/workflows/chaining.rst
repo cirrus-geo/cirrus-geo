@@ -23,7 +23,7 @@ This example models a simple chain:
      2(Workflow 2)
      1 --> 2
 
-In this case, the Cirrus Process Payload output from ``workflow 1`` is passed as
+In this case, the Cirrus Payload output from ``workflow 1`` is passed as
 the input to ``workflow 2`` after
 
 * popping the ``workflow 1`` process definition from the array.

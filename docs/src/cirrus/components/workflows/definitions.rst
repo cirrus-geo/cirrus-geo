@@ -293,7 +293,7 @@ ones.
 Workflows should not produce different outputs from the same set of inputs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-See the :doc:`Cirrus Process Payload docs <../../30_payload>` for additional
+See the :doc:`Cirrus Payload docs <../../30_payload>` for additional
 details on how Cirrus's idempotency check works. Generally speaking, cirrus
 will use the set of input items as a proxy for the outputs produced by a given
 workflow. Don't rely on workflow/task parameters to change the set outputs, as
