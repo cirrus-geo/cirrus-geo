@@ -2,6 +2,8 @@ import contextlib
 import os
 
 from datetime import UTC, datetime, timedelta
+from pprint import pformat
+from time import sleep
 
 import pytest
 
@@ -51,10 +53,19 @@ def test_workflow_metric_logger_and_and_send():
 
 @pytest.mark.skip(reason="moto does not support CloudWatch Log Metric Filters")
 @mock_aws
-def test_workflow_metric_reader_get_statistics(monkeypatch):
+def test_workflow_metric_reader_get_statistics():
     """Test the WorkflowMetricReader by setting up metric filters and logging some
     events.  Then retrieve statistics and verify the results.  This test can only be run
     against real AWS because moto does not fully support CloudWatch Log Metric Filters.
+    Comment out the @mock_aws decorator to run against real AWS by using the following
+    snippet:
+
+        uv run python -c '
+        import tests.lib.test_events as te ;
+        te.test_workflow_metric_reader_get_statistics()
+        '
+
+    Note: this test will create a log group and metric filters, if they do not exist.
     """
     log_group_name = "cirrus-deployment"
 
@@ -101,18 +112,26 @@ def test_workflow_metric_reader_get_statistics(monkeypatch):
         )
     os.environ["CIRRUS_WORKFLOW_METRIC_NAMESPACE"] = metric_namespace
 
+    sleep(10)
     metric_logger = WorkflowMetricLogger(log_group_name=log_group_name, batch_size=1)
     assert metric_logger.enabled()
     event = make_event()
+    mark = datetime.now(tz=UTC)
     metric_logger.add(event)
     metric_logger.add(event)
-
-    now = datetime.now(tz=UTC)
+    sleep(20)  # wait for metrics to be available
 
     reader = WorkflowMetricReader(metric_namespace=metric_namespace)
     assert reader.enabled()
-    start = now - timedelta(days=10)
-    end = now
-    stats = reader.aggregated_for_specified_workflows(["copier"], start, end)
+    stats = reader.aggregated_for_specified_workflows(
+        workflows=["copier"],
+        start_time=mark - timedelta(seconds=30),
+        end_time=mark + timedelta(seconds=30),
+        period=1,
+    )
+    stats_str = pformat(stats)
     assert type(stats) is dict
-    assert len(stats) > 0
+    assert len(stats) == 1, f"stats = {stats_str}"
+    assert next(iter(stats.values()))["SUCCEEDED"]["SampleCount"] == 2.0, (
+        f"stats = {stats_str}"
+    )
