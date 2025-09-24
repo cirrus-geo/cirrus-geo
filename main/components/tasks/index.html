@@ -47,7 +47,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/10_intro.html">Getting started with Cirrus</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/20_arch.html">Cirrus architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../cirrus/30_payload.html">Cirrus Process Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cirrus/30_payload.html">Cirrus Payload</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/40_config-deploy.html">Configuration and Deployment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/50_operation.html">Basic Operation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/60_components.html">Cirrus Components</a></li>
@@ -106,7 +106,7 @@
 <h1>Tasks<a class="headerlink" href="#tasks" title="Link to this heading"></a></h1>
 <p>Tasks in Cirrus implement a unit of processing, to be composed together into a
 <a class="reference internal" href="../workflows/index.html"><span class="doc">Workflow</span></a>. Tasks are expected to support both input and
-output formatted as a <span class="xref std std-doc">Cirrus Process Payload</span>. As part of its
+output formatted as a <span class="xref std std-doc">Cirrus Payload</span>. As part of its
 processing, a task can make any requisite modifications to its input payload
 and/or derive any output assets, pushing them to the canonical storage location
 in S3.</p>
@@ -123,7 +123,7 @@ specialized instance types.</p>
 <h2>Anatomy of a task<a class="headerlink" href="#anatomy-of-a-task" title="Link to this heading"></a></h2>
 <p>Generally speaking, every task should do a few key things:</p>
 <ul class="simple">
-<li><p>Take an input Cirrus Process Payload</p>
+<li><p>Take an input Cirrus Payload</p>
 <ul>
 <li><p>In the case of Batch tasks and/or large payloads, tasks should support
 receiving a <code class="docutils literal notranslate"><span class="pre">url</span></code> input parameter pointing to a payload object in S3</p></li>
@@ -133,7 +133,7 @@ receiving a <code class="docutils literal notranslate"><span class="pre">url</sp
 <li><p>Perform any asset metadata manipulation and/or derived product processing</p></li>
 <li><p>Update/replace payload items based on task outputs</p></li>
 <li><p>Upload any output assets/items to S3 for persistence</p></li>
-<li><p>Return the output Cirrus Process Payload</p>
+<li><p>Return the output Cirrus Payload</p>
 <ul>
 <li><p>In the case of Batch tasks and/or large payloads, tasks should support
 uploading the output payload to S3 and returning an output <code class="docutils literal notranslate"><span class="pre">url</span></code> parameter
@@ -282,7 +282,7 @@ a single definition.</p>
 <section id="task-parameters">
 <h2>Task parameters<a class="headerlink" href="#task-parameters" title="Link to this heading"></a></h2>
 <p>Tasks can take arguments at runtime via process definition parameters. See the
-<span class="xref std std-doc">Cirrus Process Payload</span> docs for more information.</p>
+<span class="xref std std-doc">Cirrus Payload</span> docs for more information.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="post-batch.html">post-batch</a></li>

@@ -47,7 +47,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/10_intro.html">Getting started with Cirrus</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/20_arch.html">Cirrus architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../cirrus/30_payload.html">Cirrus Process Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cirrus/30_payload.html">Cirrus Payload</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/40_config-deploy.html">Configuration and Deployment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/50_operation.html">Basic Operation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/60_components.html">Cirrus Components</a></li>
@@ -107,7 +107,7 @@
              
   <section id="process">
 <h1>process<a class="headerlink" href="#process" title="Link to this heading"></a></h1>
-<p>The <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda is a core piece of Cirrus infrastructure.  It processes messages, extracts and prepares Cirrus process Payloads (CPP) from these messages and then uses these payloads to trigger execution of pre-defined AWS Step Function workflows.  This lambda can also involve simple administrative work like setting payload ids, and updating the state db to avoid duplicative executions.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda is a core piece of Cirrus infrastructure.  It processes messages, extracts and prepares Cirrus Payloads from these messages and then uses these payloads to trigger execution of pre-defined AWS Step Function workflows.  This lambda can also involve simple administrative work like setting payload ids, and updating the state db to avoid duplicative executions.</p>
 <section id="trigger">
 <h2>Trigger<a class="headerlink" href="#trigger" title="Link to this heading"></a></h2>
 <p>There are multiple ways to trigger the <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda.</p>
@@ -121,11 +121,11 @@ Once these lambda has ingested a payload it begins the processing pipeline.</p>
 </section>
 <section id="payload">
 <h2>Payload<a class="headerlink" href="#payload" title="Link to this heading"></a></h2>
-<p>It is preferable that a message itself sent to the SQS queue is a CPP, but that
+<p>It is preferable that a message itself sent to the SQS queue is a Cirrus Payload, but that
 is not required.  However the message must allow the process lambda to
-extract or retrieve a valid CPP.</p>
-<p>The message may contain the CPP, have an S3 URl for a payload, be a Batch
-message containing a url link to a CPP, or notification from an SNS topic that contains a CPP.</p>
+extract or retrieve a valid Cirrus Payload.</p>
+<p>The message may contain the Cirrus Payload, have an S3 URl for a payload, be a Batch
+message containing a url link to a Cirrus Payload, or notification from an SNS topic that contains a Cirrus Payload.</p>
 </section>
 <section id="workflow-kick-off">
 <h2>Workflow Kick Off<a class="headerlink" href="#workflow-kick-off" title="Link to this heading"></a></h2>

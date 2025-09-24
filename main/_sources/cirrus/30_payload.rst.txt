@@ -1,11 +1,11 @@
-Cirrus Process Payload
+Cirrus Payload
 ======================
 
-A Cirrus Process Payload is a JSON object containing the input metadata along with a parameters
+A Cirrus Payload is a JSON object containing the input metadata along with a parameters
 for processing that metadata and associated data. A Cirrus payload is used to start a
 single execution of a workflow.
 
-.. list-table:: Cirrus Process Payload
+.. list-table:: Cirrus Payload
    :widths: 25 25 50
    :header-rows: 1
 

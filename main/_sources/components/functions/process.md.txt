@@ -1,6 +1,6 @@
 # process
 
-The `process` lambda is a core piece of Cirrus infrastructure.  It processes messages, extracts and prepares Cirrus process Payloads (CPP) from these messages and then uses these payloads to trigger execution of pre-defined AWS Step Function workflows.  This lambda can also involve simple administrative work like setting payload ids, and updating the state db to avoid duplicative executions.
+The `process` lambda is a core piece of Cirrus infrastructure.  It processes messages, extracts and prepares Cirrus Payloads from these messages and then uses these payloads to trigger execution of pre-defined AWS Step Function workflows.  This lambda can also involve simple administrative work like setting payload ids, and updating the state db to avoid duplicative executions.
 
 ## Trigger
 
@@ -15,12 +15,12 @@ Once these lambda has ingested a payload it begins the processing pipeline.
 
 ## Payload
 
-It is preferable that a message itself sent to the SQS queue is a CPP, but that
+It is preferable that a message itself sent to the SQS queue is a Cirrus Payload, but that
 is not required.  However the message must allow the process lambda to
-extract or retrieve a valid CPP.
+extract or retrieve a valid Cirrus Payload.
 
-The message may contain the CPP, have an S3 URl for a payload, be a Batch
-message containing a url link to a CPP, or notification from an SNS topic that contains a CPP.
+The message may contain the Cirrus Payload, have an S3 URl for a payload, be a Batch
+message containing a url link to a Cirrus Payload, or notification from an SNS topic that contains a Cirrus Payload.
 
 ## Workflow Kick Off
 

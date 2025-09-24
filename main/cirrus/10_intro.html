@@ -66,7 +66,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="20_arch.html">Cirrus architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="30_payload.html">Cirrus Process Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="30_payload.html">Cirrus Payload</a></li>
 <li class="toctree-l1"><a class="reference internal" href="40_config-deploy.html">Configuration and Deployment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="50_operation.html">Basic Operation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="60_components.html">Cirrus Components</a></li>
@@ -138,7 +138,7 @@ abstractions solving common needs for users writing their own Cirrus components.
 <section id="stac-based-workflows">
 <h3>STAC-based workflows<a class="headerlink" href="#stac-based-workflows" title="Link to this heading"></a></h3>
 <p>A core design aspect of Cirrus is the use of the <a class="reference external" href="https://stacspec.org/">STAC</a> metadata specification
-as a basis for the <a class="reference internal" href="30_payload.html"><span class="doc">Cirrus Process Payload</span></a> format. In this
+as a basis for the <a class="reference internal" href="30_payload.html"><span class="doc">Cirrus Payload</span></a> format. In this
 way Cirrus, encourages a highly-interoperable, metadata-first approach for both
 pipeline operators and end users alike.</p>
 <p>Cirrus pipelines are, ideally, STAC-in and STAC-out, ensuring compatibility with
@@ -152,13 +152,13 @@ as needed for a given workflow.</p>
 <p>Cirrus is organized into reusable blocks called <a class="reference internal" href="60_components.html"><span class="doc">Components</span></a>. There are four types of Components:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="components/feeders/index.html"><span class="doc">Feeders</span></a> accept arbitrary input, and
-output a Cirrus Process Payload which is enqueued for processing. These can
+output a Cirrus Payload which is enqueued for processing. These can
 be used to initiate processing from any source, for example, an SNS topic
 message indicating a new scene is available or an S3 Inventory of existing
 scenes.  Cirrus does not come pre-loaded with feeders, and they must be
 set up by users.</p></li>
 <li><p><a class="reference internal" href="components/tasks/index.html"><span class="doc">Tasks</span></a> are the basic unit of work in a
-Workflow and use a Cirrus Process Payload for both input and output. This is
+Workflow and use a Cirrus Payload for both input and output. This is
 where specific processing, for example, transforming data to data (e.g.
 JPEG200 to COG), data to metadata (e.g., COG to STAC), or metadata to
 metadata (e.g., MTL to STAC).</p></li>
@@ -249,7 +249,7 @@ necessary.</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="60_components.html"><span class="doc">Components</span></a></p></li>
 <li><p><a class="reference internal" href="components/tasks/index.html"><span class="doc">Tasks</span></a></p></li>
-<li><p><a class="reference internal" href="30_payload.html"><span class="doc">Cirrus Process Payload format</span></a></p></li>
+<li><p><a class="reference internal" href="30_payload.html"><span class="doc">Cirrus Payload format</span></a></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code> documentation</p></li>
 </ul>
 </section>

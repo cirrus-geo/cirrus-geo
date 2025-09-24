@@ -10,7 +10,7 @@ Tasks
 
 Tasks in Cirrus implement a unit of processing, to be composed together into a
 :doc:`Workflow <../workflows/index>`. Tasks are expected to support both input
-and output formatted as a :doc:`Cirrus Process Payload <../../30_payload>`. As
+and output formatted as a :doc:`Cirrus Payload <../../30_payload>`. As
 part of it's processing, a task can make any requisite modifications to its
 input payload and/or derive any output assets, pushing them to the canonical
 storage location in S3.
@@ -31,7 +31,7 @@ Anatomy of a task
 
 Generally speaking, every task should do a few key things:
 
-* Take an input Cirrus Process Payload
+* Take an input Cirrus Payload
 
   * In the case of Batch tasks and/or large payloads, tasks should support
     receiving a ``url`` input parameter pointing to a payload object in S3
@@ -40,7 +40,7 @@ Generally speaking, every task should do a few key things:
 * Perform any asset metadata manipulation and/or derived product processing
 * Update/replace payload items based on task outputs
 * Upload any output assets/items to S3 for persistence
-* Return the output Cirrus Process Payload
+* Return the output Cirrus Payload
 
   * In the case of Batch tasks and/or large payloads, tasks should support
     uploading the output payload to S3 and returning an output ``url`` parameter
@@ -242,4 +242,4 @@ Task parameters
 ---------------
 
 Tasks can take arguments at runtime via process definition parameters. See the
-:doc:`Cirrus Process Payload <../../30_payload>` docs for more information.
+:doc:`Cirrus Payload <../../30_payload>` docs for more information.
