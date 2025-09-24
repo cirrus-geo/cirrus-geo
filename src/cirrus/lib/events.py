@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+import warnings
 
 from collections import defaultdict
 from collections.abc import Callable
@@ -114,6 +115,7 @@ class WorkflowEventManager:
         logger: Logger | None = None,
         statedb: StateDB | None = None,
         eventdb: EventDB | None = None,
+        metric_logger: "WorkflowMetricLogger" | None = None,
         batch_size: int = 10,
     ):
         self.logger = logger if logger is not None else getLogger(__name__)
@@ -129,6 +131,17 @@ class WorkflowEventManager:
         )
         self.statedb = statedb if statedb is not None else StateDB()
         self.eventdb = eventdb if eventdb is not None else EventDB()
+        if self.eventdb.enabled():
+            warnings.warn(
+                "`EventDB` is deprecated, use `WorkflowMetricLogger` instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        self.metric_logger = (
+            WorkflowMetricLogger(logger=self.logger)
+            if metric_logger is None
+            else metric_logger
+        )
 
     def flush(self: Self):
         """Ensure any messages remaining in the batch buffer are sent."""
@@ -175,6 +188,8 @@ class WorkflowEventManager:
         """
         if self.event_publisher:
             self.event_publisher.add(event.to_message())
+        if self.metric_logger.enabled():
+            self.metric_logger.add(event)
 
     def claim_processing(
         self: Self,
