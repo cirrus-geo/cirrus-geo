@@ -102,7 +102,7 @@ def test_payload_get_id(runner):
 
 
 def test_payload_validate(runner):
-    MOCK_PAYLOAD["id"] = "workflow-test-id"
+    MOCK_PAYLOAD["id"] = "collection/workflow-test-id/itemid"
     result = runner.invoke(validate, input=json.dumps(MOCK_PAYLOAD))
     assert result.exit_code == 0
     assert result.stdout.strip() == ""

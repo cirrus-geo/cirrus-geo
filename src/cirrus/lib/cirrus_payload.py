@@ -6,7 +6,7 @@ import json
 import stactask
 
 from cirrus.lib.errors import NoUrlError
-from cirrus.lib.utils import extract_event_records, payload_from_s3
+from cirrus.lib.utils import PAYLOAD_ID_REGEX, extract_event_records, payload_from_s3
 
 
 class CirrusPayload(stactask.payload.Payload):
@@ -36,9 +36,10 @@ class CirrusPayload(stactask.payload.Payload):
                 "Payload must contain a 'workflow' field specifying the workflow name",
             )
 
-        if "workflow-" not in self["id"]:
+        if not PAYLOAD_ID_REGEX.match(self["id"]):
             raise ValueError(
-                f"Payload 'id' field must contain 'workflow-': {self['id']}",
+                "Payload 'id' field must match '${COLLECTIONS}/"
+                f"workflow-${{WORKFLOW_NAME}}/${{ITEMIDS}}: {self['id']}",
             )
 
     def set_id(self) -> None:
