@@ -3,13 +3,13 @@ from __future__ import annotations
 import contextlib
 import json
 
-from stactask.payload import Payload
+import stactask
 
 from cirrus.lib.errors import NoUrlError
 from cirrus.lib.utils import extract_event_records, payload_from_s3
 
 
-class CirrusPayload(Payload):
+class CirrusPayload(stactask.payload.Payload):
     """Extends stac-task Payload with Cirrus-specific validation and ID setting."""
 
     def __init__(self, *args, set_id_if_missing: bool = False, **kwargs) -> None:
