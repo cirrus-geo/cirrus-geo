@@ -628,7 +628,7 @@ class WorkflowMetricReader:
                     Statistics=statistics,
                 )
                 for datapoint in resp["Datapoints"]:
-                    tstamp = datapoint["Timestamp"].replace(second=0, microsecond=0)
+                    tstamp = datapoint["Timestamp"].replace(microsecond=0)
                     for statistic in statistics:
                         stat = datapoint[statistic]
                         cstats[tstamp][str(event_type)][statistic] += stat
@@ -677,7 +677,7 @@ class WorkflowMetricReader:
                 Statistics=statistics,
             )
             for datapoint in resp["Datapoints"]:
-                tstamp = datapoint["Timestamp"].replace(second=0, microsecond=0)
+                tstamp = datapoint["Timestamp"].replace(microsecond=0)
                 for statistic in statistics:
                     stat = datapoint[statistic]
                     cstats[tstamp][str(event_type)][statistic] += stat
