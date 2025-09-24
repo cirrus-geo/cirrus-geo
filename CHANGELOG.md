@@ -7,12 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
-### ⚠️ Breaking changes
-
-- `ProcessPayload` class renamed to `PayloadManager` to better reflect its purpose. The
-  renamed class is also simplified: `features` and `process` attributes removed,
-  `from_event` method moved to the new `CirrusPayload` class. ([#331])
-
 ### Added
 
 - Adds the functionality from the cirrus api lambda to the `Deployment` class and
@@ -23,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Switch to `uv` for package management. ([#330])
+- Internal `ProcessPayload` class renamed to `PayloadManager` to better reflect its
+  purpose. ([#331])
 
 ### Fixed
 
