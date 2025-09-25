@@ -7,10 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### ⚠️ Deprecations
+
+- The `EventDB` feature utilized Amazon Timestream to generate workflow
+  metrics.  AWS has stopped supporting this service, and it is no longer
+  deployable.  The feature will remain in Cirrus to support existing
+  deployments, but those are encouraged to migrate to the new framework, via
+  the `WorkflowMetricLogger` and `WorkflowMetricReader`. ([#329])
+
 ### Added
 
-- Adds the functionality from the cirrus api lambda to the `Deployment` class and
-  the CLI. ([#324])
+- Adds the functionality from the cirrus api lambda to the `Deployment` class
+  and the CLI. ([#324])
+- Adds `WorkflowMetricLogger` and `WorkflowMetricReader` classes to surface
+  aggregate workflow activity, as a replacement for `EventDB`. These classes
+  depend on Cloudwatch Logs Metric Filters. ([#329])
 
 ### Changed
 
