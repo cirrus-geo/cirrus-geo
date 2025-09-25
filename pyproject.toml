@@ -27,7 +27,7 @@ dependencies = [
     "boto3-utils",
     "jsonpath-ng",
     "python-json-logger",
-    "stactask~=0.7.0",
+    "stactask>=0.7.0",
 ]
 
 [project.optional-dependencies]
