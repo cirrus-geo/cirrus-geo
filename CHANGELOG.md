@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [v1.1.0] -- 2025-09-25
+## [v1.1.0] - 2025-09-25
 
 ### Added
 
@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   the Step Functions event. This caused the lambda to fail on certain errors,
   leaving payloads with incorrect states in the state database. ([#326])
 
-## [v1.0.2] -- 2025-08-26
+## [v1.0.2] - 2025-08-26
 
 ### Fixed
 
@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Dynamo DB fails to update with extraneous parameters in the
   `ExpressionAttributeValues` argument.  Issue not surfaced by Moto. ([#319])
 
-## [v1.0.1] -- 2025-06-18
+## [v1.0.1] - 2025-06-18
 
 ### Added
 
