@@ -1,10 +1,3 @@
-[build-system]
-requires = [
-    'setuptools',
-    'setuptools-scm',
-]
-build-backend = 'setuptools.build_meta'
-
 [project]
 name = 'cirrus-geo'
 authors = [
@@ -12,6 +5,7 @@ authors = [
     {name = "Jarrett Keifer", email = "jkeifer@element84.com"},
 ]
 description = "AWS-native STAC-based processing pipeline"
+readme = "README.md"
 requires-python = ">=3.12"
 keywords = [
     "cirrus",
@@ -27,7 +21,6 @@ classifiers = [
 ]
 dynamic = [
     'version',
-    'readme',
 ]
 dependencies = [
     "boto3",
@@ -70,14 +63,24 @@ docs = [
 [project.urls]
 Repository = 'https://github.com/cirrus-geo/cirrus-geo'
 
-
 [project.scripts]
 cirrus = 'cirrus.management.__main__:main'
 
-[tool.setuptools_scm]
+[build-system]
+requires = [
+    "hatchling",
+    "hatch-vcs",
+]
+build-backend = "hatchling.build"
 
-[tool.setuptools.dynamic]
-readme = {file = "README.md"}
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/cirrus/__version__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cirrus"]
 
 [tool.ruff.lint]
 # https://docs.astral.sh/ruff/rules/
