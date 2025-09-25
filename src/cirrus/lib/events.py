@@ -28,6 +28,23 @@ from .utils import (
 )
 
 
+def date_formatter(granularity="m") -> Callable:
+    """Return string representation of the given datetime, truncated to the specified
+    granularity.  Timezone handling is deferred to the datetime library behavior.
+
+    Args:
+       granularity (str): 'd'|'h'|'m', defaulting to 'm'
+                          'd' - date only (YYYY-MM-DD)
+                          'h' - hour (YYYY-MM-DDTHH:00:00)
+                          'm' - minute (YYYY-MM-DDTHH:MM:00)
+    """
+    return {
+        "d": lambda dt: dt.date().isoformat(),
+        "h": lambda dt: dt.replace(minute=0, second=0, microsecond=0).isoformat(),
+        "m": lambda dt: dt.replace(second=0, microsecond=0).isoformat(),
+    }[granularity]
+
+
 @dataclass
 class WorkflowEvent:
     event_type: WFEventType
@@ -253,7 +270,8 @@ class WorkflowMetricReader:
         period: int = 3600,
         event_types: list[WFEventType] | None = None,
         statistics: list[str] | None = None,
-    ) -> dict[datetime, dict[str, dict[str, float]]]:
+        formatter: Callable[[datetime], str] | None = None,
+    ) -> list[dict[str, str | dict[str, dict[str, float]]]]:
         """
         Retrieve metric statistics from CloudWatch.
 
@@ -266,13 +284,14 @@ class WorkflowMetricReader:
             statistics (list[str]): List of statistics to retrieve.
 
         Returns:
-            dict[str, Any] | None: Dictionary of metric statistics found, or None if
-            retrieval failed.
+            list[dict[str, Any]]: List of metric statistics dictionaries retrieved.
         """
         if statistics is None:
             statistics = [WorkflowMetricReader._agg_statistic]
         if event_types is None:
             event_types = list(WFEventType)
+        if formatter is None:
+            formatter = date_formatter()
         cstats: dict[datetime, dict[str, dict[str, float]]] = defaultdict(
             lambda: defaultdict(lambda: dict.fromkeys(statistics, 0.0)),
         )
@@ -297,7 +316,10 @@ class WorkflowMetricReader:
                         stat = datapoint[statistic]
                         cstats[tstamp][str(event_type)][statistic] += stat
         # TODO: break this out by workflow, maybe
-        return {k: dict(v) for k, v in cstats.items()}
+        return [
+            {"period": formatter(k), "events": dict(v)}
+            for k, v in sorted(cstats.items(), key=lambda x: x[0])
+        ]
 
     def aggregated_by_event_type(
         self,
@@ -306,7 +328,8 @@ class WorkflowMetricReader:
         period: int = 3600,
         event_types: list[WFEventType] | None = None,
         statistics: list[str] | None = None,
-    ) -> dict[datetime, dict[str, dict[str, float]]]:
+        formatter: Callable[[datetime], str] | None = None,
+    ) -> list[dict[str, str | dict[str, dict[str, float]]]]:
         """
         Retrieve metric statistics from CloudWatch.
 
@@ -318,13 +341,15 @@ class WorkflowMetricReader:
             statistics (list[str]): List of statistics to retrieve.
 
         Returns:
-            dict[str, Any] | None: Dictionary of metric statistics found, or None if
-            retrieval failed.
+            list[dict[str, Any]]: List of metric statistics dictionaries retrieved.
+
         """
         if statistics is None:
             statistics = [WorkflowMetricReader._agg_statistic]
         if event_types is None:
             event_types = list(WFEventType)
+        if formatter is None:
+            formatter = date_formatter()
         cstats: dict[datetime, dict[str, dict[str, float]]] = defaultdict(
             lambda: defaultdict(lambda: dict.fromkeys(statistics, 0.0)),
         )
@@ -346,13 +371,16 @@ class WorkflowMetricReader:
                     stat = datapoint[statistic]
                     cstats[tstamp][str(event_type)][statistic] += stat
 
-        return {k: dict(v) for k, v in cstats.items()}
+        return [
+            {"period": formatter(k), "events": dict(v)}
+            for k, v in sorted(cstats.items(), key=lambda x: x[0])
+        ]
 
     def query_hour(
         self,
         start: int,
         end: int,
-    ) -> dict[datetime, dict[str, dict[str, float]]]:
+    ) -> list[dict[str, str | dict[str, dict[str, float]]]]:
         """
         Query CloudWatch metrics for a specific hour range.
         """
@@ -364,13 +392,14 @@ class WorkflowMetricReader:
             start_time=start_time,
             end_time=end_time,
             period=3600,
+            formatter=date_formatter("m"),
         )
 
     def query_by_bin_and_duration(
         self,
         bin_size: str,
         duration: str,
-    ) -> dict[datetime, dict[str, dict[str, float]]]:
+    ) -> list[dict[str, str | dict[str, dict[str, float]]]]:
         """
         Query CloudWatch metrics for a given bin size and duration.
         bin_size: e.g. '1d', '1h'
@@ -387,6 +416,7 @@ class WorkflowMetricReader:
             start_time=start_time,
             end_time=end_time,
             period=period,
+            formatter=date_formatter(bin_size[-1]),
         )
 
 
