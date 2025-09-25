@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased]
+
+## [v1.1.0] -- 2025-09-25
 
 ### Added
 
@@ -22,9 +24,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- The update state lambda was not correctly parsing the error and cause from the Step
-  Functions event. This caused the lambda to fail on certain errors, leaving payloads
-  with incorrect states in the state database. ([#326])
+- The update state lambda was not correctly parsing the error and cause from
+  the Step Functions event. This caused the lambda to fail on certain errors,
+  leaving payloads with incorrect states in the state database. ([#326])
 
 ## [v1.0.2] -- 2025-08-26
 
@@ -94,13 +96,13 @@ This is a breaking change, as documented below.
 - CLI required env vars are stored/retrieved from AWS Parameter Store ([#295])
 - CLI tool may now assume an IAM role and update session with IAM credentials
   if IAM role is available in parameter store config ([#303])
-- Updated documentation for default cirrus lambda functions,
-  documenting each current lambda-function ([#306])
-- The `update_state` lambda now pushes each Item in output Cirrus Process Payloads to
-  the `CIRRUS_PUBLISH_TOPIC_ARN`, if set, with SNS messages derived from the Item.
-  ([#294])
-- Workflow events of type `SUCCEEDED` now include the step function execution ARN in
-  the event. ([#297])
+- Updated documentation for default cirrus lambda functions, documenting each
+  current lambda-function ([#306])
+- The `update_state` lambda now pushes each Item in output Cirrus Process
+  Payloads to the `CIRRUS_PUBLISH_TOPIC_ARN`, if set, with SNS messages derived
+  from the Item.  ([#294])
+- Workflow events of type `SUCCEEDED` now include the step function execution
+  ARN in the event. ([#297])
 
 ## [v0.15.4] - 2024-12-03
 
@@ -143,11 +145,11 @@ This is a breaking change, as documented below.
 
 ### Changed
 
-- The `update_state` lambda now pushes each Item in output Cirrus Process Payloads to
-  the `CIRRUS_PUBLISH_TOPIC_ARN`, if set, with SNS messages derived from the Item.
-  ([#294])
-- Workflow events of type `SUCCEEDED` now include the step function execution ARN in
-  the event. ([#297])
+- The `update_state` lambda now pushes each Item in output Cirrus Process
+  Payloads to the `CIRRUS_PUBLISH_TOPIC_ARN`, if set, with SNS messages derived
+  from the Item.  ([#294])
+- Workflow events of type `SUCCEEDED` now include the step function execution
+  ARN in the event. ([#297])
 
 ## [v0.15.2] - 2024-11-08
 
@@ -295,10 +297,10 @@ Deleted due to github release workflow misconfiguration.
 
 ## Changed
 
-- `process` function definition now defines a maximumConcurrency
-  of 16. This still results is relatively fast draining of the process queue, but unlike
-  an unlimited concurrency, prevents too many step functions from being created too fast,
-  which can result in Lambda or Batch overload.
+- `process` function definition now defines a maximumConcurrency of 16. This
+  still results is relatively fast draining of the process queue, but unlike an
+  unlimited concurrency, prevents too many step functions from being created
+  too fast, which can result in Lambda or Batch overload.
 
 ## [v0.10.1] - 2024-01-10
 
@@ -492,9 +494,9 @@ ContainerProperties:
 
 ### ⚠️ Breaking changes
 
-- Serverless versions through 3.x now supported. Minimum serverless of 2.3.0 is now
-  required per pseudo parameters now being parsed within cirrus, rather than via the
-  `serverless-pseudo-parameters` plugin. ([#139])
+- Serverless versions through 3.x now supported. Minimum serverless of 2.3.0 is
+  now required per pseudo parameters now being parsed within cirrus, rather
+  than via the `serverless-pseudo-parameters` plugin. ([#139])
 
   Tested `package.json` dependency versions:
 
@@ -594,14 +596,16 @@ ContainerProperties:
   - When using `BatchJobRole` or a custom role per batch task, ensure it is
     specified on the job definition as the `ContainerProperties` `JobRoleArn`.
 
-- The cli command to create new tasks now uses `-t`/`--type` to specify the task type,
-  instead of `--has-batch`/`--no-batch` and `--has-lambda`/`--no-lambda`. `-t`/`--type`
-  has no default value and is required. It can be specified multiple times in the case
-  of a task that uses both batch and lambda. ([#123])
+- The cli command to create new tasks now uses `-t`/`--type` to specify the
+  task type, instead of `--has-batch`/`--no-batch` and
+  `--has-lambda`/`--no-lambda`. `-t`/`--type` has no default value and is
+  required. It can be specified multiple times in the case of a task that uses
+  both batch and lambda. ([#123])
 
 ### ⚠️ Deprecations
 
-- `ProcessPayload.process['output_options']` has been renamed to `'upload_options'` ([#128])`
+- `ProcessPayload.process['output_options']` has been renamed to
+  `'upload_options'` ([#128])`
 
 ### Added
 
@@ -620,20 +624,25 @@ ContainerProperties:
 
 ### Changed
 
-- `BatchInstanceRole` no longer has cirrus-specific permissions. Specify a `JobRoleArn`
-  on batch job definitions pointing to the builtin `BatchJobRole` or a custom role. ([#149])
-- support for modern versions of serverless; minimum version supported is now 2.3.0 ([#139])
-- lambda components definitions require `handler` to be specified when not using container
-  images (previous default: `handler: lambda_function.lambda_handler`) ([#139])
+- `BatchInstanceRole` no longer has cirrus-specific permissions. Specify a
+  `JobRoleArn` on batch job definitions pointing to the builtin `BatchJobRole`
+  or a custom role. ([#149])
+- support for modern versions of serverless; minimum version supported is now
+  2.3.0 ([#139])
+- lambda components definitions require `handler` to be specified when not
+  using container images (previous default: `handler:
+  lambda_function.lambda_handler`) ([#139])
 
 ### Fixed
 
 - `rerun` feeder has required permissions ([#131])
-- cirrus.yml default template now has missing provider vpc configuration ([#132])
+- cirrus.yml default template now has missing provider vpc configuration
+  ([#132])
 - `sls`/`serverless` command returns non-0 on errors ([#134])
 - `update-state` lambda supports payload URLs ([#135])
 - omit lambda block from batch-only task `definition.yml` on create ([#123])
-- test payloads output to non-terminal FDs will not have lines broken by terminal width ([#145])
+- test payloads output to non-terminal FDs will not have lines broken by
+  terminal width ([#145])
 - component README templates missing space in header ([#138])
 
 ### Removed
@@ -849,7 +858,8 @@ cleanup steps.
 
 ### Added
 
-- API root now returns child links to summaries if configured in the Cirrus root catalog
+- API root now returns child links to summaries if configured in the Cirrus
+  root catalog
 - `status` field added to attributes of published SNS messages, `created` if
   new STAC Item (not in Cirrus catalog), or `updated` if it already exists
 - `created` and `updated` properties added to STAC Items when adding to Cirrus
@@ -963,13 +973,15 @@ cleanup steps.
 - `lambda-as-batch` and `geolambda-as-batch` Batch tasks fixed to properly
   return newly returned STAC Catalog rather than the original one (which may
   have been modified as it is passed by reference to handler)
-- `convert-to-cog` now properly populates `derived_from` link in newly created STAC Item
+- `convert-to-cog` now properly populates `derived_from` link in newly created
+  STAC Item
 
 ## [v0.1.0] - 2020-08-07
 
 Initial release
 
-[unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.2...main
+[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.1.0...main
+[v1.1.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.2...v1.1.0
 [v1.0.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.1...v1.0.2
 [v1.0.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0...v1.0.1
 [v1.0.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v0.15.4...v1.0.0
