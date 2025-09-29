@@ -1,0 +1,94 @@
+[
+  {
+    "ParameterKey": "ResourcePrefix",
+    "ParameterValue": "cirrus-sandbox"
+  },
+  {
+    "ParameterKey": "ProcessSQSTimeout",
+    "ParameterValue": "180"
+  },
+  {
+    "ParameterKey": "ProcessSQSMaxReceiveCount",
+    "ParameterValue": "5"
+  },
+  {
+    "ParameterKey": "TimestreamMagneticStoreRetentionDays",
+    "ParameterValue": "93"
+  },
+  {
+    "ParameterKey": "TimestreamMemoryStoreRetentionHours",
+    "ParameterValue": "24"
+  },
+  {
+    "ParameterKey": "ApiLambdaTimeout",
+    "ParameterValue": "10"
+  },
+  {
+    "ParameterKey": "ApiLambdaMemory",
+    "ParameterValue": "128"
+  },
+  {
+    "ParameterKey": "ProcessLambdaTimeout",
+    "ParameterValue": "10"
+  },
+  {
+    "ParameterKey": "ProcessLambdaConcurrency",
+    "ParameterValue": "16"
+  },
+  {
+    "ParameterKey": "ProcessLambdaMemory",
+    "ParameterValue": "128"
+  },
+  {
+    "ParameterKey": "UpdateStateLambdaTimeout",
+    "ParameterValue": "15"
+  },
+  {
+    "ParameterKey": "UpdateStateLambdaMemory",
+    "ParameterValue": "128"
+  },
+  {
+    "ParameterKey": "PreBatchLambdaTimeout",
+    "ParameterValue": "15"
+  },
+  {
+    "ParameterKey": "PreBatchLambdaMemory",
+    "ParameterValue": "128"
+  },
+  {
+    "ParameterKey": "PostBatchLambdaTimeout",
+    "ParameterValue": "15"
+  },
+  {
+    "ParameterKey": "PostBatchLambdaMemory",
+    "ParameterValue": "128"
+  },
+  {
+    "ParameterKey": "LogLevel",
+    "ParameterValue": "DEBUG"
+  },
+  {
+    "ParameterKey": "VpcCidr",
+    "ParameterValue": "10.0.0.0/16"
+  },
+  {
+    "ParameterKey": "PrivateSubnet1Cidr",
+    "ParameterValue": "10.0.10.0/24"
+  },
+  {
+    "ParameterKey": "PrivateSubnet2Cidr",
+    "ParameterValue": "10.0.20.0/24"
+  },
+  {
+    "ParameterKey": "PublicSubnet1Cidr",
+    "ParameterValue": "10.0.1.0/24"
+  },
+  {
+    "ParameterKey": "PublicSubnet2Cidr",
+    "ParameterValue": "10.0.2.0/24"
+  },
+  {
+    "ParameterKey": "ApiGatewayStageName",
+    "ParameterValue": "v1"
+  }
+]

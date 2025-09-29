@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Cirrus API Gateway and related resources'
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for all resource names
+    MinLength: 2
+    MaxLength: 22
+
+  FunctionsStackName:
+    Type: String
+    Description: Name of the functions stack to import Lambda ARN from
+
+  ApiGatewayStageName:
+    Type: String
+    Description: API Gateway deployment stage name
+    Default: v1
+    AllowedPattern: '^[a-zA-Z0-9_-]+$'
+
+Resources:
+  # API Gateway REST API
+  CirrusApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub '${ResourcePrefix}-api'
+      Description: !Sub 'Cirrus API for ${ResourcePrefix}'
+      EndpointConfiguration:
+        Types:
+          - EDGE
+
+  # API Gateway Resource (proxy resource to catch all paths)
+  ProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref CirrusApi
+      ParentId: !GetAtt CirrusApi.RootResourceId
+      PathPart: '{proxy+}'
+
+  # API Gateway Method for root resource
+  RootMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref CirrusApi
+      ResourceId: !GetAtt CirrusApi.RootResourceId
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations'
+          - LambdaArn: !ImportValue
+              'Fn::Sub': '${FunctionsStackName}-ApiLambdaArn'
+
+  # API Gateway Method for proxy resource
+  ProxyMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref CirrusApi
+      ResourceId: !Ref ProxyResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations'
+          - LambdaArn: !ImportValue
+              'Fn::Sub': '${FunctionsStackName}-ApiLambdaArn'
+
+  # Lambda permission for API Gateway to invoke the function
+  ApiLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        'Fn::Sub': '${FunctionsStackName}-ApiLambdaName'
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CirrusApi}/*/GET/*'
+
+  ApiLambdaRootPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue
+        'Fn::Sub': '${FunctionsStackName}-ApiLambdaName'
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CirrusApi}/*/GET'
+
+  # API Gateway Deployment
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - RootMethod
+      - ProxyMethod
+    Properties:
+      RestApiId: !Ref CirrusApi
+
+  # CloudWatch Log Group for API Gateway
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${ResourcePrefix}-api'
+
+  # IAM Role for API Gateway CloudWatch logging
+  ApiGatewayCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+  # API Gateway Account (for CloudWatch logging)
+  ApiGatewayAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchRole.Arn
+
+  # API Gateway Stage with logging configuration
+  ApiStage:
+    Type: AWS::ApiGateway::Stage
+    DependsOn:
+      - ApiGatewayAccount
+    Properties:
+      RestApiId: !Ref CirrusApi
+      DeploymentId: !Ref ApiDeployment
+      StageName: !Ref ApiGatewayStageName
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
+        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","caller":"$context.identity.caller","user":"$context.identity.user","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          DataTraceEnabled: true
+          MetricsEnabled: true
+
+Outputs:
+  ApiGatewayId:
+    Description: API Gateway ID
+    Value: !Ref CirrusApi
+
+  ApiGatewayUrl:
+    Description: API Gateway invoke URL
+    Value: !Sub 'https://${CirrusApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStage}'
+
+  ApiGatewayRootResourceId:
+    Description: API Gateway root resource ID
+    Value: !GetAtt CirrusApi.RootResourceId
+
+  ApiGatewayStageName:
+    Description: API Gateway stage name
+    Value: !Ref ApiGatewayStageName

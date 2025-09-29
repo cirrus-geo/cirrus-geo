@@ -1,0 +1,387 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Cirrus - Main template orchestrating all infrastructure components'
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for all resource names
+    MinLength: 2
+    MaxLength: 22
+    AllowedPattern: '^[a-zA-Z][a-zA-Z0-9-]*$'
+    ConstraintDescription: >
+      Must be between 2 and 22 characters, begin with a letter, and contain only
+      alphanumeric characters and hyphens.
+    Default: cirrus-sandbox
+
+  # Base Infrastructure Parameters
+  ProcessSQSTimeout:
+    Type: Number
+    Description: >
+      Cirrus process SQS queue visibility timeout in seconds. This should exceed the
+      ProcessLambdaTimeout parameter to ensure messages are not re-enqueued prior to
+      process lambda completion.
+    Default: 180
+    MinValue: 0
+    MaxValue: 43200
+
+  ProcessSQSMaxReceiveCount:
+    Type: Number
+    Description: Maximum number of times a message can be received before moving to DLQ
+    Default: 5
+    MinValue: 1
+    MaxValue: 100
+
+  TimestreamMagneticStoreRetentionDays:
+    Type: Number
+    Description: Timestream magnetic store retention period in days
+    Default: 93
+    MinValue: 1
+    MaxValue: 73000
+
+  TimestreamMemoryStoreRetentionHours:
+    Type: Number
+    Description: Timestream memory store retention period in hours
+    Default: 24
+    MinValue: 1
+    MaxValue: 8766
+
+  # VPC CIDR Parameters
+  VpcCidr:
+    Type: String
+    Description: CIDR block for the VPC
+    Default: 10.0.0.0/16
+    AllowedPattern: ^10\.\d{1,3}\.\d{1,3}\.\d{1,3}/16$
+
+  PrivateSubnet1Cidr:
+    Type: String
+    Description: CIDR block for private subnet in first AZ
+    Default: 10.0.10.0/24
+
+  PrivateSubnet2Cidr:
+    Type: String
+    Description: CIDR block for private subnet in second AZ
+    Default: 10.0.20.0/24
+
+  PublicSubnet1Cidr:
+    Type: String
+    Description: CIDR block for public subnet in first AZ
+    Default: 10.0.1.0/24
+
+  PublicSubnet2Cidr:
+    Type: String
+    Description: CIDR block for public subnet in second AZ
+    Default: 10.0.2.0/24
+
+  # Lambda Function Parameters
+  ApiLambdaTimeout:
+    Type: Number
+    Description: API Lambda timeout in seconds
+    Default: 10
+    MinValue: 1
+    MaxValue: 900
+
+  ApiLambdaMemory:
+    Type: Number
+    Description: API Lambda memory in MB
+    Default: 128
+    MinValue: 128
+    MaxValue: 10240
+
+  ProcessLambdaTimeout:
+    Type: Number
+    Description: Process Lambda timeout in seconds
+    Default: 10
+    MinValue: 1
+    MaxValue: 900
+
+  ProcessLambdaMemory:
+    Type: Number
+    Description: Process Lambda memory in MB
+    Default: 128
+    MinValue: 128
+    MaxValue: 10240
+
+  ProcessLambdaConcurrency:
+    Type: Number
+    Description: Process Lambda reserved concurrency
+    Default: 16
+    MinValue: 1
+    MaxValue: 1000
+
+  UpdateStateLambdaTimeout:
+    Type: Number
+    Description: Update State Lambda timeout in seconds
+    Default: 15
+    MinValue: 1
+    MaxValue: 900
+
+  UpdateStateLambdaMemory:
+    Type: Number
+    Description: Update State Lambda memory in MB
+    Default: 128
+    MinValue: 128
+    MaxValue: 10240
+
+  PreBatchLambdaTimeout:
+    Type: Number
+    Description: Pre-Batch Lambda timeout in seconds
+    Default: 15
+    MinValue: 1
+    MaxValue: 900
+
+  PreBatchLambdaMemory:
+    Type: Number
+    Description: Pre-Batch Lambda memory in MB
+    Default: 128
+    MinValue: 128
+    MaxValue: 10240
+
+  PostBatchLambdaTimeout:
+    Type: Number
+    Description: Post-Batch Lambda timeout in seconds
+    Default: 15
+    MinValue: 1
+    MaxValue: 900
+
+  PostBatchLambdaMemory:
+    Type: Number
+    Description: Post-Batch Lambda memory in MB
+    Default: 128
+    MinValue: 128
+    MaxValue: 10240
+
+  LogLevel:
+    Type: String
+    Description: Cirrus log level
+    Default: DEBUG
+    AllowedValues:
+      - DEBUG
+      - INFO
+      - WARNING
+      - ERROR
+      - CRITICAL
+
+  # API Gateway Parameters
+  ApiGatewayStageName:
+    Type: String
+    Description: API Gateway deployment stage name
+    Default: v1
+    AllowedPattern: '^[a-zA-Z0-9_-]+$'
+
+Resources:
+  # Base Infrastructure Stack
+  BaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: core/cirrus-base.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        ProcessSQSTimeout: !Ref ProcessSQSTimeout
+        ProcessSQSMaxReceiveCount: !Ref ProcessSQSMaxReceiveCount
+        TimestreamMagneticStoreRetentionDays: !Ref TimestreamMagneticStoreRetentionDays
+        TimestreamMemoryStoreRetentionHours: !Ref TimestreamMemoryStoreRetentionHours
+      Tags:
+        - Key: Component
+          Value: Base
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+  # VPC Stack
+  VpcStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: core/cirrus-vpc.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        VpcCidr: !Ref VpcCidr
+        PrivateSubnet1Cidr: !Ref PrivateSubnet1Cidr
+        PrivateSubnet2Cidr: !Ref PrivateSubnet2Cidr
+        PublicSubnet1Cidr: !Ref PublicSubnet1Cidr
+        PublicSubnet2Cidr: !Ref PublicSubnet2Cidr
+      Tags:
+        - Key: Component
+          Value: Networking
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+  # Lambda Functions Stack
+  FunctionsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: core/cirrus-functions.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        BaseStackName: !GetAtt BaseStack.Outputs.StackName
+        VpcId: !GetAtt VpcStack.Outputs.VpcId
+        SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnetIds
+        VpcCidr: !Ref VpcCidr
+        ApiLambdaTimeout: !Ref ApiLambdaTimeout
+        ApiLambdaMemory: !Ref ApiLambdaMemory
+        ProcessLambdaTimeout: !Ref ProcessLambdaTimeout
+        ProcessLambdaMemory: !Ref ProcessLambdaMemory
+        UpdateStateLambdaTimeout: !Ref UpdateStateLambdaTimeout
+        UpdateStateLambdaMemory: !Ref UpdateStateLambdaMemory
+        PreBatchLambdaTimeout: !Ref PreBatchLambdaTimeout
+        PreBatchLambdaMemory: !Ref PreBatchLambdaMemory
+        PostBatchLambdaTimeout: !Ref PostBatchLambdaTimeout
+        PostBatchLambdaMemory: !Ref PostBatchLambdaMemory
+        ProcessLambdaConcurrency: !Ref ProcessLambdaConcurrency
+        LogLevel: !Ref LogLevel
+      Tags:
+        - Key: Component
+          Value: Functions
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+  # API Gateway Stack
+  ApiStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: core/cirrus-api.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        FunctionsStackName: !GetAtt FunctionsStack.Outputs.StackName
+        ApiGatewayStageName: !Ref ApiGatewayStageName
+      Tags:
+        - Key: Component
+          Value: Api
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+Outputs:
+  # Base Stack Outputs
+  CirrusDataBucket:
+    Description: S3 bucket for Cirrus data
+    Value: !GetAtt BaseStack.Outputs.CirrusDataBucket
+
+  CirrusPayloadBucket:
+    Description: S3 bucket for Cirrus payloads
+    Value: !GetAtt BaseStack.Outputs.CirrusPayloadBucket
+
+  StateTable:
+    Description: DynamoDB table for Cirrus state
+    Value: !GetAtt BaseStack.Outputs.StateTable
+
+  # TimestreamDatabase:
+  #   Description: Timestream database for state events
+  #   Value: !GetAtt BaseStack.Outputs.TimestreamDatabase
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-TimestreamDatabase'
+
+  # TimestreamTable:
+  #   Description: Timestream table for state events
+  #   Value: !GetAtt BaseStack.Outputs.TimestreamTable
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-TimestreamTable'
+
+  ProcessQueue:
+    Description: SQS queue for processing
+    Value: !GetAtt BaseStack.Outputs.ProcessQueue
+
+  ProcessQueueArn:
+    Description: SQS queue ARN for processing
+    Value: !GetAtt BaseStack.Outputs.ProcessQueueArn
+
+  ProcessDeadLetterQueue:
+    Description: SQS dead letter queue for processing
+    Value: !GetAtt BaseStack.Outputs.ProcessDeadLetterQueue
+
+  UpdateStateDeadLetterQueue:
+    Description: SQS dead letter queue for update state
+    Value: !GetAtt BaseStack.Outputs.UpdateStateDeadLetterQueue
+
+  PublishTopic:
+    Description: SNS topic for publishing
+    Value: !GetAtt BaseStack.Outputs.PublishTopic
+
+  PublishTopicArn:
+    Description: SNS topic ARN for publishing
+    Value: !GetAtt BaseStack.Outputs.PublishTopicArn
+
+  WorkflowEventTopic:
+    Description: SNS topic for workflow events
+    Value: !GetAtt BaseStack.Outputs.WorkflowEventTopic
+
+  WorkflowEventTopicArn:
+    Description: SNS topic ARN for workflow events
+    Value: !GetAtt BaseStack.Outputs.WorkflowEventTopicArn
+
+  # VPC Stack Outputs
+  VpcId:
+    Description: VPC ID for Lambda functions
+    Value: !GetAtt VpcStack.Outputs.VpcId
+
+  PrivateSubnetIds:
+    Description: Private Subnet IDs for Lambda functions
+    Value: !GetAtt VpcStack.Outputs.PrivateSubnetIds
+
+  PublicSubnetIds:
+    Description: Public Subnet IDs for NAT Gateways
+    Value: !GetAtt VpcStack.Outputs.PublicSubnetIds
+
+  VpcCidr:
+    Description: VPC CIDR block
+    Value: !GetAtt VpcStack.Outputs.VpcCidr
+
+  # Functions Stack Outputs
+  ApiLambdaArn:
+    Description: API Lambda function ARN
+    Value: !GetAtt FunctionsStack.Outputs.ApiLambdaArn
+
+  ProcessLambdaArn:
+    Description: Process Lambda function ARN
+    Value: !GetAtt FunctionsStack.Outputs.ProcessLambdaArn
+
+  UpdateStateLambdaArn:
+    Description: Update State Lambda function ARN
+    Value: !GetAtt FunctionsStack.Outputs.UpdateStateLambdaArn
+
+  PreBatchLambdaArn:
+    Description: Pre-Batch Lambda function ARN
+    Value: !GetAtt FunctionsStack.Outputs.PreBatchLambdaArn
+
+  PostBatchLambdaArn:
+    Description: Post-Batch Lambda function ARN
+    Value: !GetAtt FunctionsStack.Outputs.PostBatchLambdaArn
+
+  ApiLambdaName:
+    Description: API Lambda function name
+    Value: !GetAtt FunctionsStack.Outputs.ApiLambdaName
+
+  ProcessLambdaName:
+    Description: Process Lambda function name
+    Value: !GetAtt FunctionsStack.Outputs.ProcessLambdaName
+
+  LambdaSecurityGroupId:
+    Description: Security group ID for Lambda functions
+    Value: !GetAtt FunctionsStack.Outputs.LambdaSecurityGroupId
+
+  # API Stack Outputs
+  ApiGatewayUrl:
+    Description: API Gateway invoke URL
+    Value: !GetAtt ApiStack.Outputs.ApiGatewayUrl
+
+  # Summary Information
+  CirrusEndpoint:
+    Description: Main Cirrus API endpoint
+    Value: !GetAtt ApiStack.Outputs.ApiGatewayUrl
+
+  ResourcePrefix:
+    Description: Resource prefix used for this deployment
+    Value: !Ref ResourcePrefix
+
+  DeploymentRegion:
+    Description: AWS region where Cirrus is deployed
+    Value: !Ref 'AWS::Region'
+
+  StackComponents:
+    Description: CloudFormation stacks created for this Cirrus deployment
+    Value: !Sub 'Base: ${BaseStack}, Functions: ${FunctionsStack}, API: ${ApiStack}'
