@@ -1,0 +1,264 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Cirrus Base Infrastructure - S3, DynamoDB, Timestream, SQS, SNS'
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for all resource names
+    MinLength: 2
+    MaxLength: 22
+    AllowedPattern: '^[a-zA-Z][a-zA-Z0-9-]*$'
+    ConstraintDescription: >
+      Must be between 2 and 22 characters, begin with a letter, and contain only
+      alphanumeric characters and hyphens.
+    Default: cirrus-sandbox
+
+  ProcessSQSTimeout:
+    Type: Number
+    Description: >
+      Cirrus process SQS queue visibility timeout in seconds. This should exceed the
+      ProcessLambdaTimeout parameter to ensure messages are not re-enqueued prior to
+      process lambda completion.
+    Default: 180
+    MinValue: 0
+    MaxValue: 43200
+
+  ProcessSQSMaxReceiveCount:
+    Type: Number
+    Description: Maximum number of times a message can be received before moving to DLQ
+    Default: 5
+    MinValue: 1
+    MaxValue: 1000
+
+  TimestreamMagneticStoreRetentionDays:
+    Type: Number
+    Description: Timestream magnetic store retention period in days
+    Default: 93
+    MinValue: 1
+    MaxValue: 73000
+
+  TimestreamMemoryStoreRetentionHours:
+    Type: Number
+    Description: Timestream memory store retention period in hours
+    Default: 24
+    MinValue: 1
+    MaxValue: 8766
+
+Resources:
+  # S3 Buckets
+  CirrusDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ResourcePrefix}-data-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  CirrusPayloadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ResourcePrefix}-payload-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+
+  # DynamoDB State Table
+  StateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ResourcePrefix}-state'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: collections_workflow
+          AttributeType: S
+        - AttributeName: itemids
+          AttributeType: S
+        - AttributeName: state_updated
+          AttributeType: S
+        - AttributeName: updated
+          AttributeType: S
+      KeySchema:
+        - AttributeName: collections_workflow
+          KeyType: HASH
+        - AttributeName: itemids
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: state_updated
+          KeySchema:
+            - AttributeName: collections_workflow
+              KeyType: HASH
+            - AttributeName: state_updated
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: updated
+          KeySchema:
+            - AttributeName: collections_workflow
+              KeyType: HASH
+            - AttributeName: updated
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  # # Timestream Database
+  # TimestreamDatabase:
+  #   Type: AWS::Timestream::Database
+  #   Properties:
+  #     DatabaseName: !Sub '${ResourcePrefix}-state-events'
+
+  # TimestreamTable:
+  #   Type: AWS::Timestream::Table
+  #   Properties:
+  #     DatabaseName: !Ref TimestreamDatabase
+  #     TableName: !Sub '${ResourcePrefix}-state-events-table'
+  #     RetentionProperties:
+  #       MemoryStoreRetentionPeriodInHours: !Ref TimestreamMemoryStoreRetentionHours
+  #       MagneticStoreRetentionPeriodInDays: !Ref TimestreamMagneticStoreRetentionDays
+
+  # SQS Process Queue
+  ProcessQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${ResourcePrefix}-process'
+      VisibilityTimeout: !Ref ProcessSQSTimeout
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
+        maxReceiveCount: !Ref ProcessSQSMaxReceiveCount
+
+  # SQS Dead Letter Queue
+  ProcessDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${ResourcePrefix}-process-dlq'
+      MessageRetentionPeriod: 1209600  # 14 days
+
+  UpdateStateDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${ResourcePrefix}-update-state-dlq'
+      MessageRetentionPeriod: 1209600  # 14 days
+
+  # SNS Topics
+  PublishTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ResourcePrefix}-publish'
+      DisplayName: !Sub 'Cirrus ${ResourcePrefix} Publish Topic'
+
+  WorkflowEventTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ResourcePrefix}-workflow-event'
+      DisplayName: !Sub 'Cirrus ${ResourcePrefix} Workflow Event Topic'
+
+Outputs:
+  StackName:
+    Description: The name of this stack
+    Value: !Ref 'AWS::StackName'
+
+  CirrusDataBucket:
+    Description: S3 bucket for Cirrus data
+    Value: !Ref CirrusDataBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-CirrusDataBucket'
+
+  CirrusPayloadBucket:
+    Description: S3 bucket for Cirrus payloads
+    Value: !Ref CirrusPayloadBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-CirrusPayloadBucket'
+
+  StateTable:
+    Description: DynamoDB table for Cirrus state
+    Value: !Ref StateTable
+    Export:
+      Name: !Sub '${AWS::StackName}-StateTable'
+
+  StateTableArn:
+    Description: DynamoDB table ARN for Cirrus state
+    Value: !GetAtt StateTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-StateTableArn'
+
+  # TimestreamDatabase:
+  #   Description: Timestream database for state events
+  #   Value: !Ref TimestreamDatabase
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-TimestreamDatabase'
+
+  # TimestreamDatabaseArn:
+  #   Description: Timestream database ARN for state events
+  #   Value: !GetAtt TimestreamDatabase.Arn
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-TimestreamDatabaseArn'
+
+  # TimestreamTable:
+  #   Description: Timestream table for state events
+  #   Value: !Ref TimestreamTable
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-TimestreamTable'
+
+  # TimestreamTableArn:
+  #   Description: Timestream table ARN for state events
+  #   Value: !GetAtt TimestreamTable.Arn
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-TimestreamTableArn'
+
+  ProcessQueue:
+    Description: SQS queue for processing
+    Value: !Ref ProcessQueue
+    Export:
+      Name: !Sub '${AWS::StackName}-ProcessQueue'
+
+  ProcessQueueArn:
+    Description: SQS queue ARN for processing
+    Value: !GetAtt ProcessQueue.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ProcessQueueArn'
+
+  ProcessDeadLetterQueue:
+    Description: SQS dead letter queue for processing
+    Value: !Ref ProcessDeadLetterQueue
+
+  UpdateStateDeadLetterQueue:
+    Description: SQS dead letter queue for update state
+    Value: !Ref UpdateStateDeadLetterQueue
+
+  UpdateStateDeadLetterQueueArn:
+    Description: SQS dead letter queue ARN for update state
+    Value: !GetAtt UpdateStateDeadLetterQueue.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-UpdateStateDeadLetterQueueArn'
+
+  PublishTopic:
+    Description: SNS topic for publishing
+    Value: !Ref PublishTopic
+
+  PublishTopicArn:
+    Description: SNS topic ARN for publishing
+    Value: !Ref PublishTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-PublishTopicArn'
+
+  WorkflowEventTopic:
+    Description: SNS topic for workflow events
+    Value: !Ref WorkflowEventTopic
+
+  WorkflowEventTopicArn:
+    Description: SNS topic ARN for workflow events
+    Value: !Ref WorkflowEventTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-WorkflowEventTopicArn'

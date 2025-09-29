@@ -39,6 +39,7 @@ cli = [
 
 [dependency-groups]
 dev = [
+    "cfn-lint",
     "darglint",
     "pytest",
     "pytest-cov",

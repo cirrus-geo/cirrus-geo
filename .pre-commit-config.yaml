@@ -29,6 +29,7 @@ repos:
         entry: check-yaml
         language: system
         types: [yaml]
+        exclude: ^cloudformation/
       - id: end-of-file-fixer
         name: Fix End of Files
         entry: end-of-file-fixer
@@ -56,3 +57,9 @@ repos:
         'types_or': [python, pyi]
         args: []
         require_serial: true
+      - id: cfn-lint
+        name: CloudFormation Linter
+        entry: cfn-lint
+        language: python
+        files: 'cloudformation/.*\.(yaml|yml)$'
+        args: [--non-zero-exit-code, error]
