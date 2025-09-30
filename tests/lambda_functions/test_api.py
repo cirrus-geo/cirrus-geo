@@ -3,13 +3,48 @@ import json
 import pytest
 
 from cirrus.lambda_functions import api
+from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.utils import parse_since
+
+
+@pytest.fixture
+def metric_data():
+    return [
+        {
+            "events": {
+                "FAILED": {"SampleCount": 1.0},
+                "SUCCEEDED": {"SampleCount": 1.0},
+            },
+            "period": "2025-09-29T17:48:00+00:00",
+        },
+    ]
 
 
 def test_empty_event():
     with pytest.raises(Exception):
         api.lambda_handler({}, {})
+
+
+def test_filter_for_dashboard(metric_data):
+    filtered = api.filter_for_dashboard(metric_data, "hour")
+    states = {
+        state: {"count": 0.0, "unique_count": 0.0} for state in StateEnum._member_names_
+    }
+    states.update(
+        {
+            "FAILED": {"unique_count": 1.0, "count": 1.0},
+            "SUCCEEDED": {"unique_count": 1.0, "count": 1.0},
+        },
+    )
+
+    assert filtered == [
+        {
+            "period": "2025-09-29T17:48:00+00:00",
+            "states": states,
+            "interval": "hour",
+        },
+    ]
 
 
 @pytest.mark.usefixtures("_env")
@@ -65,9 +100,52 @@ class MockEventDB:
         return {"Rows": []}
 
 
-def test_api_stats_output(fixtures):
-    actual_result = api.get_stats(MockEventDB(fixtures))
-    expected_result = {
+class MockWorkflowMetricReader:
+    def __init__(self, enabled: bool = True):
+        self._enabled = enabled
+
+    def enabled(self):
+        return self._enabled
+
+    def query_by_bin_and_duration(self, x, y):
+        if self.enabled():
+            return [
+                {
+                    "period": "2025-09-29T17:48:00+00:00"
+                    if x == "1h"
+                    else "2025-09-29",
+                    "events": {
+                        "FAILED": {"SampleCount": 1.0},
+                        "SUCCEEDED": {"SampleCount": 1.0},
+                    },
+                },
+            ]
+        return []
+
+    def query_hour(self, x, y):
+        if self.enabled():
+            return [
+                {
+                    "period": "2025-09-29T17:48:00+00:00",
+                    "events": {
+                        "FAILED": {"SampleCount": 1.0},
+                        "SUCCEEDED": {"SampleCount": 1.0},
+                    },
+                },
+            ]
+        return []
+
+
+@pytest.mark.parametrize(
+    ("eventdb_enabled", "metric_reader_enabled"),
+    [(False, False), (True, False), (False, True)],
+)
+def test_api_stats_output(eventdb_enabled, metric_reader_enabled, fixtures):
+    actual_result = api.get_stats(
+        MockWorkflowMetricReader(enabled=metric_reader_enabled),
+        MockEventDB(fixtures, enabled=eventdb_enabled),
+    )
+    eventdb_result = {
         "state_transitions": {
             "daily": json.loads(
                 fixtures.joinpath("eventdb-daily-expected.json").read_text(),
@@ -78,11 +156,51 @@ def test_api_stats_output(fixtures):
             "hourly_rolling": [],
         },
     }
-    assert actual_result == expected_result
-
-
-def test_api_stats_output_when_not_enabled(fixtures):
-    assert api.get_stats(MockEventDB(fixtures, enabled=False)) is None
+    states = {
+        state: {"count": 0.0, "unique_count": 0.0} for state in StateEnum._member_names_
+    }
+    states.update(
+        {
+            "FAILED": {"unique_count": 1.0, "count": 1.0},
+            "SUCCEEDED": {"unique_count": 1.0, "count": 1.0},
+        },
+    )
+    metric_reader_result = {
+        "state_transitions": {
+            "daily": [
+                {
+                    "interval": "day",
+                    "period": "2025-09-29",
+                    "states": states,
+                },
+            ],
+            "hourly": [
+                {
+                    "interval": "hour",
+                    "period": "2025-09-29T17:48:00+00:00",
+                    "states": states,
+                },
+            ],
+            "hourly_rolling": [
+                {
+                    "interval": "hour",
+                    "period": "2025-09-29T17:48:00+00:00",
+                    "states": states,
+                },
+                {
+                    "interval": "hour",
+                    "period": "2025-09-29T17:48:00+00:00",
+                    "states": states,
+                },
+            ],
+        },
+    }
+    if metric_reader_enabled:
+        assert actual_result == metric_reader_result
+    elif eventdb_enabled:
+        assert actual_result == eventdb_result
+    else:
+        assert actual_result is None
 
 
 def test_api_collection_summary(statedb):
