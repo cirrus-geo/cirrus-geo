@@ -1,8 +1,8 @@
-from enum import Enum, unique
+from enum import StrEnum, unique
 
 
 @unique
-class StateEnum(str, Enum):
+class StateEnum(StrEnum):
     """Cirrus state strings"""
 
     PROCESSING = "PROCESSING"
@@ -12,12 +12,9 @@ class StateEnum(str, Enum):
     ABORTED = "ABORTED"
     CLAIMED = "CLAIMED"
 
-    def __str__(self):
-        return self.value
-
 
 @unique
-class SfnStatus(str, Enum):
+class SfnStatus(StrEnum):
     """StepFunctions status strings"""
 
     SUCCEEDED = "SUCCEEDED"
@@ -25,12 +22,9 @@ class SfnStatus(str, Enum):
     ABORTED = "ABORTED"
     TIMED_OUT = "TIMED_OUT"
 
-    def __str__(self):
-        return self.value
-
 
 @unique
-class WFEventType(str, Enum):
+class WFEventType(StrEnum):
     """Cirrus Workflow Event Type strings"""
 
     CLAIMED_PROCESSING = "CLAIMED_PROCESSING"
@@ -47,6 +41,3 @@ class WFEventType(str, Enum):
     ABORTED = "ABORTED"
     RECORD_EXTRACT_FAILED = "RECORD_EXTRACT_FAILED"
     NOT_A_PROCESS_PAYLOAD = "NOT_A_PROCESS_PAYLOAD"
-
-    def __str__(self):
-        return self.value

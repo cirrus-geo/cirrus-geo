@@ -85,7 +85,7 @@ class WorkflowEvent:
             source = str(self.payload_id)
 
         return {
-            "event": self.event_type,
+            "event": str(self.event_type),
             "workflow": workflow,
             "source": source,
             "execution_arn": self.execution_arn,
@@ -366,7 +366,7 @@ class WorkflowMetricReader:
         ]
         fcstats: dict[datetime, dict[str, dict[str, float]]] = {
             d.replace(second=0, microsecond=0): {
-                e: dict.fromkeys(statistics, 0.0) for e in event_types
+                str(e): dict.fromkeys(statistics, 0.0) for e in event_types
             }
             for d in dates
         }
