@@ -139,6 +139,11 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
             # Generate a UUID-based log stream name
             self.log_stream_name = f"workflow-metrics-{uuid.uuid4()}"
             # Create log stream if it does not exist
+            self.logger.debug(
+                "Creating log stream %s, in log group %s",
+                self.log_stream_name,
+                self.log_group_name,
+            )
             try:
                 self.logs_client.create_log_stream(
                     logGroupName=self.log_group_name,
@@ -147,6 +152,10 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
                 self.logger.info("Created new log stream: %s", self.log_stream_name)
             except self.logs_client.exceptions.ResourceAlreadyExistsException:
                 self.logger.info("Log stream already exists: %s", self.log_stream_name)
+            except self.logs_client.exceptions.ResourceNotFoundException as e:
+                raise Exception(
+                    f"Log group {self.log_group_name} does not exist.",
+                ) from e
             # Retrieve sequence token
             response = self.logs_client.describe_log_streams(
                 logGroupName=self.log_group_name,
