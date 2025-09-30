@@ -21,7 +21,7 @@ setup_venv() {
     venv="${1:?'provide path to directory for venv'}"
     uv venv "${venv}"
     source "${venv}/bin/activate"
-    uv sync --locked --no-dev --active
+    uv sync --locked --no-dev --active --no-editable
 }
 
 
