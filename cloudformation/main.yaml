@@ -31,20 +31,6 @@ Parameters:
     MinValue: 1
     MaxValue: 100
 
-  TimestreamMagneticStoreRetentionDays:
-    Type: Number
-    Description: Timestream magnetic store retention period in days
-    Default: 93
-    MinValue: 1
-    MaxValue: 73000
-
-  TimestreamMemoryStoreRetentionHours:
-    Type: Number
-    Description: Timestream memory store retention period in hours
-    Default: 24
-    MinValue: 1
-    MaxValue: 8766
-
   # VPC CIDR Parameters
   VpcCidr:
     Type: String
@@ -173,13 +159,11 @@ Resources:
   BaseStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: core/cirrus-base.yaml
+      TemplateURL: platform/base.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         ProcessSQSTimeout: !Ref ProcessSQSTimeout
         ProcessSQSMaxReceiveCount: !Ref ProcessSQSMaxReceiveCount
-        TimestreamMagneticStoreRetentionDays: !Ref TimestreamMagneticStoreRetentionDays
-        TimestreamMemoryStoreRetentionHours: !Ref TimestreamMemoryStoreRetentionHours
       Tags:
         - Key: Component
           Value: Base
@@ -192,7 +176,7 @@ Resources:
   VpcStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: core/cirrus-vpc.yaml
+      TemplateURL: platform/vpc.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         VpcCidr: !Ref VpcCidr
@@ -212,10 +196,9 @@ Resources:
   FunctionsStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: core/cirrus-functions.yaml
+      TemplateURL: platform/functions.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
-        BaseStackName: !GetAtt BaseStack.Outputs.StackName
         VpcId: !GetAtt VpcStack.Outputs.VpcId
         SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnetIds
         VpcCidr: !Ref VpcCidr
@@ -230,6 +213,15 @@ Resources:
         PostBatchLambdaTimeout: !Ref PostBatchLambdaTimeout
         PostBatchLambdaMemory: !Ref PostBatchLambdaMemory
         ProcessLambdaConcurrency: !Ref ProcessLambdaConcurrency
+        CirrusDataBucket: !GetAtt BaseStack.Outputs.CirrusDataBucket
+        CirrusPayloadBucket: !GetAtt BaseStack.Outputs.CirrusPayloadBucket
+        StateTable: !GetAtt BaseStack.Outputs.StateTable
+        StateTableArn: !GetAtt BaseStack.Outputs.StateTableArn
+        ProcessQueue: !GetAtt BaseStack.Outputs.ProcessQueue
+        ProcessQueueArn: !GetAtt BaseStack.Outputs.ProcessQueueArn
+        PublishTopicArn: !GetAtt BaseStack.Outputs.PublishTopicArn
+        WorkflowEventTopicArn: !GetAtt BaseStack.Outputs.WorkflowEventTopicArn
+        UpdateStateDeadLetterQueueArn: !GetAtt BaseStack.Outputs.UpdateStateDeadLetterQueueArn
         LogLevel: !Ref LogLevel
       Tags:
         - Key: Component
@@ -243,11 +235,12 @@ Resources:
   ApiStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: core/cirrus-api.yaml
+      TemplateURL: platform/api.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
-        FunctionsStackName: !GetAtt FunctionsStack.Outputs.StackName
         ApiGatewayStageName: !Ref ApiGatewayStageName
+        ApiLambdaArn: !GetAtt FunctionsStack.Outputs.ApiLambdaArn
+        ApiLambdaName: !GetAtt FunctionsStack.Outputs.ApiLambdaName
       Tags:
         - Key: Component
           Value: Api
@@ -270,25 +263,9 @@ Outputs:
     Description: DynamoDB table for Cirrus state
     Value: !GetAtt BaseStack.Outputs.StateTable
 
-  # TimestreamDatabase:
-  #   Description: Timestream database for state events
-  #   Value: !GetAtt BaseStack.Outputs.TimestreamDatabase
-  #   Export:
-  #     Name: !Sub '${AWS::StackName}-TimestreamDatabase'
-
-  # TimestreamTable:
-  #   Description: Timestream table for state events
-  #   Value: !GetAtt BaseStack.Outputs.TimestreamTable
-  #   Export:
-  #     Name: !Sub '${AWS::StackName}-TimestreamTable'
-
   ProcessQueue:
     Description: SQS queue for processing
     Value: !GetAtt BaseStack.Outputs.ProcessQueue
-
-  ProcessQueueArn:
-    Description: SQS queue ARN for processing
-    Value: !GetAtt BaseStack.Outputs.ProcessQueueArn
 
   ProcessDeadLetterQueue:
     Description: SQS dead letter queue for processing
@@ -302,17 +279,9 @@ Outputs:
     Description: SNS topic for publishing
     Value: !GetAtt BaseStack.Outputs.PublishTopic
 
-  PublishTopicArn:
-    Description: SNS topic ARN for publishing
-    Value: !GetAtt BaseStack.Outputs.PublishTopicArn
-
   WorkflowEventTopic:
     Description: SNS topic for workflow events
     Value: !GetAtt BaseStack.Outputs.WorkflowEventTopic
-
-  WorkflowEventTopicArn:
-    Description: SNS topic ARN for workflow events
-    Value: !GetAtt BaseStack.Outputs.WorkflowEventTopicArn
 
   # VPC Stack Outputs
   VpcId:
@@ -327,31 +296,7 @@ Outputs:
     Description: Public Subnet IDs for NAT Gateways
     Value: !GetAtt VpcStack.Outputs.PublicSubnetIds
 
-  VpcCidr:
-    Description: VPC CIDR block
-    Value: !GetAtt VpcStack.Outputs.VpcCidr
-
   # Functions Stack Outputs
-  ApiLambdaArn:
-    Description: API Lambda function ARN
-    Value: !GetAtt FunctionsStack.Outputs.ApiLambdaArn
-
-  ProcessLambdaArn:
-    Description: Process Lambda function ARN
-    Value: !GetAtt FunctionsStack.Outputs.ProcessLambdaArn
-
-  UpdateStateLambdaArn:
-    Description: Update State Lambda function ARN
-    Value: !GetAtt FunctionsStack.Outputs.UpdateStateLambdaArn
-
-  PreBatchLambdaArn:
-    Description: Pre-Batch Lambda function ARN
-    Value: !GetAtt FunctionsStack.Outputs.PreBatchLambdaArn
-
-  PostBatchLambdaArn:
-    Description: Post-Batch Lambda function ARN
-    Value: !GetAtt FunctionsStack.Outputs.PostBatchLambdaArn
-
   ApiLambdaName:
     Description: API Lambda function name
     Value: !GetAtt FunctionsStack.Outputs.ApiLambdaName
@@ -359,6 +304,18 @@ Outputs:
   ProcessLambdaName:
     Description: Process Lambda function name
     Value: !GetAtt FunctionsStack.Outputs.ProcessLambdaName
+
+  UpdateStateLambdaName:
+    Description: Update State Lambda function name
+    Value: !GetAtt FunctionsStack.Outputs.UpdateStateLambdaName
+
+  PreBatchLambdaName:
+    Description: Pre-Batch Lambda function name
+    Value: !GetAtt FunctionsStack.Outputs.PreBatchLambdaName
+
+  PostBatchLambdaName:
+    Description: Post-Batch Lambda function name
+    Value: !GetAtt FunctionsStack.Outputs.PostBatchLambdaName
 
   LambdaSecurityGroupId:
     Description: Security group ID for Lambda functions
@@ -370,10 +327,6 @@ Outputs:
     Value: !GetAtt ApiStack.Outputs.ApiGatewayUrl
 
   # Summary Information
-  CirrusEndpoint:
-    Description: Main Cirrus API endpoint
-    Value: !GetAtt ApiStack.Outputs.ApiGatewayUrl
-
   ResourcePrefix:
     Description: Resource prefix used for this deployment
     Value: !Ref ResourcePrefix
@@ -381,7 +334,3 @@ Outputs:
   DeploymentRegion:
     Description: AWS region where Cirrus is deployed
     Value: !Ref 'AWS::Region'
-
-  StackComponents:
-    Description: CloudFormation stacks created for this Cirrus deployment
-    Value: !Sub 'Base: ${BaseStack}, Functions: ${FunctionsStack}, API: ${ApiStack}'

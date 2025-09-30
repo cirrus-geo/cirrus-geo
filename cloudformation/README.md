@@ -1,16 +1,13 @@
 # Cirrus CloudFormation Infrastructure
 
 This directory contains CloudFormation templates for deploying **cirrus-geo**
-infrastructure on AWS. This implementation provides a canonical Infrastructure as Code
-(IaC) definition for the **cirrus-geo** project and provides a means for sandbox
-deployments for development and testing.
+infrastructure on AWS.
 
 ## Overview
 
 The CloudFormation implementation consists of:
 
-- **Base Infrastructure**: S3 buckets, DynamoDB state table, Timestream database, SQS
-  queues, SNS topics
+- **Base Infrastructure**: S3 buckets, DynamoDB state table, SQS queues, SNS topics
 - **Lambda Functions**: 5 core functions (API, Process, Update State, Pre-Batch,
   Post-Batch) with IAM roles
 - **API Gateway**: REST API (EDGE) with Lambda integration and CloudWatch logging
@@ -21,15 +18,18 @@ The CloudFormation templates are modular and use nested stacks for organization.
 
 ```bash
 cloudformation/
-├── cirrus-bootstrap.yaml        # Bootstrap template (S3 bucket for deployment artifacts)
-├── cirrus-main.yaml             # Main template (entry point)
-├── core/                        # Core stack templates
-│   ├── cirrus-base.yaml         # Base infrastructure (S3, DynamoDB, Timestream, SQS, SNS)
-│   ├── cirrus-functions.yaml    # Lambda functions with IAM roles
-│   ├── cirrus-api.yaml          # API Gateway and related resources
-│   └── cirrus-vpc.yaml          # VPC and networking (2-AZ setup)
-├── parameters.json              # Parameter file with sensible defaults
-└── deployment-artifacts/        # Directory for packaged Lambda code (created by build script)
+├── main.yaml                # Main template (entry point)
+├── bootstrap/
+│   └── bootstrap.yaml       # Bootstrap template (S3 bucket for deployment artifacts)
+├── platform/                # Platform stack templates
+│   ├── base.yaml            # Base infrastructure (S3, DynamoDB, SQS, SNS)
+│   ├── functions.yaml       # Lambda functions with IAM roles
+│   ├── api.yaml             # API Gateway and related resources
+│   ├── vpc.yaml             # VPC and networking (2-AZ setup)
+│   └── lambda-packages/     # Zipped Python Lambda function code
+├── parameters/
+│   └── parameters.json      # Parameter file with default values
+└── deployment-artifacts/    # Directory for packaged Lambda code (created by build script)
 ```
 
 ## Quick Start
@@ -47,8 +47,8 @@ cloudformation/
    ```bash
    aws cloudformation create-stack \
      --stack-name cirrus-bootstrap \
-     --template-body file://cloudformation/cirrus-bootstrap.yaml \
-     --parameters file://cloudformation/parameters.json
+     --template-body file://cloudformation/bootstrap/bootstrap.yaml \
+     --parameters file://cloudformation/parameters/parameters.json
 
    # Wait for bootstrap to complete
    aws cloudformation wait stack-create-complete --stack-name cirrus-bootstrap
@@ -61,7 +61,7 @@ cloudformation/
    ```
 
    Copy the `cirrus-lambda-dist.zip` file that was created into the
-   `cloudformation/lambda-packages/` directory.
+   `cloudformation/platform/lambda-packages/` directory.
 
 3. **Package and deploy the main stack**:
 
@@ -72,7 +72,7 @@ cloudformation/
 
    # Package templates and Lambda code
    aws cloudformation package \
-     --template-file cloudformation/cirrus-main.yaml \
+     --template-file cloudformation/main.yaml \
      --s3-bucket $S3_BUCKET \
      --output-template-file packaged-template.yaml
 
@@ -80,7 +80,7 @@ cloudformation/
    aws cloudformation create-stack \
      --stack-name cirrus-sandbox \
      --template-body file://packaged-template.yaml \
-     --parameters file://cloudformation/parameters.json \
+     --parameters file://cloudformation/parameters/parameters.json \
      --capabilities CAPABILITY_NAMED_IAM
    ```
 
