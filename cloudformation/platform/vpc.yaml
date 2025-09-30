@@ -1,38 +1,30 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Cirrus VPC Infrastructure - Private networking for Lambda functions'
+Description: 'Cirrus VPC Infrastructure'
 
 Parameters:
   ResourcePrefix:
     Type: String
     Description: Prefix for all resource names
-    MinLength: 2
-    MaxLength: 22
 
   VpcCidr:
     Type: String
     Description: CIDR block for the VPC
-    Default: 10.0.0.0/16
-    AllowedPattern: ^10\.\d{1,3}\.\d{1,3}\.\d{1,3}/16$
 
   PrivateSubnet1Cidr:
     Type: String
     Description: CIDR block for private subnet in first AZ
-    Default: 10.0.10.0/24
 
   PrivateSubnet2Cidr:
     Type: String
     Description: CIDR block for private subnet in second AZ
-    Default: 10.0.20.0/24
 
   PublicSubnet1Cidr:
     Type: String
     Description: CIDR block for public subnet in first AZ
-    Default: 10.0.1.0/24
 
   PublicSubnet2Cidr:
     Type: String
     Description: CIDR block for public subnet in second AZ
-    Default: 10.0.2.0/24
 
 Resources:
   # VPC
@@ -104,35 +96,6 @@ Resources:
         - Key: Name
           Value: !Sub '${ResourcePrefix}-private-subnet-2'
 
-  # Private Route Tables
-  PrivateRouteTable1:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref CirrusVpc
-      Tags:
-        - Key: Name
-          Value: !Sub '${ResourcePrefix}-private-routes-1'
-
-  PrivateSubnet1RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable1
-      SubnetId: !Ref PrivateSubnet1
-
-  PrivateRouteTable2:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref CirrusVpc
-      Tags:
-        - Key: Name
-          Value: !Sub '${ResourcePrefix}-private-routes-2'
-
-  PrivateSubnet2RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable2
-      SubnetId: !Ref PrivateSubnet2
-
   # Public Route Table
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -161,6 +124,35 @@ Resources:
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet2
+
+  # Private Route Tables
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CirrusVpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ResourcePrefix}-private-routes-1'
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CirrusVpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ResourcePrefix}-private-routes-2'
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
 
   # Elastic IPs for NAT Gateways
   NatGateway1EIP:
@@ -248,7 +240,3 @@ Outputs:
   PublicSubnetIds:
     Description: Public Subnet IDs for NAT Gateways
     Value: !Sub '${PublicSubnet1},${PublicSubnet2}'
-
-  VpcCidr:
-    Description: VPC CIDR block
-    Value: !Ref VpcCidr

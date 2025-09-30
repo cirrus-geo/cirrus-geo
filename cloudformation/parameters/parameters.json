@@ -12,14 +12,6 @@
     "ParameterValue": "5"
   },
   {
-    "ParameterKey": "TimestreamMagneticStoreRetentionDays",
-    "ParameterValue": "93"
-  },
-  {
-    "ParameterKey": "TimestreamMemoryStoreRetentionHours",
-    "ParameterValue": "24"
-  },
-  {
     "ParameterKey": "ApiLambdaTimeout",
     "ParameterValue": "10"
   },

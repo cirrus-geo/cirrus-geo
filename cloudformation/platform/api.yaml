@@ -5,18 +5,18 @@ Parameters:
   ResourcePrefix:
     Type: String
     Description: Prefix for all resource names
-    MinLength: 2
-    MaxLength: 22
-
-  FunctionsStackName:
-    Type: String
-    Description: Name of the functions stack to import Lambda ARN from
 
   ApiGatewayStageName:
     Type: String
     Description: API Gateway deployment stage name
-    Default: v1
-    AllowedPattern: '^[a-zA-Z0-9_-]+$'
+
+  ApiLambdaArn:
+    Type: String
+    Description: ARN of the Lambda function to integrate with API Gateway
+
+  ApiLambdaName:
+    Type: String
+    Description: Name of the Lambda function to integrate with API Gateway
 
 Resources:
   # API Gateway REST API
@@ -48,10 +48,7 @@ Resources:
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
-        Uri: !Sub
-          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations'
-          - LambdaArn: !ImportValue
-              'Fn::Sub': '${FunctionsStackName}-ApiLambdaArn'
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambdaArn}/invocations'
 
   # API Gateway Method for proxy resource
   ProxyMethod:
@@ -64,17 +61,13 @@ Resources:
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
-        Uri: !Sub
-          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations'
-          - LambdaArn: !ImportValue
-              'Fn::Sub': '${FunctionsStackName}-ApiLambdaArn'
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambdaArn}/invocations'
 
   # Lambda permission for API Gateway to invoke the function
   ApiLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !ImportValue
-        'Fn::Sub': '${FunctionsStackName}-ApiLambdaName'
+      FunctionName: !Ref ApiLambdaName
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CirrusApi}/*/GET/*'
@@ -82,8 +75,7 @@ Resources:
   ApiLambdaRootPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !ImportValue
-        'Fn::Sub': '${FunctionsStackName}-ApiLambdaName'
+      FunctionName: !Ref ApiLambdaName
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CirrusApi}/*/GET'
@@ -143,18 +135,6 @@ Resources:
           MetricsEnabled: true
 
 Outputs:
-  ApiGatewayId:
-    Description: API Gateway ID
-    Value: !Ref CirrusApi
-
   ApiGatewayUrl:
     Description: API Gateway invoke URL
     Value: !Sub 'https://${CirrusApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStage}'
-
-  ApiGatewayRootResourceId:
-    Description: API Gateway root resource ID
-    Value: !GetAtt CirrusApi.RootResourceId
-
-  ApiGatewayStageName:
-    Description: API Gateway stage name
-    Value: !Ref ApiGatewayStageName

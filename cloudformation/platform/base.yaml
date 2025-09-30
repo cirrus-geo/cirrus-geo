@@ -1,48 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Cirrus Base Infrastructure - S3, DynamoDB, Timestream, SQS, SNS'
+Description: 'Cirrus Base Infrastructure - S3, DynamoDB, SQS, SNS'
 
 Parameters:
   ResourcePrefix:
     Type: String
     Description: Prefix for all resource names
-    MinLength: 2
-    MaxLength: 22
-    AllowedPattern: '^[a-zA-Z][a-zA-Z0-9-]*$'
-    ConstraintDescription: >
-      Must be between 2 and 22 characters, begin with a letter, and contain only
-      alphanumeric characters and hyphens.
-    Default: cirrus-sandbox
 
   ProcessSQSTimeout:
     Type: Number
-    Description: >
-      Cirrus process SQS queue visibility timeout in seconds. This should exceed the
-      ProcessLambdaTimeout parameter to ensure messages are not re-enqueued prior to
-      process lambda completion.
-    Default: 180
-    MinValue: 0
-    MaxValue: 43200
+    Description: Cirrus process SQS queue visibility timeout in seconds.
 
   ProcessSQSMaxReceiveCount:
     Type: Number
     Description: Maximum number of times a message can be received before moving to DLQ
-    Default: 5
-    MinValue: 1
-    MaxValue: 1000
-
-  TimestreamMagneticStoreRetentionDays:
-    Type: Number
-    Description: Timestream magnetic store retention period in days
-    Default: 93
-    MinValue: 1
-    MaxValue: 73000
-
-  TimestreamMemoryStoreRetentionHours:
-    Type: Number
-    Description: Timestream memory store retention period in hours
-    Default: 24
-    MinValue: 1
-    MaxValue: 8766
 
 Resources:
   # S3 Buckets
@@ -113,21 +83,6 @@ Resources:
           Projection:
             ProjectionType: ALL
 
-  # # Timestream Database
-  # TimestreamDatabase:
-  #   Type: AWS::Timestream::Database
-  #   Properties:
-  #     DatabaseName: !Sub '${ResourcePrefix}-state-events'
-
-  # TimestreamTable:
-  #   Type: AWS::Timestream::Table
-  #   Properties:
-  #     DatabaseName: !Ref TimestreamDatabase
-  #     TableName: !Sub '${ResourcePrefix}-state-events-table'
-  #     RetentionProperties:
-  #       MemoryStoreRetentionPeriodInHours: !Ref TimestreamMemoryStoreRetentionHours
-  #       MagneticStoreRetentionPeriodInDays: !Ref TimestreamMagneticStoreRetentionDays
-
   # SQS Process Queue
   ProcessQueue:
     Type: AWS::SQS::Queue
@@ -156,78 +111,38 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Sub '${ResourcePrefix}-publish'
-      DisplayName: !Sub 'Cirrus ${ResourcePrefix} Publish Topic'
+      DisplayName: !Sub '${ResourcePrefix}-publish'
 
   WorkflowEventTopic:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Sub '${ResourcePrefix}-workflow-event'
-      DisplayName: !Sub 'Cirrus ${ResourcePrefix} Workflow Event Topic'
+      DisplayName: !Sub '${ResourcePrefix}-workflow-events'
 
 Outputs:
-  StackName:
-    Description: The name of this stack
-    Value: !Ref 'AWS::StackName'
-
   CirrusDataBucket:
     Description: S3 bucket for Cirrus data
     Value: !Ref CirrusDataBucket
-    Export:
-      Name: !Sub '${AWS::StackName}-CirrusDataBucket'
 
   CirrusPayloadBucket:
     Description: S3 bucket for Cirrus payloads
     Value: !Ref CirrusPayloadBucket
-    Export:
-      Name: !Sub '${AWS::StackName}-CirrusPayloadBucket'
 
   StateTable:
     Description: DynamoDB table for Cirrus state
     Value: !Ref StateTable
-    Export:
-      Name: !Sub '${AWS::StackName}-StateTable'
 
   StateTableArn:
     Description: DynamoDB table ARN for Cirrus state
     Value: !GetAtt StateTable.Arn
-    Export:
-      Name: !Sub '${AWS::StackName}-StateTableArn'
-
-  # TimestreamDatabase:
-  #   Description: Timestream database for state events
-  #   Value: !Ref TimestreamDatabase
-  #   Export:
-  #     Name: !Sub '${AWS::StackName}-TimestreamDatabase'
-
-  # TimestreamDatabaseArn:
-  #   Description: Timestream database ARN for state events
-  #   Value: !GetAtt TimestreamDatabase.Arn
-  #   Export:
-  #     Name: !Sub '${AWS::StackName}-TimestreamDatabaseArn'
-
-  # TimestreamTable:
-  #   Description: Timestream table for state events
-  #   Value: !Ref TimestreamTable
-  #   Export:
-  #     Name: !Sub '${AWS::StackName}-TimestreamTable'
-
-  # TimestreamTableArn:
-  #   Description: Timestream table ARN for state events
-  #   Value: !GetAtt TimestreamTable.Arn
-  #   Export:
-  #     Name: !Sub '${AWS::StackName}-TimestreamTableArn'
 
   ProcessQueue:
     Description: SQS queue for processing
     Value: !Ref ProcessQueue
-    Export:
-      Name: !Sub '${AWS::StackName}-ProcessQueue'
 
   ProcessQueueArn:
     Description: SQS queue ARN for processing
     Value: !GetAtt ProcessQueue.Arn
-    Export:
-      Name: !Sub '${AWS::StackName}-ProcessQueueArn'
 
   ProcessDeadLetterQueue:
     Description: SQS dead letter queue for processing
@@ -240,8 +155,6 @@ Outputs:
   UpdateStateDeadLetterQueueArn:
     Description: SQS dead letter queue ARN for update state
     Value: !GetAtt UpdateStateDeadLetterQueue.Arn
-    Export:
-      Name: !Sub '${AWS::StackName}-UpdateStateDeadLetterQueueArn'
 
   PublishTopic:
     Description: SNS topic for publishing
@@ -249,9 +162,7 @@ Outputs:
 
   PublishTopicArn:
     Description: SNS topic ARN for publishing
-    Value: !Ref PublishTopic
-    Export:
-      Name: !Sub '${AWS::StackName}-PublishTopicArn'
+    Value: !GetAtt PublishTopic.TopicArn
 
   WorkflowEventTopic:
     Description: SNS topic for workflow events
@@ -259,6 +170,4 @@ Outputs:
 
   WorkflowEventTopicArn:
     Description: SNS topic ARN for workflow events
-    Value: !Ref WorkflowEventTopic
-    Export:
-      Name: !Sub '${AWS::StackName}-WorkflowEventTopicArn'
+    Value: !GetAtt WorkflowEventTopic.TopicArn
