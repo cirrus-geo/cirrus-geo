@@ -3,7 +3,6 @@ import os
 import uuid
 import warnings
 
-from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -28,7 +27,7 @@ from .utils import (
 )
 
 
-def date_formatter(granularity="m") -> Callable:
+def date_formatter(granularity="s") -> Callable:
     """Return string representation of the given datetime, truncated to the specified
     granularity.  Timezone handling is deferred to the datetime library behavior.
 
@@ -37,11 +36,13 @@ def date_formatter(granularity="m") -> Callable:
                           'd' - date only (YYYY-MM-DD)
                           'h' - hour (YYYY-MM-DDTHH:00:00)
                           'm' - minute (YYYY-MM-DDTHH:MM:00)
+                          's' - minute (YYYY-MM-DDTHH:MM:SS.uuuuu)
     """
     return {
         "d": lambda dt: dt.date().isoformat(),
         "h": lambda dt: dt.replace(minute=0, second=0, microsecond=0).isoformat(),
         "m": lambda dt: dt.replace(second=0, microsecond=0).isoformat(),
+        "s": lambda dt: dt.isoformat(),
     }[granularity]
 
 
@@ -292,9 +293,17 @@ class WorkflowMetricReader:
             event_types = list(WFEventType)
         if formatter is None:
             formatter = date_formatter()
-        cstats: dict[datetime, dict[str, dict[str, float]]] = defaultdict(
-            lambda: defaultdict(lambda: dict.fromkeys(statistics, 0.0)),
-        )
+        delta = timedelta(seconds=period)
+        dates = [
+            start_time + i * delta
+            for i in range(int((end_time - start_time).total_seconds() / period))
+        ]
+        fcstats: dict[datetime, dict[str, dict[str, float]]] = {
+            d.replace(second=0, microsecond=0): {
+                e: dict.fromkeys(statistics, 0.0) for e in event_types
+            }
+            for d in dates
+        }
 
         for workflow in workflows:
             for event_type in event_types:
@@ -311,14 +320,14 @@ class WorkflowMetricReader:
                     Statistics=statistics,
                 )
                 for datapoint in resp["Datapoints"]:
-                    tstamp = datapoint["Timestamp"].replace(microsecond=0)
+                    tstamp = datapoint["Timestamp"]
                     for statistic in statistics:
                         stat = datapoint[statistic]
-                        cstats[tstamp][str(event_type)][statistic] += stat
+                        fcstats[tstamp][str(event_type)][statistic] += stat
         # TODO: break this out by workflow, maybe
         return [
             {"period": formatter(k), "events": dict(v)}
-            for k, v in sorted(cstats.items(), key=lambda x: x[0])
+            for k, v in sorted(fcstats.items(), key=lambda x: x[0])
         ]
 
     def aggregated_by_event_type(
@@ -350,9 +359,17 @@ class WorkflowMetricReader:
             event_types = list(WFEventType)
         if formatter is None:
             formatter = date_formatter()
-        cstats: dict[datetime, dict[str, dict[str, float]]] = defaultdict(
-            lambda: defaultdict(lambda: dict.fromkeys(statistics, 0.0)),
-        )
+        delta = timedelta(seconds=period)
+        dates = [
+            start_time + i * delta
+            for i in range(int((end_time - start_time).total_seconds() / period))
+        ]
+        fcstats: dict[datetime, dict[str, dict[str, float]]] = {
+            d.replace(second=0, microsecond=0): {
+                e: dict.fromkeys(statistics, 0.0) for e in event_types
+            }
+            for d in dates
+        }
         for event_type in event_types:
             resp = self.cw_client.get_metric_statistics(
                 Namespace=self.metric_namespace,
@@ -366,14 +383,14 @@ class WorkflowMetricReader:
                 Statistics=statistics,
             )
             for datapoint in resp["Datapoints"]:
-                tstamp = datapoint["Timestamp"].replace(microsecond=0)
+                tstamp = datapoint["Timestamp"]
                 for statistic in statistics:
                     stat = datapoint[statistic]
-                    cstats[tstamp][str(event_type)][statistic] += stat
+                    fcstats[tstamp][str(event_type)][statistic] += stat
 
         return [
             {"period": formatter(k), "events": dict(v)}
-            for k, v in sorted(cstats.items(), key=lambda x: x[0])
+            for k, v in sorted(fcstats.items(), key=lambda x: x[0])
         ]
 
     def query_hour(
@@ -392,7 +409,7 @@ class WorkflowMetricReader:
             start_time=start_time,
             end_time=end_time,
             period=3600,
-            formatter=date_formatter("m"),
+            formatter=date_formatter(),
         )
 
     def query_by_bin_and_duration(
@@ -416,7 +433,7 @@ class WorkflowMetricReader:
             start_time=start_time,
             end_time=end_time,
             period=period,
-            formatter=date_formatter(bin_size[-1]),
+            formatter=date_formatter(),
         )
 
 
@@ -506,7 +523,9 @@ class WorkflowEventManager:
 
     def announce(self: Self, event: WorkflowEvent) -> None:
         """
-        Construct message payload and publish to WorkflowEventTopic.
+        Construct message payload and publish (if enabled) to:
+             1. WorkflowEventTopic (SNS)
+             2. WorkflowMetricsLogger (CloudWatch)
 
         Args:
             event (WorkflowEvent):
