@@ -30,5 +30,3 @@ Outputs:
   CirrusDeploymentArtifactsBucket:
     Description: S3 bucket for deployment artifacts (Lambda packages and CloudFormation templates)
     Value: !Ref CirrusDeploymentArtifactsBucket
-    Export:
-      Name: !Sub '${AWS::StackName}-CirrusDeploymentArtifactsBucket'

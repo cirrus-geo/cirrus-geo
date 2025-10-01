@@ -30,8 +30,12 @@ cloudformation/
 │   ├── api.yaml             # API Gateway and related resources
 │   ├── vpc.yaml             # VPC and networking (2-AZ setup)
 │   └── lambda-packages/     # Zipped Python Lambda function code
-└── cli/
-    └── ssm_parameters.yaml  # SSM parameters for CLI
+├── cli/
+│   └── ssm_parameters.yaml  # SSM parameters for CLI
+└── workflows/               # Step Functions workflow templates
+    └── minimal/             # Minimal test workflow
+        ├── state_machine.yaml
+        └── payload.json
 ```
 
 ## Quick Start
@@ -44,58 +48,92 @@ cloudformation/
 
 ### Basic Deployment
 
-1. **Deploy bootstrap stack** (creates S3 bucket for deployment artifacts):
+1. **Set parameters and stack names**
+
+   - Change parameters in `cloudformation/parameters.json` as needed.
+   - Choose names for the bootstrap, main, and workflow CloudFormation stacks and
+     export as environment variables. For example:
+
+     ```bash
+     export BOOTSTRAP_STACK="cirrus-bootstrap"
+     export MAIN_STACK="cirrus-sandbox"
+     export MINIMAL_WORKFLOW_STACK="cirrus-sandbox-minimal-workflow"
+     ```
+
+   - Export the location for the Lambda deployment package. This is used by the
+     `build/lambda-dist.bash` script.
+
+     ```bash
+     export CIRRUS_LAMBDA_ZIP=cloudformation/core/lambda-packages/cirrus-lambda-dist.zip
+     ```
+
+2. **Deploy bootstrap stack** (creates S3 bucket for deployment artifacts):
 
    ```bash
-   aws cloudformation create-stack \
-     --stack-name cirrus-bootstrap \
-     --template-body file://cloudformation/bootstrap/bootstrap.yaml \
-     --parameters file://cloudformation/parameters.json
-
-   # Wait for bootstrap to complete
-   aws cloudformation wait stack-create-complete --stack-name cirrus-bootstrap
+   aws cloudformation deploy \
+     --stack-name "$BOOTSTRAP_STACK" \
+     --template-file cloudformation/bootstrap/bootstrap.yaml \
+     --parameter-overrides file://cloudformation/parameters.json
    ```
 
-2. **Package Lambda functions**:
+3. **Package Lambda functions**:
 
    ```bash
-   CIRRUS_LAMBDA_ZIP=cloudformation/core/lambda-packages/cirrus-lambda-dist.zip ./bin/build-lambda-dist.bash
+   ./bin/build-lambda-dist.bash
    ```
 
-3. **Package and deploy the main stack**:
+4. **Package and deploy the main stack**:
 
    ```bash
    # Get the S3 bucket for packaging
-   S3_BUCKET=$(aws cloudformation describe-stacks --stack-name cirrus-bootstrap \
-     --query 'Stacks[0].Outputs[?OutputKey==`CirrusDeploymentArtifactsBucket`].OutputValue' --output text)
+   ARTIFACT_BUCKET=$(aws cloudformation describe-stacks \
+     --stack-name "$BOOTSTRAP_STACK" \
+     --query 'Stacks[0].Outputs[?OutputKey==`CirrusDeploymentArtifactsBucket`].OutputValue' \
+     --output text)
 
    # Package templates and Lambda code
    aws cloudformation package \
      --template-file cloudformation/main.yaml \
-     --s3-bucket $S3_BUCKET \
+     --s3-bucket "$ARTIFACT_BUCKET" \
      --output-template-file packaged-template.yaml
 
    # Deploy the packaged stack
-   aws cloudformation create-stack \
-     --stack-name cirrus-sandbox \
-     --template-body file://packaged-template.yaml \
-     --parameters file://cloudformation/parameters.json \
+   aws cloudformation deploy \
+     --stack-name "$MAIN_STACK" \
+     --template-file packaged-template.yaml \
+     --parameter-overrides file://cloudformation/parameters.json \
      --capabilities CAPABILITY_NAMED_IAM
-   ```
-
-4. **Wait for deployment to complete**:
-
-   ```bash
-   aws cloudformation wait stack-create-complete --stack-name cirrus-sandbox
    ```
 
 5. **Get deployed resource information**:
 
    ```bash
-   aws cloudformation describe-stacks --stack-name cirrus-sandbox \
+   aws cloudformation describe-stacks --stack-name "$MAIN_STACK" \
      --query 'Stacks[0].Outputs | sort_by(@, &Description)' \
      --output table
    ```
+
+## Deploying Workflows
+
+Workflows are deployed as separate stacks to allow rapid iteration without affecting the
+main infrastructure.
+
+### Minimal Workflow
+
+Deploy the minimal test workflow:
+
+```bash
+aws cloudformation deploy \
+  --template-file cloudformation/workflows/minimal/state_machine.yaml \
+  --stack-name "$MINIMAL_WORKFLOW_STACK" \
+  --parameter-overrides file://cloudformation/parameters.json \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+The minimal workflow contains a single `ChoiceState` that checks for a particular value
+in the `workflow` field in the payload. Use `workflows/minimal/payload.json` for
+testing. You can change the `workflow` value to something other than "minimal" to make
+the workflow fail.
 
 ## Cleanup
 
@@ -103,14 +141,20 @@ cloudformation/
 
    ```bash
    # Get bucket names
-   DATA_BUCKET=$(aws cloudformation describe-stacks --stack-name cirrus-sandbox \
-     --query 'Stacks[0].Outputs[?OutputKey==`CirrusDataBucket`].OutputValue' --output text)
+   DATA_BUCKET=$(aws cloudformation describe-stacks \
+     --stack-name "$MAIN_STACK" \
+     --query 'Stacks[0].Outputs[?OutputKey==`CirrusDataBucket`].OutputValue' \
+     --output text)
 
-   PAYLOAD_BUCKET=$(aws cloudformation describe-stacks --stack-name cirrus-sandbox \
-     --query 'Stacks[0].Outputs[?OutputKey==`CirrusPayloadBucket`].OutputValue' --output text)
+   PAYLOAD_BUCKET=$(aws cloudformation describe-stacks \
+     --stack-name "$MAIN_STACK" \
+     --query 'Stacks[0].Outputs[?OutputKey==`CirrusPayloadBucket`].OutputValue' \
+     --output text)
 
-   ARTIFACT_BUCKET=$(aws cloudformation describe-stacks --stack-name cirrus-bootstrap \
-     --query 'Stacks[0].Outputs[?OutputKey==`CirrusDeploymentArtifactsBucket`].OutputValue' --output text)
+   ARTIFACT_BUCKET=$(aws cloudformation describe-stacks \
+     --stack-name "$BOOTSTRAP_STACK" \
+     --query 'Stacks[0].Outputs[?OutputKey==`CirrusDeploymentArtifactsBucket`].OutputValue' \
+     --output text)
 
    # Empty buckets
    aws s3 rm s3://$DATA_BUCKET --recursive
@@ -118,14 +162,18 @@ cloudformation/
    aws s3 rm s3://$ARTIFACT_BUCKET --recursive
    ```
 
-2. **Delete the stacks** (main stack first, then bootstrap):
+2. **Delete the stacks** (workflows first, then main stack, then bootstrap):
 
    ```bash
-   # Delete main stack
-   aws cloudformation delete-stack --stack-name cirrus-sandbox
-   aws cloudformation wait stack-delete-complete --stack-name cirrus-sandbox
+   # Delete workflow stacks (if deployed). Example for the minimal workflow:
+   aws cloudformation delete-stack --stack-name "$MINIMAL_WORKFLOW_STACK"
+   aws cloudformation wait stack-delete-complete --stack-name "$MINIMAL_WORKFLOW_STACK"
 
-   # Delete bootstrap stack
-   aws cloudformation delete-stack --stack-name cirrus-bootstrap
-   aws cloudformation wait stack-delete-complete --stack-name cirrus-bootstrap
+   # Delete main stack:
+   aws cloudformation delete-stack --stack-name "$MAIN_STACK"
+   aws cloudformation wait stack-delete-complete --stack-name "$MAIN_STACK"
+
+   # Delete bootstrap stack:
+   aws cloudformation delete-stack --stack-name "$BOOTSTRAP_STACK"
+   aws cloudformation wait stack-delete-complete --stack-name "$BOOTSTRAP_STACK"
    ```
