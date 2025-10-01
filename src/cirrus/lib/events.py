@@ -253,7 +253,7 @@ class WorkflowMetricReader:
             if log_group_name != ""
             else os.getenv("CIRRUS_WORKFLOW_LOG_GROUP", "")
         )
-        self._enabled = metric_namespace is not None or self.metric_namespace != ""
+        self._enabled = metric_namespace is not None and self.metric_namespace != ""
         self.metric_some_workflows = "a_workflow_by_event"
         self.metric_all_workflows = "all_workflows_by_event"
         if self._enabled:
