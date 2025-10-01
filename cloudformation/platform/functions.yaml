@@ -1,0 +1,555 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Cirrus Lambda Functions and IAM Roles'
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for all resource names
+
+  VpcId:
+    Type: String
+    Description: VPC ID for Lambda functions
+    Default: ''
+
+  VpcCidr:
+    Type: String
+    Description: VPC CIDR block for security group rules
+    Default: ''
+
+  SubnetIds:
+    Type: CommaDelimitedList
+    Description: Subnet IDs for Lambda functions
+    Default: ''
+
+  ApiLambdaTimeout:
+    Type: Number
+    Description: API Lambda timeout in seconds
+
+  ApiLambdaMemory:
+    Type: Number
+    Description: API Lambda memory in MB
+
+  ProcessLambdaTimeout:
+    Type: Number
+    Description: Process Lambda timeout in seconds
+
+  ProcessLambdaMemory:
+    Type: Number
+    Description: Process Lambda memory in MB
+
+  ProcessLambdaConcurrency:
+    Type: Number
+    Description: Process Lambda reserved concurrency
+
+  UpdateStateLambdaTimeout:
+    Type: Number
+    Description: Update State Lambda timeout in seconds
+
+  UpdateStateLambdaMemory:
+    Type: Number
+    Description: Update State Lambda memory in MB
+
+  PreBatchLambdaTimeout:
+    Type: Number
+    Description: Pre-Batch Lambda timeout in seconds
+
+  PreBatchLambdaMemory:
+    Type: Number
+    Description: Pre-Batch Lambda memory in MB
+
+  PostBatchLambdaTimeout:
+    Type: Number
+    Description: Post-Batch Lambda timeout in seconds
+
+  PostBatchLambdaMemory:
+    Type: Number
+    Description: Post-Batch Lambda memory in MB
+
+  CirrusDataBucket:
+    Type: String
+    Description: Name of the Cirrus data bucket
+
+  CirrusPayloadBucket:
+    Type: String
+    Description: Name of the Cirrus payload bucket
+
+  StateTable:
+    Type: String
+    Description: Name of the Cirrus state DynamoDB table
+
+  StateTableArn:
+    Type: String
+    Description: ARN of the Cirrus state DynamoDB table
+
+  ProcessQueueArn:
+    Type: String
+    Description: ARN of the Cirrus process SQS queue
+
+  WorkflowEventTopicArn:
+    Type: String
+    Description: ARN of the Cirrus workflow event SNS topic
+
+  LogLevel:
+    Type: String
+    Description: Cirrus log level
+
+  ProcessQueue:
+    Type: String
+    Description: SQS queue for processing
+
+  PublishTopicArn:
+    Type: String
+    Description: SNS topic ARN for publishing
+
+  UpdateStateDeadLetterQueueArn:
+    Type: String
+    Description: Dead letter queue ARN for update state lambda
+
+Conditions:
+  UseVpc: !Not [!Equals [!Ref VpcId, '']]
+
+Resources:
+  # Security Group for Lambda functions
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: UseVpc
+    Properties:
+      GroupDescription: Security group for Cirrus Lambda functions
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref VpcCidr
+          Description: Allow HTTPS to VPC endpoints
+      Tags:
+        - Key: Name
+          Value: !Sub '${ResourcePrefix}-lambda-sg'
+
+  # IAM Role for API Lambda
+  ApiLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-api-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns: !If
+        - UseVpc
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
+      Policies:
+        - PolicyName: CirrusApiPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - s3:GetBucketLocation
+                Resource: !Sub 'arn:aws:s3:::${CirrusDataBucket}*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:GetItem
+                  - dynamodb:DescribeTable
+                Resource:
+                  - !Ref StateTableArn
+                  - !Sub '${StateTableArn}/index/*'
+
+  # IAM Role for Process Lambda
+  ProcessLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-process-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns: !If
+        - UseVpc
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
+      Policies:
+        - PolicyName: CirrusProcessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - s3:GetBucketLocation
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::${CirrusPayloadBucket}/*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:GetItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                Resource:
+                  - !Ref StateTableArn
+                  - !Sub '${StateTableArn}/index/*'
+              - Effect: Allow
+                Action:
+                  - sqs:GetQueueUrl
+                  - sqs:GetQueueAttributes
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource:
+                  - !Ref ProcessQueueArn
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource:
+                  - !Ref WorkflowEventTopicArn
+              - Effect: Allow
+                Action:
+                  - states:StartExecution
+                Resource: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ResourcePrefix}-*'
+
+  # IAM Role for Update State Lambda
+  UpdateStateLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-update-state-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns: !If
+        - UseVpc
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
+      Policies:
+        - PolicyName: CirrusUpdateStatePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                Resource:
+                  - !Ref StateTableArn
+                  - !Sub '${StateTableArn}/index/*'
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  - !Ref ProcessQueueArn
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::${CirrusPayloadBucket}/*'
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource:
+                  - !Ref PublishTopicArn
+                  - !Ref WorkflowEventTopicArn
+
+  # IAM Role for Pre Batch Lambda
+  PreBatchLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-pre-batch-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns: !If
+        - UseVpc
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
+      Policies:
+        - PolicyName: CirrusPreBatchPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                  - s3:GetObject
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::${CirrusPayloadBucket}/*'
+
+  # IAM Role for Post Batch Lambda
+  PostBatchLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-post-batch-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns: !If
+        - UseVpc
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
+      Policies:
+        - PolicyName: CirrusPostBatchPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                  - s3:GetObject
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::${CirrusPayloadBucket}/*'
+              - Effect: Allow
+                Action:
+                  - logs:GetLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/batch/*'
+
+  # API Lambda
+  ApiLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ResourcePrefix}-api'
+      Runtime: python3.12
+      Handler: api.lambda_handler
+      Code: lambda-packages/cirrus-lambda-dist.zip
+      Role: !GetAtt ApiLambdaRole.Arn
+      Timeout: !Ref ApiLambdaTimeout
+      MemorySize: !Ref ApiLambdaMemory
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          CIRRUS_LOG_LEVEL: !Ref LogLevel
+          CIRRUS_DATA_BUCKET: !Ref CirrusDataBucket
+          CIRRUS_PAYLOAD_BUCKET: !Ref CirrusPayloadBucket
+          CIRRUS_STATE_DB: !Ref StateTable
+      VpcConfig: !If
+        - UseVpc
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+          SubnetIds: !Ref SubnetIds
+        - !Ref AWS::NoValue
+
+  # Process Lambda
+  ProcessLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ResourcePrefix}-process'
+      Runtime: python3.12
+      Handler: process.lambda_handler
+      Code: lambda-packages/cirrus-lambda-dist.zip
+      Role: !GetAtt ProcessLambdaRole.Arn
+      Timeout: !Ref ProcessLambdaTimeout
+      MemorySize: !Ref ProcessLambdaMemory
+      ReservedConcurrentExecutions: !Ref ProcessLambdaConcurrency
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          CIRRUS_LOG_LEVEL: !Ref LogLevel
+          CIRRUS_DATA_BUCKET: !Ref CirrusDataBucket
+          CIRRUS_PAYLOAD_BUCKET: !Ref CirrusPayloadBucket
+          CIRRUS_STATE_DB: !Ref StateTable
+          CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopicArn
+          CIRRUS_BASE_WORKFLOW_ARN: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ResourcePrefix}-'
+      VpcConfig: !If
+        - UseVpc
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+          SubnetIds: !Ref SubnetIds
+        - !Ref AWS::NoValue
+
+  # Event Source Mapping for Process Lambda
+  ProcessLambdaEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !Ref ProcessQueueArn
+      FunctionName: !Ref ProcessLambda
+      BatchSize: 10
+
+  # Update State Lambda
+  UpdateStateLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ResourcePrefix}-update-state'
+      Runtime: python3.12
+      Handler: update_state.lambda_handler
+      Code: lambda-packages/cirrus-lambda-dist.zip
+      Role: !GetAtt UpdateStateLambdaRole.Arn
+      Timeout: !Ref UpdateStateLambdaTimeout
+      MemorySize: !Ref UpdateStateLambdaMemory
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          CIRRUS_LOG_LEVEL: !Ref LogLevel
+          CIRRUS_DATA_BUCKET: !Ref CirrusDataBucket
+          CIRRUS_PAYLOAD_BUCKET: !Ref CirrusPayloadBucket
+          CIRRUS_STATE_DB: !Ref StateTable
+          CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopicArn
+          CIRRUS_PUBLISH_TOPIC_ARN: !Ref PublishTopicArn
+          CIRRUS_PROCESS_QUEUE_URL: !Ref ProcessQueue
+      VpcConfig: !If
+        - UseVpc
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+          SubnetIds: !Ref SubnetIds
+        - !Ref AWS::NoValue
+
+  # EventBridge Rule for Update State Lambda
+  UpdateStateEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${ResourcePrefix}-update-state-sfn-events'
+      Description: Trigger update state lambda on Step Functions execution status changes
+      EventPattern:
+        detail-type:
+          - "Step Functions Execution Status Change"
+        source:
+          - "aws.states"
+        detail:
+          stateMachineArn:
+            - prefix: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ResourcePrefix}-'
+          status:
+            - "SUCCEEDED"
+            - "FAILED"
+            - "ABORTED"
+            - "TIMED_OUT"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt UpdateStateLambda.Arn
+          Id: !Sub '${ResourcePrefix}-update-state-event-target'
+          DeadLetterConfig:
+            Arn: !Ref UpdateStateDeadLetterQueueArn
+          RetryPolicy:
+            MaximumEventAgeInSeconds: 1800
+
+  # Lambda Permission for EventBridge to invoke Update State Lambda
+  UpdateStateEventBridgePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UpdateStateLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt UpdateStateEventRule.Arn
+
+  # Pre Batch Lambda
+  PreBatchLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ResourcePrefix}-pre-batch'
+      Runtime: python3.12
+      Handler: pre_batch.lambda_handler
+      Code: lambda-packages/cirrus-lambda-dist.zip
+      Role: !GetAtt PreBatchLambdaRole.Arn
+      Timeout: !Ref PreBatchLambdaTimeout
+      MemorySize: !Ref PreBatchLambdaMemory
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          CIRRUS_LOG_LEVEL: !Ref LogLevel
+          CIRRUS_PAYLOAD_BUCKET: !Ref CirrusPayloadBucket
+      VpcConfig: !If
+        - UseVpc
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+          SubnetIds: !Ref SubnetIds
+        - !Ref AWS::NoValue
+
+  # Post Batch Lambda
+  PostBatchLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ResourcePrefix}-post-batch'
+      Runtime: python3.12
+      Handler: post_batch.lambda_handler
+      Code: lambda-packages/cirrus-lambda-dist.zip
+      Role: !GetAtt PostBatchLambdaRole.Arn
+      Timeout: !Ref PostBatchLambdaTimeout
+      MemorySize: !Ref PostBatchLambdaMemory
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          CIRRUS_LOG_LEVEL: !Ref LogLevel
+          CIRRUS_PAYLOAD_BUCKET: !Ref CirrusPayloadBucket
+      VpcConfig: !If
+        - UseVpc
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+          SubnetIds: !Ref SubnetIds
+        - !Ref AWS::NoValue
+
+Outputs:
+  ApiLambdaArn:
+    Description: API Lambda function ARN
+    Value: !GetAtt ApiLambda.Arn
+
+  ApiLambdaName:
+    Description: API Lambda function name
+    Value: !Ref ApiLambda
+
+  ProcessLambdaName:
+    Description: Process Lambda function name
+    Value: !Ref ProcessLambda
+
+  UpdateStateLambdaName:
+    Description: Update State Lambda function name
+    Value: !Ref UpdateStateLambda
+
+  PreBatchLambdaName:
+    Description: Pre Batch Lambda function name
+    Value: !Ref PreBatchLambda
+
+  PostBatchLambdaName:
+    Description: Post Batch Lambda function name
+    Value: !Ref PostBatchLambda
+
+  LambdaSecurityGroupId:
+    Description: Security group ID for Lambda functions
+    Value: !If
+      - UseVpc
+      - !Ref LambdaSecurityGroup
+      - !Ref AWS::NoValue
