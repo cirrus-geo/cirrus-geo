@@ -21,6 +21,7 @@ MOCK_REGION = "us-east-1"
 
 def set_fake_creds():
     """Mocked AWS Credentials for moto."""
+    os.environ.pop("AWS_ENDPOINT_URL", None)
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"  # noqa: S105
     os.environ["AWS_SECURITY_TOKEN"] = "testing"  # noqa: S105
