@@ -2,6 +2,8 @@
 
 set -euxo pipefail
 
+LAMBDA_ARCHITECTURE="${LAMBDA_ARCHITECTURE:-arm64}"  # arm64 or x86_64
+LAMBDA_PYTHON_VERSION="${LAMBDA_PYTHON_VERSION:-3.12}"
 CIRRUS_LAMBDA_ZIP="${CIRRUS_LAMBDA_ZIP:-./cirrus-lambda-dist.zip}"
 
 
@@ -17,11 +19,25 @@ find_this () {
 
 
 setup_venv() {
+    local lambda_platform
+    if [[ "$LAMBDA_ARCHITECTURE" == "arm64" ]]; then
+        lambda_platform="aarch64-manylinux2014"
+    elif [[ "$LAMBDA_ARCHITECTURE" == "x86_64" ]]; then
+        lambda_platform="x86_64-manylinux2014"
+    else
+        echo >&2 "ERROR: LAMBDA_ARCHITECTURE must be 'arm64' or 'x86_64', got: ${LAMBDA_ARCHITECTURE}"
+        exit 1
+    fi
+
     local venv
     venv="${1:?'provide path to directory for venv'}"
-    uv venv "${venv}"
+    uv venv --python "${LAMBDA_PYTHON_VERSION}" "${venv}"
     source "${venv}/bin/activate"
-    uv sync --locked --no-dev --active --no-editable
+    uv pip install . \
+        --python-platform "${lambda_platform}" \
+        --python-version "${LAMBDA_PYTHON_VERSION}" \
+        --only-binary=:all: \
+        --no-binary=cirrus-geo
 }
 
 
