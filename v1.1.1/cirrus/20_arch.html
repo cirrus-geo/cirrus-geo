@@ -1,0 +1,193 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cirrus architecture &mdash; Cirrus  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/js/versions-loader.js?v=d43487cb"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Cirrus Payload" href="30_payload.html" />
+    <link rel="prev" title="Getting started with Cirrus" href="10_intro.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Cirrus
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Cirrus architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cirrus-overview">Cirrus overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#workflow-structure">Workflow structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#glossary">Glossary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#naming-conventions">Naming conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="30_payload.html">Cirrus Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="60_components.html">Cirrus Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="95_tips_and_tricks.html">Tips and Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="96_deploying.html">Deploying</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/tasks/index.html">Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/workflows/index.html">Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Cirrus CLI READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli/00_intro.html">CLIrrus Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/01_install.html">Installing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/02_auth.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/03_deployments.html">CLIrrus and Cirrus Deployments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/04_commands.html">Command Examples</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Cirrus architecture</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/cirrus/20_arch.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cirrus-architecture">
+<h1>Cirrus architecture<a class="headerlink" href="#cirrus-architecture" title="Link to this heading"></a></h1>
+<section id="cirrus-overview">
+<h2>Cirrus overview<a class="headerlink" href="#cirrus-overview" title="Link to this heading"></a></h2>
+<p>An overall picture of Cirrus looks like this:</p>
+<img alt="../_images/arch-overview.png" src="../_images/arch-overview.png" />
+<p>As shown in that diagram, input Cirrus Payloads are generated by a <span class="xref std std-doc">Feeder</span> and sent to an input SQS queue, either manually by a user or
+from an external source such as an SNS notification. These enqueued messages are then
+processed by the <code class="docutils literal notranslate"><span class="pre">process</span></code> Lambda Function. The <code class="docutils literal notranslate"><span class="pre">process</span></code> function creates or
+updates the <a class="reference internal" href="70_statedb.html"><span class="doc">State DB</span></a> record for the payload and starts a
+<a class="reference internal" href="components/workflows/index.html"><span class="doc">Workflow</span></a> execution by dispatching the payload to the
+specified Workflow.</p>
+<p>Any output items and their assets are persisted to S3, and the output items are
+published to an output SNS topic that can notify downstream subscribers, like
+stac-server, of newly-processed items.</p>
+<p>At the end of a workflow execution, an EventBridge event is triggered, which
+notifies the listening <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda that the execution has
+completed.  <code class="docutils literal notranslate"><span class="pre">update-state</span></code> updates the State DB record for the processed
+payload in accordance with the final workflow state (success, failed, aborted,
+or invalid), and triggers any necessary follow-up actions. For example, failed
+or invalid executions can trigger notifications to the Failure/Invalid SNS
+topic(s), and successful payloads using <a class="reference internal" href="components/workflows/chaining.html"><span class="doc">workflow chaining</span></a> can be re-enqueued for the next stage of the
+processing chain.</p>
+</section>
+<section id="workflow-structure">
+<h2>Workflow structure<a class="headerlink" href="#workflow-structure" title="Link to this heading"></a></h2>
+<p>Workflows are composed of one or more <a class="reference internal" href="components/tasks/index.html"><span class="doc">Tasks</span></a>, which use
+an input Cirrus Payload to define input metadata/assets for the Task
+processing. A workflow could look something like this:</p>
+<img alt="../_images/workflow-example.png" src="../_images/workflow-example.png" />
+<p>This example workflow begins with a preprocessing step to do some initial
+metadata modifications. Following that, a batch task to perform some
+computationally-intensive manipulation of the input item data assets, and a
+create preview task then generates a new preview image asset. The workflow ends
+with a publish task step, which pushes the final generated item to S3 for
+persistence and the Cirrus publish SNS topic for and subscribed downstream
+consumers of this Workflow’s items.</p>
+<p>In the event of any task failure, the failure step in the step function ensures
+that the step function execution will end in a <code class="docutils literal notranslate"><span class="pre">FAILED</span></code> state. If all steps
+complete successfully then the execution will end in a <code class="docutils literal notranslate"><span class="pre">SUCCEEDED</span></code> state.</p>
+</section>
+<section id="glossary">
+<h2>Glossary<a class="headerlink" href="#glossary" title="Link to this heading"></a></h2>
+<p><strong>execution</strong>: An individual run of a workflow on a payload</p>
+<p><strong>payload</strong>: A Cirrus Payload used as input to a workflow</p>
+<p><strong>publish</strong>: Uploading output STAC Items to s3 and publishing the Items to the Cirrus Publish SNS topic</p>
+<p><strong>statedb</strong>: A database used to track the state of executions</p>
+<p><strong>task</strong>: A single function operating on a Cirrus Payload running on Lambda or Batch</p>
+<p><strong>workflow</strong>: An AWS Step Function consisting of 1 or more tasks</p>
+<p><strong>feeder</strong>: Anything that generates a <span class="xref std std-doc">Cirrus Payload</span> and queues it for processing.</p>
+</section>
+<section id="naming-conventions">
+<h2>Naming conventions<a class="headerlink" href="#naming-conventions" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="10_intro.html" class="btn btn-neutral float-left" title="Getting started with Cirrus" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="30_payload.html" class="btn btn-neutral float-right" title="Cirrus Payload" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
