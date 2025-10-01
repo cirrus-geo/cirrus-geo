@@ -26,10 +26,10 @@ def make_event():
 
 
 @mock_aws
-def test_workflow_metric_logger_and_and_send():
+def test_workflow_metric_logger_and_and_send(monkeypatch):
     log_group_name = "ircwaves-test-20250903"
     # Setup environment variables for log group and metric name
-    os.environ["CIRRUS_WORKFLOW_LOG_GROUP"] = log_group_name
+    monkeypatch.setenv("CIRRUS_WORKFLOW_LOG_GROUP", log_group_name)
 
     # Create log group and log stream using boto3 client
     logs_client = get_client("logs")
@@ -65,6 +65,8 @@ def test_workflow_metric_reader_get_statistics():
         '
 
     Note: this test will create a log group and metric filters, if they do not exist.
+
+    Also, this test would use `monkeypatch.setenv`, if it were runnable in pytest-mode.
     """
     log_group_name = "cirrus-deployment"
 
