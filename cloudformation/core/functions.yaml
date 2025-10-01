@@ -18,50 +18,6 @@ Parameters:
     Type: CommaDelimitedList
     Description: Subnet IDs for Lambda functions
 
-  ApiLambdaTimeout:
-    Type: Number
-    Description: API Lambda timeout in seconds
-
-  ApiLambdaMemory:
-    Type: Number
-    Description: API Lambda memory in MB
-
-  ProcessLambdaTimeout:
-    Type: Number
-    Description: Process Lambda timeout in seconds
-
-  ProcessLambdaMemory:
-    Type: Number
-    Description: Process Lambda memory in MB
-
-  ProcessLambdaConcurrency:
-    Type: Number
-    Description: Process Lambda reserved concurrency
-
-  UpdateStateLambdaTimeout:
-    Type: Number
-    Description: Update State Lambda timeout in seconds
-
-  UpdateStateLambdaMemory:
-    Type: Number
-    Description: Update State Lambda memory in MB
-
-  PreBatchLambdaTimeout:
-    Type: Number
-    Description: Pre-Batch Lambda timeout in seconds
-
-  PreBatchLambdaMemory:
-    Type: Number
-    Description: Pre-Batch Lambda memory in MB
-
-  PostBatchLambdaTimeout:
-    Type: Number
-    Description: Post-Batch Lambda timeout in seconds
-
-  PostBatchLambdaMemory:
-    Type: Number
-    Description: Post-Batch Lambda memory in MB
-
   CirrusDataBucket:
     Type: String
     Description: Name of the Cirrus data bucket
@@ -82,17 +38,13 @@ Parameters:
     Type: String
     Description: ARN of the Cirrus process SQS queue
 
+  ProcessQueueUrl:
+    Type: String
+    Description: SQS queue URL for processing
+
   WorkflowEventTopicArn:
     Type: String
     Description: ARN of the Cirrus workflow event SNS topic
-
-  LogLevel:
-    Type: String
-    Description: Cirrus log level
-
-  ProcessQueue:
-    Type: String
-    Description: SQS queue for processing
 
   PublishTopicArn:
     Type: String
@@ -101,6 +53,10 @@ Parameters:
   UpdateStateDeadLetterQueueArn:
     Type: String
     Description: Dead letter queue ARN for update state lambda
+
+  LogLevel:
+    Type: String
+    Description: Cirrus log level
 
 Resources:
   # Security Group for Lambda functions
@@ -337,8 +293,8 @@ Resources:
       Handler: api.lambda_handler
       Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt ApiLambdaRole.Arn
-      Timeout: !Ref ApiLambdaTimeout
-      MemorySize: !Ref ApiLambdaMemory
+      Timeout: 10
+      MemorySize: 128
       Architectures:
         - arm64
       Environment:
@@ -361,9 +317,9 @@ Resources:
       Handler: process.lambda_handler
       Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt ProcessLambdaRole.Arn
-      Timeout: !Ref ProcessLambdaTimeout
-      MemorySize: !Ref ProcessLambdaMemory
-      ReservedConcurrentExecutions: !Ref ProcessLambdaConcurrency
+      Timeout: 10
+      MemorySize: 128
+      ReservedConcurrentExecutions: 16
       Architectures:
         - arm64
       Environment:
@@ -396,8 +352,8 @@ Resources:
       Handler: update_state.lambda_handler
       Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt UpdateStateLambdaRole.Arn
-      Timeout: !Ref UpdateStateLambdaTimeout
-      MemorySize: !Ref UpdateStateLambdaMemory
+      Timeout: 15
+      MemorySize: 128
       Architectures:
         - arm64
       Environment:
@@ -408,7 +364,7 @@ Resources:
           CIRRUS_STATE_DB: !Ref StateTable
           CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopicArn
           CIRRUS_PUBLISH_TOPIC_ARN: !Ref PublishTopicArn
-          CIRRUS_PROCESS_QUEUE_URL: !Ref ProcessQueue
+          CIRRUS_PROCESS_QUEUE_URL: !Ref ProcessQueueUrl
       VpcConfig:
         SecurityGroupIds:
           - !Ref LambdaSecurityGroup
@@ -460,8 +416,8 @@ Resources:
       Handler: pre_batch.lambda_handler
       Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt PreBatchLambdaRole.Arn
-      Timeout: !Ref PreBatchLambdaTimeout
-      MemorySize: !Ref PreBatchLambdaMemory
+      Timeout: 15
+      MemorySize: 128
       Architectures:
         - arm64
       Environment:
@@ -482,8 +438,8 @@ Resources:
       Handler: post_batch.lambda_handler
       Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt PostBatchLambdaRole.Arn
-      Timeout: !Ref PostBatchLambdaTimeout
-      MemorySize: !Ref PostBatchLambdaMemory
+      Timeout: 15
+      MemorySize: 128
       Architectures:
         - arm64
       Environment:

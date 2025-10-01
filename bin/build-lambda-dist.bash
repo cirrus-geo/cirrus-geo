@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-CIRRUS_LAMBDA_ZIP="./cirrus-lambda-dist.zip"
+CIRRUS_LAMBDA_ZIP="${CIRRUS_LAMBDA_ZIP:-./cirrus-lambda-dist.zip}"
 
 
 find_this () {

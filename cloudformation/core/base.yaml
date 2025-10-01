@@ -6,14 +6,6 @@ Parameters:
     Type: String
     Description: Prefix for all resource names
 
-  ProcessSQSTimeout:
-    Type: Number
-    Description: Cirrus process SQS queue visibility timeout in seconds.
-
-  ProcessSQSMaxReceiveCount:
-    Type: Number
-    Description: Maximum number of times a message can be received before moving to DLQ
-
 Resources:
   # S3 Buckets
   CirrusDataBucket:
@@ -88,10 +80,10 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub '${ResourcePrefix}-process'
-      VisibilityTimeout: !Ref ProcessSQSTimeout
+      VisibilityTimeout: 180
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
-        maxReceiveCount: !Ref ProcessSQSMaxReceiveCount
+        maxReceiveCount: 5
 
   # SQS Dead Letter Queue
   ProcessDeadLetterQueue:
@@ -136,9 +128,9 @@ Outputs:
     Description: DynamoDB table ARN for Cirrus state
     Value: !GetAtt StateTable.Arn
 
-  ProcessQueue:
-    Description: SQS queue for processing
-    Value: !Ref ProcessQueue
+  ProcessQueueUrl:
+    Description: SQS queue URL for processing
+    Value: !GetAtt ProcessQueue.QueueUrl
 
   ProcessQueueArn:
     Description: SQS queue ARN for processing

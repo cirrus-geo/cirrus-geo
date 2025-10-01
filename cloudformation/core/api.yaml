@@ -6,10 +6,6 @@ Parameters:
     Type: String
     Description: Prefix for all resource names
 
-  ApiGatewayStageName:
-    Type: String
-    Description: API Gateway deployment stage name
-
   ApiLambdaArn:
     Type: String
     Description: ARN of the Lambda function to integrate with API Gateway
@@ -123,7 +119,7 @@ Resources:
     Properties:
       RestApiId: !Ref CirrusApi
       DeploymentId: !Ref ApiDeployment
-      StageName: !Ref ApiGatewayStageName
+      StageName: 'dev'
       AccessLogSetting:
         DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
         Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","caller":"$context.identity.caller","user":"$context.identity.user","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
@@ -137,4 +133,4 @@ Resources:
 Outputs:
   ApiGatewayUrl:
     Description: API Gateway invoke URL
-    Value: !Sub 'https://${CirrusApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStage}'
+    Value: !Sub 'https://${CirrusApi}.execute-api.${AWS::Region}.amazonaws.com/dev'

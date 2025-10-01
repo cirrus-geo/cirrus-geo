@@ -13,25 +13,6 @@ Parameters:
       alphanumeric characters and hyphens.
     Default: cirrus-sandbox
 
-  # Base Infrastructure Parameters
-  ProcessSQSTimeout:
-    Type: Number
-    Description: >
-      Cirrus process SQS queue visibility timeout in seconds. This should exceed the
-      ProcessLambdaTimeout parameter to ensure messages are not re-enqueued prior to
-      process lambda completion.
-    Default: 180
-    MinValue: 0
-    MaxValue: 43200
-
-  ProcessSQSMaxReceiveCount:
-    Type: Number
-    Description: Maximum number of times a message can be received before moving to DLQ
-    Default: 5
-    MinValue: 1
-    MaxValue: 100
-
-  # VPC CIDR Parameters
   VpcCidr:
     Type: String
     Description: CIDR block for the VPC
@@ -58,84 +39,6 @@ Parameters:
     Description: CIDR block for public subnet in second AZ
     Default: 10.0.2.0/24
 
-  # Lambda Function Parameters
-  ApiLambdaTimeout:
-    Type: Number
-    Description: API Lambda timeout in seconds
-    Default: 10
-    MinValue: 1
-    MaxValue: 900
-
-  ApiLambdaMemory:
-    Type: Number
-    Description: API Lambda memory in MB
-    Default: 128
-    MinValue: 128
-    MaxValue: 10240
-
-  ProcessLambdaTimeout:
-    Type: Number
-    Description: Process Lambda timeout in seconds
-    Default: 10
-    MinValue: 1
-    MaxValue: 900
-
-  ProcessLambdaMemory:
-    Type: Number
-    Description: Process Lambda memory in MB
-    Default: 128
-    MinValue: 128
-    MaxValue: 10240
-
-  ProcessLambdaConcurrency:
-    Type: Number
-    Description: Process Lambda reserved concurrency
-    Default: 16
-    MinValue: 1
-    MaxValue: 1000
-
-  UpdateStateLambdaTimeout:
-    Type: Number
-    Description: Update State Lambda timeout in seconds
-    Default: 15
-    MinValue: 1
-    MaxValue: 900
-
-  UpdateStateLambdaMemory:
-    Type: Number
-    Description: Update State Lambda memory in MB
-    Default: 128
-    MinValue: 128
-    MaxValue: 10240
-
-  PreBatchLambdaTimeout:
-    Type: Number
-    Description: Pre-Batch Lambda timeout in seconds
-    Default: 15
-    MinValue: 1
-    MaxValue: 900
-
-  PreBatchLambdaMemory:
-    Type: Number
-    Description: Pre-Batch Lambda memory in MB
-    Default: 128
-    MinValue: 128
-    MaxValue: 10240
-
-  PostBatchLambdaTimeout:
-    Type: Number
-    Description: Post-Batch Lambda timeout in seconds
-    Default: 15
-    MinValue: 1
-    MaxValue: 900
-
-  PostBatchLambdaMemory:
-    Type: Number
-    Description: Post-Batch Lambda memory in MB
-    Default: 128
-    MinValue: 128
-    MaxValue: 10240
-
   LogLevel:
     Type: String
     Description: Cirrus log level
@@ -147,23 +50,14 @@ Parameters:
       - ERROR
       - CRITICAL
 
-  # API Gateway Parameters
-  ApiGatewayStageName:
-    Type: String
-    Description: API Gateway deployment stage name
-    Default: v1
-    AllowedPattern: '^[a-zA-Z0-9_-]+$'
-
 Resources:
   # Base Infrastructure Stack
   BaseStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: platform/base.yaml
+      TemplateURL: core/base.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
-        ProcessSQSTimeout: !Ref ProcessSQSTimeout
-        ProcessSQSMaxReceiveCount: !Ref ProcessSQSMaxReceiveCount
       Tags:
         - Key: Component
           Value: Base
@@ -176,7 +70,7 @@ Resources:
   VpcStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: platform/vpc.yaml
+      TemplateURL: core/vpc.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         VpcCidr: !Ref VpcCidr
@@ -196,28 +90,17 @@ Resources:
   FunctionsStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: platform/functions.yaml
+      TemplateURL: core/functions.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         VpcId: !GetAtt VpcStack.Outputs.VpcId
         SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnetIds
         VpcCidr: !Ref VpcCidr
-        ApiLambdaTimeout: !Ref ApiLambdaTimeout
-        ApiLambdaMemory: !Ref ApiLambdaMemory
-        ProcessLambdaTimeout: !Ref ProcessLambdaTimeout
-        ProcessLambdaMemory: !Ref ProcessLambdaMemory
-        UpdateStateLambdaTimeout: !Ref UpdateStateLambdaTimeout
-        UpdateStateLambdaMemory: !Ref UpdateStateLambdaMemory
-        PreBatchLambdaTimeout: !Ref PreBatchLambdaTimeout
-        PreBatchLambdaMemory: !Ref PreBatchLambdaMemory
-        PostBatchLambdaTimeout: !Ref PostBatchLambdaTimeout
-        PostBatchLambdaMemory: !Ref PostBatchLambdaMemory
-        ProcessLambdaConcurrency: !Ref ProcessLambdaConcurrency
         CirrusDataBucket: !GetAtt BaseStack.Outputs.CirrusDataBucket
         CirrusPayloadBucket: !GetAtt BaseStack.Outputs.CirrusPayloadBucket
         StateTable: !GetAtt BaseStack.Outputs.StateTable
         StateTableArn: !GetAtt BaseStack.Outputs.StateTableArn
-        ProcessQueue: !GetAtt BaseStack.Outputs.ProcessQueue
+        ProcessQueueUrl: !GetAtt BaseStack.Outputs.ProcessQueueUrl
         ProcessQueueArn: !GetAtt BaseStack.Outputs.ProcessQueueArn
         PublishTopicArn: !GetAtt BaseStack.Outputs.PublishTopicArn
         WorkflowEventTopicArn: !GetAtt BaseStack.Outputs.WorkflowEventTopicArn
@@ -235,15 +118,38 @@ Resources:
   ApiStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: platform/api.yaml
+      TemplateURL: core/api.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
-        ApiGatewayStageName: !Ref ApiGatewayStageName
         ApiLambdaArn: !GetAtt FunctionsStack.Outputs.ApiLambdaArn
         ApiLambdaName: !GetAtt FunctionsStack.Outputs.ApiLambdaName
       Tags:
         - Key: Component
           Value: Api
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+  # CLI Stack
+  CliStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - BaseStack
+    Properties:
+      TemplateURL: cli/ssm_parameters.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        CirrusPayloadBucket: !GetAtt BaseStack.Outputs.CirrusPayloadBucket
+        CirrusDataBucket: !GetAtt BaseStack.Outputs.CirrusDataBucket
+        StateTable: !GetAtt BaseStack.Outputs.StateTable
+        ProcessQueueUrl: !GetAtt BaseStack.Outputs.ProcessQueueUrl
+        PublishTopicArn: !GetAtt BaseStack.Outputs.PublishTopicArn
+        WorkflowEventTopicArn: !GetAtt BaseStack.Outputs.WorkflowEventTopicArn
+        LogLevel: !Ref LogLevel
+      Tags:
+        - Key: Component
+          Value: CLI
         - Key: Project
           Value: cirrus-geo
         - Key: Environment
@@ -263,9 +169,9 @@ Outputs:
     Description: DynamoDB table for Cirrus state
     Value: !GetAtt BaseStack.Outputs.StateTable
 
-  ProcessQueue:
-    Description: SQS queue for processing
-    Value: !GetAtt BaseStack.Outputs.ProcessQueue
+  ProcessQueueUrl:
+    Description: SQS queue URL for processing
+    Value: !GetAtt BaseStack.Outputs.ProcessQueueUrl
 
   ProcessDeadLetterQueue:
     Description: SQS dead letter queue for processing
@@ -325,6 +231,15 @@ Outputs:
   ApiGatewayUrl:
     Description: API Gateway invoke URL
     Value: !GetAtt ApiStack.Outputs.ApiGatewayUrl
+
+  # CLI Stack Outputs
+  DeploymentName:
+    Description: Cirrus deployment name for CLI
+    Value: !GetAtt CliStack.Outputs.DeploymentName
+
+  ParameterStorePrefix:
+    Description: Parameter Store prefix for this deployment
+    Value: !GetAtt CliStack.Outputs.ParameterPrefix
 
   # Summary Information
   ResourcePrefix:
