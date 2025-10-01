@@ -147,12 +147,22 @@ Parameters:
       - ERROR
       - CRITICAL
 
+  # VPC Deployment Control
+  DeployVpc:
+    Type: String
+    Description: Whether to deploy VPC infrastructure (useful for LocalStack)
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+
   # API Gateway Parameters
   ApiGatewayStageName:
     Type: String
     Description: API Gateway deployment stage name
     Default: v1
     AllowedPattern: '^[a-zA-Z0-9_-]+$'
+
+Conditions:
+  CreateVpc: !Equals [!Ref DeployVpc, 'true']
 
 Resources:
   # Base Infrastructure Stack
@@ -175,6 +185,7 @@ Resources:
   # VPC Stack
   VpcStack:
     Type: AWS::CloudFormation::Stack
+    Condition: CreateVpc
     Properties:
       TemplateURL: platform/vpc.yaml
       Parameters:
@@ -199,9 +210,9 @@ Resources:
       TemplateURL: platform/functions.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
-        VpcId: !GetAtt VpcStack.Outputs.VpcId
-        SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnetIds
-        VpcCidr: !Ref VpcCidr
+        VpcId: !If [CreateVpc, !GetAtt VpcStack.Outputs.VpcId, '']
+        SubnetIds: !If [CreateVpc, !GetAtt VpcStack.Outputs.PrivateSubnetIds, '']
+        VpcCidr: !If [CreateVpc, !Ref VpcCidr, '']
         ApiLambdaTimeout: !Ref ApiLambdaTimeout
         ApiLambdaMemory: !Ref ApiLambdaMemory
         ProcessLambdaTimeout: !Ref ProcessLambdaTimeout
@@ -285,16 +296,28 @@ Outputs:
 
   # VPC Stack Outputs
   VpcId:
+    Condition: CreateVpc
     Description: VPC ID for Lambda functions
-    Value: !GetAtt VpcStack.Outputs.VpcId
+    Value: !If
+      - CreateVpc
+      - !GetAtt VpcStack.Outputs.VpcId
+      - !Ref AWS::NoValue
 
   PrivateSubnetIds:
+    Condition: CreateVpc
     Description: Private Subnet IDs for Lambda functions
-    Value: !GetAtt VpcStack.Outputs.PrivateSubnetIds
+    Value: !If
+      - CreateVpc
+      - !GetAtt VpcStack.Outputs.PrivateSubnetIds
+      - !Ref AWS::NoValue
 
   PublicSubnetIds:
+    Condition: CreateVpc
     Description: Public Subnet IDs for NAT Gateways
-    Value: !GetAtt VpcStack.Outputs.PublicSubnetIds
+    Value: !If
+      - CreateVpc
+      - !GetAtt VpcStack.Outputs.PublicSubnetIds
+      - !Ref AWS::NoValue
 
   # Functions Stack Outputs
   ApiLambdaName:
@@ -318,6 +341,7 @@ Outputs:
     Value: !GetAtt FunctionsStack.Outputs.PostBatchLambdaName
 
   LambdaSecurityGroupId:
+    Condition: CreateVpc
     Description: Security group ID for Lambda functions
     Value: !GetAtt FunctionsStack.Outputs.LambdaSecurityGroupId
 

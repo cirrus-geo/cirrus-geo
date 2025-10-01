@@ -9,14 +9,17 @@ Parameters:
   VpcId:
     Type: String
     Description: VPC ID for Lambda functions
+    Default: ''
 
   VpcCidr:
     Type: String
     Description: VPC CIDR block for security group rules
+    Default: ''
 
   SubnetIds:
     Type: CommaDelimitedList
     Description: Subnet IDs for Lambda functions
+    Default: ''
 
   ApiLambdaTimeout:
     Type: Number
@@ -102,10 +105,14 @@ Parameters:
     Type: String
     Description: Dead letter queue ARN for update state lambda
 
+Conditions:
+  UseVpc: !Not [!Equals [!Ref VpcId, '']]
+
 Resources:
   # Security Group for Lambda functions
   LambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
+    Condition: UseVpc
     Properties:
       GroupDescription: Security group for Cirrus Lambda functions
       VpcId: !Ref VpcId
@@ -131,8 +138,10 @@ Resources:
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      ManagedPolicyArns: !If
+        - UseVpc
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
       Policies:
         - PolicyName: CirrusApiPolicy
           PolicyDocument:
@@ -166,8 +175,10 @@ Resources:
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      ManagedPolicyArns: !If
+        - UseVpc
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
       Policies:
         - PolicyName: CirrusProcessPolicy
           PolicyDocument:
@@ -226,8 +237,10 @@ Resources:
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      ManagedPolicyArns: !If
+        - UseVpc
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
       Policies:
         - PolicyName: CirrusUpdateStatePolicy
           PolicyDocument:
@@ -274,8 +287,10 @@ Resources:
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      ManagedPolicyArns: !If
+        - UseVpc
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
       Policies:
         - PolicyName: CirrusPreBatchPolicy
           PolicyDocument:
@@ -305,8 +320,10 @@ Resources:
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      ManagedPolicyArns: !If
+        - UseVpc
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]
+        - [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
       Policies:
         - PolicyName: CirrusPostBatchPolicy
           PolicyDocument:
@@ -347,10 +364,12 @@ Resources:
           CIRRUS_DATA_BUCKET: !Ref CirrusDataBucket
           CIRRUS_PAYLOAD_BUCKET: !Ref CirrusPayloadBucket
           CIRRUS_STATE_DB: !Ref StateTable
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref LambdaSecurityGroup
-        SubnetIds: !Ref SubnetIds
+      VpcConfig: !If
+        - UseVpc
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+          SubnetIds: !Ref SubnetIds
+        - !Ref AWS::NoValue
 
   # Process Lambda
   ProcessLambda:
@@ -374,10 +393,12 @@ Resources:
           CIRRUS_STATE_DB: !Ref StateTable
           CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopicArn
           CIRRUS_BASE_WORKFLOW_ARN: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ResourcePrefix}-'
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref LambdaSecurityGroup
-        SubnetIds: !Ref SubnetIds
+      VpcConfig: !If
+        - UseVpc
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+          SubnetIds: !Ref SubnetIds
+        - !Ref AWS::NoValue
 
   # Event Source Mapping for Process Lambda
   ProcessLambdaEventSourceMapping:
@@ -409,10 +430,12 @@ Resources:
           CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopicArn
           CIRRUS_PUBLISH_TOPIC_ARN: !Ref PublishTopicArn
           CIRRUS_PROCESS_QUEUE_URL: !Ref ProcessQueue
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref LambdaSecurityGroup
-        SubnetIds: !Ref SubnetIds
+      VpcConfig: !If
+        - UseVpc
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+          SubnetIds: !Ref SubnetIds
+        - !Ref AWS::NoValue
 
   # EventBridge Rule for Update State Lambda
   UpdateStateEventRule:
@@ -468,10 +491,12 @@ Resources:
         Variables:
           CIRRUS_LOG_LEVEL: !Ref LogLevel
           CIRRUS_PAYLOAD_BUCKET: !Ref CirrusPayloadBucket
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref LambdaSecurityGroup
-        SubnetIds: !Ref SubnetIds
+      VpcConfig: !If
+        - UseVpc
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+          SubnetIds: !Ref SubnetIds
+        - !Ref AWS::NoValue
 
   # Post Batch Lambda
   PostBatchLambda:
@@ -490,10 +515,12 @@ Resources:
         Variables:
           CIRRUS_LOG_LEVEL: !Ref LogLevel
           CIRRUS_PAYLOAD_BUCKET: !Ref CirrusPayloadBucket
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref LambdaSecurityGroup
-        SubnetIds: !Ref SubnetIds
+      VpcConfig: !If
+        - UseVpc
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+          SubnetIds: !Ref SubnetIds
+        - !Ref AWS::NoValue
 
 Outputs:
   ApiLambdaArn:
@@ -522,4 +549,7 @@ Outputs:
 
   LambdaSecurityGroupId:
     Description: Security group ID for Lambda functions
-    Value: !Ref LambdaSecurityGroup
+    Value: !If
+      - UseVpc
+      - !Ref LambdaSecurityGroup
+      - !Ref AWS::NoValue
