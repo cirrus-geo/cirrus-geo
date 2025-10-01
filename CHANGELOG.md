@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v1.1.1] - 2025-10-01
+
+### Changed
+
+- Switch build system to hatchling. ([#337])
+- Relax stac-task dependency version. ([#337])
+
+### Fixed
+
+- Fix README rendering on PyPI. ([#337])
+- Add `--no-editable` flag to force non-editable install in bash build script. ([#339])
+
 ## [v1.1.0] - 2025-09-25
 
 ### Added
@@ -980,7 +992,8 @@ cleanup steps.
 
 Initial release
 
-[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.1.0...main
+[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.1.1...main
+[v1.1.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.2...v1.1.0
 [v1.0.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.1...v1.0.2
 [v1.0.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.0.0...v1.0.1
@@ -1133,6 +1146,8 @@ Initial release
 [#326]: https://github.com/cirrus-geo/cirrus-geo/pull/326
 [#330]: https://github.com/cirrus-geo/cirrus-geo/pull/330
 [#331]: https://github.com/cirrus-geo/cirrus-geo/pull/331
+[#337]: https://github.com/cirrus-geo/cirrus-geo/pull/337
+[#339]: https://github.com/cirrus-geo/cirrus-geo/pull/339
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c

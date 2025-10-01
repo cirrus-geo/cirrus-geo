@@ -5,7 +5,7 @@ authors = [
     {name = "Jarrett Keifer", email = "jkeifer@element84.com"},
 ]
 description = "AWS-native STAC-based processing pipeline"
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.12"
 keywords = [
     "cirrus",
