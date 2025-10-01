@@ -4,8 +4,8 @@
 
 **Proposed Changes:**
 
-1.
-2.
+1. [Describe change]
+2. [Describe change]
 
 **PR Checklist:**
 
