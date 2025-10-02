@@ -1,5 +1,5 @@
 packaged-template.yaml
-cirrus-lambda-dist.zip
+cirrus-lambda-dist*.zip
 output/
 .DS_Store
 __version__.py

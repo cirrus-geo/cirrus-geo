@@ -2,9 +2,9 @@
 
 set -euxo pipefail
 
-LAMBDA_ARCHITECTURE="${LAMBDA_ARCHITECTURE:-arm64}"  # arm64 or x86_64
-LAMBDA_PYTHON_VERSION="${LAMBDA_PYTHON_VERSION:-3.12}"
-CIRRUS_LAMBDA_ZIP="${CIRRUS_LAMBDA_ZIP:-./cirrus-lambda-dist.zip}"
+LAMBDA_ARCHITECTURES="arm64 x86_64"
+LAMBDA_PYTHON_VERSIONS="3.12 3.13"
+CIRRUS_LAMBDA_ZIP_DIR="${CIRRUS_LAMBDA_ZIP_DIR:-.}"
 
 
 find_this () {
@@ -19,19 +19,22 @@ find_this () {
 
 
 setup_venv() {
-    local lambda_platform
-    if [[ "$LAMBDA_ARCHITECTURE" == "arm64" ]]; then
+    local lambda_architecture lambda_python_version lambda_platform
+    lambda_architecture="${1:?'provide architecture (arm64 or x86_64)'}"
+    lambda_python_version="${2:?'provide python version (e.g. 3.12)'}"
+
+    if [[ "$lambda_architecture" == "arm64" ]]; then
         lambda_platform="aarch64-manylinux2014"
-    elif [[ "$LAMBDA_ARCHITECTURE" == "x86_64" ]]; then
+    elif [[ "$lambda_architecture" == "x86_64" ]]; then
         lambda_platform="x86_64-manylinux2014"
     else
-        echo >&2 "ERROR: LAMBDA_ARCHITECTURE must be 'arm64' or 'x86_64', got: ${LAMBDA_ARCHITECTURE}"
+        echo >&2 "ERROR: LAMBDA_ARCHITECTURE must be 'arm64' or 'x86_64', got: ${lambda_architecture}"
         exit 1
     fi
 
     local venv
-    venv="${1:?'provide path to directory for venv'}"
-    uv venv --python "${LAMBDA_PYTHON_VERSION}" "${venv}"
+    venv="${3:?'provide path to directory for venv'}"
+    uv venv --python "${lambda_python_version}" "${venv}"
     source "${venv}/bin/activate"
     uv sync --python-platform "${lambda_platform}" --locked --no-dev --active --no-editable
 }
@@ -72,10 +75,13 @@ EOP
 }
 
 
-main() {
-    find_this "${BASH_SOURCE[0]}"
+build_for_config() {
+    local lambda_architecture lambda_python_version zipfile venv handler output_zip
+    lambda_architecture="${1:?'provide architecture'}"
+    lambda_python_version="${2:?'provide python version'}"
 
-    local zipfile venv handler lambda_name tmp_zip
+    # Create output filename with architecture and python version
+    output_zip="${CIRRUS_LAMBDA_ZIP_DIR}/cirrus-lambda-dist-py${lambda_python_version}-${lambda_architecture}.zip"
 
     zipfile="$(mktemp -u)"
     (
@@ -85,7 +91,7 @@ main() {
         (
             trap "rm -rf '${venv}'" EXIT
 
-            setup_venv "${venv}"
+            setup_venv "${lambda_architecture}" "${lambda_python_version}" "${venv}"
             make_zip_base "${venv}" "${zipfile}"
             get_lambda_handlers "${venv}" | while IFS= read -r handler; do
                 (
@@ -95,9 +101,21 @@ main() {
             done
         )
 
-        mv "${zipfile}" "${CIRRUS_LAMBDA_ZIP}"
+        mv "${zipfile}" "${output_zip}"
         trap "" EXIT
     )
+}
+
+
+main() {
+    find_this "${BASH_SOURCE[0]}"
+
+    for lambda_python_version in ${LAMBDA_PYTHON_VERSIONS}; do
+        for lambda_architecture in ${LAMBDA_ARCHITECTURES}; do
+            echo "Building for Python ${lambda_python_version} on ${lambda_architecture}"
+            build_for_config "${lambda_architecture}" "${lambda_python_version}"
+        done
+    done
 }
 
 
