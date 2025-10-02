@@ -65,12 +65,18 @@ Resources:
     Properties:
       GroupDescription: Security group for Cirrus Lambda functions
       VpcId: !Ref VpcId
-      SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          FromPort: 0
+          ToPort: 0
           CidrIp: !Ref VpcCidr
-          Description: Allow HTTPS to VPC endpoints
+          Description: Allow any inbound traffic from within the VPC
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          FromPort: 0
+          ToPort: 0
+          CidrIp: 0.0.0.0/0
+          Description: Allow any outbound traffic exiting the VPC
       Tags:
         - Key: Name
           Value: !Sub '${ResourcePrefix}-lambda-sg'
@@ -293,8 +299,8 @@ Resources:
       Handler: api.lambda_handler
       Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt ApiLambdaRole.Arn
-      Timeout: 10
-      MemorySize: 128
+      Timeout: 15
+      MemorySize: 256
       Architectures:
         - arm64
       Environment:
@@ -317,8 +323,8 @@ Resources:
       Handler: process.lambda_handler
       Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt ProcessLambdaRole.Arn
-      Timeout: 10
-      MemorySize: 128
+      Timeout: 15
+      MemorySize: 256
       ReservedConcurrentExecutions: 16
       Architectures:
         - arm64
@@ -353,7 +359,7 @@ Resources:
       Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt UpdateStateLambdaRole.Arn
       Timeout: 15
-      MemorySize: 128
+      MemorySize: 256
       Architectures:
         - arm64
       Environment:
@@ -417,7 +423,7 @@ Resources:
       Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt PreBatchLambdaRole.Arn
       Timeout: 15
-      MemorySize: 128
+      MemorySize: 256
       Architectures:
         - arm64
       Environment:
@@ -439,7 +445,7 @@ Resources:
       Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt PostBatchLambdaRole.Arn
       Timeout: 15
-      MemorySize: 128
+      MemorySize: 256
       Architectures:
         - arm64
       Environment:

@@ -10,7 +10,7 @@ Resources:
   MinimalWorkflowStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
-      StateMachineName: !Sub '${ResourcePrefix}-minimal-workflow'
+      StateMachineName: !Sub '${ResourcePrefix}-minimal'
       RoleArn: !GetAtt StateMachineRole.Arn
       DefinitionString: |
         {
