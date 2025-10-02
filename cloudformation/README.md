@@ -8,7 +8,7 @@ infrastructure on AWS.
 The CloudFormation implementation consists of:
 
 - **Base Infrastructure**: S3 buckets, DynamoDB state table, SQS queues, SNS topics
-- **VPC**: Virtual Private Cloud with public/private subnets across 2 availability zones
+- **VPC**: Virtual Private Cloud with public/private subnets
 - **Lambda Functions**: 5 core functions (API, Process, Update State, Pre-Batch,
   Post-Batch) with IAM roles
 - **API Gateway**: REST API (EDGE) with Lambda integration and CloudWatch logging
@@ -20,20 +20,20 @@ The CloudFormation templates are modular and use nested stacks for organization.
 
 ```bash
 cloudformation/
-├── main.yaml                # Main template (entry point)
-├── parameters.json          # Parameter file with default values
+├── main.yaml                   # Main template (entry point)
+├── parameters.json             # Parameter file with default values
 ├── bootstrap/
-│   └── bootstrap.yaml       # Bootstrap template (S3 bucket for deployment artifacts)
-├── core/                    # Core cirrus-geo infrastructure stacks
-│   ├── base.yaml            # Base infrastructure (S3, DynamoDB, SQS, SNS)
-│   ├── functions.yaml       # Lambda functions with IAM roles
-│   ├── api.yaml             # API Gateway and related resources
-│   ├── vpc.yaml             # VPC and networking (2-AZ setup)
-│   └── lambda-packages/     # Zipped Python Lambda function code
+│   └── bootstrap.yaml          # Bootstrap template (S3 bucket for deployment artifacts)
+├── core/
+│   ├── base.yaml               # Base infrastructure template (S3, DynamoDB, SQS, SNS)
+│   ├── functions.yaml          # Lambda function template (functions, roles, security group)
+│   ├── api.yaml                # API Gateway template (for Cirrus API)
+│   ├── vpc.yaml                # VPC and networking template
+│   └── lambda-packages/        # Zipped Python code for Lambda functions
 ├── cli/
-│   └── ssm_parameters.yaml  # SSM parameters for CLI
-└── workflows/               # Step Functions workflow templates
-    └── minimal/             # Minimal test workflow
+│   └── ssm_parameters.yaml     # CLI template (for deployment discovery via Parameter Store)
+└── workflows/
+    └── minimal/                # Minimal test workflow
         ├── state_machine.yaml
         └── payload.json
 ```
@@ -60,11 +60,11 @@ cloudformation/
      export MINIMAL_WORKFLOW_STACK="cirrus-sandbox-minimal-workflow"
      ```
 
-   - Export the location for the Lambda deployment package. This is used by the
+   - Export the location for the Lambda deployment packages. This is used by the
      `build/lambda-dist.bash` script.
 
      ```bash
-     export CIRRUS_LAMBDA_ZIP=cloudformation/core/lambda-packages/cirrus-lambda-dist.zip
+     export CIRRUS_LAMBDA_ZIP_DIR="./cloudformation/core/lambda-packages"
      ```
 
 2. **Deploy bootstrap stack** (creates S3 bucket for deployment artifacts):
@@ -75,6 +75,10 @@ cloudformation/
      --template-file cloudformation/bootstrap/bootstrap.yaml \
      --parameter-overrides file://cloudformation/parameters.json
    ```
+
+   Note: This command is using CloudFormation's deploy operation, which is a
+   "create-or-update" style of operation. It will modify an existing $BOOTSTRAP_STACK,
+   if one exists.
 
 3. **Package Lambda functions**:
 
