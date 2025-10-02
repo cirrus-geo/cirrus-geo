@@ -33,11 +33,7 @@ setup_venv() {
     venv="${1:?'provide path to directory for venv'}"
     uv venv --python "${LAMBDA_PYTHON_VERSION}" "${venv}"
     source "${venv}/bin/activate"
-    uv pip install . \
-        --python-platform "${lambda_platform}" \
-        --python-version "${LAMBDA_PYTHON_VERSION}" \
-        --only-binary=:all: \
-        --no-binary=cirrus-geo
+    uv sync --python-platform "${lambda_platform}" --locked --no-dev --active --no-editable
 }
 
 
