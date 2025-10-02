@@ -4,10 +4,10 @@
 
 Get [uv](https://docs.astral.sh/uv/getting-started/installation/). Then:
 
-```
+```commandline
 git clone https://github.com/cirrus-geo/cirrus-geo.git
 cd cirrus-geo
-uv sync --group dev --extra cli --python <python_version>
+uv sync --extra cli --python <python_version>
 ```
 
 Run pre-commit install to enable the pre-commit configuration:

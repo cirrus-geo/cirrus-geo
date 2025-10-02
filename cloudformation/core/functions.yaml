@@ -58,6 +58,14 @@ Parameters:
     Type: String
     Description: Cirrus log level
 
+  LambdaPythonVersion:
+    Type: String
+    Description: Python version for Lambda functions
+
+  LambdaArch:
+    Type: String
+    Description: CPU architecture for Lambda functions
+
 Resources:
   # Security Group for Lambda functions
   LambdaSecurityGroup:
@@ -291,14 +299,14 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub '${ResourcePrefix}-api'
-      Runtime: python3.12
+      Runtime: !Sub 'python${LambdaPythonVersion}'
       Handler: api.lambda_handler
-      Code: lambda-packages/cirrus-lambda-dist-py3.12-arm64.zip
+      Code: !Sub 'lambda-packages/cirrus-lambda-dist_python-${LambdaPythonVersion}_${LambdaArch}.zip'
       Role: !GetAtt ApiLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
       Architectures:
-        - arm64
+        - !Ref LambdaArch
       Environment:
         Variables:
           CIRRUS_LOG_LEVEL: !Ref LogLevel
@@ -315,15 +323,15 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub '${ResourcePrefix}-process'
-      Runtime: python3.12
+      Runtime: !Sub 'python${LambdaPythonVersion}'
       Handler: process.lambda_handler
-      Code: lambda-packages/cirrus-lambda-dist-py3.12-arm64.zip
+      Code: !Sub 'lambda-packages/cirrus-lambda-dist_python-${LambdaPythonVersion}_${LambdaArch}.zip'
       Role: !GetAtt ProcessLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
       ReservedConcurrentExecutions: 16
       Architectures:
-        - arm64
+        - !Ref LambdaArch
       Environment:
         Variables:
           CIRRUS_LOG_LEVEL: !Ref LogLevel
@@ -350,14 +358,14 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub '${ResourcePrefix}-update-state'
-      Runtime: python3.12
+      Runtime: !Sub 'python${LambdaPythonVersion}'
       Handler: update_state.lambda_handler
-      Code: lambda-packages/cirrus-lambda-dist-py3.12-arm64.zip
+      Code: !Sub 'lambda-packages/cirrus-lambda-dist_python-${LambdaPythonVersion}_${LambdaArch}.zip'
       Role: !GetAtt UpdateStateLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
       Architectures:
-        - arm64
+        - !Ref LambdaArch
       Environment:
         Variables:
           CIRRUS_LOG_LEVEL: !Ref LogLevel
@@ -414,14 +422,14 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub '${ResourcePrefix}-pre-batch'
-      Runtime: python3.12
+      Runtime: !Sub 'python${LambdaPythonVersion}'
       Handler: pre_batch.lambda_handler
-      Code: lambda-packages/cirrus-lambda-dist-py3.12-arm64.zip
+      Code: !Sub 'lambda-packages/cirrus-lambda-dist_python-${LambdaPythonVersion}_${LambdaArch}.zip'
       Role: !GetAtt PreBatchLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
       Architectures:
-        - arm64
+        - !Ref LambdaArch
       Environment:
         Variables:
           CIRRUS_LOG_LEVEL: !Ref LogLevel
@@ -436,14 +444,14 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub '${ResourcePrefix}-post-batch'
-      Runtime: python3.12
+      Runtime: !Sub 'python${LambdaPythonVersion}'
       Handler: post_batch.lambda_handler
-      Code: lambda-packages/cirrus-lambda-dist-py3.12-arm64.zip
+      Code: !Sub 'lambda-packages/cirrus-lambda-dist_python-${LambdaPythonVersion}_${LambdaArch}.zip'
       Role: !GetAtt PostBatchLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
       Architectures:
-        - arm64
+        - !Ref LambdaArch
       Environment:
         Variables:
           CIRRUS_LOG_LEVEL: !Ref LogLevel

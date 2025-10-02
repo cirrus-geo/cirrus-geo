@@ -60,11 +60,12 @@ cloudformation/
      export MINIMAL_WORKFLOW_STACK="cirrus-sandbox-minimal-workflow"
      ```
 
-   - Export the location for the Lambda deployment packages. This is used by the
-     `build/lambda-dist.bash` script.
+   - Set the lambda python version and architecture via environment variables.
+     For example:
 
      ```bash
-     export CIRRUS_LAMBDA_ZIP_DIR="./cloudformation/core/lambda-packages"
+     export LAMBDA_PYTHON_VERSION="3.13"
+     export LAMBDA_ARCH="arm64"
      ```
 
 2. **Deploy bootstrap stack** (creates S3 bucket for deployment artifacts):
@@ -83,7 +84,10 @@ cloudformation/
 3. **Package Lambda functions**:
 
    ```bash
-   ./bin/build-lambda-dist.bash
+   ./bin/build-lambda-dist.py \
+       -p "$LAMBDA_PYTHON_VERSION" \
+       -a "$LAMBDA_ARCH" \
+       -o "cloudformation/core/lambda-packages/cirrus-lambda-zip_python${LAMBDA_PYTHON_VERSION}_${LAMBDA_ARCH}.zip"
    ```
 
 4. **Package and deploy the main stack**:
@@ -106,6 +110,8 @@ cloudformation/
      --stack-name "$MAIN_STACK" \
      --template-file packaged-template.yaml \
      --parameter-overrides file://cloudformation/parameters.json \
+       LambdaPythonVersion=$LAMBDA_PYTHON_VERSION \
+       LambdaArch=$LAMBDA_ARCH \
      --capabilities CAPABILITY_NAMED_IAM
    ```
 
