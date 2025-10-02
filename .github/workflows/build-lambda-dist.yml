@@ -14,18 +14,34 @@ on:
 jobs:
   build-lambda-dist:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+        architecture: ["aarch64", "x86_64"]
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
+      - name: Get version
+        id: version
+        run: |
+          uv pip install --system setuptools_scm
+          VERSION=$(python -m setuptools_scm)
+          echo "cirrus_version=$VERSION" >> $GITHUB_OUTPUT
       - name: Build lambda zip
-        run: ./bin/build-lambda-dist.bash
+        run: |
+          ./bin/build-lambda-dist.py \
+            --cpu-arch ${{ matrix.architecture }} \
+            --python-version ${{ matrix.python-version }} \
+            --output-zip cirrus-lambda-dist_v${{ steps.version.outputs.cirrus_version }}_python-${{ matrix.python-version }}_${{ matrix.architecture }}.zip
       - name: Add to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: cirrus-lambda-dist.zip
+          files: cirrus-lambda-dist_v${{ steps.version.outputs.cirrus_version }}_python-${{ matrix.python-version }}_${{ matrix.architecture }}.zip

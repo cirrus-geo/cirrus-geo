@@ -40,6 +40,14 @@ Parameters:
       - ERROR
       - CRITICAL
 
+  LambdaPythonVersion:
+    Type: String
+    Description: Python version for Lambda functions
+
+  LambdaArch:
+    Type: String
+    Description: CPU architecture for Lambda functions
+
 Resources:
   # Base Infrastructure Stack
   BaseStack:
@@ -94,6 +102,8 @@ Resources:
         WorkflowEventTopicArn: !GetAtt BaseStack.Outputs.WorkflowEventTopicArn
         UpdateStateDeadLetterQueueArn: !GetAtt BaseStack.Outputs.UpdateStateDeadLetterQueueArn
         LogLevel: !Ref LogLevel
+        LambdaPythonVersion: !Ref LambdaPythonVersion
+        LambdaArch: !Ref LambdaArch
       Tags:
         - Key: Component
           Value: Functions
