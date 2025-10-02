@@ -10,21 +10,13 @@ Parameters:
     Type: String
     Description: CIDR block for the VPC
 
-  PrivateSubnet1Cidr:
+  PrivateSubnetCidr:
     Type: String
-    Description: CIDR block for private subnet in first AZ
+    Description: CIDR block for private subnet
 
-  PrivateSubnet2Cidr:
+  PublicSubnetCidr:
     Type: String
-    Description: CIDR block for private subnet in second AZ
-
-  PublicSubnet1Cidr:
-    Type: String
-    Description: CIDR block for public subnet in first AZ
-
-  PublicSubnet2Cidr:
-    Type: String
-    Description: CIDR block for public subnet in second AZ
+    Description: CIDR block for public subnet
 
 Resources:
   # VPC
@@ -52,49 +44,28 @@ Resources:
       VpcId: !Ref CirrusVpc
       InternetGatewayId: !Ref InternetGateway
 
-  # Public Subnets
-  PublicSubnet1:
+  # Public Subnet
+  PublicSubnet:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref CirrusVpc
       AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock: !Ref PublicSubnet1Cidr
+      CidrBlock: !Ref PublicSubnetCidr
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${ResourcePrefix}-public-subnet-1'
+          Value: !Sub '${ResourcePrefix}-public-subnet'
 
-  PublicSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref CirrusVpc
-      AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock: !Ref PublicSubnet2Cidr
-      MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: !Sub '${ResourcePrefix}-public-subnet-2'
-
-  # Private Subnets
-  PrivateSubnet1:
+  # Private Subnet
+  PrivateSubnet:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref CirrusVpc
       AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock: !Ref PrivateSubnet1Cidr
+      CidrBlock: !Ref PrivateSubnetCidr
       Tags:
         - Key: Name
-          Value: !Sub '${ResourcePrefix}-private-subnet-1'
-
-  PrivateSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref CirrusVpc
-      AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock: !Ref PrivateSubnet2Cidr
-      Tags:
-        - Key: Name
-          Value: !Sub '${ResourcePrefix}-private-subnet-2'
+          Value: !Sub '${ResourcePrefix}-private-subnet'
 
   # Public Route Table
   PublicRouteTable:
@@ -113,99 +84,54 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
-  PublicSubnet1RouteTableAssociation:
+  PublicSubnetRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet1
+      SubnetId: !Ref PublicSubnet
 
-  PublicSubnet2RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet2
-
-  # Private Route Tables
-  PrivateRouteTable1:
+  # Private Route Table
+  PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref CirrusVpc
       Tags:
         - Key: Name
-          Value: !Sub '${ResourcePrefix}-private-routes-1'
+          Value: !Sub '${ResourcePrefix}-private-routes'
 
-  PrivateSubnet1RouteTableAssociation:
+  PrivateSubnetRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PrivateRouteTable1
-      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet
 
-  PrivateRouteTable2:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref CirrusVpc
-      Tags:
-        - Key: Name
-          Value: !Sub '${ResourcePrefix}-private-routes-2'
-
-  PrivateSubnet2RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable2
-      SubnetId: !Ref PrivateSubnet2
-
-  # Elastic IPs for NAT Gateways
-  NatGateway1EIP:
+  # Elastic IP for NAT Gateway
+  NatGatewayEIP:
     Type: AWS::EC2::EIP
     DependsOn: VpcGatewayAttachment
     Properties:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${ResourcePrefix}-nat1-eip'
+          Value: !Sub '${ResourcePrefix}-nat-eip'
 
-  NatGateway2EIP:
-    Type: AWS::EC2::EIP
-    DependsOn: VpcGatewayAttachment
-    Properties:
-      Domain: vpc
-      Tags:
-        - Key: Name
-          Value: !Sub '${ResourcePrefix}-nat2-eip'
-
-  # NAT Gateways
-  NatGateway1:
+  # NAT Gateway
+  NatGateway:
     Type: AWS::EC2::NatGateway
     Properties:
-      AllocationId: !GetAtt NatGateway1EIP.AllocationId
-      SubnetId: !Ref PublicSubnet1
+      AllocationId: !GetAtt NatGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet
       Tags:
         - Key: Name
-          Value: !Sub '${ResourcePrefix}-nat-gateway-1'
+          Value: !Sub '${ResourcePrefix}-nat-gateway'
 
-  NatGateway2:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NatGateway2EIP.AllocationId
-      SubnetId: !Ref PublicSubnet2
-      Tags:
-        - Key: Name
-          Value: !Sub '${ResourcePrefix}-nat-gateway-2'
-
-  # Private Routes to NAT Gateways
-  PrivateRoute1:
+  # Private Route to NAT Gateway
+  PrivateRoute:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref PrivateRouteTable1
+      RouteTableId: !Ref PrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway1
-
-  PrivateRoute2:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable2
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway2
+      NatGatewayId: !Ref NatGateway
 
   # VPC Gateway Endpoints
   S3VpcEndpoint:
@@ -215,8 +141,7 @@ Resources:
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
       VpcEndpointType: Gateway
       RouteTableIds:
-        - !Ref PrivateRouteTable1
-        - !Ref PrivateRouteTable2
+        - !Ref PrivateRouteTable
 
   DynamoDbVpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -225,8 +150,7 @@ Resources:
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
       VpcEndpointType: Gateway
       RouteTableIds:
-        - !Ref PrivateRouteTable1
-        - !Ref PrivateRouteTable2
+        - !Ref PrivateRouteTable
 
 Outputs:
   VpcId:
@@ -234,9 +158,9 @@ Outputs:
     Value: !Ref CirrusVpc
 
   PrivateSubnetIds:
-    Description: Private subnet IDs for Lambda functions
-    Value: !Sub '${PrivateSubnet1},${PrivateSubnet2}'
+    Description: Private subnet ID for Lambda functions
+    Value: !Ref PrivateSubnet
 
   PublicSubnetIds:
-    Description: Public Subnet IDs for NAT Gateways
-    Value: !Sub '${PublicSubnet1},${PublicSubnet2}'
+    Description: Public Subnet ID for NAT Gateway
+    Value: !Ref PublicSubnet

@@ -19,25 +19,15 @@ Parameters:
     Default: 10.0.0.0/16
     AllowedPattern: ^10\.\d{1,3}\.\d{1,3}\.\d{1,3}/16$
 
-  PrivateSubnet1Cidr:
+  PrivateSubnetCidr:
     Type: String
-    Description: CIDR block for private subnet in first AZ
+    Description: CIDR block for private subnet
     Default: 10.0.10.0/24
 
-  PrivateSubnet2Cidr:
+  PublicSubnetCidr:
     Type: String
-    Description: CIDR block for private subnet in second AZ
-    Default: 10.0.20.0/24
-
-  PublicSubnet1Cidr:
-    Type: String
-    Description: CIDR block for public subnet in first AZ
+    Description: CIDR block for public subnet
     Default: 10.0.1.0/24
-
-  PublicSubnet2Cidr:
-    Type: String
-    Description: CIDR block for public subnet in second AZ
-    Default: 10.0.2.0/24
 
   LogLevel:
     Type: String
@@ -74,10 +64,8 @@ Resources:
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
         VpcCidr: !Ref VpcCidr
-        PrivateSubnet1Cidr: !Ref PrivateSubnet1Cidr
-        PrivateSubnet2Cidr: !Ref PrivateSubnet2Cidr
-        PublicSubnet1Cidr: !Ref PublicSubnet1Cidr
-        PublicSubnet2Cidr: !Ref PublicSubnet2Cidr
+        PrivateSubnetCidr: !Ref PrivateSubnetCidr
+        PublicSubnetCidr: !Ref PublicSubnetCidr
       Tags:
         - Key: Component
           Value: Networking
@@ -134,8 +122,6 @@ Resources:
   # CLI Stack
   CliStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn:
-      - BaseStack
     Properties:
       TemplateURL: cli/ssm_parameters.yaml
       Parameters:
@@ -195,11 +181,11 @@ Outputs:
     Value: !GetAtt VpcStack.Outputs.VpcId
 
   PrivateSubnetIds:
-    Description: Private Subnet IDs for Lambda functions
+    Description: Private Subnet ID for Lambda functions
     Value: !GetAtt VpcStack.Outputs.PrivateSubnetIds
 
   PublicSubnetIds:
-    Description: Public Subnet IDs for NAT Gateways
+    Description: Public Subnet ID for NAT Gateway
     Value: !GetAtt VpcStack.Outputs.PublicSubnetIds
 
   # Functions Stack Outputs

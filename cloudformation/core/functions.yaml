@@ -67,14 +67,10 @@ Resources:
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: -1
-          FromPort: 0
-          ToPort: 0
           CidrIp: !Ref VpcCidr
           Description: Allow any inbound traffic from within the VPC
       SecurityGroupEgress:
         - IpProtocol: -1
-          FromPort: 0
-          ToPort: 0
           CidrIp: 0.0.0.0/0
           Description: Allow any outbound traffic exiting the VPC
       Tags:
@@ -297,7 +293,7 @@ Resources:
       FunctionName: !Sub '${ResourcePrefix}-api'
       Runtime: python3.12
       Handler: api.lambda_handler
-      Code: lambda-packages/cirrus-lambda-dist.zip
+      Code: lambda-packages/cirrus-lambda-dist-py3.12-arm64.zip
       Role: !GetAtt ApiLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
@@ -321,7 +317,7 @@ Resources:
       FunctionName: !Sub '${ResourcePrefix}-process'
       Runtime: python3.12
       Handler: process.lambda_handler
-      Code: lambda-packages/cirrus-lambda-dist.zip
+      Code: lambda-packages/cirrus-lambda-dist-py3.12-arm64.zip
       Role: !GetAtt ProcessLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
@@ -356,7 +352,7 @@ Resources:
       FunctionName: !Sub '${ResourcePrefix}-update-state'
       Runtime: python3.12
       Handler: update_state.lambda_handler
-      Code: lambda-packages/cirrus-lambda-dist.zip
+      Code: lambda-packages/cirrus-lambda-dist-py3.12-arm64.zip
       Role: !GetAtt UpdateStateLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
@@ -420,7 +416,7 @@ Resources:
       FunctionName: !Sub '${ResourcePrefix}-pre-batch'
       Runtime: python3.12
       Handler: pre_batch.lambda_handler
-      Code: lambda-packages/cirrus-lambda-dist.zip
+      Code: lambda-packages/cirrus-lambda-dist-py3.12-arm64.zip
       Role: !GetAtt PreBatchLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
@@ -442,7 +438,7 @@ Resources:
       FunctionName: !Sub '${ResourcePrefix}-post-batch'
       Runtime: python3.12
       Handler: post_batch.lambda_handler
-      Code: lambda-packages/cirrus-lambda-dist.zip
+      Code: lambda-packages/cirrus-lambda-dist-py3.12-arm64.zip
       Role: !GetAtt PostBatchLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
