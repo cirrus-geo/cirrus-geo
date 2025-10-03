@@ -48,11 +48,11 @@ cloudformation/
 
 ### Basic Deployment
 
-1. **Set parameters and stack names**
+1. **Set parameters and required environment variables**
 
    - Change parameters in `cloudformation/parameters.json` as needed.
-   - Choose names for the bootstrap, main, and workflow CloudFormation stacks and
-     export as environment variables. For example:
+   - Set the bootstrap, main, and workflow CloudFormation stack names via environment
+     variables. For example:
 
      ```bash
      export BOOTSTRAP_STACK="cirrus-bootstrap"
@@ -60,8 +60,8 @@ cloudformation/
      export MINIMAL_WORKFLOW_STACK="cirrus-sandbox-minimal-workflow"
      ```
 
-   - Set the lambda python version and architecture via environment variables.
-     For example:
+   - Set the lambda python version and architecture via environment variables. These
+     must match the `parameters.json` entries. For example:
 
      ```bash
      export LAMBDA_PYTHON_VERSION="3.13"
@@ -77,7 +77,7 @@ cloudformation/
      --parameter-overrides file://cloudformation/parameters.json
    ```
 
-   Note: This command is using CloudFormation's deploy operation, which is a
+   Note: This command is using CloudFormation's `deploy` operation, which is a
    "create-or-update" style of operation. It will modify an existing $BOOTSTRAP_STACK,
    if one exists.
 
@@ -87,7 +87,7 @@ cloudformation/
    ./bin/build-lambda-dist.py \
        -p "$LAMBDA_PYTHON_VERSION" \
        -a "$LAMBDA_ARCH" \
-       -o "cloudformation/core/lambda-packages/cirrus-lambda-zip_python${LAMBDA_PYTHON_VERSION}_${LAMBDA_ARCH}.zip"
+       -o "cloudformation/core/lambda-packages/cirrus-lambda-dist.zip"
    ```
 
 4. **Package and deploy the main stack**:
@@ -110,8 +110,6 @@ cloudformation/
      --stack-name "$MAIN_STACK" \
      --template-file packaged-template.yaml \
      --parameter-overrides file://cloudformation/parameters.json \
-       LambdaPythonVersion=$LAMBDA_PYTHON_VERSION \
-       LambdaArch=$LAMBDA_ARCH \
      --capabilities CAPABILITY_NAMED_IAM
    ```
 

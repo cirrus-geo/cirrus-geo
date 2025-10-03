@@ -301,7 +301,7 @@ Resources:
       FunctionName: !Sub '${ResourcePrefix}-api'
       Runtime: !Sub 'python${LambdaPythonVersion}'
       Handler: api.lambda_handler
-      Code: !Sub 'lambda-packages/cirrus-lambda-dist_python-${LambdaPythonVersion}_${LambdaArch}.zip'
+      Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt ApiLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
@@ -325,7 +325,7 @@ Resources:
       FunctionName: !Sub '${ResourcePrefix}-process'
       Runtime: !Sub 'python${LambdaPythonVersion}'
       Handler: process.lambda_handler
-      Code: !Sub 'lambda-packages/cirrus-lambda-dist_python-${LambdaPythonVersion}_${LambdaArch}.zip'
+      Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt ProcessLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
@@ -360,7 +360,7 @@ Resources:
       FunctionName: !Sub '${ResourcePrefix}-update-state'
       Runtime: !Sub 'python${LambdaPythonVersion}'
       Handler: update_state.lambda_handler
-      Code: !Sub 'lambda-packages/cirrus-lambda-dist_python-${LambdaPythonVersion}_${LambdaArch}.zip'
+      Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt UpdateStateLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
@@ -424,7 +424,7 @@ Resources:
       FunctionName: !Sub '${ResourcePrefix}-pre-batch'
       Runtime: !Sub 'python${LambdaPythonVersion}'
       Handler: pre_batch.lambda_handler
-      Code: !Sub 'lambda-packages/cirrus-lambda-dist_python-${LambdaPythonVersion}_${LambdaArch}.zip'
+      Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt PreBatchLambdaRole.Arn
       Timeout: 15
       MemorySize: 256
@@ -446,7 +446,7 @@ Resources:
       FunctionName: !Sub '${ResourcePrefix}-post-batch'
       Runtime: !Sub 'python${LambdaPythonVersion}'
       Handler: post_batch.lambda_handler
-      Code: !Sub 'lambda-packages/cirrus-lambda-dist_python-${LambdaPythonVersion}_${LambdaArch}.zip'
+      Code: lambda-packages/cirrus-lambda-dist.zip
       Role: !GetAtt PostBatchLambdaRole.Arn
       Timeout: 15
       MemorySize: 256

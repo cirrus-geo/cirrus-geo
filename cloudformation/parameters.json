@@ -4,6 +4,14 @@
     "ParameterValue": "cirrus-sandbox"
   },
   {
+    "ParameterKey": "LambdaPythonVersion",
+    "ParameterValue": "3.13"
+  },
+  {
+    "ParameterKey": "LambdaArch",
+    "ParameterValue": "arm64"
+  },
+  {
     "ParameterKey": "LogLevel",
     "ParameterValue": "DEBUG"
   },
