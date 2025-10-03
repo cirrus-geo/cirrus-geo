@@ -1,0 +1,10 @@
+{
+    "type": "FeatureCollection",
+    "features": [],
+    "process": [
+        {
+            "workflow": "minimal"
+        }
+    ],
+    "id": "none/workflow-minimal/none"
+}

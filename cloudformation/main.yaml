@@ -1,0 +1,247 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Cirrus - Main template orchestrating all infrastructure components'
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for all resource names
+    MinLength: 2
+    MaxLength: 22
+    AllowedPattern: '^[a-zA-Z][a-zA-Z0-9-]*$'
+    ConstraintDescription: >
+      Must be between 2 and 22 characters, begin with a letter, and contain only
+      alphanumeric characters and hyphens.
+    Default: cirrus-sandbox
+
+  VpcCidr:
+    Type: String
+    Description: CIDR block for the VPC
+    Default: 10.0.0.0/16
+    AllowedPattern: ^10\.\d{1,3}\.\d{1,3}\.\d{1,3}/16$
+
+  PrivateSubnetCidr:
+    Type: String
+    Description: CIDR block for private subnet
+    Default: 10.0.10.0/24
+
+  PublicSubnetCidr:
+    Type: String
+    Description: CIDR block for public subnet
+    Default: 10.0.1.0/24
+
+  LogLevel:
+    Type: String
+    Description: Cirrus log level
+    Default: DEBUG
+    AllowedValues:
+      - DEBUG
+      - INFO
+      - WARNING
+      - ERROR
+      - CRITICAL
+
+  LambdaPythonVersion:
+    Type: String
+    Description: Python version for Lambda functions
+
+  LambdaArch:
+    Type: String
+    Description: CPU architecture for Lambda functions
+
+Resources:
+  # Base Infrastructure Stack
+  BaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: core/base.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+      Tags:
+        - Key: Component
+          Value: Base
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+  # VPC Stack
+  VpcStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: core/vpc.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        VpcCidr: !Ref VpcCidr
+        PrivateSubnetCidr: !Ref PrivateSubnetCidr
+        PublicSubnetCidr: !Ref PublicSubnetCidr
+      Tags:
+        - Key: Component
+          Value: Networking
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+  # Lambda Functions Stack
+  FunctionsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: core/functions.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        VpcId: !GetAtt VpcStack.Outputs.VpcId
+        SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnetIds
+        VpcCidr: !Ref VpcCidr
+        CirrusDataBucket: !GetAtt BaseStack.Outputs.CirrusDataBucket
+        CirrusPayloadBucket: !GetAtt BaseStack.Outputs.CirrusPayloadBucket
+        StateTable: !GetAtt BaseStack.Outputs.StateTable
+        StateTableArn: !GetAtt BaseStack.Outputs.StateTableArn
+        ProcessQueueUrl: !GetAtt BaseStack.Outputs.ProcessQueueUrl
+        ProcessQueueArn: !GetAtt BaseStack.Outputs.ProcessQueueArn
+        PublishTopicArn: !GetAtt BaseStack.Outputs.PublishTopicArn
+        WorkflowEventTopicArn: !GetAtt BaseStack.Outputs.WorkflowEventTopicArn
+        UpdateStateDeadLetterQueueArn: !GetAtt BaseStack.Outputs.UpdateStateDeadLetterQueueArn
+        LogLevel: !Ref LogLevel
+        LambdaPythonVersion: !Ref LambdaPythonVersion
+        LambdaArch: !Ref LambdaArch
+      Tags:
+        - Key: Component
+          Value: Functions
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+  # API Gateway Stack
+  ApiStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: core/api.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        ApiLambdaArn: !GetAtt FunctionsStack.Outputs.ApiLambdaArn
+        ApiLambdaName: !GetAtt FunctionsStack.Outputs.ApiLambdaName
+      Tags:
+        - Key: Component
+          Value: Api
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+  # CLI Stack
+  CliStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: cli/ssm_parameters.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        CirrusPayloadBucket: !GetAtt BaseStack.Outputs.CirrusPayloadBucket
+        CirrusDataBucket: !GetAtt BaseStack.Outputs.CirrusDataBucket
+        StateTable: !GetAtt BaseStack.Outputs.StateTable
+        ProcessQueueUrl: !GetAtt BaseStack.Outputs.ProcessQueueUrl
+        PublishTopicArn: !GetAtt BaseStack.Outputs.PublishTopicArn
+        WorkflowEventTopicArn: !GetAtt BaseStack.Outputs.WorkflowEventTopicArn
+        LogLevel: !Ref LogLevel
+      Tags:
+        - Key: Component
+          Value: CLI
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+Outputs:
+  # Base Stack Outputs
+  CirrusDataBucket:
+    Description: S3 bucket for Cirrus data
+    Value: !GetAtt BaseStack.Outputs.CirrusDataBucket
+
+  CirrusPayloadBucket:
+    Description: S3 bucket for Cirrus payloads
+    Value: !GetAtt BaseStack.Outputs.CirrusPayloadBucket
+
+  StateTable:
+    Description: DynamoDB table for Cirrus state
+    Value: !GetAtt BaseStack.Outputs.StateTable
+
+  ProcessQueueUrl:
+    Description: SQS queue URL for processing
+    Value: !GetAtt BaseStack.Outputs.ProcessQueueUrl
+
+  ProcessDeadLetterQueue:
+    Description: SQS dead letter queue for processing
+    Value: !GetAtt BaseStack.Outputs.ProcessDeadLetterQueue
+
+  UpdateStateDeadLetterQueue:
+    Description: SQS dead letter queue for update state
+    Value: !GetAtt BaseStack.Outputs.UpdateStateDeadLetterQueue
+
+  PublishTopic:
+    Description: SNS topic for publishing
+    Value: !GetAtt BaseStack.Outputs.PublishTopic
+
+  WorkflowEventTopic:
+    Description: SNS topic for workflow events
+    Value: !GetAtt BaseStack.Outputs.WorkflowEventTopic
+
+  # VPC Stack Outputs
+  VpcId:
+    Description: VPC ID for Lambda functions
+    Value: !GetAtt VpcStack.Outputs.VpcId
+
+  PrivateSubnetIds:
+    Description: Private Subnet ID for Lambda functions
+    Value: !GetAtt VpcStack.Outputs.PrivateSubnetIds
+
+  PublicSubnetIds:
+    Description: Public Subnet ID for NAT Gateway
+    Value: !GetAtt VpcStack.Outputs.PublicSubnetIds
+
+  # Functions Stack Outputs
+  ApiLambdaName:
+    Description: API Lambda function name
+    Value: !GetAtt FunctionsStack.Outputs.ApiLambdaName
+
+  ProcessLambdaName:
+    Description: Process Lambda function name
+    Value: !GetAtt FunctionsStack.Outputs.ProcessLambdaName
+
+  UpdateStateLambdaName:
+    Description: Update State Lambda function name
+    Value: !GetAtt FunctionsStack.Outputs.UpdateStateLambdaName
+
+  PreBatchLambdaName:
+    Description: Pre-Batch Lambda function name
+    Value: !GetAtt FunctionsStack.Outputs.PreBatchLambdaName
+
+  PostBatchLambdaName:
+    Description: Post-Batch Lambda function name
+    Value: !GetAtt FunctionsStack.Outputs.PostBatchLambdaName
+
+  LambdaSecurityGroupId:
+    Description: Security group ID for Lambda functions
+    Value: !GetAtt FunctionsStack.Outputs.LambdaSecurityGroupId
+
+  # API Stack Outputs
+  ApiGatewayUrl:
+    Description: API Gateway invoke URL
+    Value: !GetAtt ApiStack.Outputs.ApiGatewayUrl
+
+  # CLI Stack Outputs
+  DeploymentName:
+    Description: Cirrus deployment name for CLI
+    Value: !GetAtt CliStack.Outputs.DeploymentName
+
+  ParameterStorePrefix:
+    Description: Parameter Store prefix for this deployment
+    Value: !GetAtt CliStack.Outputs.ParameterPrefix
+
+  # Summary Information
+  ResourcePrefix:
+    Description: Resource prefix used for this deployment
+    Value: !Ref ResourcePrefix
+
+  DeploymentRegion:
+    Description: AWS region where Cirrus is deployed
+    Value: !Ref 'AWS::Region'
