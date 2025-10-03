@@ -21,8 +21,8 @@ Resources:
               "Type": "Choice",
               "Choices": [
                 {
-                  "Variable": "$.process[0].workflow",
-                  "StringEquals": "minimal",
+                  "Variable": "$.process[0].succeed",
+                  "BooleanEquals": true,
                   "Next": "Success"
                 }
               ],
@@ -34,7 +34,7 @@ Resources:
             "FailState": {
               "Type": "Fail",
               "Error": "WorkflowMismatch",
-              "Cause": "The workflow field does not contain 'minimal'"
+              "Cause": "The succeed field was not true"
             }
           }
         }

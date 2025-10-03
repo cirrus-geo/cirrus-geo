@@ -3,8 +3,9 @@
     "features": [],
     "process": [
         {
-            "workflow": "minimal"
+            "workflow": "minimal",
+            "succeed": true
         }
     ],
-    "id": "none/workflow-minimal/none"
+    "id": "collection/workflow-minimal/item"
 }

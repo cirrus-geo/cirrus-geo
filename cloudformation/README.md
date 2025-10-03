@@ -134,10 +134,10 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-The minimal workflow contains a single `ChoiceState` that checks for a particular value
-in the `workflow` field in the payload. Use `workflows/minimal/payload.json` for
-testing. You can change the `workflow` value to something other than "minimal" to make
-the workflow fail.
+The minimal workflow contains a single `ChoiceState` that checks for a `succeed` field
+in the payload process block for a boolean `true` value. Use
+`workflows/minimal/payload.json` for testing. Set the `succeed` field to `false` to
+generate a failed state machine execution.
 
 ## Cleanup
 
