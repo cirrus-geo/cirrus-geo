@@ -39,6 +39,7 @@ cli = [
 
 [dependency-groups]
 dev = [
+    "cfn-lint",
     "darglint",
     "pytest",
     "pytest-cov",
@@ -127,6 +128,7 @@ exclude = [
     'B017',
     'PT011',
 ]
+'bin/build-lambda-dist.py' = ['S603', 'T201']
 
 [tool.ruff.lint.isort]
 lines-between-types = 1

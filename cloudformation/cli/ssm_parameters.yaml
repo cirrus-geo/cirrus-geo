@@ -1,0 +1,127 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SSM Parameters holding deployment configuration for the Cirrus CLI'
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for all resource names
+
+  CirrusPayloadBucket:
+    Type: String
+    Description: S3 bucket for Cirrus payloads
+
+  CirrusDataBucket:
+    Type: String
+    Description: S3 bucket for Cirrus data
+
+  StateTable:
+    Type: String
+    Description: DynamoDB table name for Cirrus state
+
+  ProcessQueueUrl:
+    Type: String
+    Description: SQS queue URL for processing
+
+  PublishTopicArn:
+    Type: String
+    Description: SNS topic ARN for publishing
+
+  WorkflowEventTopicArn:
+    Type: String
+    Description: SNS topic ARN for workflow events
+
+  LogLevel:
+    Type: String
+    Description: Cirrus log level
+
+Resources:
+  # Parameter to tell the CLI where to find the deployment configuration values
+  DeploymentPointer:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/cirrus/deployments/${ResourcePrefix}'
+      Type: String
+      Value: !Sub '{"type": "parameter_store", "value": "/deployment/${ResourcePrefix}/"}'
+      Description: !Sub 'Cirrus deployment pointer for ${ResourcePrefix}'
+
+  # Deployment configuration values
+  PayloadBucketParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/deployment/${ResourcePrefix}/CIRRUS_PAYLOAD_BUCKET'
+      Type: String
+      Value: !Ref CirrusPayloadBucket
+      Description: S3 bucket for Cirrus payloads
+
+  DataBucketParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/deployment/${ResourcePrefix}/CIRRUS_DATA_BUCKET'
+      Type: String
+      Value: !Ref CirrusDataBucket
+      Description: S3 bucket for Cirrus data
+
+  StateDbParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/deployment/${ResourcePrefix}/CIRRUS_STATE_DB'
+      Type: String
+      Value: !Ref StateTable
+      Description: DynamoDB table name for Cirrus state
+
+  ProcessQueueUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/deployment/${ResourcePrefix}/CIRRUS_PROCESS_QUEUE_URL'
+      Type: String
+      Value: !Ref ProcessQueueUrl
+      Description: SQS queue URL for processing
+
+  PublishTopicArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/deployment/${ResourcePrefix}/CIRRUS_PUBLISH_TOPIC_ARN'
+      Type: String
+      Value: !Ref PublishTopicArn
+      Description: SNS topic ARN for publishing
+
+  WorkflowEventTopicArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/deployment/${ResourcePrefix}/CIRRUS_WORKFLOW_EVENT_TOPIC_ARN'
+      Type: String
+      Value: !Ref WorkflowEventTopicArn
+      Description: SNS topic ARN for workflow events
+
+  BaseWorkflowArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/deployment/${ResourcePrefix}/CIRRUS_BASE_WORKFLOW_ARN'
+      Type: String
+      Value: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ResourcePrefix}-'
+      Description: Base ARN for Cirrus workflow state machines
+
+  PrefixParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/deployment/${ResourcePrefix}/CIRRUS_PREFIX'
+      Type: String
+      Value: !Sub '${ResourcePrefix}-'
+      Description: Prefix for Cirrus resource names
+
+  LogLevelParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/deployment/${ResourcePrefix}/CIRRUS_LOG_LEVEL'
+      Type: String
+      Value: !Ref LogLevel
+      Description: Cirrus log level
+
+Outputs:
+  DeploymentName:
+    Description: Cirrus deployment name for use in CLI
+    Value: !Ref ResourcePrefix
+
+  ParameterPrefix:
+    Description: Parameter Store prefix for this deployment
+    Value: !Sub '/deployment/${ResourcePrefix}/'
