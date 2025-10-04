@@ -7,7 +7,7 @@ import sys
 import tempfile
 import zipfile
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from enum import StrEnum
 from pathlib import Path
 
@@ -16,6 +16,12 @@ PROJECT_DIR = Path(__file__).parent.parent
 
 # Add packages we don't need in the zip to slim it down
 PACKAGE_EXCLUDES = ("pip",)
+
+
+# Patches to apply to specific files in the zip
+PATCHES: dict[str, Callable[[Path], bytes]] = {
+    "stactask/__init__.py": lambda x: b"",
+}
 
 
 class Architecture(StrEnum):
@@ -95,6 +101,7 @@ def setup_venv(
         str(project_dir),
         "--no-editable",
         "--active",
+        "--no-cache",
     ]
 
     print(f"Running: {' '.join(cmd)}")
@@ -137,6 +144,12 @@ def create_base_zip(site_packages: Path, zip_path: Path) -> None:
             if package_name not in packages:
                 packages.add(package_name)
                 print(f"Copying package to zip: {package_name}")
+
+            name = str(arcname)
+            if name in PATCHES:
+                print(f"Patching file {arcname}")
+                zf.writestr(name, PATCHES[name](file_path))
+                continue
 
             zf.write(file_path, arcname)
 

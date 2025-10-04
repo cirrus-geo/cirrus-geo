@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import json
 
-import stactask
+import stactask.payload
 
 from cirrus.lib.errors import NoUrlError
 from cirrus.lib.utils import PAYLOAD_ID_REGEX, extract_event_records, payload_from_s3
