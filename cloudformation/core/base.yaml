@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Cirrus Base Infrastructure - S3, DynamoDB, SQS, SNS'
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for all resource names
+
+Resources:
+  # S3 Buckets
+  CirrusDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ResourcePrefix}-data-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  CirrusPayloadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ResourcePrefix}-payload-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # DynamoDB State Table
+  StateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ResourcePrefix}-state'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: collections_workflow
+          AttributeType: S
+        - AttributeName: itemids
+          AttributeType: S
+        - AttributeName: state_updated
+          AttributeType: S
+        - AttributeName: updated
+          AttributeType: S
+      KeySchema:
+        - AttributeName: collections_workflow
+          KeyType: HASH
+        - AttributeName: itemids
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: state_updated
+          KeySchema:
+            - AttributeName: collections_workflow
+              KeyType: HASH
+            - AttributeName: state_updated
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: updated
+          KeySchema:
+            - AttributeName: collections_workflow
+              KeyType: HASH
+            - AttributeName: updated
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  # SQS Process Queue
+  ProcessQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${ResourcePrefix}-process'
+      VisibilityTimeout: 180
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ProcessDeadLetterQueue.Arn
+        maxReceiveCount: 5
+
+  # SQS Dead Letter Queue
+  ProcessDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${ResourcePrefix}-process-dlq'
+      MessageRetentionPeriod: 1209600  # 14 days
+
+  UpdateStateDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${ResourcePrefix}-update-state-dlq'
+      MessageRetentionPeriod: 1209600  # 14 days
+
+  # SNS Topics
+  PublishTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ResourcePrefix}-publish'
+      DisplayName: !Sub '${ResourcePrefix}-publish'
+
+  WorkflowEventTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ResourcePrefix}-workflow-event'
+      DisplayName: !Sub '${ResourcePrefix}-workflow-events'
+
+Outputs:
+  CirrusDataBucket:
+    Description: S3 bucket for Cirrus data
+    Value: !Ref CirrusDataBucket
+
+  CirrusPayloadBucket:
+    Description: S3 bucket for Cirrus payloads
+    Value: !Ref CirrusPayloadBucket
+
+  StateTable:
+    Description: DynamoDB table for Cirrus state
+    Value: !Ref StateTable
+
+  StateTableArn:
+    Description: DynamoDB table ARN for Cirrus state
+    Value: !GetAtt StateTable.Arn
+
+  ProcessQueueUrl:
+    Description: SQS queue URL for processing
+    Value: !GetAtt ProcessQueue.QueueUrl
+
+  ProcessQueueArn:
+    Description: SQS queue ARN for processing
+    Value: !GetAtt ProcessQueue.Arn
+
+  ProcessDeadLetterQueue:
+    Description: SQS dead letter queue for processing
+    Value: !Ref ProcessDeadLetterQueue
+
+  UpdateStateDeadLetterQueue:
+    Description: SQS dead letter queue for update state
+    Value: !Ref UpdateStateDeadLetterQueue
+
+  UpdateStateDeadLetterQueueArn:
+    Description: SQS dead letter queue ARN for update state
+    Value: !GetAtt UpdateStateDeadLetterQueue.Arn
+
+  PublishTopic:
+    Description: SNS topic for publishing
+    Value: !Ref PublishTopic
+
+  PublishTopicArn:
+    Description: SNS topic ARN for publishing
+    Value: !GetAtt PublishTopic.TopicArn
+
+  WorkflowEventTopic:
+    Description: SNS topic for workflow events
+    Value: !Ref WorkflowEventTopic
+
+  WorkflowEventTopicArn:
+    Description: SNS topic ARN for workflow events
+    Value: !GetAtt WorkflowEventTopic.TopicArn

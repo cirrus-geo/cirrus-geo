@@ -1,0 +1,30 @@
+[
+  {
+    "ParameterKey": "ResourcePrefix",
+    "ParameterValue": "cirrus-sandbox"
+  },
+  {
+    "ParameterKey": "LambdaPythonVersion",
+    "ParameterValue": "3.13"
+  },
+  {
+    "ParameterKey": "LambdaArch",
+    "ParameterValue": "arm64"
+  },
+  {
+    "ParameterKey": "LogLevel",
+    "ParameterValue": "DEBUG"
+  },
+  {
+    "ParameterKey": "VpcCidr",
+    "ParameterValue": "10.1.0.0/16"
+  },
+  {
+    "ParameterKey": "PrivateSubnetCidr",
+    "ParameterValue": "10.1.10.0/24"
+  },
+  {
+    "ParameterKey": "PublicSubnetCidr",
+    "ParameterValue": "10.1.1.0/24"
+  }
+]

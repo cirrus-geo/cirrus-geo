@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Cirrus - Minimal Workflow Step Function'
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for all resource names
+
+Resources:
+  MinimalWorkflowStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub '${ResourcePrefix}-minimal'
+      RoleArn: !GetAtt StateMachineRole.Arn
+      DefinitionString: |
+        {
+          "Comment": "Minimal workflow for testing",
+          "StartAt": "CheckWorkflow",
+          "States": {
+            "CheckWorkflow": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.process[0].succeed",
+                  "BooleanEquals": true,
+                  "Next": "Success"
+                }
+              ],
+              "Default": "FailState"
+            },
+            "Success": {
+              "Type": "Succeed"
+            },
+            "FailState": {
+              "Type": "Fail",
+              "Error": "WorkflowMismatch",
+              "Cause": "The succeed field was not true"
+            }
+          }
+        }
+      Tags:
+        - Key: Workflow
+          Value: minimal
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+  StateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-minimal-workflow-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/CloudWatchLogsFullAccess'
+      Tags:
+        - Key: Workflow
+          Value: minimal
+        - Key: Project
+          Value: cirrus-geo
+
+Outputs:
+  StateMachineArn:
+    Description: ARN of the minimal workflow state machine
+    Value: !Ref MinimalWorkflowStateMachine
+
+  StateMachineName:
+    Description: Name of the minimal workflow state machine
+    Value: !GetAtt MinimalWorkflowStateMachine.Name
