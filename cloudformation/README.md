@@ -14,7 +14,7 @@ The CloudFormation implementation consists of:
 - **API Gateway**: REST API (EDGE) with Lambda integration and CloudWatch logging
 - **CLI Configuration**: Parameter Store setup for cirrus CLI deployment discovery
 
-The CloudFormation templates are modular and use nested stacks for organization.
+The CloudFormation templates use nested stacks for organization.
 
 ## Directory Structure
 
@@ -77,9 +77,9 @@ cloudformation/
      --parameter-overrides file://cloudformation/parameters.json
    ```
 
-   Note: This command is using CloudFormation's `deploy` operation, which is a
-   "create-or-update" style of operation. It will modify an existing $BOOTSTRAP_STACK,
-   if one exists.
+   Note the use of CloudFormation's `deploy` operation here and elsewhere, which is a
+   "create-or-update" style of operation. It will modify an existing stack, if one
+   exists.
 
 3. **Package Lambda functions**:
 
@@ -138,8 +138,8 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-The minimal workflow contains a single `ChoiceState` that checks for a `succeed` field
-in the payload process block for a boolean `true` value. Use
+The minimal workflow contains a single `ChoiceState` that checks the `succeed` field in
+the first entry of the payload `process` block for a boolean `true` value. Use
 `workflows/minimal/payload.json` for testing. Set the `succeed` field to `false` to
 generate a failed state machine execution.
 
