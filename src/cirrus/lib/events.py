@@ -219,6 +219,8 @@ class WorkflowMetricReader:
     """
 
     _agg_statistic = "SampleCount"
+    metric_some_workflows = "a_workflow_by_event"
+    metric_all_workflows = "all_workflows_by_event"
 
     def __init__(
         self,
@@ -254,14 +256,15 @@ class WorkflowMetricReader:
             else os.getenv("CIRRUS_WORKFLOW_LOG_GROUP", "")
         )
         self._enabled = metric_namespace is not None and self.metric_namespace != ""
-        self.metric_some_workflows = "a_workflow_by_event"
-        self.metric_all_workflows = "all_workflows_by_event"
         if self._enabled:
             resp = get_client("logs").describe_metric_filters(
                 logGroupName=self.log_group_name,
             )
             list_of_metrics = resp.get("metricFilters", [])
-            self._metrics = {metric["filterName"] for metric in list_of_metrics}
+            self._metrics = {
+                metric["metricTransformations"][0]["metricName"]
+                for metric in list_of_metrics
+            }
             if self.metric_some_workflows not in self._metrics or (
                 self.metric_all_workflows not in self._metrics
             ):
@@ -395,7 +398,21 @@ class WorkflowMetricReader:
                 tstamp = datapoint["Timestamp"]
                 for statistic in statistics:
                     stat = datapoint[statistic]
-                    fcstats[tstamp][str(event_type)][statistic] += stat
+                    try:
+                        fcstats[tstamp][str(event_type)][statistic] += stat
+                    except KeyError as ke:
+                        self.logger.error(
+                            "KeyError accessing fcstats[%s][%s][%s]: %s",
+                            tstamp,
+                            str(event_type),
+                            statistic,
+                            ke,
+                        )
+                        self.logger.error(
+                            "fcstats keys",
+                            list(fcstats.keys()),
+                        )
+                        raise ke
 
         return [
             {"period": formatter(k), "events": dict(v)}
@@ -410,11 +427,10 @@ class WorkflowMetricReader:
         """
         Query CloudWatch metrics for a specific hour range.
         """
-
-        end_time = datetime.now(UTC) - timedelta(hours=end)
-        start_time = datetime.now(UTC) - timedelta(hours=start)
+        now = datetime.now(UTC)
+        end_time = now - timedelta(hours=end)
+        start_time = now - timedelta(hours=start)
         return self.aggregated_by_event_type(
-            event_types=[WFEventType.SUCCEEDED, WFEventType.FAILED],
             start_time=start_time,
             end_time=end_time,
             period=3600,
