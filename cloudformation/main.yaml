@@ -94,6 +94,21 @@ Resources:
         - Key: Environment
           Value: !Ref ResourcePrefix
 
+  MetricsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: core/metrics.yaml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+      Tags:
+        - Key: Component
+          Value: WorkflowMetric
+        - Key: Project
+          Value: cirrus-geo
+        - Key: Environment
+          Value: !Ref ResourcePrefix
+
+
   # Lambda Functions Stack
   FunctionsStack:
     Type: AWS::CloudFormation::Stack
@@ -116,6 +131,8 @@ Resources:
         LogLevel: !Ref LogLevel
         LambdaPythonVersion: !Ref LambdaPythonVersion
         LambdaArch: !Ref LambdaArch
+        WorkflowMetricLogGroup: !GetAtt MetricsStack.Outputs.CirrusWorkflowEventLogGroup
+        WorkflowMetricNamespace: !GetAtt MetricsStack.Outputs.CirrusWorkflowMetricNamespace
       Tags:
         - Key: Component
           Value: Functions
