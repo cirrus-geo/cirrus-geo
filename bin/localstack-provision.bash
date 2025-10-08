@@ -14,9 +14,16 @@ PAYLOAD_BUCKET_KEY="CirrusPayloadBucket"
 ARTIFACT_BUCKET_KEY="CirrusDeploymentArtifactsBucket"
 
 
+ercho () {
+    local msg="${1:?message to echo is required}"
+    echo -e >&2 "${msg}"
+    [ -z "${2:-}" ] || exit "${2}"
+}
+
+
 find_this () {
     THIS="${1:?'must provide script path, like "${BASH_SOURCE[0]}" or "$0"'}"
-    trap "echo >&2 'FATAL: could not resolve parent directory of ${THIS}'" EXIT
+    trap "ercho 'FATAL: could not resolve parent directory of ${THIS}'" EXIT
     [ "${THIS:0:1}"  == "/" ] || THIS="$(pwd -P)/${THIS}"
     THIS_DIR="$(dirname -- "${THIS}")"
     THIS_DIR="$(cd -P -- "${THIS_DIR}" && pwd)"
@@ -24,6 +31,15 @@ find_this () {
     trap "" EXIT
 }
 
+
+[ "${_USING_LOCALSTACK_CONFIG:-}" == "true" ] || {
+    ERR=''
+    ERR+='ERROR: $_USING_LOCALSTACK_CONFIG is not `true`\n\n'
+    ERR+='HINT: ensure `.env.localstack.example` has been copied to `.env.localstack` '
+    ERR+='and that the latter has been sourced like `source .env.localstack` '
+    ERR+='before running this script.'
+    ercho "${ERR}" 10
+}
 
 find_this "${BASH_SOURCE[0]}"
 
@@ -35,13 +51,6 @@ BUILD_DIR="${CF_DIR}/_build"
 CORE="${CF_DIR}/core"
 LAMBDA_PACKAGES="${CORE}/lambda-packages"
 LAMBDA_ZIP="${LAMBDA_PACKAGES}/cirrus-lambda-dist.zip"
-
-
-ercho () {
-    local msg="${1:?message to echo is required}"
-    echo -e >&2 "${msg}"
-    [ -z "${2:-}" ] || exit "${2}"
-}
 
 
 _build_lambda_dist() {
@@ -90,7 +99,7 @@ debootstrap() {
 }
 
 
-create() {
+deploy() {
     local bucket_name="$(_get_bucket "${BOOTSTRAP_STACK}" "${ARTIFACT_BUCKET_KEY}")"
     local packaged_template="${BUILD_DIR}/packaged-template.yaml"
 
@@ -150,7 +159,7 @@ Supported Commands:
   help         show this message
   bootstrap    set up cirrus bootstrap stack
   debootstrap  tear down cirrus bootstrap stack
-  create       set up cirrus sandbox deployment
+  deploy       set up/update cirrus sandbox deployment
   delete       tear down cirrus sandbox deployment
 EOF
     )
@@ -159,7 +168,7 @@ EOF
     case "${cmd:-}" in
         bootstrap)   bootstrap "${@}" ;;
         debootstrap) debootstrap "${@}" ;;
-        create)      create "${@}" ;;
+        deploy)      deploy "${@}" ;;
         delete)      delete "${@}" ;;
         help|-h|--help) ercho "${usage}" 0 ;;
         ?*) ercho "unknown command: '$cmd'" 1 ;;

@@ -17,8 +17,8 @@ Parameters:
     Default: ''
 
   SubnetIds:
-    Type: String
-    Description: Comma-separated subnet IDs for Lambda functions
+    Type: CommaDelimitedList
+    Description: Subnet IDs for Lambda functions
     Default: ''
 
   CirrusDataBucket:
@@ -332,7 +332,7 @@ Resources:
         - UseVpc
         - SecurityGroupIds:
             - !Ref LambdaSecurityGroup
-          SubnetIds: !Split [',', !Ref SubnetIds]
+          SubnetIds: !Ref SubnetIds
         - !Ref 'AWS::NoValue'
 
   # Process Lambda
@@ -361,7 +361,7 @@ Resources:
         - UseVpc
         - SecurityGroupIds:
             - !Ref LambdaSecurityGroup
-          SubnetIds: !Split [',', !Ref SubnetIds]
+          SubnetIds: !Ref SubnetIds
         - !Ref 'AWS::NoValue'
 
   # Event Source Mapping for Process Lambda
@@ -398,7 +398,7 @@ Resources:
         - UseVpc
         - SecurityGroupIds:
             - !Ref LambdaSecurityGroup
-          SubnetIds: !Split [',', !Ref SubnetIds]
+          SubnetIds: !Ref SubnetIds
         - !Ref 'AWS::NoValue'
 
   # EventBridge Rule for Update State Lambda
@@ -459,7 +459,7 @@ Resources:
         - UseVpc
         - SecurityGroupIds:
             - !Ref LambdaSecurityGroup
-          SubnetIds: !Split [',', !Ref SubnetIds]
+          SubnetIds: !Ref SubnetIds
         - !Ref 'AWS::NoValue'
 
   # Post Batch Lambda
@@ -483,7 +483,7 @@ Resources:
         - UseVpc
         - SecurityGroupIds:
             - !Ref LambdaSecurityGroup
-          SubnetIds: !Split [',', !Ref SubnetIds]
+          SubnetIds: !Ref SubnetIds
         - !Ref 'AWS::NoValue'
 
 Outputs:

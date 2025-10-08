@@ -200,17 +200,26 @@ Outputs:
   # VPC Stack Outputs (conditional)
   VpcId:
     Description: VPC ID for Lambda functions
-    Value: !GetAtt VpcStack.Outputs.VpcId
+    Value: !If
+      - CreateVpc
+      - !GetAtt VpcStack.Outputs.VpcId
+      - !Ref AWS::NoValue
     Condition: CreateVpc
 
   PrivateSubnetIds:
     Description: Private Subnet ID for Lambda functions
-    Value: !GetAtt VpcStack.Outputs.PrivateSubnetIds
+    Value: !If
+      - CreateVpc
+      - !GetAtt VpcStack.Outputs.PrivateSubnetIds
+      - !Ref AWS::NoValue
     Condition: CreateVpc
 
   PublicSubnetIds:
     Description: Public Subnet ID for NAT Gateway
-    Value: !GetAtt VpcStack.Outputs.PublicSubnetIds
+    Value: !If
+      - CreateVpc
+      - !GetAtt VpcStack.Outputs.PublicSubnetIds
+      - !Ref AWS::NoValue
     Condition: CreateVpc
 
   # Functions Stack Outputs
@@ -236,7 +245,10 @@ Outputs:
 
   LambdaSecurityGroupId:
     Description: Security group ID for Lambda functions
-    Value: !GetAtt FunctionsStack.Outputs.LambdaSecurityGroupId
+    Value: !If
+      - CreateVpc
+      - !GetAtt FunctionsStack.Outputs.LambdaSecurityGroupId
+      - !Ref AWS::NoValue
     Condition: CreateVpc
 
   # API Stack Outputs

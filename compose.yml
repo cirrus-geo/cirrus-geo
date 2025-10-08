@@ -5,7 +5,7 @@ services:
     restart: always
     ports:
       - "4566:4566"
-      - "127.0.0.1:4510-4559:4510-4559"
+      - "4510-4559:4510-4559"
     environment:
       DEBUG: "${DEBUG:-1}"
     volumes:

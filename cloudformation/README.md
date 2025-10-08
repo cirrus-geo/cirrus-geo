@@ -82,7 +82,7 @@ cloudformation/
    # Get the S3 bucket for packaging
    ARTIFACT_BUCKET=$(aws cloudformation describe-stacks \
      --stack-name "$BOOTSTRAP_STACK" \
-     --query "Stacks[0].Outputs[?OutputKey==\`CirrusDeploymentArtifactsBucket\`].OutputValue" \
+     --query 'Stacks[0].Outputs[?OutputKey==`CirrusDeploymentArtifactsBucket`].OutputValue' \
      --output text)
 
    # Package templates and Lambda code
@@ -143,17 +143,17 @@ generate a failed state machine execution.
    # Get bucket names
    DATA_BUCKET=$(aws cloudformation describe-stacks \
      --stack-name "$MAIN_STACK" \
-     --query "Stacks[0].Outputs[?OutputKey==\`CirrusDataBucket\`].OutputValue" \
+     --query 'Stacks[0].Outputs[?OutputKey==`CirrusDataBucket`].OutputValue' \
      --output text)
 
    PAYLOAD_BUCKET=$(aws cloudformation describe-stacks \
      --stack-name "$MAIN_STACK" \
-     --query "Stacks[0].Outputs[?OutputKey==\`CirrusPayloadBucket\`].OutputValue" \
+     --query 'Stacks[0].Outputs[?OutputKey==`CirrusPayloadBucket`].OutputValue' \
      --output text)
 
    ARTIFACT_BUCKET=$(aws cloudformation describe-stacks \
      --stack-name "$BOOTSTRAP_STACK" \
-     --query "Stacks[0].Outputs[?OutputKey==\`CirrusDeploymentArtifactsBucket\`].OutputValue" \
+     --query 'Stacks[0].Outputs[?OutputKey==`CirrusDeploymentArtifactsBucket`].OutputValue' \
      --output text)
 
    # Empty buckets
@@ -186,13 +186,14 @@ main, and minimal workflow stacks and can also delete the stacks via command lin
 arguments.
 
 ```bash
-./bin/localstack-provision.bash [bootstrap|debootstrap|create|delete]
+./bin/localstack-provision.bash [bootstrap|debootstrap|deploy|delete]
 ```
 
 ### Prerequisites
 
 1. **AWS CLI** installed and configured
 2. **Python 3.12+** for Lambda function packaging
+3. **Docker** to run the localstack via compose
 
 ### Stack Deployment
 
@@ -206,7 +207,7 @@ arguments.
 2. **Start LocalStack**
 
    ```bash
-   docker compose up -d
+   docker compose up -d -V
    ```
 
 3. **Deploy the bootstrap stack**
@@ -218,8 +219,19 @@ arguments.
 4. **Deploy the main and minimal workflow stacks**
 
    ```bash
-   ./bin/localstack-provision.bash create
+   ./bin/localstack-provision.bash deploy
    ```
+
+The `deploy` command can be used repeatedly as an idempotent way to apply stack
+updates.
+
+> [!NOTE]
+> Sometimes localstack can get into a broken state when trying to
+> apply/rollback bad CloudFormation, such as ehen using localstack to test
+> CloudFormation changes during development. If the `deploy` command results in
+> the system entering an unrecoverable state, restarting localstack by
+> re-running `docker compose up -d -V`  and redeploying from the bootstrap
+> stage will be required.
 
 ### Interacting with LocalStack-deployed Infrastructure
 
