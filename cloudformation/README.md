@@ -255,12 +255,12 @@ curl "http://localhost:4566/restapis/${API_ID}/dev/_user_request_/collection/wor
 
 1. **Delete the main stack**
 
-```bash
-./bin/localstack-provision.bash delete
-```
+   ```bash
+   ./bin/localstack-provision.bash delete
+   ```
 
 2. **Delete the bootstrap stack**
 
-```bash
-./bin/localstack-provision.bash debootstrap
-```
+   ```bash
+   ./bin/localstack-provision.bash debootstrap
+   ```
