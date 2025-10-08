@@ -134,3 +134,7 @@ Outputs:
   ApiGatewayUrl:
     Description: API Gateway invoke URL
     Value: !Sub 'https://${CirrusApi}.execute-api.${AWS::Region}.amazonaws.com/dev'
+
+  ApiGatewayId:
+    Description: API Gateway ID
+    Value: !Ref CirrusApi

@@ -148,10 +148,16 @@ def create_base_zip(site_packages: Path, zip_path: Path) -> None:
             name = str(arcname)
             if name in PATCHES:
                 print(f"Patching file {arcname}")
-                zf.writestr(name, PATCHES[name](file_path))
+                info = zipfile.ZipInfo(name)
+                # set permissions to -rw-r--r-- (for localstack compatibility)
+                info.external_attr = 0o644 << 16
+                zf.writestr(info, PATCHES[name](file_path))
                 continue
 
-            zf.write(file_path, arcname)
+            info = zipfile.ZipInfo.from_file(file_path, arcname)
+            info.external_attr = 0o644 << 16
+            with Path.open(file_path, "rb") as f:
+                zf.writestr(info, f.read())
 
 
 def get_lambda_handlers(venv_path: Path) -> list[Path]:
@@ -200,7 +206,10 @@ def add_handlers_to_zip(zip_path: Path, handlers: list[Path]) -> None:
     with zipfile.ZipFile(zip_path, "a") as zf:
         for handler_path in handlers:
             print(f"Adding handler: {handler_path.name}")
-            zf.write(handler_path, handler_path.name)
+            info = zipfile.ZipInfo.from_file(handler_path, handler_path.name)
+            info.external_attr = 0o644 << 16
+            with Path.open(handler_path, "rb") as f:
+                zf.writestr(info, f.read())
 
 
 def build_lambda_zip(
