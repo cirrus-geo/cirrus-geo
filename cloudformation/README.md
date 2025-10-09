@@ -193,7 +193,7 @@ arguments.
 
 1. **AWS CLI** installed and configured
 2. **Python 3.12+** for Lambda function packaging
-3. **Docker** to run the localstack via compose
+3. **Docker** to run the LocalStack via compose
 
 ### Stack Deployment
 
@@ -226,10 +226,10 @@ The `deploy` command can be used repeatedly as an idempotent way to apply stack
 updates.
 
 > [!NOTE]
-> Sometimes localstack can get into a broken state when trying to
-> apply/rollback bad CloudFormation, such as ehen using localstack to test
+> Sometimes LocalStack can get into a broken state when trying to
+> apply/rollback bad CloudFormation, such as when using LocalStack to test
 > CloudFormation changes during development. If the `deploy` command results in
-> the system entering an unrecoverable state, restarting localstack by
+> the system entering an unrecoverable state, restarting LocalStack by
 > re-running `docker compose up -d -V`  and redeploying from the bootstrap
 > stage will be required.
 
