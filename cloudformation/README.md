@@ -50,7 +50,7 @@ cloudformation/
 1. **Configure deployment**
 
    - Copy `.env.aws.example` to `.env.aws` (in the project root)
-   - Edit `.env.aws` to customize stack names, deployment parameters, and AWS configuration
+   - Edit `.env.aws` to customize stack names and deployment parameters
    - Source the environment file: `source .env.aws`
 
 2. **Deploy bootstrap stack** (creates S3 bucket for deployment artifacts):
@@ -63,9 +63,10 @@ cloudformation/
        "ResourcePrefix=$RESOURCE_PREFIX"
    ```
 
-   Note the use of CloudFormation's `deploy` operation here and elsewhere, which is a
-   "create-or-update" style of operation. It will modify an existing stack, if one
-   exists.
+   > [!NOTE]
+   > The use of CloudFormation's `deploy` operation here and elsewhere, which is a
+   > "create-or-update" style of operation, will modify an existing stack, if one
+   > exists.
 
 3. **Package Lambda functions**:
 
@@ -193,7 +194,7 @@ arguments.
 
 1. **AWS CLI** installed and configured
 2. **Python 3.12+** for Lambda function packaging
-3. **Docker** to run the LocalStack via compose
+3. **Docker** to run LocalStack via compose
 
 ### Stack Deployment
 
