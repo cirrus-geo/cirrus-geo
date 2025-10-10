@@ -51,6 +51,7 @@ BUILD_DIR="${CF_DIR}/_build"
 CORE="${CF_DIR}/core"
 LAMBDA_PACKAGES="${CORE}/lambda-packages"
 LAMBDA_ZIP="${LAMBDA_PACKAGES}/cirrus-lambda-dist.zip"
+MINIMAL_DIR="${CF_DIR}/workflows/minimal"
 
 
 _build_lambda_dist() {
@@ -128,7 +129,7 @@ deploy() {
 
     aws cloudformation deploy \
         --stack-name "${MINIMAL_WORKFLOW_STACK}" \
-        --template-file "${CF_DIR}/workflows/minimal/state_machine.yaml" \
+        --template-file "${MINIMAL_DIR}/state_machine.yaml" \
         --parameter-overrides \
             "ResourcePrefix=${RESOURCE_PREFIX}" \
         --capabilities CAPABILITY_NAMED_IAM \
@@ -145,6 +146,48 @@ delete() {
     [ -z "${payload_bucket}" ] || [ "${payload_bucket}" == "None" ] || _empty_bucket "${payload_bucket}"
     aws cloudformation delete-stack --stack-name "${MAIN_STACK}"
     aws cloudformation wait stack-delete-complete --stack-name "${MAIN_STACK}"
+}
+
+_test() {
+    local total_tests=2 tests_failed=0 fail_rc=0 exp_fail_rc=10
+
+    ercho "Testing success case..."
+    <"${MINIMAL_DIR}/payload.json.template" cirrus payload template \
+        -x id_suffix "-$(uuidgen)" \
+        -x succeed true \
+        -x replace true \
+        | \
+        cirrus manage "${RESOURCE_PREFIX}" run-workflow -p 1 -t 30 && {
+            ercho "✅ Test passed"
+        } || {
+            ercho "❌ Expected rc 0, got ${$?}"
+            tests_failed=$((tests_failed+1))
+        }
+
+    ercho "Testing failure case..."
+    <"${MINIMAL_DIR}/payload.json.template" cirrus payload template \
+        -x id_suffix "-$(uuidgen)" \
+        -x succeed false \
+        -x replace true \
+        | \
+        cirrus manage "${RESOURCE_PREFIX}" run-workflow -p 1 -t 30 && {
+            ercho "❌ Expected rc 10, got 0"
+            tests_failed=$((tests_failed+1))
+        } || {
+            fail_rc=$?
+            [ "$fail_rc" -eq "$exp_fail_rc" ] && {
+                echo "✅ Test passed"
+            } || {
+                ercho "❌ Expected rc ${exp_fail_rc}, got ${fail_rc}"
+                tests_failed=$((tests_failed+1))
+            }
+        }
+
+    ercho "---"
+
+    [ "$tests_failed" -eq 0 ] || ercho "❌ Test failures: ${tests_failed} of ${total_tests}" 1
+
+    ercho "✅ All tests passed (${total_tests} of ${total_tests})" 0
 }
 
 
@@ -170,6 +213,7 @@ EOF
         debootstrap) debootstrap "${@}" ;;
         deploy)      deploy "${@}" ;;
         delete)      delete "${@}" ;;
+        test)        _test "${@}" ;;
         help|-h|--help) ercho "${usage}" 0 ;;
         ?*) ercho "unknown command: '$cmd'" 1 ;;
         *)  ercho "${usage}" 0 ;;
