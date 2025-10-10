@@ -16,18 +16,18 @@ Parameters:
   VpcCidr:
     Type: String
     Description: CIDR block for the VPC
-    Default: 10.0.0.0/16
+    Default: 10.1.0.0/16
     AllowedPattern: ^10\.\d{1,3}\.\d{1,3}\.\d{1,3}/16$
 
   PrivateSubnetCidr:
     Type: String
     Description: CIDR block for private subnet
-    Default: 10.0.10.0/24
+    Default: 10.1.10.0/24
 
   PublicSubnetCidr:
     Type: String
     Description: CIDR block for public subnet
-    Default: 10.0.1.0/24
+    Default: 10.1.1.0/24
 
   LogLevel:
     Type: String
@@ -48,6 +48,17 @@ Parameters:
     Type: String
     Description: CPU architecture for Lambda functions
 
+  EnableVpc:
+    Type: String
+    Description: Enable VPC creation and Lambda VPC configuration
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+Conditions:
+  CreateVpc: !Equals [!Ref EnableVpc, 'true']
+
 Resources:
   # Base Infrastructure Stack
   BaseStack:
@@ -64,9 +75,10 @@ Resources:
         - Key: Environment
           Value: !Ref ResourcePrefix
 
-  # VPC Stack
+  # VPC Stack (conditional)
   VpcStack:
     Type: AWS::CloudFormation::Stack
+    Condition: CreateVpc
     Properties:
       TemplateURL: core/vpc.yaml
       Parameters:
@@ -89,9 +101,9 @@ Resources:
       TemplateURL: core/functions.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
-        VpcId: !GetAtt VpcStack.Outputs.VpcId
-        SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnetIds
-        VpcCidr: !Ref VpcCidr
+        VpcId: !If [CreateVpc, !GetAtt VpcStack.Outputs.VpcId, '']
+        SubnetIds: !If [CreateVpc, !GetAtt VpcStack.Outputs.PrivateSubnetIds, '']
+        VpcCidr: !If [CreateVpc, !Ref VpcCidr, '']
         CirrusDataBucket: !GetAtt BaseStack.Outputs.CirrusDataBucket
         CirrusPayloadBucket: !GetAtt BaseStack.Outputs.CirrusPayloadBucket
         StateTable: !GetAtt BaseStack.Outputs.StateTable
@@ -185,18 +197,30 @@ Outputs:
     Description: SNS topic for workflow events
     Value: !GetAtt BaseStack.Outputs.WorkflowEventTopic
 
-  # VPC Stack Outputs
+  # VPC Stack Outputs (conditional)
   VpcId:
     Description: VPC ID for Lambda functions
-    Value: !GetAtt VpcStack.Outputs.VpcId
+    Value: !If
+      - CreateVpc
+      - !GetAtt VpcStack.Outputs.VpcId
+      - !Ref AWS::NoValue
+    Condition: CreateVpc
 
   PrivateSubnetIds:
     Description: Private Subnet ID for Lambda functions
-    Value: !GetAtt VpcStack.Outputs.PrivateSubnetIds
+    Value: !If
+      - CreateVpc
+      - !GetAtt VpcStack.Outputs.PrivateSubnetIds
+      - !Ref AWS::NoValue
+    Condition: CreateVpc
 
   PublicSubnetIds:
     Description: Public Subnet ID for NAT Gateway
-    Value: !GetAtt VpcStack.Outputs.PublicSubnetIds
+    Value: !If
+      - CreateVpc
+      - !GetAtt VpcStack.Outputs.PublicSubnetIds
+      - !Ref AWS::NoValue
+    Condition: CreateVpc
 
   # Functions Stack Outputs
   ApiLambdaName:
@@ -221,12 +245,20 @@ Outputs:
 
   LambdaSecurityGroupId:
     Description: Security group ID for Lambda functions
-    Value: !GetAtt FunctionsStack.Outputs.LambdaSecurityGroupId
+    Value: !If
+      - CreateVpc
+      - !GetAtt FunctionsStack.Outputs.LambdaSecurityGroupId
+      - !Ref AWS::NoValue
+    Condition: CreateVpc
 
   # API Stack Outputs
   ApiGatewayUrl:
     Description: API Gateway invoke URL
     Value: !GetAtt ApiStack.Outputs.ApiGatewayUrl
+
+  ApiGatewayId:
+    Description: API Gateway ID
+    Value: !GetAtt ApiStack.Outputs.ApiGatewayId
 
   # CLI Stack Outputs
   DeploymentName:

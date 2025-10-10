@@ -1,14 +1,14 @@
 # Cirrus CloudFormation Infrastructure
 
 This directory contains CloudFormation templates for deploying **cirrus-geo**
-infrastructure on AWS.
+infrastructure to AWS or LocalStack.
 
 ## Overview
 
 The CloudFormation implementation consists of:
 
 - **Base Infrastructure**: S3 buckets, DynamoDB state table, SQS queues, SNS topics
-- **VPC**: Virtual Private Cloud with public/private subnets
+- **VPC** (optional): Virtual Private Cloud with public/private subnets
 - **Lambda Functions**: 5 core functions (API, Process, Update State, Pre-Batch,
   Post-Batch) with IAM roles
 - **API Gateway**: REST API (EDGE) with Lambda integration and CloudWatch logging
@@ -21,14 +21,13 @@ The CloudFormation templates use nested stacks for organization.
 ```bash
 cloudformation/
 ├── main.yaml                   # Main template (entry point)
-├── parameters.json             # Parameter file with default values
 ├── bootstrap/
 │   └── bootstrap.yaml          # Bootstrap template (S3 bucket for deployment artifacts)
 ├── core/
 │   ├── base.yaml               # Base infrastructure template (S3, DynamoDB, SQS, SNS)
 │   ├── functions.yaml          # Lambda function template (functions, roles, security group)
 │   ├── api.yaml                # API Gateway template (for Cirrus API)
-│   ├── vpc.yaml                # VPC and networking template
+│   ├── vpc.yaml                # VPC and networking template (optional)
 │   └── lambda-packages/        # Zipped Python code for Lambda functions
 ├── cli/
 │   └── ssm_parameters.yaml     # CLI template (for deployment discovery via Parameter Store)
@@ -38,35 +37,21 @@ cloudformation/
         └── payload.json
 ```
 
-## Quick Start
+## AWS Deployment
 
 ### Prerequisites
 
 1. **AWS CLI** installed and configured
 2. **Python 3.12+** for Lambda function packaging
-3. AWS credentials with appropriate permissions
+3. AWS credentials with appropriate permissions in your environment
 
-### Basic Deployment
+### Bootstrap and Main Stack Deployment
 
-1. **Set parameters and required environment variables**
+1. **Configure deployment**
 
-   - Change parameters in `cloudformation/parameters.json` as needed.
-   - Set the bootstrap, main, and workflow CloudFormation stack names via environment
-     variables. For example:
-
-     ```bash
-     export BOOTSTRAP_STACK="cirrus-bootstrap"
-     export MAIN_STACK="cirrus-sandbox"
-     export MINIMAL_WORKFLOW_STACK="cirrus-sandbox-minimal-workflow"
-     ```
-
-   - Set the lambda python version and architecture via environment variables. These
-     must match the `parameters.json` entries. For example:
-
-     ```bash
-     export LAMBDA_PYTHON_VERSION="3.13"
-     export LAMBDA_ARCH="arm64"
-     ```
+   - Copy `.env.aws.example` to `.env.aws` (in the project root)
+   - Edit `.env.aws` to customize stack names and deployment parameters
+   - Source the environment file: `source .env.aws`
 
 2. **Deploy bootstrap stack** (creates S3 bucket for deployment artifacts):
 
@@ -74,12 +59,14 @@ cloudformation/
    aws cloudformation deploy \
      --stack-name "$BOOTSTRAP_STACK" \
      --template-file cloudformation/bootstrap/bootstrap.yaml \
-     --parameter-overrides file://cloudformation/parameters.json
+     --parameter-overrides \
+       "ResourcePrefix=$RESOURCE_PREFIX"
    ```
 
-   Note the use of CloudFormation's `deploy` operation here and elsewhere, which is a
-   "create-or-update" style of operation. It will modify an existing stack, if one
-   exists.
+   > [!NOTE]
+   > The use of CloudFormation's `deploy` operation here and elsewhere, which is a
+   > "create-or-update" style of operation, will modify an existing stack, if one
+   > exists.
 
 3. **Package Lambda functions**:
 
@@ -109,7 +96,15 @@ cloudformation/
    aws cloudformation deploy \
      --stack-name "$MAIN_STACK" \
      --template-file packaged-template.yaml \
-     --parameter-overrides file://cloudformation/parameters.json \
+     --parameter-overrides \
+       "ResourcePrefix=$RESOURCE_PREFIX" \
+       "LambdaPythonVersion=$LAMBDA_PYTHON_VERSION" \
+       "LambdaArch=$LAMBDA_ARCH" \
+       "LogLevel=$LOG_LEVEL" \
+       "EnableVpc=$ENABLE_VPC" \
+       "VpcCidr=$VPC_CIDR" \
+       "PrivateSubnetCidr=$PRIVATE_SUBNET_CIDR" \
+       "PublicSubnetCidr=$PUBLIC_SUBNET_CIDR" \
      --capabilities CAPABILITY_NAMED_IAM
    ```
 
@@ -121,20 +116,18 @@ cloudformation/
      --output table
    ```
 
-## Deploying Workflows
+### Workflow Deployment
 
 Workflows are deployed as separate stacks to allow rapid iteration without affecting the
-main infrastructure.
-
-### Minimal Workflow
-
-Deploy the minimal test workflow:
+main infrastructure. A minimal example workflow is provided in
+`cloudformation/workflows/minimal` and is deployed with:
 
 ```bash
 aws cloudformation deploy \
   --template-file cloudformation/workflows/minimal/state_machine.yaml \
   --stack-name "$MINIMAL_WORKFLOW_STACK" \
-  --parameter-overrides file://cloudformation/parameters.json \
+  --parameter-overrides \
+    "ResourcePrefix=$RESOURCE_PREFIX" \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
@@ -143,7 +136,7 @@ the first entry of the payload `process` block for a boolean `true` value. Use
 `workflows/minimal/payload.json` for testing. Set the `succeed` field to `false` to
 generate a failed state machine execution.
 
-## Cleanup
+### Stack Cleanup
 
 1. **Empty S3 buckets** (required before stack deletion):
 
@@ -184,4 +177,103 @@ generate a failed state machine execution.
    # Delete bootstrap stack:
    aws cloudformation delete-stack --stack-name "$BOOTSTRAP_STACK"
    aws cloudformation wait stack-delete-complete --stack-name "$BOOTSTRAP_STACK"
+   ```
+
+## LocalStack Deployment
+
+Deploying **cirrus-geo** to LocalStack is scripted for convenience. The script
+`bin/localstack-provision.bash` handles packaging and deployment of the bootstrap,
+main, and minimal workflow stacks and can also delete the stacks via command line
+arguments.
+
+```bash
+./bin/localstack-provision.bash [bootstrap|debootstrap|deploy|delete]
+```
+
+### Prerequisites
+
+1. **AWS CLI** installed and configured
+2. **Python 3.12+** for Lambda function packaging
+3. **Docker** to run LocalStack via compose
+
+### Stack Deployment
+
+1. **Configure deployment**
+
+   - Copy `.env.localstack.example` to `.env.localstack` (in the project root)
+   - Edit `.env.localstack` to customize stack names, Lambda configuration, and other
+     deployment parameters
+   - Source the environment file: `source .env.localstack`
+
+2. **Start LocalStack**
+
+   ```bash
+   docker compose up -d -V
+   ```
+
+3. **Deploy the bootstrap stack**
+
+   ```bash
+   ./bin/localstack-provision.bash bootstrap
+   ```
+
+4. **Deploy the main and minimal workflow stacks**
+
+   ```bash
+   ./bin/localstack-provision.bash deploy
+   ```
+
+The `deploy` command can be used repeatedly as an idempotent way to apply stack
+updates.
+
+> [!NOTE]
+> Sometimes LocalStack can get into a broken state when trying to
+> apply/rollback bad CloudFormation, such as when using LocalStack to test
+> CloudFormation changes during development. If the `deploy` command results in
+> the system entering an unrecoverable state, restarting LocalStack by
+> re-running `docker compose up -d -V`  and redeploying from the bootstrap
+> stage will be required.
+
+### Interacting with LocalStack-deployed Infrastructure
+
+You can use standard AWS CLI commands to interact with the LocalStack-deployed
+infrastructure. For example, to list S3 buckets:
+
+```bash
+aws s3 ls
+```
+
+To call the API Gateway endpoint, you will need the API ID:
+
+```bash
+API_ID=$(aws cloudformation describe-stacks \
+  --stack-name "$MAIN_STACK" \
+  --query 'Stacks[0].Outputs[?OutputKey==`ApiGatewayId`].OutputValue' \
+  --output text)
+```
+
+Then:
+
+```bash
+curl "http://localhost:4566/restapis/${API_ID}/dev/_user_request_/<desired_path>"
+```
+
+For example, to list items in the state database for the minimal workflow:
+
+```bash
+curl "http://localhost:4566/restapis/${API_ID}/dev/_user_request_/collection/workflow-minimal/items"
+```
+
+### Stack Cleanup
+
+1. **Delete the main stack**
+
+   ```bash
+   ./bin/localstack-provision.bash delete
+   ```
+
+2. **Delete the bootstrap stack**
+
+   ```bash
+   ./bin/localstack-provision.bash debootstrap
    ```

@@ -148,7 +148,8 @@ def create_base_zip(site_packages: Path, zip_path: Path) -> None:
             name = str(arcname)
             if name in PATCHES:
                 print(f"Patching file {arcname}")
-                zf.writestr(name, PATCHES[name](file_path))
+                info = zipfile.ZipInfo.from_file(file_path, arcname)
+                zf.writestr(info, PATCHES[name](file_path))
                 continue
 
             zf.write(file_path, arcname)

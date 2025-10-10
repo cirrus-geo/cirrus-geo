@@ -1,0 +1,16 @@
+services:
+  localstack:
+    image: localstack/localstack:4
+    container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-cirrus}"
+    restart: always
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    environment:
+      DEBUG: "${DEBUG:-1}"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      default:
+        aliases:
+          - localstack.local

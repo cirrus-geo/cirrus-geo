@@ -1,8 +1,11 @@
-packaged-template.yaml
+**/packaged-template.yaml
 cirrus-lambda-dist*.zip
 output/
 .DS_Store
 __version__.py
+.localstack-volume
+.env.aws
+.env.localstack
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

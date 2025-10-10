@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Lambda packaging script now produces zip files for all combinations of Python 3.12 and
   3.13 and arm64 and x86_64 architectures. ([#338])
+- Lambda packaging script patches stac-task `__init__.py` for faster startup ([#338])
+- Lambda packaging ensures proper file permissions on patched files ([#340])
 
 ## [v1.1.1] - 2025-10-01
 
@@ -1155,12 +1157,10 @@ Initial release
 [#326]: https://github.com/cirrus-geo/cirrus-geo/pull/326
 [#330]: https://github.com/cirrus-geo/cirrus-geo/pull/330
 [#331]: https://github.com/cirrus-geo/cirrus-geo/pull/331
-<<<<<<< HEAD
 [#337]: https://github.com/cirrus-geo/cirrus-geo/pull/337
-[#339]: https://github.com/cirrus-geo/cirrus-geo/pull/339
-=======
 [#338]: https://github.com/cirrus-geo/cirrus-geo/pull/338
->>>>>>> 81b11be (chore: add CHANGELOG entry)
+[#339]: https://github.com/cirrus-geo/cirrus-geo/pull/339
+[#340]: https://github.com/cirrus-geo/cirrus-geo/pull/340
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
