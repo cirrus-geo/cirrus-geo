@@ -93,12 +93,13 @@ def run_workflow(
     retrieve and return its output payload"""
     payload = json.loads(sys.stdin.read())
 
-    output = deployment.run_workflow(
+    rc, output = deployment.run_workflow(
         payload=payload,
         timeout=timeout,
         poll_interval=poll_interval,
     )
     click.echo(json.dumps(output, indent=(4 if not raw else None)))
+    sys.exit(rc)
 
 
 @manage.command("get-payload")

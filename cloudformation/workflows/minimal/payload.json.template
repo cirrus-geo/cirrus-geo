@@ -1,0 +1,12 @@
+{
+    "type": "FeatureCollection",
+    "features": [],
+    "process": [
+        {
+            "workflow": "minimal",
+            "succeed": ${succeed?true},
+            "replace": ${replace?false}
+        }
+    ],
+    "id": "collection/workflow-minimal/item${id_suffix?}"
+}
