@@ -254,7 +254,7 @@ class Deployment:
         payload: dict,
         timeout: int = 3600,
         poll_interval: int = WORKFLOW_POLL_INTERVAL,
-    ) -> dict[str, Any]:
+    ) -> tuple[int, dict[str, Any]]:
         """
 
         Args:
@@ -289,15 +289,13 @@ class Deployment:
 
         execution = self.get_execution_by_payload_id(wf_id)
 
-        output: dict[str, Any]
         if state == "COMPLETED":
-            output = CirrusPayload.from_event(json.loads(execution["output"]))
-        elif state == "PROCESSING":
-            output = {"last_error": "Unkonwn: cirrus-mgmt polling timeout exceeded"}
-        else:
-            output = {"last_error": resp.get("last_error", "last error not recorded")}
+            return 0, CirrusPayload.from_event(json.loads(execution["output"]))
 
-        return output
+        if state == "PROCESSING":
+            return 11, {"last_error": "Unkonwn: cirrus-mgmt polling timeout exceeded"}
+
+        return 10, {"last_error": resp.get("last_error", "last error not recorded")}
 
     def template_payload(
         self,

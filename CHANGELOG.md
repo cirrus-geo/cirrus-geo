@@ -16,10 +16,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- Lambda packaging script now produces zip files for all combinations of Python 3.12 and
-  3.13 and arm64 and x86_64 architectures. ([#338])
-- Lambda packaging script patches stac-task `__init__.py` for faster startup ([#338])
+- Lambda packaging script now produces zip files for all combinations of Python
+  3.12 and 3.13 and arm64 and x86_64 architectures. ([#338])
+- Lambda packaging script patches stac-task `__init__.py` for faster startup
+  ([#338])
 - Lambda packaging ensures proper file permissions on patched files ([#340])
+- The management CLI `run-workflow` command now returns non-zero on error (`10`
+  in the event of a failed run, `11` in the case of a timeout; [#344])
 
 ## [v1.1.1] - 2025-10-01
 
