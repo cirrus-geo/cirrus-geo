@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds CloudFormation for a minimal Cirrus deployment. ([#338])
+- CLI payload templating now supports default values specified in templates,
+  using a syntax like `${var_name?default value}`. The default value can be any
+  string except those that contain a `}`. ([#344])
 
 ### Changed
 
@@ -1161,6 +1164,7 @@ Initial release
 [#338]: https://github.com/cirrus-geo/cirrus-geo/pull/338
 [#339]: https://github.com/cirrus-geo/cirrus-geo/pull/339
 [#340]: https://github.com/cirrus-geo/cirrus-geo/pull/340
+[#344]: https://github.com/cirrus-geo/cirrus-geo/pull/344
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
