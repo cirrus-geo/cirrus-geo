@@ -53,10 +53,12 @@
 <li class="toctree-l1"><a class="reference internal" href="60_components.html">Cirrus Components</a></li>
 <li class="toctree-l1"><a class="reference internal" href="65_cloudformation.html">Cloudformation Support</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">State Database</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#what-is-dynamodb">What is DynamoDB?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-dynamodb">Why DynamoDB?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#managed-service">Managed Service</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#schema">Schema</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#using-cirrus-lib-to-interact-with-state-database">Using cirrus-lib to interact with state database</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#using-the-cirrus-api">Using the Cirrus API</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#deleting-items-from-database">Deleting items from database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#statedb-and-cirrus-cli">StateDB and Cirrus CLI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deleting-statedb-items">Deleting StateDB items</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
@@ -104,17 +106,94 @@
              
   <section id="state-database">
 <h1>State Database<a class="headerlink" href="#state-database" title="Link to this heading"></a></h1>
+<p>The state database (StateDB) is a serverless Amazon Web Services (AWS) DynamoDB
+table used by Cirrus to track the state of workflows executions.  As seen
+in the <a class="reference internal" href="20_arch.html"><span class="doc">architecture</span></a> the StateDB is an independant piece of AWS
+infrastructure.  It is a critical component of Cirrus that ensures workflow
+state and executions are properly tracked as part of <a class="reference internal" href="80_monitoring.html"><span class="doc">monitoring</span></a> pipeline success, failure, errors, avoiding duplicate
+workflows, and flagging invalid payloads.</p>
+<p>The StateDB is accessed by Cirrus at different stages of workflow execution.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">process</span></code> lambda: acesses the StateDB to check existing states and skip
+payloads that have successfully completed, and fire off TimeStream events in
+the event of encountering an already “failed” or “invalid” payload.  It will
+also make state updates upon initializing a workflow execution.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">api</span></code> lambda: when queried for aggregate statistics, the lambada will call
+the StateDB to get execution summary counts based on query inputs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">update_state</span></code> lambda: updates StateDB table after step function workflow
+execution termination, successful or not.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">management</span></code> cli: directly connects to the StateDB to get workflow status,
+inputs, and outputs.</p></li>
+</ul>
+<section id="what-is-dynamodb">
+<h2>What is DynamoDB?<a class="headerlink" href="#what-is-dynamodb" title="Link to this heading"></a></h2>
+<p>DynamoDB is a serverless, highly scalable non-relational (NoSQL) database
+provisioned and managed by AWS.  This means that DynamoDB is a “key-value”
+database, not a relational database like Postgres or AWS RDS.  In a NoSQL
+database like DynamoDB there are ‘items’ and each item has ‘attributes’, and
+items are independant of each other.  This simplified structures allows
+DynamoDB to be optimized for read/write at any scale.</p>
+<p>Additionally as a NoSQL database, DynamoDB does not require a predefined
+schema and permits different items to have different attributes unlike the
+rigid schemas of relational databases, providing flexibility for users to add
+attributes if needed.</p>
+</section>
+<section id="why-dynamodb">
+<h2>Why DynamoDB?<a class="headerlink" href="#why-dynamodb" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>serverless</p></li>
+<li><p>optimized for scalable read/write</p></li>
+<li><p>non-relational</p></li>
+</ul>
+<p>Cirrus itself handles business logic regarding when and how to make updates to
+the StateDB and with no relationships between distinct workflow executions, the
+StateDB only needs a “key-value” store for lookup.  As a managed, scalabale
+“key-value” store DynamoDB is the AWS service that best meets Cirrus needs.</p>
+</section>
+<section id="managed-service">
+<h2>Managed Service<a class="headerlink" href="#managed-service" title="Link to this heading"></a></h2>
+<p>As a managed AWS service DynamoDB handles provisoning and maintaining the
+underlying storage and scaling infrastructure as your data scales up or down.
+This allows Cirrus to focus on the business logic of state management.
+Additonally, DynamoDB is optimized by AWS for rapid read/writes at any scale.</p>
+</section>
 <section id="schema">
 <h2>Schema<a class="headerlink" href="#schema" title="Link to this heading"></a></h2>
+<p>While DynamoDB does not necessitate a predefined schema like a relational
+databse, there are attributes that are required for core Cirrus functionality.</p>
+<p>Required Fields:
+These fields are required for out-of-the-box functionality of Cirrus</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">collections_workflow</span></code> (<em>string</em>):  a unique “partition key” constructed
+from a Cirrus payload’s <code class="docutils literal notranslate"><span class="pre">payload_id</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">itemIDs</span></code> (<em>string</em>): a unique ID field extrated from a payload ID</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">created</span></code> (<em>string</em>): UTC time when record was created</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">executions</span></code> (<em>list[string]</em>): ARNs of state machine executions.  May have
+multiple records in this field if a payload is submitted multiple time, or
+part of chained workflows</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">state_updated</span></code> (<em>string</em>): Concatenated string of state + UTC time of last
+updated</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">updated</span></code> (<em>string</em>): UTC time when the record was most recently updated</p></li>
+</ul>
 </section>
-<section id="using-cirrus-lib-to-interact-with-state-database">
-<h2>Using cirrus-lib to interact with state database<a class="headerlink" href="#using-cirrus-lib-to-interact-with-state-database" title="Link to this heading"></a></h2>
+<section id="statedb-and-cirrus-cli">
+<h2>StateDB and Cirrus CLI<a class="headerlink" href="#statedb-and-cirrus-cli" title="Link to this heading"></a></h2>
+<p>Selected Cirrus CLI commands interact with the StateDB.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">get-payloads</span></code> command takes in query parameters to retrieve input
+payloads in bulk, returned as new line delimited JSON.</p>
+<p>Input query parameters are used as filters against the StateDB to retrieve
+records matching certain criteria, like entires with a <code class="docutils literal notranslate"><span class="pre">FAILED</span></code> workflow
+status that occured in the past week.  These returned StateDB records are used
+to retrieve input payloads from the S3 payload bucket which are returned to the
+user.</p>
+<p>More information about the <code class="docutils literal notranslate"><span class="pre">get-payloads</span></code> command can be found in the CLI
+documentation</p>
 </section>
-<section id="using-the-cirrus-api">
-<h2>Using the Cirrus API<a class="headerlink" href="#using-the-cirrus-api" title="Link to this heading"></a></h2>
-</section>
-<section id="deleting-items-from-database">
-<h2>Deleting items from database<a class="headerlink" href="#deleting-items-from-database" title="Link to this heading"></a></h2>
+<section id="deleting-statedb-items">
+<h2>Deleting StateDB items<a class="headerlink" href="#deleting-statedb-items" title="Link to this heading"></a></h2>
+<p>The deletion of records from the StateDB is not generally necessary.  In the
+unlikely case doing so required, the <cite>cirrus.statedb.StateDB.delete_item()`</cite>
+method can be used to delete a state record based on its <code class="docutils literal notranslate"><span class="pre">payload_id</span></code>.</p>
 </section>
 </section>
 

@@ -54,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="65_cloudformation.html">Cloudformation Support</a></li>
 <li class="toctree-l1"><a class="reference internal" href="70_statedb.html">State Database</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Pipeline Monitoring</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#state-tracking">State Tracking</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#cirrus-api">Cirrus API</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#aws-console">AWS Console</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#step-functions">Step Functions</a></li>
@@ -106,6 +107,12 @@
              
   <section id="pipeline-monitoring">
 <h1>Pipeline Monitoring<a class="headerlink" href="#pipeline-monitoring" title="Link to this heading"></a></h1>
+<section id="state-tracking">
+<h2>State Tracking<a class="headerlink" href="#state-tracking" title="Link to this heading"></a></h2>
+<p>Tracking the state of workflow executions is essential for pipeline monitorig,
+successes and failures.  This is facilitated by the <a class="reference internal" href="70_statedb.html"><span class="doc">StateDB</span></a>, and AWS DynamoDB table where execution statuses are stored,
+managed, and updated.</p>
+</section>
 <section id="cirrus-api">
 <h2>Cirrus API<a class="headerlink" href="#cirrus-api" title="Link to this heading"></a></h2>
 </section>
