@@ -13,7 +13,7 @@ class DefaultableTemplate(Template):
     # Note this pattern works for any default value _except_
     # those with a `}` in them. To accommodate such defaults
     # would require a significantly more complex implementation.
-    # We be better off switching to a real templating solution
+    # We will be better off switching to a real templating solution
     # if that becomes a need.
     pattern = r"""
     \$(?:

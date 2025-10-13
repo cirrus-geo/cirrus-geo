@@ -204,6 +204,8 @@ Supported Commands:
   debootstrap  tear down cirrus bootstrap stack
   deploy       set up/update cirrus sandbox deployment
   delete       tear down cirrus sandbox deployment
+  test         submit successful and failing workflow
+                 payloads and verify results
 EOF
     )
 
