@@ -61,8 +61,6 @@ Schema
 ------
 While DynamoDB does not necessitate a predefined schema like a relational
 databse, there are attributes that are required for core Cirrus functionality.
-Because DynamoDB does not require a predefined schema users may add additional
-fields if necessary.
 
 Required Fields:
 These fields are required for out-of-the-box functionality of Cirrus
@@ -98,7 +96,6 @@ documentation
 Deleting StateDB items
 -----------------------
 
-The deletion of records from the StateDB is strongly discouraged, and almost
-certainly unnecessary.  For the unlikely case it is required, there is a
-``delete_item`` method of the ``StateDB`` class.  That can be used to delete
-a record, based on its ``payload_id``.
+The deletion of records from the StateDB is not generally necessary.  In the
+unlikely case doing so required, the `cirrus.statedb.StateDB.delete_item()``
+method can be used to delete a state record based on its ``payload_id``.
