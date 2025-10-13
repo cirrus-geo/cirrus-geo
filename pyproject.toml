@@ -55,7 +55,6 @@ dev = [
 ]
 docs = [
     "sphinx",
-    "myst_parser",
     "sphinxcontrib-mermaid",
     "sphinx-click",
     "sphinx-rtd-theme",
