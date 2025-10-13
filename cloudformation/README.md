@@ -131,10 +131,36 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-The minimal workflow contains a single `ChoiceState` that checks the `succeed` field in
-the first entry of the payload `process` block for a boolean `true` value. Use
-`workflows/minimal/payload.json` for testing. Set the `succeed` field to `false` to
-generate a failed state machine execution.
+The minimal workflow contains a single `ChoiceState` that checks the `succeed`
+field in the first entry of the payload `process` block for a boolean `true`
+value. Use `cloudformation/workflows/minimal/payload.json.template` for
+testing:
+
+```bash
+<cloudformation/workflows/minimal/payload.json.template cirrus payload template \
+    | cirrus management $RESOURCE_PREFIX run-workflow
+```
+
+Set the `succeed` field to `false` to generate a failed state machine
+execution via the cirrus cli payload templating function:
+
+```bash
+<cloudformation/workflows/minimal/payload.json.template cirrus payload template \
+    -x succeed false \
+    | cirrus management $RESOURCE_PREFIX run-workflow
+```
+
+The `replace` flag can also be set to `true` if desired (default false), and a
+unique ID can be created by setting the `id_suffix` var (default is not set a
+suffix).
+
+```bash
+<cloudformation/workflows/minimal/payload.json.template cirrus payload template \
+    -x succeed false \
+    -x replace true \
+    -x id_suffix "-$(uuidgen)" \
+    | cirrus management $RESOURCE_PREFIX run-workflow
+```
 
 ### Stack Cleanup
 
