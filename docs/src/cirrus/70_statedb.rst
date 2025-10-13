@@ -94,7 +94,7 @@ More information about the ``get-payloads`` command can be found in the CLI
 documentation
 
 Deleting StateDB items
------------------------
+----------------------
 
 The deletion of records from the StateDB is not generally necessary.  In the
 unlikely case doing so required, the `cirrus.statedb.StateDB.delete_item()``

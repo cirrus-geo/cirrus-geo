@@ -17,42 +17,42 @@ minimal Cirrus workflow ``state-machine.json``
 
 .. code-block:: JSON
 
-  {
-    "Comment": "Simple example that just publishes input Collections and items",
-    "StartAt": "publish",
-    "States": {
-        "publish": {
-            "Type": "Task",
-            "Resource": "!GetAtt publish.Arn",
-            "End": true,
-            "Retry": [
-                {
-                    "ErrorEquals": [
-                        "Lambda.TooManyRequestsException",
-                        "Lambda.Unknown"
-                    ],
-                    "IntervalSeconds": 1,
-                    "BackoffRate": 2,
-                    "MaxAttempts": 5
-                }
-            ],
-            "Catch": [
-                {
-                    "ErrorEquals": [
-                        "States.ALL"
-                    ],
-                    "ResultPath": "$.error",
-                    "Next": "failure"
-                }
-            ]
-        },
-        "failure": {
-            "Type": "Fail",
-            "Error": "$.error.Error",
-            "Cause": "$.error.Cause"
+    {
+        "Comment": "Simple example that just publishes input Collections and items",
+        "StartAt": "publish",
+        "States": {
+            "publish": {
+                "Type": "Task",
+                "Resource": "!GetAtt publish.Arn",
+                "End": true,
+                "Retry": [
+                    {
+                        "ErrorEquals": [
+                            "Lambda.TooManyRequestsException",
+                            "Lambda.Unknown"
+                        ],
+                        "IntervalSeconds": 1,
+                        "BackoffRate": 2,
+                        "MaxAttempts": 5
+                    }
+                ],
+                "Catch": [
+                    {
+                        "ErrorEquals": [
+                            "States.ALL"
+                        ],
+                        "ResultPath": "$.error",
+                        "Next": "failure"
+                    }
+                ]
+            },
+            "failure": {
+                "Type": "Fail",
+                "Error": "$.error.Error",
+                "Cause": "$.error.Cause"
+            }
         }
     }
-}
 
 The top-level keys in this example are among those supported by the
 serverless-step-functions plugin, with the exception of ``enabled``, which is a

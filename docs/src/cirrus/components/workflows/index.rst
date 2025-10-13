@@ -11,14 +11,14 @@ the `AWS States Language`_. Workflows are defined in ``state-machine.json`` file
 
 These ``state-machine.json`` files define the entire step function workflow.  A non exhaustive list of configuarable are :
 
-   * task definitions
-   * task input parameters
-   * task output parameters
-   * job definition
-   * job name
-   * task retry config
-   # error handling
-   * resource ARNs
+* task definitions
+* task input parameters
+* task output parameters
+* job definition
+* job name
+* task retry config
+* error handling
+* resource ARNs
 
 The :doc:`state database <../../70_statedb>` tracks the state of items
 processed at the workflow level.
