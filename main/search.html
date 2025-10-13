@@ -24,7 +24,7 @@
 import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
 window.addEventListener("load", () => mermaid.run());
 </script>
-      <script src="_static/js/versions-loader.js?v=d43487cb"></script>
+      <script src="_static/js/versions-loader.js?v=38b9fbf7"></script>
     <script src="_static/js/theme.js"></script>
     <script src="_static/searchtools.js"></script>
     <script src="_static/language_data.js"></script>
@@ -137,7 +137,22 @@ window.addEventListener("load", () => mermaid.run());
       </div>
     </section>
   </div>
-  <script>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: main
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
