@@ -2,47 +2,57 @@ Writing workflow definitions
 ============================
 
 Cirrus workflows, being implemented via `AWS Step Functions`_, are written in
-the `AWS States Language`_. Like all Cirrus components, workflows require both a
-``definition.yml`` file and a ``README.md`` file. Cirrus uses the Serverless
-plugin `serverless-step-functions`_ to underlay the workflow definitions and
-therefore the ``definition.yml`` format is more or less as documented by the
-plugin.
+the `AWS States Language`_.
 
 .. _AWS Step Functions:
    https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html
 .. _AWS States Language:
    https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html
-.. _serverless-step-functions:
-   https://www.serverless.com/plugins/serverless-step-functions
-
 
 Simple example
 --------------
 
 We can use the built-in ``publish-only`` workflow as a simple example of a
-minimal Cirrus workflow ``definition.yml``::
+minimal Cirrus workflow ``state-machine.json``
 
-    name: '#{AWS::StackName}-publish-only
-    enabled: true
-    definition:
-      Comment: Simple example that just publishes input Collections and items
-      StartAt: publish
-      States:
-        publish:
-          Type: Task
-          Resource: !GetAtt publish.Arn
-          End: True
-          Retry:
-            - ErrorEquals: ["Lambda.TooManyRequestsException", "Lambda.Unknown"]
-              IntervalSeconds: 1
-              BackoffRate: 2.0
-              MaxAttempts: 5
-          Catch:
-            - ErrorEquals: ["States.ALL"]
-              ResultPath: $.error
-              Next: failure
-        failure:
-          Type: Fail
+.. code-block:: JSON
+
+  {
+    "Comment": "Simple example that just publishes input Collections and items",
+    "StartAt": "publish",
+    "States": {
+        "publish": {
+            "Type": "Task",
+            "Resource": "!GetAtt publish.Arn",
+            "End": true,
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "Lambda.TooManyRequestsException",
+                        "Lambda.Unknown"
+                    ],
+                    "IntervalSeconds": 1,
+                    "BackoffRate": 2,
+                    "MaxAttempts": 5
+                }
+            ],
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "ResultPath": "$.error",
+                    "Next": "failure"
+                }
+            ]
+        },
+        "failure": {
+            "Type": "Fail",
+            "Error": "$.error.Error",
+            "Cause": "$.error.Cause"
+        }
+    }
+}
 
 The top-level keys in this example are among those supported by the
 serverless-step-functions plugin, with the exception of ``enabled``, which is a
