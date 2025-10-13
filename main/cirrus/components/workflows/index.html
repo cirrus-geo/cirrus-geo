@@ -74,7 +74,6 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../components/functions/index.html">Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../components/tasks/index.html">Tasks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/workflows/index.html">Workflows</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Cirrus CLI READMEs</span></p>
 <ul>
@@ -115,10 +114,24 @@
 <p>Cirrus workflows are the component that puts the “pipe” in “pipeline”.
 Workflows model a transformation of an input item or set of input items with a
 process definition into one or more output items via processing from one or
-more tasks.</p>
-<p>Cirrus also provides several mechanisms for modeling workflow dependencies.</p>
-<p>The <a class="reference internal" href="../../70_statedb.html"><span class="doc">state database</span></a> tracks the state of items processed at
-the workflow level.</p>
+more tasks.  Workflows are composed of one or more “tasks”.</p>
+<p>Cirrus workflows, being implemented via <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions</a>, are written in
+the <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html">AWS States Language</a>. Workflows are defined in <code class="docutils literal notranslate"><span class="pre">state-machine.json</span></code> files and require a companion <code class="docutils literal notranslate"><span class="pre">README.md</span></code>.</p>
+<p>These <code class="docutils literal notranslate"><span class="pre">state-machine.json</span></code> files define the entire step function workflow.  A non exhaustive list of configuarable are :</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>task definitions</p></li>
+<li><p>task input parameters</p></li>
+<li><p>task output parameters</p></li>
+<li><p>job definition</p></li>
+<li><p>job name</p></li>
+<li><p>task retry config</p></li>
+</ul>
+<p># error handling
+* resource ARNs</p>
+</div></blockquote>
+<p>The <a class="reference internal" href="../../70_statedb.html"><span class="doc">state database</span></a> tracks the state of items
+processed at the workflow level.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Workflow topics:</span></p>
 <ul>
