@@ -64,7 +64,7 @@ to use a Parallel block with retry to wrap the Batch steps.
 
 It is also critical to ensure that errors are properly passed out of the state
 machine so that they can be accessed by the ``update-state`` lambda via the
-EventBridge event.  This is done by properly confiuring the fail state to
+EventBridge event.  This is done by properly configuring the fail state to
 contain errors so that stack track information from say a failure in a
 container is passed out to the step function for proper preservation in the
 state database.  The example below demonstrates how the ``Fail`` state in your
@@ -83,17 +83,33 @@ overhead of placing the jobs onto compute resources will dominate the runtime,
 and will result in a slow and inefficient pipeline. A few examples in Earth
 Search are:
 
-* **Landsat SNS topic (public-c2-notify-v2)**: Includes many "Real-Time" (RT)   scenes that are ignored. These result in a runtime of only a few seconds. If these were run  with Batch, there would be a few minute overhead for job placement (incurring the cost of the EC2 instances for that time) for only a few seconds of actual use.
+* **Landsat SNS topic (public-c2-notify-v2)**: Includes many "Real-Time" (RT)
+  scenes that are ignored. These result in a runtime of only a few seconds. If
+  these were run  with Batch, there would be a few minute overhead for job
+  placement (incurring the cost of the EC2 instances for that time) for only a
+  few seconds of actual use.
 
-  * Even without the aforementioned RT scenes, Landsat ingest uses Lambda instead of Batch because the task is only performing a metadata-to-metadata conversion that takes tens of seconds per scene. The overhead for Batch is far greater than the actual runtime, and the task runtime is both low (much less than the Lambda maximum of 15 minutes) and consistent.
+  * Even without the aforementioned RT scenes, Landsat ingest uses Lambda
+    instead of Batch because the task is only performing a metadata-to-metadata
+    conversion that takes tens of seconds per scene. The overhead for Batch is
+    far greater than the actual runtime, and the task runtime is both low (much
+    less than the Lambda maximum of 15 minutes) and consistent.
 
-* **Sentinel-2 Collection 1 Level-L2A**: This collection only includes items with a "processing baseline" value of 05.00 or higher. All newly-acquired scenes have this processing baseline, but when back-processing the catalog, about half of the scenes have an older baseline and are immediately ignored. This meant that half of the Batch Jobs ran for seconds and half ran for 5-10 minutes. The batch jobs that ran for seconds caused a signficant increase in cost and decrease in throughput. A better solution would have been to have an initial Lambda that checked only if the processing baseline was appropriate, and only allowed the Batch job to run if it was.
+* **Sentinel-2 Collection 1 Level-L2A**: This collection only includes items
+  with a "processing baseline" value of 05.00 or higher. All newly-acquired
+  scenes have this processing baseline, but when back-processing the catalog,
+  about half of the scenes have an older baseline and are immediately ignored.
+  This meant that half of the Batch Jobs ran for seconds and half ran for 5-10
+  minutes. The batch jobs that ran for seconds caused a signficant increase in
+  cost and decrease in throughput. A better solution would have been to have an
+  initial Lambda that checked only if the processing baseline was appropriate,
+  and only allowed the Batch job to run if so.
 
 Another consideration is with error handing and InvalidInputs. Tasks that raise
 InvalidInput exceptions are indicating that the payload can never be processed
 correctly. A trivial example of this would be a process payload with only an ID
-value and no other information. This is contrasted with a valid payload that
-fails because of something that can be corrected, such as a code bug.
+value and no other information. Contrast that scenario with a valid payload
+that fails because of something that can be corrected, such as a code bug.
 
 
 Minimal example
