@@ -52,8 +52,10 @@ def main(gh_pages_dir):
     latest.symlink_to(LATEST_TARGET)
     all_versions.add(LATEST_LINK_NAME)
 
-    # write list of versions to versions file
-    gh_pages_dir.joinpath("versions.txt").write_text("\n".join(all_versions))
+    # write sorted list of versions to versions file
+    gh_pages_dir.joinpath("versions.txt").write_text(
+        "\n".join(sorted(all_versions)),
+    )
 
     # create index.html redirect
     index_version = stable_version if stable_version else LATEST_LINK_NAME
