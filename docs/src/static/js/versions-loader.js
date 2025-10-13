@@ -1,11 +1,8 @@
-let dataRootUrl = "";
 const docOptionsElm = document.getElementById("documentation_options");
 const htmlElm = document.getElementsByTagName("html")[0];
-if (docOptionsElm) {
-  dataRootUrl = docOptionsElm.getAttribute("data-url_root");
-} else {
-  dataRootUrl = htmlElm.getAttribute("data-content_root");
-}
+const dataRootUrl = docOptionsElm != null ?
+    docOptionsElm.getAttribute("data-url_root")
+    : htmlElm.getAttribute("data-content_root");
 
 const findRoot = () => {
   const href = window.location.href;
