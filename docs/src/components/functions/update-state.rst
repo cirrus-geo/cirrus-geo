@@ -5,7 +5,7 @@ Updates the dynamoDB state database with the State Function execution
 results.
 
 Completion of a State Function execution can also be used to chain
-additonal workflow steps with pushing messages to SQS or SNS for
+additional workflow steps with pushing messages to SQS or SNS for
 additional steps beyond the core cirrus workflow, like triggering a
 lambda to push an output STAC Item to a STAC API.
 

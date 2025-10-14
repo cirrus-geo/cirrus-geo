@@ -269,7 +269,7 @@ use-case perfectly.
 Batch retries vs step function retries
 --------------------------------------
 
-Whenver possible, using the step function retry semantics over those provided by
+Whenever possible, using the step function retry semantics over those provided by
 Batch is preferred. While Batch retries can be used without having to manage the
 additional complexity of the ``parallel`` block, Batch retries regardless of
 error type, while step function retries allow matching specific error types,

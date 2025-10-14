@@ -1,21 +1,17 @@
 post-batch
 ==========
 
-A lambda related to running Batch tasks, required to work around
-limitations of AWS Batch and facilitates batch tasks to have the same
-step-function API as a lambda based task
+A lambda related to running Batch tasks, required to work around limitations of
+AWS Batch and facilitates batch tasks to have the same step-function API as a
+lambda-based task.
 
-The ``post-batch`` lambda preforms a function similar to that of the
-``pre-batch`` lambdas. A ``Batch`` task will execute the predefined
-workflow and push the output to S3. The ``post-batch`` lambda will take
-outputs from S3 and passes the payloads to the next task in the
-workflow.
+In other words, the ``post-batch`` task performs a function similar to but
+opposite that of the ``pre-batch`` task. A completed ``Batch`` task must push
+its output to S3. The ``post-batch`` task will take said output from S3 and
+pass it along to the next task in the workflow. The combination of
+``pre-batch`` and ``post-batch`` with a batch task emulates how a lambda task
+is able to consume and return the JSON payload directly.
 
-It also handles errors that come out of the ``Batch`` workflow, errors
-that can be related to either the Batch job itself or cirrus task
-related errors, and re-raises these errors in the step-function context.
-
-Trigger
--------
-
-The completion of any cirrus ``Batch`` task
+It also handles errors that come out of the ``Batch`` workflow, errors that can
+be related to either the Batch job itself or cirrus task related errors, and
+re-raises these errors in the step-function context.

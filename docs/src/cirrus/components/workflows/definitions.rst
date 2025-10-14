@@ -12,7 +12,7 @@ the `AWS States Language`_.
 Simple example
 --------------
 
-We can use the built-in ``publish-only`` workflow as a simple example of a
+We can use the idea of a ``publish-only`` workflow as a simple example of a
 minimal Cirrus workflow ``state-machine.json``
 
 .. code-block:: JSON
@@ -53,11 +53,6 @@ minimal Cirrus workflow ``state-machine.json``
             }
         }
     }
-
-The top-level keys in this example are among those supported by the
-serverless-step-functions plugin, with the exception of ``enabled``, which is a
-Cirrus-specific parameter that controls whether this workflow definition should
-be included or not when compiling the Serverless configuration.
 
 
 Workflow naming

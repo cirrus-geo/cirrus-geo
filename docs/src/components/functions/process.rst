@@ -17,19 +17,14 @@ There are multiple ways to trigger the ``process`` lambda.
 - Send a message to the SQS queue using the CLI tool ``process``
   command.
 
-The SQS message can be used to send a single payload, or batch payloads
-to trigger workflows at volume with a single message (e.g. bulk image
-processing). Once these lambda has ingested a payload it begins the
-processing pipeline.
+The SQS message can be used to send a single payload, or batch payloads to
+trigger workflows at volume with a single message (e.g. bulk image processing).
+Once the lambda has ingested a payload it begins the processing pipeline.
 
 Payload
 -------
 
-It is preferable that a message itself sent to the SQS queue is a Cirrus
-Payload, but that is not required. However the message must allow the
-process lambda to extract or retrieve a valid Cirrus Payload.
-
-The message may contain the Cirrus Payload, have an S3 URl for a
+The message may contain the Cirrus Payload, have an S3 URL for a
 payload, be a Batch message containing a url link to a Cirrus Payload,
 or notification from an SNS topic that contains a Cirrus Payload.
 
