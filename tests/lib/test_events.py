@@ -140,5 +140,5 @@ def test_workflow_metric_reader_get_statistics():
     assert len(stats[0]["events"]) == 2, stats_str
     assert len(stats[0]["events"]["FAILED"]) == 1, stats_str
     assert len(stats[0]["events"]["SUCCEEDED"]) == 1, stats_str
-    assert stats[0]["events"]["FAILED"]["SampleCount"] == 1.0, stats_str
-    assert stats[0]["events"]["SUCCEEDED"]["SampleCount"] == 1.0, stats_str
+    assert stats[0]["events"]["FAILED"] == 1.0, stats_str
+    assert stats[0]["events"]["SUCCEEDED"] == 1.0, stats_str

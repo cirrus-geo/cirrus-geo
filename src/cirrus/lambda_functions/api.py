@@ -98,8 +98,8 @@ def filter_for_dashboard(
         }
         for event, value in events.items():
             states[state_map.get(event, event)] = {
-                "count": value["SampleCount"],
-                "unique_count": value["SampleCount"],
+                "count": value,
+                "unique_count": value,
             }
         return states
 

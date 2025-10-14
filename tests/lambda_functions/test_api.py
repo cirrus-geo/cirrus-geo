@@ -13,8 +13,8 @@ def metric_data():
     return [
         {
             "events": {
-                "FAILED": {"SampleCount": 1.0},
-                "SUCCEEDED": {"SampleCount": 1.0},
+                "FAILED": 1.0,
+                "SUCCEEDED": 1.0,
             },
             "period": "2025-09-29T17:48:00+00:00",
         },
@@ -115,8 +115,8 @@ class MockWorkflowMetricReader:
                     if x == "1h"
                     else "2025-09-29",
                     "events": {
-                        "FAILED": {"SampleCount": 1.0},
-                        "SUCCEEDED": {"SampleCount": 1.0},
+                        "FAILED": 1.0,
+                        "SUCCEEDED": 1.0,
                     },
                 },
             ]
@@ -128,8 +128,8 @@ class MockWorkflowMetricReader:
                 {
                     "period": "2025-09-29T17:48:00+00:00",
                     "events": {
-                        "FAILED": {"SampleCount": 1.0},
-                        "SUCCEEDED": {"SampleCount": 1.0},
+                        "FAILED": 1.0,
+                        "SUCCEEDED": 1.0,
                     },
                 },
             ]
