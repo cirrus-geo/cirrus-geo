@@ -136,44 +136,43 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
         )
         self.sequence_token = None
 
-        if self.log_group_name != "":
-            self.logs_client = get_client("logs")
-            # Generate a UUID-based log stream name
-            self.log_stream_name = f"workflow-metrics-{uuid.uuid4()}"
-            # Create log stream if it does not exist
-            self.logger.debug(
-                "Creating log stream %s, in log group %s",
-                self.log_stream_name,
-                self.log_group_name,
-            )
-            try:
-                self.logs_client.create_log_stream(
-                    logGroupName=self.log_group_name,
-                    logStreamName=self.log_stream_name,
-                )
-                self.logger.info("Created new log stream: %s", self.log_stream_name)
-            except self.logs_client.exceptions.ResourceAlreadyExistsException:
-                self.logger.info("Log stream already exists: %s", self.log_stream_name)
-            except self.logs_client.exceptions.ResourceNotFoundException as e:
-                raise Exception(
-                    f"Log group {self.log_group_name} does not exist.",
-                ) from e
-            # Retrieve sequence token
-            response = self.logs_client.describe_log_streams(
-                logGroupName=self.log_group_name,
-                logStreamNamePrefix=self.log_stream_name,
-            )
-            self.log_stream = (
-                response["logStreams"][0] if len(response["logStreams"]) > 0 else None
-            )
-            if self.log_stream is None:
-                raise Exception("Log stream not found after attempted creation.")
-
-        else:
+        if self.log_group_name == "":
             self.logger.info(
                 "WorkflowMetricLogger not configured, "
                 "workflow state changes will not be logged",
             )
+            return
+        self.logs_client = get_client("logs")
+        # Generate a UUID-based log stream name
+        self.log_stream_name = f"workflow-metrics-{uuid.uuid4()}"
+        # Create log stream if it does not exist
+        self.logger.debug(
+            "Creating log stream %s, in log group %s",
+            self.log_stream_name,
+            self.log_group_name,
+        )
+        try:
+            self.logs_client.create_log_stream(
+                logGroupName=self.log_group_name,
+                logStreamName=self.log_stream_name,
+            )
+            self.logger.info("Created new log stream: %s", self.log_stream_name)
+        except self.logs_client.exceptions.ResourceAlreadyExistsException:
+            self.logger.info("Log stream already exists: %s", self.log_stream_name)
+        except self.logs_client.exceptions.ResourceNotFoundException as e:
+            raise Exception(
+                f"Log group {self.log_group_name} does not exist.",
+            ) from e
+        # Retrieve sequence token
+        response = self.logs_client.describe_log_streams(
+            logGroupName=self.log_group_name,
+            logStreamNamePrefix=self.log_stream_name,
+        )
+        self.log_stream = (
+            response["logStreams"][0] if len(response["logStreams"]) > 0 else None
+        )
+        if self.log_stream is None:
+            raise Exception("Log stream not found after attempted creation.")
 
     def enabled(self: Self) -> bool:
         return bool(self.log_group_name) and self.log_stream is not None
