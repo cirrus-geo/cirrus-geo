@@ -31,7 +31,6 @@ version = os.environ.get("CIRRUS_VERSION", None)
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "myst_parser",
     "sphinxcontrib.mermaid",
     "sphinx_click",
     "sphinx_rtd_theme",
@@ -40,7 +39,6 @@ extensions = [
 source_suffix = {
     ".rst": "restructuredtext",
     ".txt": "markdown",
-    ".md": "markdown",
 }
 
 # Add any paths that contain templates here, relative to this directory.

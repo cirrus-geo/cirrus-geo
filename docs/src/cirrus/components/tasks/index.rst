@@ -58,9 +58,6 @@ Lambda tasks use the `AWS Lambda`_ runtime to power executions. Lambda has the
 advantage of quick startup and easy management, but has many restrictions like
 short timeouts and significant resource limits.
 
-Lambda-only tasks follow the specifications outlined in the :doc:`Lambda-based
-components <../lambdas>` documentation.
-
 .. _AWS Lambda: https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
 
 

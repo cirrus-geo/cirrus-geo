@@ -121,154 +121,155 @@ uses ``parallel`` with only a single branch defined, but that fits the Batch
 use-case perfectly.
 
 .. code-block:: JSON
-  {
-    "Comment": "Example workflow using parallel to make a 'batch group'",
-    "StartAt": "batch-group",
-    "States": {
-        "batch-group": {
-            "Type": "Parallel",
-            "Branches": [
-                {
-                    "StartAt": "pre-batch",
-                    "States": {
-                        "pre-batch": {
-                            "Type": "Task",
-                            "Resource": "!GetAtt pre-batch.Arn",
-                            "Next": "batch-task",
-                            "Retry": [
-                                {
-                                    "ErrorEquals": [
-                                        "Lambda.TooManyRequestsException",
-                                        "Lambda.Unknown"
-                                    ],
-                                    "IntervalSeconds": 10,
-                                    "MaxDelaySeconds": 86400,
-                                    "BackoffRate": 2,
-                                    "MaxAttempts": 20,
-                                    "JitterStrategy": "FULL"
-                                }
-                            ]
-                        },
-                        "batch-task": {
-                            "Type": "Task",
-                            "Resource": "arn:aws:states:::batch:submitJob.sync",
-                            "Parameters": {
-                                "JobName": "some-batch-job",
-                                "JobQueue": "#{ExampleJobQueue}",
-                                "JobDefinition": "#{ExampleBatchJob}",
-                                "Parameters": {
-                                    "url.$": "$.url"
-                                }
+
+    {
+        "Comment": "Example workflow using parallel to make a 'batch group'",
+        "StartAt": "batch-group",
+        "States": {
+            "batch-group": {
+                "Type": "Parallel",
+                "Branches": [
+                    {
+                        "StartAt": "pre-batch",
+                        "States": {
+                            "pre-batch": {
+                                "Type": "Task",
+                                "Resource": "!GetAtt pre-batch.Arn",
+                                "Next": "batch-task",
+                                "Retry": [
+                                    {
+                                        "ErrorEquals": [
+                                            "Lambda.TooManyRequestsException",
+                                            "Lambda.Unknown"
+                                        ],
+                                        "IntervalSeconds": 10,
+                                        "MaxDelaySeconds": 86400,
+                                        "BackoffRate": 2,
+                                        "MaxAttempts": 20,
+                                        "JitterStrategy": "FULL"
+                                    }
+                                ]
                             },
-                            "Next": "post-batch",
-                            "Retry": [
-                                {
-                                    "ErrorEquals": [
-                                        "Batch.AWSBatchException"
-                                    ],
-                                    "IntervalSeconds": 600,
-                                    "MaxDelaySeconds": 86400,
-                                    "BackoffRate": 2,
-                                    "MaxAttempts": 20,
-                                    "JitterStrategy": "FULL"
-                                }
-                            ],
-                            "Catch": [
-                                {
-                                    "ErrorEquals": [
-                                        "States.ALL"
-                                    ],
-                                    "ResultPath": "$.error",
-                                    "Next": "post-batch"
-                                }
-                            ]
-                        },
-                        "post-batch": {
-                            "Type": "Task",
-                            "Resource": "!GetAtt post-batch.Arn",
-                            "End": true,
-                            "Retry": [
-                                {
-                                    "ErrorEquals": [
-                                        "Lambda.TooManyRequestsException",
-                                        "Lambda.Unknown"
-                                    ],
-                                    "IntervalSeconds": 10,
-                                    "MaxDelaySeconds": 86400,
-                                    "BackoffRate": 2,
-                                    "MaxAttempts": 20,
-                                    "JitterStrategy": "FULL"
-                                }
-                            ]
+                            "batch-task": {
+                                "Type": "Task",
+                                "Resource": "arn:aws:states:::batch:submitJob.sync",
+                                "Parameters": {
+                                    "JobName": "some-batch-job",
+                                    "JobQueue": "#{ExampleJobQueue}",
+                                    "JobDefinition": "#{ExampleBatchJob}",
+                                    "Parameters": {
+                                        "url.$": "$.url"
+                                    }
+                                },
+                                "Next": "post-batch",
+                                "Retry": [
+                                    {
+                                        "ErrorEquals": [
+                                            "Batch.AWSBatchException"
+                                        ],
+                                        "IntervalSeconds": 600,
+                                        "MaxDelaySeconds": 86400,
+                                        "BackoffRate": 2,
+                                        "MaxAttempts": 20,
+                                        "JitterStrategy": "FULL"
+                                    }
+                                ],
+                                "Catch": [
+                                    {
+                                        "ErrorEquals": [
+                                            "States.ALL"
+                                        ],
+                                        "ResultPath": "$.error",
+                                        "Next": "post-batch"
+                                    }
+                                ]
+                            },
+                            "post-batch": {
+                                "Type": "Task",
+                                "Resource": "!GetAtt post-batch.Arn",
+                                "End": true,
+                                "Retry": [
+                                    {
+                                        "ErrorEquals": [
+                                            "Lambda.TooManyRequestsException",
+                                            "Lambda.Unknown"
+                                        ],
+                                        "IntervalSeconds": 10,
+                                        "MaxDelaySeconds": 86400,
+                                        "BackoffRate": 2,
+                                        "MaxAttempts": 20,
+                                        "JitterStrategy": "FULL"
+                                    }
+                                ]
+                            }
                         }
                     }
-                }
-            ],
-            "Next": "publish",
-            "OutputPath": "$[0]",
-            "Retry": [
-                {
-                    "ErrorEquals": [
-                        "States.ALL"
-                    ],
-                    "MaxAttempts": 3,
-                    "IntervalSeconds": 1200,
-                    "MaxDelaySeconds": 86400,
-                    "BackoffRate": 2,
-                    "JitterStrategy": "FULL"
-                }
-            ],
-            "Catch": [
-                {
-                    "ErrorEquals": [
-                        "States.ALL"
-                    ],
-                    "ResultPath": "$.error",
-                    "Next": "failure"
-                }
-            ]
-        },
-        "publish": {
-            "Type": "Task",
-            "Resource": "!GetAtt publish.Arn",
-            "End": true,
-            "Retry": [
-                {
-                    "ErrorEquals": [
-                        "Lambda.TooManyRequestsException",
-                        "Lambda.Unknown"
-                    ],
-                    "IntervalSeconds": 10,
-                    "MaxDelaySeconds": 86400,
-                    "BackoffRate": 2,
-                    "MaxAttempts": 20,
-                    "JitterStrategy": "FULL"
-                }
-            ],
-            "Catch": [
-                {
-                    "ErrorEquals": [
-                        "States.ALL"
-                    ],
-                    "ResultPath": "$.error",
-                    "Next": "failure"
-                }
-            ]
-        },
-        "failure": {
-            "Type": "Fail",
-            "Error": "$.error.Error",
-            "Cause": "$.error.Cause"
+                ],
+                "Next": "publish",
+                "OutputPath": "$[0]",
+                "Retry": [
+                    {
+                        "ErrorEquals": [
+                            "States.ALL"
+                        ],
+                        "MaxAttempts": 3,
+                        "IntervalSeconds": 1200,
+                        "MaxDelaySeconds": 86400,
+                        "BackoffRate": 2,
+                        "JitterStrategy": "FULL"
+                    }
+                ],
+                "Catch": [
+                    {
+                        "ErrorEquals": [
+                            "States.ALL"
+                        ],
+                        "ResultPath": "$.error",
+                        "Next": "failure"
+                    }
+                ]
+            },
+            "publish": {
+                "Type": "Task",
+                "Resource": "!GetAtt publish.Arn",
+                "End": true,
+                "Retry": [
+                    {
+                        "ErrorEquals": [
+                            "Lambda.TooManyRequestsException",
+                            "Lambda.Unknown"
+                        ],
+                        "IntervalSeconds": 10,
+                        "MaxDelaySeconds": 86400,
+                        "BackoffRate": 2,
+                        "MaxAttempts": 20,
+                        "JitterStrategy": "FULL"
+                    }
+                ],
+                "Catch": [
+                    {
+                        "ErrorEquals": [
+                            "States.ALL"
+                        ],
+                        "ResultPath": "$.error",
+                        "Next": "failure"
+                    }
+                ]
+            },
+            "failure": {
+                "Type": "Fail",
+                "Error": "$.error.Error",
+                "Cause": "$.error.Cause"
+            }
         }
     }
-}
 
 
 
 Batch retries vs step function retries
 --------------------------------------
 
-Whenver possible, using the step function retry semantics over those provided by
+Whenever possible, using the step function retry semantics over those provided by
 Batch is preferred. While Batch retries can be used without having to manage the
 additional complexity of the ``parallel`` block, Batch retries regardless of
 error type, while step function retries allow matching specific error types,
@@ -281,54 +282,3 @@ are more or less hidden from the step functions.
 
 For these reasons, the overhead of the ``parallel`` block is worth the
 investment.
-
-
-Conditionally Using Batch or Lambda
---------------------------------------
-
-Tasks can be configured to use either Batch or Lambda, and then the specific
-one to use can be specified in the payload and selected by the workflow.
-
-The payload should include a field like `batch` with a boolean indicating
-if it's Batch or not (meaning Lambda)
-
-  {
-    "process": {
-    ...
-    "tasks": {"foo-to-stac": {"batch": true}},
-    ...
-  }
-
-Then in the workflow, this field can be used to drive a Choice block that
-selects either the Batch or Lambda path
-
-.. code-block:: JSON
-
-  {
-    "StartAt": "batch-or-lambda",
-    "States": {
-        "batch-or-lambda": {
-            "Type": "Choice",
-            "Choices": [
-                {
-                    "Variable": "$.process.tasks.foo-to-stac.batch",
-                    "IsPresent": false,
-                    "Next": "foo-to-stac-lambda"
-                },
-                {
-                    "Variable": "$.process.tasks.foo-to-stac.batch",
-                    "BooleanEquals": false,
-                    "Next": "foo-to-stac-lambda"
-                },
-                {
-                    "Variable": "$.process.tasks.foo-to-stac.batch",
-                    "BooleanEquals": true,
-                    "Next": "batch-group"
-                }
-             ]
-         }
-      }
-  }
-
-In this case, `foo-to-stac-lambda` is a Task block that defines the Lambda path
-and `batch-group` is a Task or Parallel block that defines the Batch path.
