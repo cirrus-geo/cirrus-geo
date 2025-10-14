@@ -118,18 +118,16 @@ more tasks.  Workflows are composed of one or more “tasks”.</p>
 <p>Cirrus workflows, being implemented via <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions</a>, are written in
 the <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html">AWS States Language</a>. Workflows are defined in <code class="docutils literal notranslate"><span class="pre">state-machine.json</span></code> files and require a companion <code class="docutils literal notranslate"><span class="pre">README.md</span></code>.</p>
 <p>These <code class="docutils literal notranslate"><span class="pre">state-machine.json</span></code> files define the entire step function workflow.  A non exhaustive list of configuarable are :</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p>task definitions</p></li>
 <li><p>task input parameters</p></li>
 <li><p>task output parameters</p></li>
 <li><p>job definition</p></li>
 <li><p>job name</p></li>
 <li><p>task retry config</p></li>
+<li><p>error handling</p></li>
+<li><p>resource ARNs</p></li>
 </ul>
-<p># error handling
-* resource ARNs</p>
-</div></blockquote>
 <p>The <a class="reference internal" href="../../70_statedb.html"><span class="doc">state database</span></a> tracks the state of items
 processed at the workflow level.</p>
 <div class="toctree-wrapper compound">
@@ -147,7 +145,6 @@ processed at the workflow level.</p>
 <li class="toctree-l2"><a class="reference internal" href="batch.html#pre-batch-and-post-batch"><code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">post-batch</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="batch.html#put-it-all-together-with-a-parallel-block">Put it all together with a <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block</a></li>
 <li class="toctree-l2"><a class="reference internal" href="batch.html#batch-retries-vs-step-function-retries">Batch retries vs step function retries</a></li>
-<li class="toctree-l2"><a class="reference internal" href="batch.html#conditionally-using-batch-or-lambda">Conditionally Using Batch or Lambda</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chaining.html">Workflow chaining</a><ul>

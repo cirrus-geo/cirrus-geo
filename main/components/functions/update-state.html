@@ -20,7 +20,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="post-batch" href="post_batch.html" />
+    <link rel="next" title="Tasks" href="../tasks/index.html" />
     <link rel="prev" title="process" href="process.html" /> 
 </head>
 
@@ -64,8 +64,6 @@
 <li class="toctree-l2"><a class="reference internal" href="api.html">api</a></li>
 <li class="toctree-l2"><a class="reference internal" href="process.html">process</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">update-state</a></li>
-<li class="toctree-l2"><a class="reference internal" href="post_batch.html">post_batch</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pre_batch.html">pre_batch</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tasks/index.html">Tasks</a></li>
@@ -96,7 +94,7 @@
           <li class="breadcrumb-item"><a href="index.html">Functions</a></li>
       <li class="breadcrumb-item active">update-state</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../_sources/components/functions/update-state.md.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/components/functions/update-state.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -106,38 +104,39 @@
              
   <section id="update-state">
 <h1>update-state<a class="headerlink" href="#update-state" title="Link to this heading"></a></h1>
-<p>Updates the dynamoDB state database with the State Function execution results.</p>
-<p>Completion of a State Function execution can also be used to chain additonal
-workflow steps with pushing messages to SQS or SNS for additional steps beyond
-the core cirrus workflow, like triggering a lambda to push an output STAC Item
-to a STAC API.</p>
+<p>Updates the dynamoDB state database with the State Function execution
+results.</p>
+<p>Completion of a State Function execution can also be used to chain
+additional workflow steps with pushing messages to SQS or SNS for
+additional steps beyond the core cirrus workflow, like triggering a
+lambda to push an output STAC Item to a STAC API.</p>
 <section id="trigger">
 <h2>Trigger<a class="headerlink" href="#trigger" title="Link to this heading"></a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda listens for terminal events output by a State Function
-that is executing a cirrus workflow/task.  These terminal states are not an
-exclusive list of possible states in the StateDB.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda listens for terminal events output by a
+State Function that is executing a cirrus workflow/task. These terminal
+states are not an exclusive list of possible states in the StateDB.</p>
 <ul class="simple">
 <li><p>“SUCCEEDED”: the successful completion of a cirrus workflow</p></li>
-<li><p>“FAILED”: A failed execution.  This can occur for a variety of reasons</p></li>
-<li><p>“ABORTED”: The state machinea was forced to abort execution.  Can be triggered
-by manual termination of a workflow.</p></li>
-<li><p>“TIMED OUT”: State machine terminated due to time out.  Can occur if a third
-party resource involved in a task hangs, or a workflow configuration did not
-allow sufficient time for a task to complete.</p></li>
+<li><p>“FAILED”: A failed execution. This can occur for a variety of reasons</p></li>
+<li><p>“ABORTED”: The state machinea was forced to abort execution. Can be
+triggered by manual termination of a workflow.</p></li>
+<li><p>“TIMED OUT”: State machine terminated due to time out. Can occur if a
+third party resource involved in a task hangs, or a workflow
+configuration did not allow sufficient time for a task to complete.</p></li>
 </ul>
 </section>
 <section id="statedb-updates">
 <h2>StateDB Updates<a class="headerlink" href="#statedb-updates" title="Link to this heading"></a></h2>
 <p>Updating the DynamoDB state database is the core functionality of the
 <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda.</p>
-<p>In addition to updating DynamoDB the <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda also fires off events
-to AWS TimeStream with each state update.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda additionally logs any errors that come from the
-StateMachine so they can be captured and anlyzed in the log stream.</p>
+<p>In addition to updating DynamoDB the <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda also fires
+off events to AWS TimeStream with each state update.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda additionally logs any errors that come from
+the StateMachine so they can be captured and anlyzed in the log stream.</p>
 <p><code class="docutils literal notranslate"><span class="pre">update-state</span></code> can send messages to configured SNS topics to provide
-notifications to users or downstream services when events and/or output items
-are produced.  It may also be used to facilitate workflow chaining by
-requeuing payloads in the <code class="docutils literal notranslate"><span class="pre">process</span></code> queue.</p>
+notifications to users or downstream services when events and/or output
+items are produced. It may also be used to facilitate workflow chaining
+by requeuing payloads in the <code class="docutils literal notranslate"><span class="pre">process</span></code> queue.</p>
 </section>
 </section>
 
@@ -146,7 +145,7 @@ requeuing payloads in the <code class="docutils literal notranslate"><span class
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="process.html" class="btn btn-neutral float-left" title="process" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="post_batch.html" class="btn btn-neutral float-right" title="post-batch" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../tasks/index.html" class="btn btn-neutral float-right" title="Tasks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

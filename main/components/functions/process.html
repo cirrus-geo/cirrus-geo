@@ -64,8 +64,6 @@
 <li class="toctree-l2"><a class="reference internal" href="api.html">api</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">process</a></li>
 <li class="toctree-l2"><a class="reference internal" href="update-state.html">update-state</a></li>
-<li class="toctree-l2"><a class="reference internal" href="post_batch.html">post_batch</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pre_batch.html">pre_batch</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tasks/index.html">Tasks</a></li>
@@ -96,7 +94,7 @@
           <li class="breadcrumb-item"><a href="index.html">Functions</a></li>
       <li class="breadcrumb-item active">process</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../_sources/components/functions/process.md.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/components/functions/process.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -106,41 +104,46 @@
              
   <section id="process">
 <h1>process<a class="headerlink" href="#process" title="Link to this heading"></a></h1>
-<p>The <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda is a core piece of Cirrus infrastructure.  It processes messages, extracts and prepares Cirrus Payloads from these messages and then uses these payloads to trigger execution of pre-defined AWS Step Function workflows.  This lambda can also involve simple administrative work like setting payload ids, and updating the state db to avoid duplicative executions.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda is a core piece of Cirrus infrastructure. It
+processes messages, extracts and prepares Cirrus Payloads from these
+messages and then uses these payloads to trigger execution of
+pre-defined AWS Step Function workflows. This lambda can also involve
+simple administrative work like setting payload ids, and updating the
+state db to avoid duplicative executions.</p>
 <section id="trigger">
 <h2>Trigger<a class="headerlink" href="#trigger" title="Link to this heading"></a></h2>
 <p>There are multiple ways to trigger the <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda.</p>
 <ul class="simple">
 <li><p>Send a message to the SQS <code class="docutils literal notranslate"><span class="pre">process</span></code> queue via a feeder</p></li>
-<li><p>Send a message to the SQS queue using the CLI tool <code class="docutils literal notranslate"><span class="pre">process</span></code> command.</p></li>
+<li><p>Send a message to the SQS queue using the CLI tool <code class="docutils literal notranslate"><span class="pre">process</span></code>
+command.</p></li>
 </ul>
 <p>The SQS message can be used to send a single payload, or batch payloads to
-trigger workflows at volume with a single message (e.g. bulk image processing).
-Once these lambda has ingested a payload it begins the processing pipeline.</p>
+trigger workflows at volume with a single message (e.g. bulk image processing).
+Once the lambda has ingested a payload it begins the processing pipeline.</p>
 </section>
 <section id="payload">
 <h2>Payload<a class="headerlink" href="#payload" title="Link to this heading"></a></h2>
-<p>It is preferable that a message itself sent to the SQS queue is a Cirrus Payload, but that
-is not required.  However the message must allow the process lambda to
-extract or retrieve a valid Cirrus Payload.</p>
-<p>The message may contain the Cirrus Payload, have an S3 URl for a payload, be a Batch
-message containing a url link to a Cirrus Payload, or notification from an SNS topic that contains a Cirrus Payload.</p>
+<p>The message may contain the Cirrus Payload, have an S3 URL for a
+payload, be a Batch message containing a url link to a Cirrus Payload,
+or notification from an SNS topic that contains a Cirrus Payload.</p>
 </section>
 <section id="workflow-kick-off">
 <h2>Workflow Kick Off<a class="headerlink" href="#workflow-kick-off" title="Link to this heading"></a></h2>
-<p>The core function of the <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda is to handle and process inputs and to
-then trigger AWS Step Function execution of predefined cirrus tasks and
-workflows.  Payloads are also stored in the cirrus deployment S3 bucket.</p>
+<p>The core function of the <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda is to handle and process
+inputs and to then trigger AWS Step Function execution of predefined
+cirrus tasks and workflows. Payloads are also stored in the cirrus
+deployment S3 bucket.</p>
 </section>
 <section id="state-management">
 <h2>State Management<a class="headerlink" href="#state-management" title="Link to this heading"></a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda also updates the state table when workflows are initiated
-or fail to be initiated.  This is intended to prevent duplicate workflows
-running the same payload.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda also updates the state table when workflows are
+initiated or fail to be initiated. This is intended to prevent duplicate
+workflows running the same payload.</p>
 <section id="cli">
 <h3>CLI<a class="headerlink" href="#cli" title="Link to this heading"></a></h3>
-<p>This lambda can be invoked using the included CLIrrus CLI tool using either the
-<code class="docutils literal notranslate"><span class="pre">process</span></code> or <code class="docutils literal notranslate"><span class="pre">invoke</span></code> commands.</p>
+<p>This lambda can be invoked using the included CLIrrus CLI tool using
+either the <code class="docutils literal notranslate"><span class="pre">process</span></code> or <code class="docutils literal notranslate"><span class="pre">invoke</span></code> commands.</p>
 </section>
 </section>
 </section>

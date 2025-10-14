@@ -58,7 +58,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#pre-batch-and-post-batch"><code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">post-batch</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#put-it-all-together-with-a-parallel-block">Put it all together with a <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#batch-retries-vs-step-function-retries">Batch retries vs step function retries</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#conditionally-using-batch-or-lambda">Conditionally Using Batch or Lambda</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="chaining.html">Workflow chaining</a></li>
@@ -218,12 +217,154 @@ that fails because of something that can be corrected, such as a code bug.</p>
 block to group the set of Batch operations together. Notice how the example
 uses <code class="docutils literal notranslate"><span class="pre">parallel</span></code> with only a single branch defined, but that fits the Batch
 use-case perfectly.</p>
-<p>}</p>
+<div class="highlight-JSON notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;Comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Example workflow using parallel to make a &#39;batch group&#39;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;StartAt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;batch-group&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;States&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;batch-group&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Parallel&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Branches&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;StartAt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pre-batch&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;States&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="nt">&quot;pre-batch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;!GetAtt pre-batch.Arn&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;batch-task&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                </span><span class="p">{</span>
+<span class="w">                                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                        </span><span class="s2">&quot;Lambda.TooManyRequestsException&quot;</span><span class="p">,</span>
+<span class="w">                                        </span><span class="s2">&quot;Lambda.Unknown&quot;</span>
+<span class="w">                                    </span><span class="p">],</span>
+<span class="w">                                    </span><span class="nt">&quot;IntervalSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxDelaySeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;BackoffRate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxAttempts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;JitterStrategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FULL&quot;</span>
+<span class="w">                                </span><span class="p">}</span>
+<span class="w">                            </span><span class="p">]</span>
+<span class="w">                        </span><span class="p">},</span>
+<span class="w">                        </span><span class="nt">&quot;batch-task&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:states:::batch:submitJob.sync&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                                </span><span class="nt">&quot;JobName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;some-batch-job&quot;</span><span class="p">,</span>
+<span class="w">                                </span><span class="nt">&quot;JobQueue&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;#{ExampleJobQueue}&quot;</span><span class="p">,</span>
+<span class="w">                                </span><span class="nt">&quot;JobDefinition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;#{ExampleBatchJob}&quot;</span><span class="p">,</span>
+<span class="w">                                </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                                    </span><span class="nt">&quot;url.$&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.url&quot;</span>
+<span class="w">                                </span><span class="p">}</span>
+<span class="w">                            </span><span class="p">},</span>
+<span class="w">                            </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;post-batch&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                </span><span class="p">{</span>
+<span class="w">                                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                        </span><span class="s2">&quot;Batch.AWSBatchException&quot;</span>
+<span class="w">                                    </span><span class="p">],</span>
+<span class="w">                                    </span><span class="nt">&quot;IntervalSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">600</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxDelaySeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;BackoffRate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxAttempts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;JitterStrategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FULL&quot;</span>
+<span class="w">                                </span><span class="p">}</span>
+<span class="w">                            </span><span class="p">],</span>
+<span class="w">                            </span><span class="nt">&quot;Catch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                </span><span class="p">{</span>
+<span class="w">                                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                        </span><span class="s2">&quot;States.ALL&quot;</span>
+<span class="w">                                    </span><span class="p">],</span>
+<span class="w">                                    </span><span class="nt">&quot;ResultPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error&quot;</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;post-batch&quot;</span>
+<span class="w">                                </span><span class="p">}</span>
+<span class="w">                            </span><span class="p">]</span>
+<span class="w">                        </span><span class="p">},</span>
+<span class="w">                        </span><span class="nt">&quot;post-batch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;!GetAtt post-batch.Arn&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;End&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                </span><span class="p">{</span>
+<span class="w">                                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                        </span><span class="s2">&quot;Lambda.TooManyRequestsException&quot;</span><span class="p">,</span>
+<span class="w">                                        </span><span class="s2">&quot;Lambda.Unknown&quot;</span>
+<span class="w">                                    </span><span class="p">],</span>
+<span class="w">                                    </span><span class="nt">&quot;IntervalSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxDelaySeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;BackoffRate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxAttempts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;JitterStrategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FULL&quot;</span>
+<span class="w">                                </span><span class="p">}</span>
+<span class="w">                            </span><span class="p">]</span>
+<span class="w">                        </span><span class="p">}</span>
+<span class="w">                    </span><span class="p">}</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;publish&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;OutputPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$[0]&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                        </span><span class="s2">&quot;States.ALL&quot;</span>
+<span class="w">                    </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;MaxAttempts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;IntervalSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1200</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;MaxDelaySeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;BackoffRate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;JitterStrategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FULL&quot;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Catch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                        </span><span class="s2">&quot;States.ALL&quot;</span>
+<span class="w">                    </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;ResultPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;failure&quot;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;publish&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;!GetAtt publish.Arn&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;End&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                        </span><span class="s2">&quot;Lambda.TooManyRequestsException&quot;</span><span class="p">,</span>
+<span class="w">                        </span><span class="s2">&quot;Lambda.Unknown&quot;</span>
+<span class="w">                    </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;IntervalSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;MaxDelaySeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;BackoffRate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;MaxAttempts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;JitterStrategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FULL&quot;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Catch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                        </span><span class="s2">&quot;States.ALL&quot;</span>
+<span class="w">                    </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;ResultPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;failure&quot;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;failure&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Error&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error.Error&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Cause&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error.Cause&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 <section id="batch-retries-vs-step-function-retries">
 <h2>Batch retries vs step function retries<a class="headerlink" href="#batch-retries-vs-step-function-retries" title="Link to this heading"></a></h2>
-<p>Whenver possible, using the step function retry semantics over those provided by
+<p>Whenever possible, using the step function retry semantics over those provided by
 Batch is preferred. While Batch retries can be used without having to manage the
 additional complexity of the <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block, Batch retries regardless of
 error type, while step function retries allow matching specific error types,
@@ -234,54 +375,6 @@ failures that a retry happened and what the initial error was. Batch retries
 are more or less hidden from the step functions.</p>
 <p>For these reasons, the overhead of the <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block is worth the
 investment.</p>
-</section>
-<section id="conditionally-using-batch-or-lambda">
-<h2>Conditionally Using Batch or Lambda<a class="headerlink" href="#conditionally-using-batch-or-lambda" title="Link to this heading"></a></h2>
-<p>Tasks can be configured to use either Batch or Lambda, and then the specific
-one to use can be specified in the payload and selected by the workflow.</p>
-<p>The payload should include a field like <cite>batch</cite> with a boolean indicating
-if it’s Batch or not (meaning Lambda)</p>
-<blockquote>
-<div><dl class="simple">
-<dt>{</dt><dd><p>“process”: {
-…
-“tasks”: {“foo-to-stac”: {“batch”: true}},
-…</p>
-</dd>
-</dl>
-<p>}</p>
-</div></blockquote>
-<p>Then in the workflow, this field can be used to drive a Choice block that
-selects either the Batch or Lambda path</p>
-<div class="highlight-JSON notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;StartAt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;batch-or-lambda&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;States&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;batch-or-lambda&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Choice&quot;</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;Choices&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">              </span><span class="p">{</span>
-<span class="w">                  </span><span class="nt">&quot;Variable&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.process.tasks.foo-to-stac.batch&quot;</span><span class="p">,</span>
-<span class="w">                  </span><span class="nt">&quot;IsPresent&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
-<span class="w">                  </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;foo-to-stac-lambda&quot;</span>
-<span class="w">              </span><span class="p">},</span>
-<span class="w">              </span><span class="p">{</span>
-<span class="w">                  </span><span class="nt">&quot;Variable&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.process.tasks.foo-to-stac.batch&quot;</span><span class="p">,</span>
-<span class="w">                  </span><span class="nt">&quot;BooleanEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
-<span class="w">                  </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;foo-to-stac-lambda&quot;</span>
-<span class="w">              </span><span class="p">},</span>
-<span class="w">              </span><span class="p">{</span>
-<span class="w">                  </span><span class="nt">&quot;Variable&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.process.tasks.foo-to-stac.batch&quot;</span><span class="p">,</span>
-<span class="w">                  </span><span class="nt">&quot;BooleanEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">                  </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;batch-group&quot;</span>
-<span class="w">              </span><span class="p">}</span>
-<span class="w">           </span><span class="p">]</span>
-<span class="w">       </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>In this case, <cite>foo-to-stac-lambda</cite> is a Task block that defines the Lambda path
-and <cite>batch-group</cite> is a Task or Parallel block that defines the Batch path.</p>
 </section>
 </section>
 

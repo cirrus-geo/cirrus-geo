@@ -64,8 +64,6 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">api</a></li>
 <li class="toctree-l2"><a class="reference internal" href="process.html">process</a></li>
 <li class="toctree-l2"><a class="reference internal" href="update-state.html">update-state</a></li>
-<li class="toctree-l2"><a class="reference internal" href="post_batch.html">post_batch</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pre_batch.html">pre_batch</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tasks/index.html">Tasks</a></li>
@@ -96,7 +94,7 @@
           <li class="breadcrumb-item"><a href="index.html">Functions</a></li>
       <li class="breadcrumb-item active">api</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../_sources/components/functions/api.md.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/components/functions/api.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -106,37 +104,53 @@
              
   <section id="api">
 <h1>api<a class="headerlink" href="#api" title="Link to this heading"></a></h1>
-<p>An AWS Lambda intended to function as an HTTP API to facilitate querying general information about the Dynamo DB and TimeStream Event Tables.  This can be used for building Cirrus monitoring dashboards, like hourly or daily events aggregate statistics.</p>
-<p>This differentiates it from the other lambdas which are more like traffic managers and handlers, while the <code class="docutils literal notranslate"><span class="pre">API</span></code> lambda exists outside of the standard cirrus workflow as laid out in the architecture diagram in :doc:<code class="docutils literal notranslate"><span class="pre">cirrus_overview</span> <span class="pre">&lt;../../cirrus/10_intro.rst&gt;</span></code></p>
+<p>An AWS Lambda intended to function as an HTTP API to facilitate querying
+general information about the Dynamo DB and TimeStream Event Tables.  This can
+be used for building Cirrus monitoring dashboards, like hourly or daily events
+aggregate statistics.</p>
+<p>This differentiates it from the other lambdas, which are more like traffic
+managers and handlers. The <code class="docutils literal notranslate"><span class="pre">API</span></code> lambda exists outside of the standard cirrus
+workflow as laid out in the architecture diagram in :doc:<code class="docutils literal notranslate"><span class="pre">cirrus_overview</span>
+<span class="pre">&lt;../../cirrus/10_intro.rst&gt;</span></code></p>
 <section id="trigger">
 <h2>Trigger<a class="headerlink" href="#trigger" title="Link to this heading"></a></h2>
 <p>Triggered by sending valid HTTTP requests.</p>
-<p>Query parameters can be passed in to control the behavior of the response.  A query param not in the following list will have no effect as it goes un unanalzyed, only a specific set of params are examined.</p>
+<p>Query parameters can be included in HTTP requests to control the behavior of
+the response. A query param not in the following list will have no effect.</p>
 <section id="query-params">
 <h3>Query Params<a class="headerlink" href="#query-params" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>State: <code class="docutils literal notranslate"><span class="pre">State</span></code> to filter the StateDB items on.</p></li>
-<li><p>Since: A string field used to search the StateDB from this time forward to the present.  Takes the form of an integer follwed by a flag to indicate the time unit.  Acceptable flags are “d” (days), “h” (hours), and “m” (minutes)</p></li>
+<li><p>Since: A string field used to search the StateDB from this time forward to
+the present. Takes the form of an integer followed by a flag to indicate the
+time unit. Acceptable flags are “d” (days), “h” (hours), and “m” (minutes)</p></li>
 </ul>
 </section>
 </section>
 <section id="response">
 <h2>Response<a class="headerlink" href="#response" title="Link to this heading"></a></h2>
-<p>A REST-like response containing a status_code, headers, and body that can be parsed like any REST response.</p>
-<section id="endpoints">
-<h3>“Endpoints”<a class="headerlink" href="#endpoints" title="Link to this heading"></a></h3>
+<p>A REST-like response containing a status_code, headers, and body that
+can be parsed like any REST response.</p>
 </section>
+<section id="endpoints">
+<h2>Endpoints<a class="headerlink" href="#endpoints" title="Link to this heading"></a></h2>
 <section id="get-root">
-<h3>“GET” Root<a class="headerlink" href="#get-root" title="Link to this heading"></a></h3>
-<p>Return a STAC-like object with links to all the outputs from the cirrus S3 data bucket.</p>
+<h3>GET Root<a class="headerlink" href="#get-root" title="Link to this heading"></a></h3>
+<p>Return a STAC-like object with links to all the outputs from the cirrus
+S3 data bucket.</p>
 </section>
 <section id="get-stats">
-<h3>“GET” Stats<a class="headerlink" href="#get-stats" title="Link to this heading"></a></h3>
-<p>Return a summary statistics of events from the TimeStream database to get a picture of cirrus events on a daily, hourly, and hourly rolling basis</p>
+<h3>GET Stats<a class="headerlink" href="#get-stats" title="Link to this heading"></a></h3>
+<p>Return a summary statistics of events from the TimeStream database to
+get a picture of cirrus events on a daily, hourly, and hourly rolling
+basis</p>
 </section>
 <section id="get-items">
-<h3>“GET” Items<a class="headerlink" href="#get-items" title="Link to this heading"></a></h3>
-<p>Return items from the DynamoDB state database based on query filters.  Can be filered on ‘state’, ‘since’, ‘limit’. The results are paginated and the pagination key <code class="docutils literal notranslate"><span class="pre">NextKey</span></code> can be used by passing it as one of the query params when making the API call to the lambda.</p>
+<h3>GET Items<a class="headerlink" href="#get-items" title="Link to this heading"></a></h3>
+<p>Return items from the DynamoDB state database based on query filters.
+Can be filered on ‘state’, ‘since’, ‘limit’. The results are paginated
+and the pagination key <code class="docutils literal notranslate"><span class="pre">NextKey</span></code> can be used by passing it as one of
+the query params when making the API call to the lambda.</p>
 </section>
 </section>
 </section>

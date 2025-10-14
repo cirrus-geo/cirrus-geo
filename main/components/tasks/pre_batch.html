@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tasks &mdash; Cirrus  documentation</title>
+  <title>pre-batch &mdash; Cirrus  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
@@ -20,8 +20,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="post-batch" href="post_batch.html" />
-    <link rel="prev" title="update-state" href="../functions/update-state.html" /> 
+    <link rel="next" title="CLIrrus Overview" href="../../cli/00_intro.html" />
+    <link rel="prev" title="post-batch" href="post_batch.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -61,9 +61,9 @@
 <p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../functions/index.html">Functions</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Tasks</a><ul>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tasks</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="post_batch.html">post_batch</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pre_batch.html">pre_batch</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pre_batch</a></li>
 </ul>
 </li>
 </ul>
@@ -90,9 +90,10 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Tasks</li>
+          <li class="breadcrumb-item"><a href="index.html">Tasks</a></li>
+      <li class="breadcrumb-item active">pre-batch</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../_sources/components/tasks/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/components/tasks/pre_batch.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -100,22 +101,25 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="tasks">
-<h1>Tasks<a class="headerlink" href="#tasks" title="Link to this heading"></a></h1>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="post_batch.html">post_batch</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pre_batch.html">pre_batch</a></li>
-</ul>
-</div>
+  <section id="pre-batch">
+<h1>pre-batch<a class="headerlink" href="#pre-batch" title="Link to this heading"></a></h1>
+<p>A lambda related to running Batch tasks, required to work around limitations of
+AWS Batch.</p>
+<p>This lambda exists due to how AWS Batch tasks are called. <code class="docutils literal notranslate"><span class="pre">Batch</span></code> tasks do
+not support large JSONs being passed directly in the “submit job” call, and
+STAC payloads can be large. To work around this limitation the <code class="docutils literal notranslate"><span class="pre">pre-batch</span></code>
+lambda will take the input payload, push it to an intermediate location (S3)
+and the URL of this location will be returned.</p>
+<p>A batch task will execute the defined workflow and will dump the output to S3,
+where it is picked up by the <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> lambda</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../functions/update-state.html" class="btn btn-neutral float-left" title="update-state" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="post_batch.html" class="btn btn-neutral float-right" title="post-batch" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="post_batch.html" class="btn btn-neutral float-left" title="post-batch" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../cli/00_intro.html" class="btn btn-neutral float-right" title="CLIrrus Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
