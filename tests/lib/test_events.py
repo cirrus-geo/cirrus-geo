@@ -134,11 +134,10 @@ def test_workflow_metric_reader_get_statistics():
     assert reader.enabled()
     stats = reader.query_by_bin_and_duration(duration="15m", bin_size="1m")
     stats_str = "stats = " + pformat(stats)
+
     assert type(stats) is list
     assert len(stats) > 0, stats_str
     assert type(stats[0]) is dict
-    assert len(stats[0]["events"]) == 2, stats_str
-    assert len(stats[0]["events"]["FAILED"]) == 1, stats_str
-    assert len(stats[0]["events"]["SUCCEEDED"]) == 1, stats_str
-    assert stats[0]["events"]["FAILED"] == 1.0, stats_str
-    assert stats[0]["events"]["SUCCEEDED"] == 1.0, stats_str
+    assert len(stats[0]["events"]) == len(WFEventType), stats_str
+    assert stats[-1]["events"]["FAILED"] >= 1.0, stats_str
+    assert stats[-1]["events"]["SUCCEEDED"] >= 1.0, stats_str

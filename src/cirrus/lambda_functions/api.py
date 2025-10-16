@@ -85,23 +85,24 @@ def filter_for_dashboard(
     if data is None:
         return None
 
-    def events_to_states(events: dict[str, Any]) -> dict[str, Any]:
+    def events_to_states(events: dict[str, Any]) -> list[dict[str, Any]]:
         # this function passes through all WFEventTypes, but updates the names for
         # COMPLETED and CLAIMED_PROCESSING to be SUCCEEDED and CLAIMED, respectively
         state_map = {
-            "COMPLETED": "SUCCEEDED",
+            "SUCCEEDED": "COMPLETED",
             "CLAIMED_PROCESSING": "CLAIMED",
+            "STARTED_PROCESSING": "PROCESSING",
         }
-        states = {
-            state: {"count": 0.0, "unique_count": 0.0}
-            for state in StateEnum._member_names_
-        }
-        for event, value in events.items():
-            states[state_map.get(event, event)] = {
-                "count": value,
-                "unique_count": value,
+
+        return [
+            {
+                "state": state_map.get(event, event),
+                "unique_count": int(value),
+                "count": int(value),
             }
-        return states
+            for event, value in events.items()
+            if event in StateEnum or event in state_map
+        ]
 
     for entry in data:
         filtered.append(
