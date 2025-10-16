@@ -313,7 +313,7 @@ class WorkflowMetricReader:
         ]
         fcstats: dict[datetime, dict[str, dict[str, float]]] = {
             d.replace(second=0, microsecond=0): {
-                e: dict.fromkeys(statistics, 0.0) for e in event_types
+                e: dict.fromkeys(statistics, 0) for e in event_types
             }
             for d in dates
         }
@@ -407,7 +407,7 @@ class WorkflowMetricReader:
         )
 
         cstats: dict[datetime, dict[str, dict[str, float]]] = defaultdict(
-            lambda: defaultdict(lambda: dict.fromkeys(event_types, 0.0)),
+            lambda: defaultdict(lambda: dict.fromkeys(event_types, 0)),
         )
         for et, d, v in itertools.chain(
             *[
