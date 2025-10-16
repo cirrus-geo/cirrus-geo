@@ -456,13 +456,22 @@ class WorkflowMetricReader:
         duration: e.g. '30d', '7d'
         """
         delta = parse_since(duration)
+        period = int(parse_since(bin_size).total_seconds())
 
         # TODO: set start and end time comensurate with period of metric, per
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch/client/get_metric_data.html
         end_time = datetime.now(UTC)
-        start_time = end_time - delta
+        if bin_size[-1] == "h":
+            end_time = end_time.replace(minute=0, second=0, microsecond=0)
+            end_time += timedelta(hours=1)
+        elif bin_size[-1] == "d":
+            end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_time += timedelta(days=1)
+        else:
+            end_time = end_time.replace(second=0, microsecond=0)
+            end_time += timedelta(minutes=1)
 
-        period = int(parse_since(bin_size).total_seconds())
+        start_time = end_time - delta - timedelta(seconds=period)
 
         return self.aggregated_by_event_type(
             start_time=start_time,
