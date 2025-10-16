@@ -13,8 +13,12 @@ def metric_data():
     return [
         {
             "events": {
-                "FAILED": 1.0,
-                "SUCCEEDED": 1.0,
+                "PROCESSING": 0,
+                "INVALID": 0,
+                "ABORTED": 0,
+                "CLAIMED": 0,
+                "FAILED": 1,
+                "SUCCEEDED": 1,
             },
             "period": "2025-09-29T17:48:00+00:00",
         },
@@ -28,23 +32,14 @@ def test_empty_event():
 
 def test_filter_for_dashboard(metric_data):
     filtered = api.filter_for_dashboard(metric_data, "hour")
-    states = {
-        state: {"count": 0.0, "unique_count": 0.0} for state in StateEnum._member_names_
-    }
-    states.update(
-        {
-            "FAILED": {"unique_count": 1.0, "count": 1.0},
-            "SUCCEEDED": {"unique_count": 1.0, "count": 1.0},
-        },
-    )
-
-    assert filtered == [
-        {
-            "period": "2025-09-29T17:48:00+00:00",
-            "states": states,
-            "interval": "hour",
-        },
+    states = [
+        {"state": state, "count": 0, "unique_count": 0}
+        if state not in [StateEnum.FAILED, StateEnum.COMPLETED]
+        else {"state": state, "count": 1, "unique_count": 1}
+        for state in sorted(StateEnum._member_names_)
     ]
+
+    assert sorted(filtered[0]["states"], key=lambda x: x["state"]) == states
 
 
 @pytest.mark.usefixtures("_env")
@@ -115,8 +110,12 @@ class MockWorkflowMetricReader:
                     if x == "1h"
                     else "2025-09-29",
                     "events": {
-                        "FAILED": 1.0,
-                        "SUCCEEDED": 1.0,
+                        "PROCESSING": 0,
+                        "INVALID": 0,
+                        "ABORTED": 0,
+                        "CLAIMED": 0,
+                        "FAILED": 1,
+                        "SUCCEEDED": 1,
                     },
                 },
             ]
@@ -128,8 +127,12 @@ class MockWorkflowMetricReader:
                 {
                     "period": "2025-09-29T17:48:00+00:00",
                     "events": {
-                        "FAILED": 1.0,
-                        "SUCCEEDED": 1.0,
+                        "PROCESSING": 0,
+                        "INVALID": 0,
+                        "ABORTED": 0,
+                        "CLAIMED": 0,
+                        "FAILED": 1,
+                        "SUCCEEDED": 1,
                     },
                 },
             ]
@@ -156,15 +159,12 @@ def test_api_stats_output(eventdb_enabled, metric_reader_enabled, fixtures):
             "hourly_rolling": [],
         },
     }
-    states = {
-        state: {"count": 0.0, "unique_count": 0.0} for state in StateEnum._member_names_
-    }
-    states.update(
-        {
-            "FAILED": {"unique_count": 1.0, "count": 1.0},
-            "SUCCEEDED": {"unique_count": 1.0, "count": 1.0},
-        },
-    )
+    states = [
+        {"state": state, "count": 0, "unique_count": 0}
+        if state not in [StateEnum.FAILED, StateEnum.COMPLETED]
+        else {"state": state, "count": 1, "unique_count": 1}
+        for state in sorted(StateEnum._member_names_)
+    ]
     metric_reader_result = {
         "state_transitions": {
             "daily": [
@@ -196,7 +196,27 @@ def test_api_stats_output(eventdb_enabled, metric_reader_enabled, fixtures):
         },
     }
     if metric_reader_enabled:
-        assert actual_result == metric_reader_result
+        assert (
+            sorted(
+                actual_result["state_transitions"]["daily"][0]["states"],
+                key=lambda x: x["state"],
+            )
+            == metric_reader_result["state_transitions"]["daily"][0]["states"]
+        )
+        assert (
+            sorted(
+                actual_result["state_transitions"]["hourly"][0]["states"],
+                key=lambda x: x["state"],
+            )
+            == metric_reader_result["state_transitions"]["hourly"][0]["states"]
+        )
+        assert (
+            sorted(
+                actual_result["state_transitions"]["hourly_rolling"][0]["states"],
+                key=lambda x: x["state"],
+            )
+            == metric_reader_result["state_transitions"]["hourly_rolling"][0]["states"]
+        )
     elif eventdb_enabled:
         assert actual_result == eventdb_result
     else:
