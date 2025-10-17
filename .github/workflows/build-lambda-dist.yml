@@ -16,8 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.12", "3.13"]
-        architecture: ["aarch64", "x86_64"]
+        python-version:
+          - "3.12"
+          - "3.13"
+          - "3.14"
+        architecture:
+          - "aarch64"
+          - "x86_64"
     steps:
       - uses: actions/checkout@v5
         with:
