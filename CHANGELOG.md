@@ -7,17 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v1.1.2]
+
 ### Added
 
 - Adds CloudFormation for a minimal Cirrus deployment. ([#338])
 - CLI payload templating now supports default values specified in templates,
   using a syntax like `${var_name?default value}`. The default value can be any
   string except those that contain a `}`. ([#344])
+- Support for python 3.14 ([#348])
 
 ### Changed
 
 - Lambda packaging script now produces zip files for all combinations of Python
-  3.12 and 3.13 and arm64 and x86_64 architectures. ([#338])
+  3.12, 3.13, and 3.14 and arm64 and x86_64 architectures. ([#338])
 - Lambda packaging script patches stac-task `__init__.py` for faster startup
   ([#338])
 - Lambda packaging ensures proper file permissions on patched files ([#340])
@@ -25,6 +28,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   in the event of a failed run, `11` in the case of a timeout; [#344])
 
 ## [v1.1.1] - 2025-10-01
+
+‼️ Note that the lambda zips for this release have been yanked. See [#347] for
+additional information.
 
 ### Changed
 
@@ -37,6 +43,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `--no-editable` flag to force non-editable install in bash build script. ([#339])
 
 ## [v1.1.0] - 2025-09-25
+
+‼️ Note that the lambda zips for this release have been yanked. See [#347] for
+additional information.
 
 ### Added
 
@@ -1107,6 +1116,7 @@ Initial release
 [#225]: https://github.com/cirrus-geo/cirrus-geo/issues/225
 [#242]: https://github.com/cirrus-geo/cirrus-geo/issues/242
 [#255]: https://github.com/cirrus-geo/cirrus-geo/issues/255
+[#347]: https://github.com/cirrus-geo/cirrus-geo/issues/347
 [#71]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#72]: https://github.com/cirrus-geo/cirrus-geo/pull/72
 [#73]: https://github.com/cirrus-geo/cirrus-geo/pull/73
@@ -1168,6 +1178,7 @@ Initial release
 [#339]: https://github.com/cirrus-geo/cirrus-geo/pull/339
 [#340]: https://github.com/cirrus-geo/cirrus-geo/pull/340
 [#344]: https://github.com/cirrus-geo/cirrus-geo/pull/344
+[#348]: https://github.com/cirrus-geo/cirrus-geo/pull/348
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
