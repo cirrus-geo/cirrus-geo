@@ -14,7 +14,7 @@ config = {
         "json": {
             "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
             "datefmt": "%Y-%m-%dT%H:%M:%S%z",
-            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "class": "pythonjsonlogger.json.JsonFormatter",
         },
     },
     "handlers": {"standard": {"class": "logging.StreamHandler", "formatter": "json"}},

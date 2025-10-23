@@ -69,8 +69,22 @@ Parameters:
     Type: String
     Description: CPU architecture for Lambda functions
 
+  WorkflowMetricLogGroup:
+    Type: String
+    Description: Name of CloudWatch Log Group for Workflow Metrics
+    Default: ''
+
+  WorkflowMetricNamespace:
+    Type: String
+    Description: Namespace for CloudWatch Logs Metric Filters for Cirrus Workflows
+    Default: ''
+
 Conditions:
   UseVpc: !Not [!Equals [!Ref VpcId, '']]
+  UseWorkflowMetricLogger: !Not [!Equals [!Ref WorkflowMetricLogGroup, '']]
+  UseWorkflowMetricReader: !Not [!Equals [!Ref WorkflowMetricNamespace, '']]
+
+
 
 Resources:
   # Security Group for Lambda functions (conditional on VPC)
@@ -128,6 +142,16 @@ Resources:
                 Resource:
                   - !Ref StateTableArn
                   - !Sub '${StateTableArn}/index/*'
+              - !If
+                - UseWorkflowMetricReader
+                - Effect: Allow
+                  Action:
+                    - cloudwatch:GetMetricData
+                    - cloudwatch:GetMetricStatistics
+                    - cloudwatch:ListMetrics
+                  Resource: '*'
+                - !Ref 'AWS::NoValue'
+
 
   # IAM Role for Process Lambda
   ProcessLambdaRole:
@@ -188,6 +212,18 @@ Resources:
                 Action:
                   - states:StartExecution
                 Resource: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ResourcePrefix}-*'
+              - !If
+                - UseWorkflowMetricLogger
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                    - logs:DescribeLogGroups
+                    - logs:DescribeLogStreams
+                  Resource:
+                    - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${WorkflowMetricLogGroup}:*'
+                - !Ref 'AWS::NoValue'
+
 
   # IAM Role for Update State Lambda
   UpdateStateLambdaRole:
@@ -238,6 +274,17 @@ Resources:
                 Resource:
                   - !Ref PublishTopicArn
                   - !Ref WorkflowEventTopicArn
+              - !If
+                - UseWorkflowMetricLogger
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                    - logs:DescribeLogGroups
+                    - logs:DescribeLogStreams
+                  Resource:
+                    - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${WorkflowMetricLogGroup}:*'
+                - !Ref 'AWS::NoValue'
 
   # IAM Role for Pre Batch Lambda
   PreBatchLambdaRole:
@@ -328,6 +375,7 @@ Resources:
           CIRRUS_DATA_BUCKET: !Ref CirrusDataBucket
           CIRRUS_PAYLOAD_BUCKET: !Ref CirrusPayloadBucket
           CIRRUS_STATE_DB: !Ref StateTable
+          CIRRUS_WORKFLOW_METRIC_NAMESPACE: !Ref WorkflowMetricNamespace
       VpcConfig: !If
         - UseVpc
         - SecurityGroupIds:
@@ -357,6 +405,7 @@ Resources:
           CIRRUS_STATE_DB: !Ref StateTable
           CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopicArn
           CIRRUS_BASE_WORKFLOW_ARN: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${ResourcePrefix}-'
+          CIRRUS_WORKFLOW_LOG_GROUP: !Ref WorkflowMetricLogGroup
       VpcConfig: !If
         - UseVpc
         - SecurityGroupIds:
@@ -394,6 +443,7 @@ Resources:
           CIRRUS_WORKFLOW_EVENT_TOPIC_ARN: !Ref WorkflowEventTopicArn
           CIRRUS_PUBLISH_TOPIC_ARN: !Ref PublishTopicArn
           CIRRUS_PROCESS_QUEUE_URL: !Ref ProcessQueueUrl
+          CIRRUS_WORKFLOW_LOG_GROUP: !Ref WorkflowMetricLogGroup
       VpcConfig: !If
         - UseVpc
         - SecurityGroupIds:
