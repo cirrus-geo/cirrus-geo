@@ -282,7 +282,8 @@ class WorkflowMetricReader:
         formatter: Callable[[datetime], str] | None = None,
     ) -> list[dict[str, str | dict[str, dict[str, float]]]]:
         """
-        Retrieve metric statistics from CloudWatch.
+        Retrieve metrics from CloudWatch for specific workflows.  Aggregated by event,
+        for each workflow in `workflows`.
 
         Args:
             event_types (list[WFEventType]): List of workflow event types to filter.
@@ -347,13 +348,15 @@ class WorkflowMetricReader:
         formatter: Callable[[datetime], str] | None = None,
     ) -> list[dict[str, str | dict[str, dict[str, float]]]]:
         """
-        Retrieve metric statistics from CloudWatch.
+        Retrieve metrics from CloudWatch for all workflows.
 
         Args:
-            event_types (list[WFEventType]): List of workflow event types to filter.
             start_time (datetime): Start of the time window.
             end_time (datetime): End of the time window.
             period (int): Granularity in seconds.
+            event_types (list[WFEventType]): List of workflow event types to filter.
+            formatter (Callable[[datetime], str]: different requests to this function
+                require different formatting, and
 
         Returns:
             list[dict[str, Any]]: List of metric statistics dictionaries retrieved.
