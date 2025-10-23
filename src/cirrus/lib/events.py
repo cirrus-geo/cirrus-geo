@@ -455,17 +455,19 @@ class WorkflowMetricReader:
         """
         delta = parse_since(duration)
         period = int(parse_since(bin_size).total_seconds())
+        if granularity := bin_size[-1] not in "dhms":
+            raise ValueError(f"Unknown temporal granularity suffix ({granularity})")
 
         end_time = datetime.now(UTC)
-        if bin_size[-1] == "h":
-            end_time = end_time.replace(minute=0, second=0, microsecond=0)
-            end_time += timedelta(hours=1)
-        elif bin_size[-1] == "d":
+        if granularity == "d":
             end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_time += timedelta(days=1)
+            end_time += timedelta(days=1)  # include the current day
+        elif granularity == "h":
+            end_time = end_time.replace(minute=0, second=0, microsecond=0)
+            end_time += timedelta(hours=1)  # include the current hour
         else:
             end_time = end_time.replace(second=0, microsecond=0)
-            end_time += timedelta(minutes=1)
+            end_time += timedelta(minutes=1)  # include the current minute
 
         start_time = end_time - delta - timedelta(seconds=period)
 
@@ -473,7 +475,7 @@ class WorkflowMetricReader:
             start_time=start_time,
             end_time=end_time,
             period=period,
-            formatter=date_formatter(),
+            formatter=date_formatter(granularity=granularity),
         )
 
 

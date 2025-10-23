@@ -146,8 +146,9 @@ def test_workflow_metric_reader_get_statistics():
     reader = WorkflowMetricReader(metric_namespace=metric_namespace)
     assert reader.enabled()
     stats = reader.query_by_bin_and_duration(duration="15m", bin_size="1m")
-    stats_str = "stats = " + pformat(stats)
 
+    stats_str = "stats = " + pformat(stats)
+    print(stats_str)
     assert type(stats) is list
     assert len(stats) > 0, stats_str
     assert type(stats[0]) is dict
