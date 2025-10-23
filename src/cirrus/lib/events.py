@@ -251,26 +251,17 @@ class WorkflowMetricReader:
                 "",
             )
         )
-        self.log_group_name = (
-            log_group_name
-            if log_group_name != ""
-            else os.getenv("CIRRUS_WORKFLOW_LOG_GROUP", "")
-        )
         self._enabled = metric_namespace is not None and self.metric_namespace != ""
         if self._enabled:
-            resp = get_client("logs").describe_metric_filters(
-                logGroupName=self.log_group_name,
-            )
-            list_of_metrics = resp.get("metricFilters", [])
-            self._metrics = {
-                metric["metricTransformations"][0]["metricName"]
-                for metric in list_of_metrics
-            }
+            resp = self.cw_client.list_metrics(Namespace=self.metric_namespace)
+            self._metrics = {metric["MetricName"] for metric in resp["Metrics"]}
             if self.metric_some_workflows not in self._metrics or (
                 self.metric_all_workflows not in self._metrics
             ):
-                raise ValueError(
-                    f"No metrics found in namespace {self.metric_namespace}",
+                self.logger.warning(
+                    "No metrics found in namespace (%s).  "
+                    "This is OK if the deployment hasn't reun any workflows yet",
+                    self.metric_namespace,
                 )
 
     def enabled(self) -> bool:
@@ -458,8 +449,6 @@ class WorkflowMetricReader:
         delta = parse_since(duration)
         period = int(parse_since(bin_size).total_seconds())
 
-        # TODO: set start and end time comensurate with period of metric, per
-        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch/client/get_metric_data.html
         end_time = datetime.now(UTC)
         if bin_size[-1] == "h":
             end_time = end_time.replace(minute=0, second=0, microsecond=0)

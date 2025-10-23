@@ -56,8 +56,17 @@ Parameters:
       - 'true'
       - 'false'
 
+  EnableWorkflowMetrics:
+    Type: String
+    Description: Enable VPC creation and Lambda VPC configuration
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
 Conditions:
   CreateVpc: !Equals [!Ref EnableVpc, 'true']
+  CreateWorkflowMetrics: !Equals [!Ref EnableWorkflowMetrics, 'true']
 
 Resources:
   # Base Infrastructure Stack
@@ -96,6 +105,7 @@ Resources:
 
   MetricsStack:
     Type: AWS::CloudFormation::Stack
+    Condition: CreateWorkflowMetrics
     Properties:
       TemplateURL: core/metrics.yaml
       Parameters:
@@ -131,8 +141,8 @@ Resources:
         LogLevel: !Ref LogLevel
         LambdaPythonVersion: !Ref LambdaPythonVersion
         LambdaArch: !Ref LambdaArch
-        WorkflowMetricLogGroup: !GetAtt MetricsStack.Outputs.CirrusWorkflowEventLogGroup
-        WorkflowMetricNamespace: !GetAtt MetricsStack.Outputs.CirrusWorkflowMetricNamespace
+        WorkflowMetricLogGroup: !If [CreateWorkflowMetrics, !GetAtt MetricsStack.Outputs.CirrusWorkflowEventLogGroup, '']
+        WorkflowMetricNamespace: !If [CreateWorkflowMetrics, !GetAtt MetricsStack.Outputs.CirrusWorkflowMetricNamespace, '']
       Tags:
         - Key: Component
           Value: Functions

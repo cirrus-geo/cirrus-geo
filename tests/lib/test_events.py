@@ -14,6 +14,7 @@ from cirrus.lib.events import (
     WorkflowMetricLogger,
     WorkflowMetricReader,
 )
+from cirrus.lib.logging import get_task_logger
 from cirrus.lib.utils import get_client
 
 
@@ -52,10 +53,22 @@ def test_workflow_metric_logger_and_and_send(monkeypatch):
 
 @mock_aws
 def test_workflow_metric_logger_disabled(monkeypatch):
-    monkeypatch.delenv("CIRRUS_WORKFLOW_LOG_GROUP", raising=False)
+    monkeypatch.delenv("CIRRUS_WORKFLOW_METRIC_NAMESPACE", raising=False)
 
     metric_logger = WorkflowMetricReader()
     assert not metric_logger.enabled()
+
+
+@mock_aws
+def test_workflow_metric_logger_enabled(monkeypatch, caplog):
+    monkeypatch.setenv("CIRRUS_WORKFLOW_METRIC_NAMESPACE", "fake-namespace")
+    logger = get_task_logger("cirrus.lib", payload=())
+
+    metric_logger = WorkflowMetricReader(logger=logger)
+    for record in caplog.records:
+        assert record.levelname == "WARNING"
+        assert "fake-namespace" in record.message
+    assert metric_logger.enabled()
 
 
 @pytest.mark.skip(reason="moto does not support CloudWatch Log Metric Filters")
