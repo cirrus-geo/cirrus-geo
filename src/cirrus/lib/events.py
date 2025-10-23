@@ -119,7 +119,9 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
     """A class for surfacing workflow state changes to Cloudwatch
     Logs, and retrieving metrics from Cloudwatch Metrics.
 
-    This defaults to a batch_size of 1, to make all logs immediate."""
+    This defaults to a batch_size of 1, to make all logs immediate.  This is because we
+    can't guard against a lambda timing out an execution, and preventing us from
+    sending the last batch of messages on exit."""
 
     def __init__(
         self: Self,
@@ -127,6 +129,8 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
         log_group_name: str = "",
         batch_size: int = 1,
     ):
+        # TODO: Reconsider the batch_size if we get to making our
+        #       event-emitting lambda handlers async, so we don't lose messages.
         super().__init__(batchable=self._send, batch_size=batch_size)
         self.logger = logger if logger is not None else getLogger(__name__)
         self.log_group_name = (
