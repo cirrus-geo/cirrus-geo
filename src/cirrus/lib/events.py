@@ -372,7 +372,7 @@ class WorkflowMetricReader:
                 "MetricStat": {
                     "Metric": {
                         "Namespace": self.metric_namespace,
-                        "MetricName": self.metric_all_workflows,
+                        "MetricName": WorkflowMetricReader.metric_all_workflows,
                         "Dimensions": [
                             {
                                 "Name": "event",
@@ -381,7 +381,7 @@ class WorkflowMetricReader:
                         ],
                     },
                     "Period": period,
-                    "Stat": self._agg_statistic,
+                    "Stat": WorkflowMetricReader._agg_statistic,
                 },
                 "Label": str(event_type),
                 "ReturnData": False,
