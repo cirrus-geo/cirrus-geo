@@ -7,7 +7,6 @@ Parameters:
     Description: Prefix for all resource names
 
 Resources:
-  # S3 Buckets
   CirrusWorkflowEventLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
