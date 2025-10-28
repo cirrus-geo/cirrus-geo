@@ -262,9 +262,8 @@ class WorkflowMetricReader:
         end_time: datetime,
         period: int = 3600,
         event_types: list[WFEventType] | None = None,
-        statistics: list[str] | None = None,
         formatter: Callable[[datetime], str] | None = None,
-    ) -> list[dict[str, str | dict[str, dict[str, float]]]]:
+    ) -> dict[str, list[dict[str, str | dict[str, dict[str, float]]]]]:
         """
         Retrieve metrics from CloudWatch for specific workflows.  Aggregated by event,
         for each workflow in `workflows`.
@@ -275,53 +274,80 @@ class WorkflowMetricReader:
             start_time (datetime): Start of the time window.
             end_time (datetime): End of the time window.
             period (int): Granularity in seconds.
-            statistics (list[str]): List of statistics to retrieve.
 
         Returns:
-            list[dict[str, Any]]: List of metric statistics dictionaries retrieved.
+            list[dict[str, Any]]: List of metric data dictionaries retrieved.
         """
-        if statistics is None:
-            statistics = [WorkflowMetricReader._agg_statistic]
         if event_types is None:
             event_types = list(WFEventType)
         if formatter is None:
             formatter = date_formatter()
-        delta = timedelta(seconds=period)
-        dates = [
-            start_time + i * delta
-            for i in range(int((end_time - start_time).total_seconds() / period))
-        ]
-        fcstats: dict[datetime, dict[str, dict[str, float]]] = {
-            d.replace(second=0, microsecond=0): {
-                e: dict.fromkeys(statistics, 0) for e in event_types
-            }
-            for d in dates
-        }
-
+        cstats: dict[str, dict[datetime, dict[str, dict[str, float]]]] = defaultdict(
+            lambda: defaultdict(
+                lambda: defaultdict(lambda: dict.fromkeys(event_types, 0)),
+            ),
+        )
         for workflow in workflows:
-            for event_type in event_types:
-                resp = self.cw_client.get_metric_statistics(
-                    Namespace=self.metric_namespace,
-                    MetricName=self.metric_some_workflows,
-                    Dimensions=[
-                        {"Name": "event", "Value": str(event_type)},
-                        {"Name": "workflow", "Value": workflow},
-                    ],
-                    StartTime=start_time,
-                    EndTime=end_time,
-                    Period=period,
-                    Statistics=statistics,
-                )
-                for datapoint in resp["Datapoints"]:
-                    tstamp = datapoint["Timestamp"]
-                    for statistic in statistics:
-                        stat = datapoint[statistic]
-                        fcstats[tstamp][str(event_type)][statistic] += stat
-        # TODO: break this out by workflow, maybe
-        return [
-            {"period": formatter(k), "events": dict(v)}
-            for k, v in sorted(fcstats.items(), key=lambda x: x[0])
-        ]
+            mdqs = [
+                {
+                    "Id": str(event_type).lower() + "___" + workflow.lower(),
+                    "MetricStat": {
+                        "Metric": {
+                            "Namespace": self.metric_namespace,
+                            "MetricName": self.metric_some_workflows,
+                            "Dimensions": [
+                                {
+                                    "Name": "event",
+                                    "Value": str(event_type),
+                                },
+                                {
+                                    "Name": "workflow",
+                                    "Value": workflow,
+                                },
+                            ],
+                        },
+                        "Period": period,
+                        "Stat": WorkflowMetricReader._agg_statistic,
+                    },
+                    "Label": str(event_type),
+                    "ReturnData": False,
+                }
+                for event_type in event_types
+            ] + [
+                {
+                    "Id": self.metric_some_workflows,
+                    "Expression": "FILL(METRICS(), 0)",
+                    "Label": "ZFILL",
+                    "ReturnData": True,
+                    "Period": period,
+                },
+            ]
+            resp = self.cw_client.get_metric_data(
+                MetricDataQueries=mdqs,
+                StartTime=start_time,
+                EndTime=end_time,
+                ScanBy="TimestampAscending",
+            )
+            for et, d, v in itertools.chain(
+                *[
+                    zip(
+                        [e["Label"].replace("ZFILL ", "")] * len(e["Timestamps"]),
+                        e["Timestamps"],
+                        e["Values"],
+                        strict=True,
+                    )
+                    for e in resp["MetricDataResults"]
+                ],
+            ):
+                cstats[workflow][d][et] = v
+
+        return {
+            wf: [
+                {"period": formatter(k), "events": dict(v)}
+                for k, v in sorted(cstats[wf].items(), key=lambda x: x[0])
+            ]
+            for wf in cstats
+        }
 
     def aggregated_by_event_type(
         self,
