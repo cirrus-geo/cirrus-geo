@@ -13,8 +13,6 @@ from logging import Logger, getLogger
 from time import time
 from typing import Any, Self
 
-from botocore.exceptions import ParamValidationError
-
 from .enums import StateEnum, WFEventType
 from .eventdb import EventDB
 from .statedb import StateDB
@@ -161,13 +159,10 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
                 logStreamName=self.log_stream_name,
             )
             self.logger.info("Created new log stream: %s", self.log_stream_name)
-        except self.logs_client.exceptions.ResourceAlreadyExistsException:
-            self.logger.info("Log stream already exists: %s", self.log_stream_name)
         except self.logs_client.exceptions.ResourceNotFoundException as e:
             raise Exception(
                 f"Log group {self.log_group_name} does not exist.",
             ) from e
-        # Retrieve sequence token
         response = self.logs_client.describe_log_streams(
             logGroupName=self.log_group_name,
             logStreamNamePrefix=self.log_stream_name,
@@ -179,7 +174,7 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
             raise Exception("Log stream not found after attempted creation.")
 
     def enabled(self: Self) -> bool:
-        return bool(self.log_group_name) and self.log_stream is not None
+        return bool(self.log_group_name)
 
     def _send(self: Self, batch: list[WorkflowEvent]) -> dict[str, Any]:
         # build log events
@@ -188,19 +183,8 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
             "logStreamName": self.log_stream_name,
             "logEvents": self.prepare_batch(batch),
         }
-        if self.sequence_token is not None:
-            params["sequenceToken"] = self.sequence_token
 
-        try:
-            response = self.logs_client.put_log_events(**params)
-            self.sequence_token = response["nextSequenceToken"]
-            return response
-        except ParamValidationError as e:
-            self.sequence_token = e.response["expectedSequenceToken"]
-            # Retry once
-            response = self.logs_client.put_log_events(**params)
-            self.sequence_token = response["nextSequenceToken"]
-            return response
+        return self.logs_client.put_log_events(**params)
 
     def add(self: Self, event: WorkflowEvent) -> None:
         if self.enabled():

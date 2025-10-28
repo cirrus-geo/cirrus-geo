@@ -70,9 +70,9 @@ def get_root(root_url, data_bucket):
 
 
 def filter_for_dashboard(
-    data: list[dict[str, Any]],
+    data: list[dict[str, Any]] | None,
     interval: str,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, Any]] | None:
     filtered = []
     """compatibilty layer to reformat WorkflowMetricReader response in the same fashion
     that EventDB reported.
