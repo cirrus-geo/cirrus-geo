@@ -12,7 +12,7 @@ Resources:
     Properties:
       LogGroupClass: STANDARD
       LogGroupName: !Sub "${ResourcePrefix}-workflow-event-metrics"
-      RetentionInDays: 90
+      RetentionInDays: 1
 
 
   CirrusAllWorkflowMetric:
