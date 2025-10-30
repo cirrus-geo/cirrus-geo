@@ -283,6 +283,10 @@ class WorkflowMetricReader:
         Retrieve metrics from CloudWatch for specific workflows.  Aggregated by event,
         for each workflow in `workflows`.
 
+        NOTE: This makes an API call for each workflow, so this method is much more
+              costly than `aggregated_by event_type`, if you are interested in all
+              workflows running in the deployment.
+
         Args:
             event_types (list[WFEventType]): List of workflow event types to filter.
             workflows (list[str]): List of workflow names to filter.
