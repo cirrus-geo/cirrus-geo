@@ -10,7 +10,7 @@ from boto3utils import s3
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, daily, hourly
-from cirrus.lib.events import WorkflowMetricReader
+from cirrus.lib.events import WorkflowMetric, WorkflowMetricReader
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.statedb import StateDB, to_current
 from cirrus.lib.utils import parse_since
@@ -70,7 +70,7 @@ def get_root(root_url, data_bucket):
 
 
 def filter_for_dashboard(
-    data: list[dict[str, Any]] | None,
+    data: list[WorkflowMetric] | None,
     interval: str,
 ) -> list[dict[str, Any]] | None:
     filtered = []
@@ -78,14 +78,14 @@ def filter_for_dashboard(
     that EventDB reported.
 
     Arguments:
-      data (list[dict[str, Any]]): list of dicts from WorkflowMetricReader
+      data (list[WorkflowMetric]): list of dicts from WorkflowMetricReader
       interval (str): interval label to add to each entry (e.g. 'daily', 'hourly')
     """
 
     if data is None:
         return None
 
-    def events_to_states(events: dict[str, Any]) -> list[dict[str, Any]]:
+    def events_to_states(events: dict[str, int]) -> list[dict[str, Any]]:
         # this function passes through all WFEventTypes, but updates the names for
         # COMPLETED and CLAIMED_PROCESSING to be SUCCEEDED and CLAIMED, respectively
         state_map = {
@@ -97,8 +97,8 @@ def filter_for_dashboard(
         return [
             {
                 "state": state_map.get(event, event),
-                "unique_count": int(value),
-                "count": int(value),
+                "unique_count": value,
+                "count": value,
             }
             for event, value in events.items()
             if event in StateEnum or event in state_map

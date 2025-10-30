@@ -1,4 +1,3 @@
-import itertools
 import json
 import os
 import uuid
@@ -11,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from functools import wraps
 from logging import Logger, getLogger
 from time import time
-from typing import Any, Self
+from typing import Any, Self, TypedDict
 
 from .enums import StateEnum, WFEventType
 from .eventdb import EventDB
@@ -27,7 +26,7 @@ from .utils import (
 )
 
 
-def date_formatter(granularity="s") -> Callable:
+def date_formatter(granularity="s") -> Callable[[datetime], str]:
     """Return string representation of the given datetime, truncated to the specified
     granularity.  Timezone handling is deferred to the datetime library behavior.
 
@@ -202,6 +201,22 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
         ]
 
 
+class WorkflowMetric(TypedDict):
+    """Summary of workflow events for period starting at `period` and running for the
+    given `interval` (in seconds)"""
+
+    period: str
+    interval: int
+    events: dict[str, int]
+
+
+class WorkflowMetricSeries[WorkflowMetric](TypedDict):
+    """`metrics` is a list of WorkflowMetric summaries for the named `workflow`"""
+
+    workflow: str
+    metrics: list[WorkflowMetric]
+
+
 class WorkflowMetricReader:
     """
     A class for retrieving workflow metrics from CloudWatch.
@@ -263,7 +278,7 @@ class WorkflowMetricReader:
         period: int = 3600,
         event_types: list[WFEventType] | None = None,
         formatter: Callable[[datetime], str] | None = None,
-    ) -> dict[str, list[dict[str, str | dict[str, dict[str, float]]]]]:
+    ) -> list[WorkflowMetricSeries]:
         """
         Retrieve metrics from CloudWatch for specific workflows.  Aggregated by event,
         for each workflow in `workflows`.
@@ -276,17 +291,18 @@ class WorkflowMetricReader:
             period (int): Granularity in seconds.
 
         Returns:
-            list[dict[str, Any]]: List of metric data dictionaries retrieved.
+            list[dict[str, int]]: List of metric data dictionaries retrieved.
         """
         if event_types is None:
             event_types = list(WFEventType)
         if formatter is None:
             formatter = date_formatter()
-        cstats: dict[str, dict[datetime, dict[str, dict[str, float]]]] = defaultdict(
-            lambda: defaultdict(
-                lambda: defaultdict(lambda: dict.fromkeys(event_types, 0)),
-            ),
-        )
+        cstats: dict[str, dict[datetime, dict[str, int]]] = {
+            workflow: defaultdict(
+                lambda: dict.fromkeys([str(e) for e in event_types], 0),
+            )
+            for workflow in workflows
+        }
         for workflow in workflows:
             mdqs = [
                 {
@@ -328,26 +344,28 @@ class WorkflowMetricReader:
                 EndTime=end_time,
                 ScanBy="TimestampAscending",
             )
-            for et, d, v in itertools.chain(
-                *[
-                    zip(
-                        [e["Label"].replace("ZFILL ", "")] * len(e["Timestamps"]),
-                        e["Timestamps"],
-                        e["Values"],
-                        strict=True,
-                    )
-                    for e in resp["MetricDataResults"]
-                ],
-            ):
-                cstats[workflow][d][et] = v
+            for mdr in resp["MetricDataResults"]:
+                for timestamp, values in zip(
+                    mdr["Timestamps"],
+                    mdr["Values"],
+                    strict=True,
+                ):
+                    eventtype = mdr["Label"].replace("ZFILL ", "")
+                    cstats[workflow][timestamp][eventtype] = int(values)
+        retvals = []
+        for wf, wfstats in cstats.items():
+            wfmetrics: WorkflowMetricSeries = {"workflow": wf, "metrics": []}
+            for timestamp, metrics in sorted(wfstats.items(), key=lambda x: x[0]):
+                wfm: WorkflowMetric = {
+                    "period": formatter(timestamp),
+                    "interval": period,
+                    "events": dict(metrics),
+                }
+                wfmetrics["metrics"].append(wfm)
 
-        return {
-            wf: [
-                {"period": formatter(k), "events": dict(v)}
-                for k, v in sorted(cstats[wf].items(), key=lambda x: x[0])
-            ]
-            for wf in cstats
-        }
+            retvals.append(wfmetrics)
+
+        return retvals
 
     def aggregated_by_event_type(
         self,
@@ -356,7 +374,7 @@ class WorkflowMetricReader:
         period: int = 3600,
         event_types: list[WFEventType] | None = None,
         formatter: Callable[[datetime], str] | None = None,
-    ) -> list[dict[str, str | dict[str, dict[str, float]]]]:
+    ) -> list[WorkflowMetric]:
         """
         Retrieve metrics from CloudWatch for all workflows.
 
@@ -369,7 +387,7 @@ class WorkflowMetricReader:
                 require different formatting, and
 
         Returns:
-            list[dict[str, Any]]: List of metric statistics dictionaries retrieved.
+            list[WorkflowMetric]: List of metric statistics dictionaries retrieved.
 
         """
         if event_types is None:
@@ -414,32 +432,33 @@ class WorkflowMetricReader:
             ScanBy="TimestampAscending",
         )
 
-        cstats: dict[datetime, dict[str, dict[str, float]]] = defaultdict(
-            lambda: defaultdict(lambda: dict.fromkeys(event_types, 0)),
+        cstats: dict[datetime, dict[str, int]] = defaultdict(
+            lambda: defaultdict(lambda: 0),
         )
-        for et, d, v in itertools.chain(
-            *[
-                zip(
-                    [e["Label"].replace("ZFILL ", "")] * len(e["Timestamps"]),
-                    e["Timestamps"],
-                    e["Values"],
-                    strict=True,
-                )
-                for e in resp["MetricDataResults"]
-            ],
-        ):
-            cstats[d][et] = v
+        for mdr in resp["MetricDataResults"]:
+            for timestamp, value in zip(
+                mdr["Timestamps"],
+                mdr["Values"],
+                strict=True,
+            ):
+                eventtype = mdr["Label"].replace("ZFILL ", "")
+                cstats[timestamp][eventtype] = int(value)
+        retval = []
+        for timestamp, metrics in sorted(cstats.items(), key=lambda x: x[0]):
+            wfm: WorkflowMetric = {
+                "period": formatter(timestamp),
+                "interval": period,
+                "events": dict(metrics),
+            }
+            retval.append(wfm)
 
-        return [
-            {"period": formatter(k), "events": dict(v)}
-            for k, v in sorted(cstats.items(), key=lambda x: x[0])
-        ]
+        return retval
 
     def query_hour(
         self,
         start: int,
         end: int,
-    ) -> list[dict[str, str | dict[str, dict[str, float]]]]:
+    ) -> list[WorkflowMetric]:
         """
         Query CloudWatch metrics for a specific hour range.
         """
@@ -457,7 +476,7 @@ class WorkflowMetricReader:
         self,
         bin_size: str,
         duration: str,
-    ) -> list[dict[str, str | dict[str, dict[str, float]]]]:
+    ) -> list[WorkflowMetric]:
         """
         Query CloudWatch metrics for a given bin size and duration.
         bin_size: e.g. '1d', '1h'
