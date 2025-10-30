@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Cirrus Workflow Event Logging/Metric Infrastructure - Cloudwatch'
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for all resource names
+
+Resources:
+  CirrusWorkflowEventLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupClass: STANDARD
+      LogGroupName: !Sub "${ResourcePrefix}-workflow-event-metrics"
+      RetentionInDays: 1
+
+
+  CirrusAllWorkflowMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName:
+        Ref: "CirrusWorkflowEventLogGroup"
+      FilterPattern: "{$.event = \"*\"}"
+      MetricTransformations:
+        -
+          MetricValue: "1"
+          MetricNamespace: !Sub "${ResourcePrefix}-workflow"
+          MetricName: "all_workflows_by_event"
+          Dimensions:
+            -
+              Key: "event"
+              Value: "$.event"
+
+  CirrusSpecificWorkflowMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName:
+        Ref: "CirrusWorkflowEventLogGroup"
+      FilterPattern: "{($.event = \"*\") && ($.workflow = \"*\")}"
+      MetricTransformations:
+        -
+          MetricValue: "1"
+          MetricNamespace: !Sub "${ResourcePrefix}-workflow"
+          MetricName: "a_workflow_by_event"
+          Dimensions:
+            -
+              Key: "event"
+              Value: "$.event"
+            -
+              Key: "workflow"
+              Value: "$.workflow"
+
+Outputs:
+  CirrusWorkflowEventLogGroup:
+    Description: CloudWatch LogGroup for Cirrus Workflow Metrics
+    Value: !Ref CirrusWorkflowEventLogGroup
+
+  CirrusWorkflowMetricNamespace:
+    Description: CloudWatch Logs Metric Filter Namespace
+    Value: !Sub "${ResourcePrefix}-workflow"

@@ -10,6 +10,7 @@ from boto3utils import s3
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, daily, hourly
+from cirrus.lib.events import WorkflowMetric, WorkflowMetricReader
 from cirrus.lib.logging import get_task_logger
 from cirrus.lib.statedb import StateDB, to_current
 from cirrus.lib.utils import parse_since
@@ -68,8 +69,77 @@ def get_root(root_url, data_bucket):
     }
 
 
-def get_stats(_eventdb: EventDB) -> dict[str, Any] | None:
+def filter_for_dashboard(
+    data: list[WorkflowMetric] | None,
+    interval: str,
+) -> list[dict[str, Any]] | None:
+    filtered = []
+    """compatibilty layer to reformat WorkflowMetricReader response in the same fashion
+    that EventDB reported.
+
+    Arguments:
+      data (list[WorkflowMetric]): list of dicts from WorkflowMetricReader
+      interval (str): interval label to add to each entry (e.g. 'daily', 'hourly')
+    """
+
+    if data is None:
+        return None
+
+    def events_to_states(events: dict[str, int]) -> list[dict[str, Any]]:
+        # this function passes through all WFEventTypes, but updates the names for
+        # COMPLETED and CLAIMED_PROCESSING to be SUCCEEDED and CLAIMED, respectively
+        state_map = {
+            "SUCCEEDED": "COMPLETED",
+            "CLAIMED_PROCESSING": "CLAIMED",
+            "STARTED_PROCESSING": "PROCESSING",
+        }
+
+        return [
+            {
+                "state": state_map.get(event, event),
+                "unique_count": value,
+                "count": value,
+            }
+            for event, value in events.items()
+            if event in StateEnum or event in state_map
+        ]
+
+    for entry in data:
+        filtered.append(
+            {
+                "period": entry["period"],
+                "states": events_to_states(entry["events"]),
+                "interval": interval,
+            },
+        )
+
+    return filtered
+
+
+def get_stats(
+    _metricreader: WorkflowMetricReader,
+    _eventdb: EventDB,
+) -> dict[str, Any] | None:
     logger.debug("Get stats")
+
+    if _metricreader.enabled():
+        return {
+            "state_transitions": {
+                "daily": filter_for_dashboard(
+                    _metricreader.query_by_bin_and_duration("1d", "60d"),
+                    "day",
+                ),
+                "hourly": filter_for_dashboard(
+                    _metricreader.query_by_bin_and_duration("1h", "36h"),
+                    "hour",
+                ),
+                "hourly_rolling": filter_for_dashboard(
+                    (_metricreader.query_hour(1, 0) or [])
+                    + (_metricreader.query_hour(2, 1) or []),
+                    "hour",
+                ),
+            },
+        }
 
     try:
         return {
@@ -107,6 +177,7 @@ def lambda_handler(event, _context):
     # Cirrus state database
     statedb = StateDB()
     eventdb = EventDB()
+    metric_reader = WorkflowMetricReader()
 
     # get request URL
     domain = event.get("requestContext", {}).get("domainName", "")
@@ -144,7 +215,7 @@ def lambda_handler(event, _context):
         return response(get_root(root_url, data_bucket))
 
     if payload_id == "stats":
-        if stats := get_stats(eventdb):
+        if stats := get_stats(_metricreader=metric_reader, _eventdb=eventdb):
             return response(stats)
         return response(
             {

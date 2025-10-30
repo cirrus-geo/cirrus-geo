@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### ⚠️ Deprecations
+
+- The `EventDB` feature utilized Amazon Timestream to generate workflow
+  metrics.  AWS has stopped supporting this service, and it is no longer
+  deployable.  The feature will remain in Cirrus to support existing
+  deployments, but those are encouraged to migrate to the new framework, via
+  the `WorkflowMetricLogger` and `WorkflowMetricReader`. ([#329])
+
+### Added
+
+- Adds `WorkflowMetricLogger` and `WorkflowMetricReader` classes to surface
+  aggregate workflow activity, as a replacement for `EventDB`. These classes
+  depend on Cloudwatch Logs Metric Filters. See
+  [this comment][metrics-migration] for a description of the migration
+  path. ([#329])
+
 ## [v1.1.2]
 
 ### Added
@@ -1171,6 +1187,8 @@ Initial release
 [#319]: https://github.com/cirrus-geo/cirrus-geo/pull/319
 [#324]: https://github.com/cirrus-geo/cirrus-geo/pull/324
 [#326]: https://github.com/cirrus-geo/cirrus-geo/pull/326
+[#329]: https://github.com/cirrus-geo/cirrus-geo/pull/329
+[metrics-migration]: https://github.com/cirrus-geo/cirrus-geo/pull/329#issuecomment-3412712053
 [#330]: https://github.com/cirrus-geo/cirrus-geo/pull/330
 [#331]: https://github.com/cirrus-geo/cirrus-geo/pull/331
 [#337]: https://github.com/cirrus-geo/cirrus-geo/pull/337
