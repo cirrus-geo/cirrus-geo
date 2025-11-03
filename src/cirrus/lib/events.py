@@ -135,7 +135,6 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
             if len(log_group_name) > 0
             else os.getenv("CIRRUS_WORKFLOW_LOG_GROUP", "")
         )
-        self.sequence_token = None
 
         if self.log_group_name == "":
             self.logger.info(
