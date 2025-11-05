@@ -124,14 +124,18 @@ the <a class="reference external" href="https://docs.aws.amazon.com/step-functio
 <section id="simple-example">
 <h2>Simple example<a class="headerlink" href="#simple-example" title="Link to this heading"></a></h2>
 <p>We can use the idea of a <code class="docutils literal notranslate"><span class="pre">publish-only</span></code> workflow as a simple example of a
-minimal Cirrus workflow <code class="docutils literal notranslate"><span class="pre">state-machine.json</span></code></p>
+minimal Cirrus workflow with a single Lambda task.</p>
 <div class="highlight-JSON notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;Comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Simple example that just publishes input Collections and items&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;Comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Simple example that just publishes input Collections and Items&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;StartAt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;publish&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;States&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="nt">&quot;publish&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;!GetAtt publish.Arn&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:states:::lambda:invoke&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;FunctionName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;!GetAtt publish.Arn&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;Payload.$&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$&quot;</span>
+<span class="w">            </span><span class="p">},</span>
 <span class="w">            </span><span class="nt">&quot;End&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 <span class="w">            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">                </span><span class="p">{</span>
@@ -163,6 +167,12 @@ minimal Cirrus workflow <code class="docutils literal notranslate"><span class="
 <span class="p">}</span>
 </pre></div>
 </div>
+<p>Note that we do not <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html#w199aac33c40c13">directly specify</a> the Lambda function ARN as the <code class="docutils literal notranslate"><span class="pre">Resource</span></code> for
+the <code class="docutils literal notranslate"><span class="pre">publish</span></code> task; rather, we use <code class="docutils literal notranslate"><span class="pre">arn:aws:states:::lambda:invoke</span></code> for the
+<code class="docutils literal notranslate"><span class="pre">Resource</span></code> and provide the Lambda function ARN in the <code class="docutils literal notranslate"><span class="pre">FunctionName</span></code> field in the
+<code class="docutils literal notranslate"><span class="pre">Parameters</span></code> object. Using this format produces additional metadata in the step
+function execution history, including the request ID of the Lambda invocation, which is
+can be used for accessing the Lambda logs.</p>
 <section id="workflow-naming">
 <h3>Workflow naming<a class="headerlink" href="#workflow-naming" title="Link to this heading"></a></h3>
 <p>How a workflow is named is important. Here we can see the name is

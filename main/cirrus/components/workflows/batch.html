@@ -229,7 +229,11 @@ use-case perfectly.</p>
 <span class="w">                    </span><span class="nt">&quot;States&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                        </span><span class="nt">&quot;pre-batch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
-<span class="w">                            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;!GetAtt pre-batch.Arn&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:states:::lambda:invoke&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                                </span><span class="nt">&quot;FunctionName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;!GetAtt pre-batch.Arn&quot;</span><span class="p">,</span>
+<span class="w">                                </span><span class="nt">&quot;Payload.$&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$&quot;</span>
+<span class="w">                            </span><span class="p">},</span>
 <span class="w">                            </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;batch-task&quot;</span><span class="p">,</span>
 <span class="w">                            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">                                </span><span class="p">{</span>
@@ -281,7 +285,11 @@ use-case perfectly.</p>
 <span class="w">                        </span><span class="p">},</span>
 <span class="w">                        </span><span class="nt">&quot;post-batch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
-<span class="w">                            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;!GetAtt post-batch.Arn&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:states:::lambda:invoke&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                                </span><span class="nt">&quot;FunctionName&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">!Ge</span><span class="kc">t</span><span class="err">A</span><span class="kc">tt</span><span class="w"> </span><span class="err">pos</span><span class="kc">t</span><span class="mi">-</span><span class="err">ba</span><span class="kc">t</span><span class="err">ch.Ar</span><span class="kc">n</span><span class="p">,</span>
+<span class="w">                                </span><span class="nt">&quot;Payload.$&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$&quot;</span>
+<span class="w">                            </span><span class="p">},</span>
 <span class="w">                            </span><span class="nt">&quot;End&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 <span class="w">                            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">                                </span><span class="p">{</span>
@@ -326,7 +334,11 @@ use-case perfectly.</p>
 <span class="w">        </span><span class="p">},</span>
 <span class="w">        </span><span class="nt">&quot;publish&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;!GetAtt publish.Arn&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:states:::lambda:invoke&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;FunctionName&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">!Ge</span><span class="kc">t</span><span class="err">A</span><span class="kc">tt</span><span class="w"> </span><span class="err">publish.Ar</span><span class="kc">n</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;Payload.$&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$&quot;</span>
+<span class="w">            </span><span class="p">},</span>
 <span class="w">            </span><span class="nt">&quot;End&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 <span class="w">            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">                </span><span class="p">{</span>
