@@ -15,9 +15,6 @@ Simple example
 We can use the idea of a ``publish-only`` workflow as a simple example of a
 minimal Cirrus workflow with a single Lambda task.
 
-
-https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html#w199aac33c40c13
-
 .. code-block:: JSON
 
     {
@@ -61,7 +58,7 @@ https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html#w199aac
         }
     }
 
-Note that we do not `directly specify`_` the Lambda function ARN as the ``Resource`` for
+Note that we do not `directly specify`_ the Lambda function ARN as the ``Resource`` for
 the ``publish`` task; rather, we use ``arn:aws:states:::lambda:invoke`` for the
 ``Resource`` and provide the Lambda function ARN in the ``FunctionName`` field in the
 ``Parameters`` object. Using this format produces additional metadata in the step
