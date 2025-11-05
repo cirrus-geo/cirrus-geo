@@ -134,7 +134,11 @@ use-case perfectly.
                         "States": {
                             "pre-batch": {
                                 "Type": "Task",
-                                "Resource": "!GetAtt pre-batch.Arn",
+                                "Resource": "arn:aws:states:::lambda:invoke",
+                                "Parameters": {
+                                    "FunctionName": "!GetAtt pre-batch.Arn",
+                                    "Payload.$": "$"
+                                },
                                 "Next": "batch-task",
                                 "Retry": [
                                     {
@@ -186,7 +190,11 @@ use-case perfectly.
                             },
                             "post-batch": {
                                 "Type": "Task",
-                                "Resource": "!GetAtt post-batch.Arn",
+                                "Resource": "arn:aws:states:::lambda:invoke",
+                                "Parameters": {
+                                    "FunctionName": !GetAtt post-batch.Arn,
+                                    "Payload.$": "$"
+                                },
                                 "End": true,
                                 "Retry": [
                                     {
@@ -231,7 +239,11 @@ use-case perfectly.
             },
             "publish": {
                 "Type": "Task",
-                "Resource": "!GetAtt publish.Arn",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "Parameters": {
+                    "FunctionName": !GetAtt publish.Arn,
+                    "Payload.$": "$"
+                },
                 "End": true,
                 "Retry": [
                     {

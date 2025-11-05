@@ -13,17 +13,24 @@ Simple example
 --------------
 
 We can use the idea of a ``publish-only`` workflow as a simple example of a
-minimal Cirrus workflow ``state-machine.json``
+minimal Cirrus workflow with a single Lambda task.
+
+
+https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html#w199aac33c40c13
 
 .. code-block:: JSON
 
     {
-        "Comment": "Simple example that just publishes input Collections and items",
+        "Comment": "Simple example that just publishes input Collections and Items",
         "StartAt": "publish",
         "States": {
             "publish": {
                 "Type": "Task",
-                "Resource": "!GetAtt publish.Arn",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "Parameters": {
+                    "FunctionName": "!GetAtt publish.Arn",
+                    "Payload.$": "$"
+                },
                 "End": true,
                 "Retry": [
                     {
@@ -54,6 +61,14 @@ minimal Cirrus workflow ``state-machine.json``
         }
     }
 
+Note that we do not `directly specify`_` the Lambda function ARN as the ``Resource`` for
+the ``publish`` task; rather, we use ``arn:aws:states:::lambda:invoke`` for the
+``Resource`` and provide the Lambda function ARN in the ``FunctionName`` field in the
+``Parameters`` object. Using this format produces additional metadata in the step
+function execution history, including the request ID of the Lambda invocation, which is
+can be used for accessing the Lambda logs.
+
+.. _directly specify: https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html#w199aac33c40c13
 
 Workflow naming
 ^^^^^^^^^^^^^^^
