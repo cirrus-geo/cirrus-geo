@@ -19,7 +19,6 @@ from cirrus.management.utils.click import (
 )
 from cirrus.management.utils.manage import (
     SINCE,
-    _get_execution,
     execution_arn,
     include_user_vars,
     query_filters,
@@ -128,8 +127,9 @@ def get_execution(
     payload_id: str | None,
     raw: bool = False,
 ):
-    """Get a workflow execution using its ARN or its input payload ID"""
-    execution = _get_execution(deployment, arn, payload_id)
+    """Get basic workflow execution details using its ARN or its input payload ID"""
+    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
+    execution = deployment.get_execution(execution_arn)
 
     if raw:
         click.echo(execution)
@@ -148,7 +148,8 @@ def get_execution_input(
     raw: bool = False,
 ):
     """Get a workflow execution's input payload using its ARN or its input payload ID"""
-    _input = json.loads(_get_execution(deployment, arn, payload_id)["input"])
+    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
+    _input = json.loads(deployment.get_execution(execution_arn)["input"])
 
     if raw:
         click.echo(_input)
@@ -168,12 +169,55 @@ def get_execution_output(
 ):
     """Get a workflow execution's output payload using its ARN or its input
     payload ID"""
-    output = json.loads(_get_execution(deployment, arn, payload_id)["output"])
+    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
+    output = json.loads(deployment.get_execution(execution_arn)["output"])
 
     if raw:
         click.echo(output)
     else:
         click.echo(json.dumps(output, indent=4, default=str))
+
+
+@manage.command("get-state-machine")
+@click.option(
+    "--arn",
+    required=True,
+    help="State machine ARN",
+)
+@raw_option
+@pass_deployment
+def get_state_machine_cmd(
+    deployment: Deployment,
+    arn: str,
+    raw: bool = False,
+):
+    """Get a state machine's ASL definition"""
+    asl = deployment.get_state_machine(arn)
+
+    if raw:
+        click.echo(asl)
+    else:
+        click.echo(json.dumps(asl, indent=4, default=str))
+
+
+@manage.command("get-execution-history")
+@execution_arn
+@raw_option
+@pass_deployment
+def get_execution_history_cmd(
+    deployment: Deployment,
+    arn: str | None,
+    payload_id: str | None,
+    raw: bool = False,
+):
+    """Get a workflow execution's event history using its ARN or its input payload ID"""
+    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
+    execution_history = deployment.get_execution_history(execution_arn)
+
+    if raw:
+        click.echo(execution_history)
+    else:
+        click.echo(json.dumps(execution_history, indent=4, default=str))
 
 
 @manage.command("get-state")

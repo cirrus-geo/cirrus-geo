@@ -79,29 +79,29 @@ def _management_env(_environment, payloads, workflow):
 
 
 @pytest.mark.usefixtures("_management_env")
-def test_manage_get_execution_by_payload_id_twice(
+def test_manage_get_execution_arn_by_payload_id_twice(
     deployment,
     basic_payload_managers_factory,
     wfem,
 ) -> None:
     """Causes two workflow executions of the same payload, and confirms that the second
-    call to get_execution_by_payload_id gets a different executionArn value from the
-    first execution. This confirms that we are getting the most recent execution ARN
+    call to get_execution_arn with payload_id gets a different executionArn value from
+    the first execution. This confirms that we are getting the most recent execution ARN
     from dynamodb, as new ones are simply appended.
     """
     basic_payload_managers1 = basic_payload_managers_factory()
     basic_payload_managers1.process(wfem)
     pid = basic_payload_managers1[0].payload["id"]
-    sfn_exe1 = deployment.get_execution_by_payload_id(pid)
+    exec_arn1 = deployment.get_execution_arn(payload_id=pid)
 
     # alter state to allow a new workflow execution of the same payload
-    wfem.aborted(pid, execution_arn=sfn_exe1["executionArn"])
+    wfem.aborted(pid, execution_arn=exec_arn1)
 
     # Create a new PayloadManagers object so it fetches fresh state
     basic_payload_managers2 = basic_payload_managers_factory()
     basic_payload_managers2.process(wfem)
-    sfn_exe2 = deployment.get_execution_by_payload_id(pid)
-    assert sfn_exe1["executionArn"] != sfn_exe2["executionArn"]
+    exec_arn2 = deployment.get_execution_arn(payload_id=pid)
+    assert exec_arn1 != exec_arn2
 
 
 # using non-stac payloads for simpler testing
