@@ -212,21 +212,46 @@ class Deployment:
 
         return s3.download_fileobj(bucket, key, output_fileobj)
 
-    def get_execution(self, arn):
+    def get_execution_arn(
+        self,
+        *,
+        arn: str | None = None,
+        payload_id: str | None = None,
+    ) -> str:
+        if arn:
+            return arn
+        if payload_id:
+            execs = self.get_payload_state(payload_id).get("executions", [])
+            try:
+                return execs[-1]
+            except IndexError as e:
+                raise NoExecutionsError(payload_id) from e
+        raise ValueError("Either arn or payload_id must be provided")
+
+    def get_execution(self, execution_arn: str) -> dict:
         sfn = get_client(
             "stepfunctions",
             session=self.session,
         )
-        return sfn.describe_execution(executionArn=arn)
+        return sfn.describe_execution(executionArn=execution_arn)
 
-    def get_execution_by_payload_id(self, payload_id):
-        execs = self.get_payload_state(payload_id).get("executions", [])
-        try:
-            exec_arn = execs[-1]
-        except IndexError as e:
-            raise NoExecutionsError(payload_id) from e
+    def get_execution_history(self, execution_arn: str) -> dict:
+        sfn = get_client("stepfunctions", session=self.session)
+        paginator = sfn.get_paginator("get_execution_history")
+        page_iterator = paginator.paginate(executionArn=execution_arn)
 
-        return self.get_execution(exec_arn)
+        all_events = []
+        for page in page_iterator:
+            all_events.extend(page["events"])
+
+        return {"events": all_events}
+
+    def get_state_machine(self, state_machine_arn: str) -> dict:
+        sfn = get_client(
+            "stepfunctions",
+            session=self.session,
+        )
+        return sfn.describe_state_machine(stateMachineArn=state_machine_arn)
 
     def invoke_lambda(
         self,
@@ -287,7 +312,8 @@ class Deployment:
             state = resp["state_updated"].split("_")[0]
             logger.debug({"state": state})
 
-        execution = self.get_execution_by_payload_id(wf_id)
+        execution_arn = self.get_execution_arn(payload_id=wf_id)
+        execution = self.get_execution(execution_arn)
 
         if state == "COMPLETED":
             return 0, CirrusPayload.from_event(json.loads(execution["output"]))
