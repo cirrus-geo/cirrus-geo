@@ -3,8 +3,15 @@
 import json
 
 from datetime import UTC, datetime
+from unittest.mock import Mock
 
-from cirrus.management.aws_logs import parse_log_metadata
+from botocore.exceptions import ClientError
+
+from cirrus.management.aws_logs import (
+    get_batch_logs,
+    get_lambda_logs,
+    parse_log_metadata,
+)
 
 
 class TestParseLogMetadata:
@@ -391,3 +398,232 @@ class TestParseLogMetadata:
         )
         # Result should have logMetadata
         assert "logMetadata" in result["events"][1]["taskSucceededEventDetails"]
+
+
+class TestGetLambdaLogs:
+    """Tests for get_lambda_logs function"""
+
+    def test_get_lambda_logs_success(self):
+        """Test successful retrieval of Lambda logs"""
+        # Arrange
+        mock_session = Mock()
+        mock_logs_client = Mock()
+        mock_session.client.return_value = mock_logs_client
+
+        test_logs = [
+            {"timestamp": 1730822630000, "message": "START RequestId: abc-123"},
+            {"timestamp": 1730822631000, "message": "Log message 1"},
+            {"timestamp": 1730822632000, "message": "END RequestId: abc-123"},
+        ]
+
+        mock_paginator = Mock()
+        mock_paginator.paginate.return_value = [{"events": test_logs}]
+        mock_logs_client.get_paginator.return_value = mock_paginator
+
+        # Act
+        result = get_lambda_logs(
+            mock_session,
+            "/aws/lambda/my-function",
+            "abc-123",
+            start_time=1730822630000,
+            end_time=1730822632000,
+        )
+
+        # Assert
+        assert result == test_logs
+        mock_session.client.assert_called_once_with("logs")
+        mock_logs_client.get_paginator.assert_called_once_with("filter_log_events")
+        mock_paginator.paginate.assert_called_once_with(
+            logGroupName="/aws/lambda/my-function",
+            filterPattern='"RequestId: abc-123"',
+            startTime=1730822630000,
+            endTime=1730822632000,
+        )
+
+    def test_get_lambda_logs_without_time_range(self):
+        """Test Lambda logs retrieval without time filtering"""
+        # Arrange
+        mock_session = Mock()
+        mock_logs_client = Mock()
+        mock_session.client.return_value = mock_logs_client
+
+        test_logs = [{"timestamp": 1730822630000, "message": "Log message"}]
+
+        mock_paginator = Mock()
+        mock_paginator.paginate.return_value = [{"events": test_logs}]
+        mock_logs_client.get_paginator.return_value = mock_paginator
+
+        # Act
+        result = get_lambda_logs(
+            mock_session,
+            "/aws/lambda/my-function",
+            "abc-123",
+        )
+
+        # Assert
+        assert result == test_logs
+        call_kwargs = mock_paginator.paginate.call_args[1]
+        assert "startTime" not in call_kwargs
+        assert "endTime" not in call_kwargs
+
+    def test_get_lambda_logs_pagination(self):
+        """Test Lambda logs retrieval with multiple pages"""
+        # Arrange
+        mock_session = Mock()
+        mock_logs_client = Mock()
+        mock_session.client.return_value = mock_logs_client
+
+        page1_logs = [{"timestamp": 1730822630000, "message": "Log 1"}]
+        page2_logs = [{"timestamp": 1730822631000, "message": "Log 2"}]
+        page3_logs = [{"timestamp": 1730822632000, "message": "Log 3"}]
+
+        mock_paginator = Mock()
+        mock_paginator.paginate.return_value = [
+            {"events": page1_logs},
+            {"events": page2_logs},
+            {"events": page3_logs},
+        ]
+        mock_logs_client.get_paginator.return_value = mock_paginator
+
+        # Act
+        result = get_lambda_logs(mock_session, "/aws/lambda/my-function", "abc-123")
+
+        # Assert
+        assert len(result) == 3
+        assert result == page1_logs + page2_logs + page3_logs
+
+    def test_get_lambda_logs_sorts_by_timestamp(self):
+        """Test that logs are sorted by timestamp"""
+        # Arrange
+        mock_session = Mock()
+        mock_logs_client = Mock()
+        mock_session.client.return_value = mock_logs_client
+
+        unsorted_logs = [
+            {"timestamp": 1730822632000, "message": "Log 3"},
+            {"timestamp": 1730822630000, "message": "Log 1"},
+            {"timestamp": 1730822631000, "message": "Log 2"},
+        ]
+
+        mock_paginator = Mock()
+        mock_paginator.paginate.return_value = [{"events": unsorted_logs}]
+        mock_logs_client.get_paginator.return_value = mock_paginator
+
+        # Act
+        result = get_lambda_logs(mock_session, "/aws/lambda/my-function", "abc-123")
+
+        # Assert
+        assert result[0]["timestamp"] == 1730822630000
+        assert result[1]["timestamp"] == 1730822631000
+        assert result[2]["timestamp"] == 1730822632000
+
+    def test_get_lambda_logs_not_found(self):
+        """Test Lambda logs when log group not found"""
+        # Arrange
+        mock_session = Mock()
+        mock_logs_client = Mock()
+        mock_session.client.return_value = mock_logs_client
+
+        mock_paginator = Mock()
+        mock_paginator.paginate.side_effect = ClientError(
+            {"Error": {"Code": "ResourceNotFoundException"}},
+            "FilterLogEvents",
+        )
+        mock_logs_client.get_paginator.return_value = mock_paginator
+
+        # Act
+        result = get_lambda_logs(mock_session, "/aws/lambda/nonexistent", "abc-123")
+
+        # Assert
+        assert result == []
+
+
+class TestGetBatchLogs:
+    """Tests for get_batch_logs function"""
+
+    def test_get_batch_logs_success(self):
+        """Test successful retrieval of Batch logs"""
+        # Arrange
+        mock_session = Mock()
+        mock_logs_client = Mock()
+        mock_session.client.return_value = mock_logs_client
+
+        test_logs = [
+            {"timestamp": 1730822630000, "message": "Batch job started"},
+            {"timestamp": 1730822631000, "message": "Processing..."},
+            {"timestamp": 1730822632000, "message": "Batch job completed"},
+        ]
+
+        # For single-page response, first call returns events with token,
+        # second call returns empty events to signal end of pagination
+        mock_logs_client.get_log_events.side_effect = [
+            {
+                "events": test_logs,
+                "nextForwardToken": "token-123",
+            },
+            {
+                "events": [],
+                "nextForwardToken": "token-123",
+            },
+        ]
+
+        # Act
+        result = get_batch_logs(
+            mock_session,
+            "/aws/batch/job",
+            "my-job-def/default/task-12345",
+        )
+
+        # Assert
+        assert result == test_logs
+        mock_session.client.assert_called_once_with("logs")
+
+    def test_get_batch_logs_pagination(self):
+        """Test Batch logs retrieval with multiple pages"""
+        # Arrange
+        mock_session = Mock()
+        mock_logs_client = Mock()
+        mock_session.client.return_value = mock_logs_client
+
+        page1_logs = [{"timestamp": 1730822630000, "message": "Log 1"}]
+        page2_logs = [{"timestamp": 1730822631000, "message": "Log 2"}]
+
+        # Simulate pagination with nextForwardToken changing
+        mock_logs_client.get_log_events.side_effect = [
+            {"events": page1_logs, "nextForwardToken": "token-2"},
+            {"events": page2_logs, "nextForwardToken": "token-2"},  # Same token = end
+        ]
+
+        # Act
+        result = get_batch_logs(
+            mock_session,
+            "/aws/batch/job",
+            "my-job-def/default/task-12345",
+        )
+
+        # Assert
+        assert len(result) == 2
+        assert result == page1_logs + page2_logs
+        assert mock_logs_client.get_log_events.call_count == 2
+
+    def test_get_batch_logs_not_found(self):
+        """Test Batch logs when log stream not found"""
+        # Arrange
+        mock_session = Mock()
+        mock_logs_client = Mock()
+        mock_session.client.return_value = mock_logs_client
+
+        mock_logs_client.get_log_events.side_effect = ClientError(
+            {"Error": {"Code": "ResourceNotFoundException"}},
+            "GetLogEvents",
+        )
+
+        # Act
+        result = get_batch_logs(
+            mock_session,
+            "/aws/batch/job",
+            "nonexistent-stream",
+        )
+
+        # Assert
+        assert result == []

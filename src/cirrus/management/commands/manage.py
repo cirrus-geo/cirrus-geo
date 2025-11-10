@@ -10,6 +10,12 @@ import click
 from boto3 import Session
 
 from cirrus.lib.enums import StateEnum
+from cirrus.management.aws_logs import (
+    format_log_event,
+    get_batch_logs,
+    get_lambda_logs,
+    parse_log_metadata,
+)
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.utils.click import (
     AliasedShortMatchGroup,
@@ -184,20 +190,14 @@ def get_execution_output(
     required=True,
     help="State machine ARN",
 )
-@raw_option
 @pass_deployment
-def get_state_machine_cmd(
+def get_state_machine(
     deployment: Deployment,
     arn: str,
-    raw: bool = False,
 ):
     """Get a state machine's ASL definition"""
     asl = deployment.get_state_machine(arn)
-
-    if raw:
-        click.echo(asl)
-    else:
-        click.echo(json.dumps(asl, indent=4, default=str))
+    click.echo(json.dumps(asl, indent=4))
 
 
 @manage.command("get-execution-history")
@@ -207,28 +207,69 @@ def get_state_machine_cmd(
     is_flag=True,
     help="Inject log metadata into Lambda/Batch task events",
 )
-@raw_option
 @pass_deployment
-def get_execution_history_cmd(
+def get_execution_history(
     deployment: Deployment,
     arn: str | None,
     payload_id: str | None,
     with_log_metadata: bool = False,
-    raw: bool = False,
 ):
     """Get a workflow execution's event history using its ARN or its input payload ID"""
     execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
     execution_history = deployment.get_execution_history(execution_arn)
 
     if with_log_metadata:
-        from cirrus.management.aws_logs import parse_log_metadata
-
         execution_history = parse_log_metadata(execution_history)
 
-    if raw:
-        click.echo(execution_history)
-    else:
-        click.echo(json.dumps(execution_history, indent=4, default=str))
+    click.echo(json.dumps(execution_history, indent=4))
+
+
+@manage.command("get-lambda-logs")
+@click.argument("log-group")
+@click.argument("request-id")
+@click.option(
+    "--start-time",
+    type=int,
+    help="Start time in Unix milliseconds",
+)
+@click.option(
+    "--end-time",
+    type=int,
+    help="End time in Unix milliseconds",
+)
+@pass_deployment
+def get_lambda_logs_cmd(
+    deployment: Deployment,
+    log_group: str,
+    request_id: str,
+    start_time: int | None = None,
+    end_time: int | None = None,
+):
+    """Get CloudWatch logs for a Lambda invocation"""
+    logs = get_lambda_logs(
+        deployment.session,
+        log_group,
+        request_id,
+        start_time,
+        end_time,
+    )
+    for log in logs:
+        click.echo(format_log_event(log))
+
+
+@manage.command("get-batch-logs")
+@click.argument("log-group")
+@click.argument("log-stream")
+@pass_deployment
+def get_batch_logs_cmd(
+    deployment: Deployment,
+    log_group: str,
+    log_stream: str,
+):
+    """Get CloudWatch logs for a Batch job"""
+    logs = get_batch_logs(deployment.session, log_group, log_stream)
+    for log in logs:
+        click.echo(format_log_event(log))
 
 
 @manage.command("get-state")
