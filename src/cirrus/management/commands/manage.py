@@ -10,13 +10,13 @@ import click
 from boto3 import Session
 
 from cirrus.lib.enums import StateEnum
-from cirrus.management.aws_logs import (
+from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
+from cirrus.management.task_logs import (
     format_log_event,
     get_batch_logs,
     get_lambda_logs,
     parse_log_metadata,
 )
-from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.utils.click import (
     AliasedShortMatchGroup,
     additional_variables,
