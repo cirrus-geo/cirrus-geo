@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 from botocore.exceptions import ClientError
 
-from cirrus.management.aws_logs import (
+from cirrus.management.task_logs import (
     get_batch_logs,
     get_lambda_logs,
     parse_log_metadata,
