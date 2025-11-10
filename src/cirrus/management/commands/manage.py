@@ -237,6 +237,16 @@ def get_execution_history(
     type=int,
     help="End time in Unix milliseconds",
 )
+@click.option(
+    "--limit",
+    type=int,
+    default=20,
+    help="Events per page (default: 20)",
+)
+@click.option(
+    "--next-token",
+    help="Pagination token from previous request",
+)
 @pass_deployment
 def get_lambda_logs_cmd(
     deployment: Deployment,
@@ -244,32 +254,60 @@ def get_lambda_logs_cmd(
     request_id: str,
     start_time: int | None = None,
     end_time: int | None = None,
+    limit: int = 20,
+    next_token: str | None = None,
 ):
     """Get CloudWatch logs for a Lambda invocation"""
-    logs = get_lambda_logs(
+    result = get_lambda_logs(
         deployment.session,
         log_group,
         request_id,
         start_time,
         end_time,
+        limit=limit,
+        next_token=next_token,
     )
-    for log in logs:
+    for log in result["logs"]:
         click.echo(format_log_event(log))
+
+    if result.get("nextToken"):
+        click.echo(f"Next page token: {result['nextToken']}")
 
 
 @manage.command("get-batch-logs")
 @click.argument("log-group")
 @click.argument("log-stream")
+@click.option(
+    "--limit",
+    type=int,
+    default=20,
+    help="Events per page (default: 20)",
+)
+@click.option(
+    "--next-token",
+    help="Pagination token from previous request",
+)
 @pass_deployment
 def get_batch_logs_cmd(
     deployment: Deployment,
     log_group: str,
     log_stream: str,
+    limit: int = 20,
+    next_token: str | None = None,
 ):
     """Get CloudWatch logs for a Batch job"""
-    logs = get_batch_logs(deployment.session, log_group, log_stream)
-    for log in logs:
+    result = get_batch_logs(
+        deployment.session,
+        log_group,
+        log_stream,
+        limit=limit,
+        next_token=next_token,
+    )
+    for log in result["logs"]:
         click.echo(format_log_event(log))
+
+    if result.get("nextToken"):
+        click.echo(f"Next page token: {result['nextToken']}")
 
 
 @manage.command("get-state")
