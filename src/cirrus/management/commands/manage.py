@@ -202,17 +202,28 @@ def get_state_machine_cmd(
 
 @manage.command("get-execution-history")
 @execution_arn
+@click.option(
+    "--with-log-metadata",
+    is_flag=True,
+    help="Inject log metadata into Lambda/Batch task events",
+)
 @raw_option
 @pass_deployment
 def get_execution_history_cmd(
     deployment: Deployment,
     arn: str | None,
     payload_id: str | None,
+    with_log_metadata: bool = False,
     raw: bool = False,
 ):
     """Get a workflow execution's event history using its ARN or its input payload ID"""
     execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
     execution_history = deployment.get_execution_history(execution_arn)
+
+    if with_log_metadata:
+        from cirrus.management.aws_logs import parse_log_metadata
+
+        execution_history = parse_log_metadata(execution_history)
 
     if raw:
         click.echo(execution_history)
