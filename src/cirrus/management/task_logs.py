@@ -10,6 +10,8 @@ from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
+AWS_MAX_LOG_EVENTS = 10000
+
 
 def parse_log_metadata(execution_history: dict) -> dict:
     history = copy.deepcopy(execution_history)
@@ -42,8 +44,7 @@ def parse_log_metadata(execution_history: dict) -> dict:
         else:  # batch
             metadata = _extract_batch_metadata(event)
 
-        if metadata:
-            event[details_key]["logMetadata"] = metadata
+        event[details_key]["logMetadata"] = metadata
 
     return history
 
@@ -63,55 +64,47 @@ def _find_task_scheduled(event: dict, event_map: dict) -> dict | None:
 def _extract_lambda_metadata(
     task_scheduled: dict,
     task_completed: dict,
-) -> dict | None:
-    try:
-        params = json.loads(task_scheduled["taskScheduledEventDetails"]["parameters"])
-        function_arn = params["FunctionName"]
+) -> dict:
+    params = json.loads(task_scheduled["taskScheduledEventDetails"]["parameters"])
+    function_arn = params["FunctionName"]
 
-        # arn:aws:lambda:region:account:function:function-name
-        function_name = function_arn.split(":")[-1]
-        log_group = f"/aws/lambda/{function_name}"
+    # arn:aws:lambda:region:account:function:function-name
+    function_name = function_arn.split(":")[-1]
+    log_group = f"/aws/lambda/{function_name}"
 
-        details_key = (
-            "taskSucceededEventDetails"
-            if task_completed["type"] == "TaskSucceeded"
-            else "taskFailedEventDetails"
-        )
-        output = json.loads(task_completed[details_key]["output"])
-        request_id = output["SdkResponseMetadata"]["RequestId"]
+    details_key = (
+        "taskSucceededEventDetails"
+        if task_completed["type"] == "TaskSucceeded"
+        else "taskFailedEventDetails"
+    )
+    output = json.loads(task_completed[details_key]["output"])
+    request_id = output["SdkResponseMetadata"]["RequestId"]
 
-        start_time_ms = int(task_scheduled["timestamp"].timestamp() * 1000)
-        end_time_ms = int(task_completed["timestamp"].timestamp() * 1000)
+    start_time_ms = int(task_scheduled["timestamp"].timestamp() * 1000)
+    end_time_ms = int(task_completed["timestamp"].timestamp() * 1000)
 
-        return {
-            "LogGroup": log_group,
-            "lambdaRequestId": request_id,
-            "StartTimeUnixMs": start_time_ms,
-            "EndTimeUnixMs": end_time_ms,
-        }
-    except (KeyError, json.JSONDecodeError, IndexError) as e:
-        logger.warning("Failed to extract Lambda metadata: %s", e)
-        return None
+    return {
+        "LogGroup": log_group,
+        "lambdaRequestId": request_id,
+        "StartTimeUnixMs": start_time_ms,
+        "EndTimeUnixMs": end_time_ms,
+    }
 
 
-def _extract_batch_metadata(task_completed: dict) -> dict | None:
-    try:
-        details_key = (
-            "taskSucceededEventDetails"
-            if task_completed["type"] == "TaskSucceeded"
-            else "taskFailedEventDetails"
-        )
-        output = json.loads(task_completed[details_key]["output"])
+def _extract_batch_metadata(task_completed: dict) -> dict:
+    details_key = (
+        "taskSucceededEventDetails"
+        if task_completed["type"] == "TaskSucceeded"
+        else "taskFailedEventDetails"
+    )
+    output = json.loads(task_completed[details_key]["output"])
 
-        log_stream = output["Container"]["LogStreamName"]
+    log_stream = output["Container"]["LogStreamName"]
 
-        return {
-            "LogGroup": "/aws/batch/job",
-            "logStreamName": log_stream,
-        }
-    except (KeyError, json.JSONDecodeError) as e:
-        logger.warning("Failed to extract Batch metadata: %s", e)
-        return None
+    return {
+        "LogGroup": "/aws/batch/job",
+        "logStreamName": log_stream,
+    }
 
 
 def get_lambda_logs(
@@ -120,7 +113,9 @@ def get_lambda_logs(
     request_id: str,
     start_time: int | None = None,
     end_time: int | None = None,
-) -> list[dict]:
+    limit: int = 20,
+    next_token: str | None = None,
+) -> dict:
     logs_client = session.client("logs")
 
     filter_pattern = f'"RequestId: {request_id}"'
@@ -128,29 +123,32 @@ def get_lambda_logs(
     kwargs: dict = {
         "logGroupName": log_group_name,
         "filterPattern": filter_pattern,
+        "limit": min(max(limit, 1), AWS_MAX_LOG_EVENTS),
     }
 
     if start_time is not None:
         kwargs["startTime"] = start_time
     if end_time is not None:
         kwargs["endTime"] = end_time
+    if next_token is not None:
+        kwargs["nextToken"] = next_token
 
+    logs: dict = {"logs": []}
     try:
-        paginator = logs_client.get_paginator("filter_log_events")
-        page_iterator = paginator.paginate(**kwargs)
-
-        all_events = []
-        for page in page_iterator:
-            all_events.extend(page.get("events", []))
-
-        all_events.sort(key=lambda x: x["timestamp"])
-
-        return all_events
+        response = logs_client.filter_log_events(**kwargs)
+        events = response.get("events", [])
+        for event in events:
+            logs["logs"].append(
+                {"timestamp": event.get("timestamp"), "message": event.get("message")},
+            )
+        if "nextToken" in response:
+            logs["nextToken"] = response["nextToken"]
+        return logs
 
     except ClientError as e:
         if e.response["Error"]["Code"] == "ResourceNotFoundException":
             logger.warning("Log group not found: %s", log_group_name)
-            return []
+            return {"logs": []}
         raise
 
 
@@ -158,47 +156,50 @@ def get_batch_logs(
     session: boto3.Session,
     log_group_name: str,
     log_stream_name: str,
-) -> list[dict]:
+    limit: int = 20,
+    next_token: str | None = None,
+) -> dict:
     logs_client = session.client("logs")
 
+    kwargs: dict = {
+        "logGroupName": log_group_name,
+        "logStreamName": log_stream_name,
+        "startFromHead": True,
+        "limit": limit,
+    }
+
+    if next_token is not None:
+        kwargs["nextToken"] = next_token
+
+    logs: dict = {"logs": []}
     try:
-        all_events = []
-        next_token = None
+        response = logs_client.get_log_events(**kwargs)
+        events = response.get("events", [])
+        next_forward_token = response.get("nextForwardToken")
 
-        while True:
-            kwargs: dict = {
-                "logGroupName": log_group_name,
-                "logStreamName": log_stream_name,
-                "startFromHead": True,
-            }
+        for event in events:
+            logs["logs"].append(
+                {"timestamp": event.get("timestamp"), "message": event.get("message")},
+            )
 
-            if next_token:
-                kwargs["nextToken"] = next_token
+        # If we're at the end, next_forward_token will be the same as next_token
+        if next_forward_token != next_token and len(events) > 0:
+            logs["nextToken"] = next_forward_token
 
-            response = logs_client.get_log_events(**kwargs)
-            events = response.get("events", [])
-
-            if not events:
-                break
-
-            all_events.extend(events)
-
-            next_forward_token = response.get("nextForwardToken")
-            if next_forward_token == next_token:
-                break
-
-            next_token = next_forward_token
-
-        return all_events
+        return logs
 
     except ClientError as e:
         if e.response["Error"]["Code"] == "ResourceNotFoundException":
-            logger.warning("Log stream not found: %s", log_stream_name)
-            return []
+            logger.warning(
+                "Log group (%s) or log stream (%s) not found",
+                log_group_name,
+                log_stream_name,
+            )
+            return {"logs": []}
         raise
 
 
 def format_log_event(log_event: dict) -> str:
     timestamp = datetime.fromtimestamp(log_event["timestamp"] / 1000, tz=UTC)
-    message = log_event["message"]
+    message = log_event["message"].rstrip()
     return f"[{timestamp}] {message}"
