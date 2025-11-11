@@ -465,3 +465,135 @@ def test_get_workflow_item(deployment, create_records, statedb):
     assert result["item"]["collections"] == "sar-test-panda"
     assert result["item"]["workflow"] == "test"
     assert result["item"]["items"] == "completed-0"
+
+
+# Tests for get_lambda_logs and get_batch_logs
+
+
+def test_get_lambda_logs(deployment, logs):
+    """Test getting Lambda logs via Deployment method"""
+    import time
+
+    log_group = "/aws/lambda/test-function"
+    request_id = "test-req-456"
+
+    # CloudWatch rejects events older than 14 days
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName="2025/11/11/[$LATEST]test123",
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName="2025/11/11/[$LATEST]test123",
+        logEvents=[
+            {"timestamp": now_ms, "message": f"START RequestId: {request_id}\n"},
+            {"timestamp": now_ms + 1000, "message": "Processing request\n"},
+            {"timestamp": now_ms + 2000, "message": f"END RequestId: {request_id}\n"},
+        ],
+    )
+
+    result = deployment.get_lambda_logs(log_group, request_id)
+
+    assert "logs" in result
+    # Filter pattern matches lines with "RequestId: {request_id}", so only START and END
+    assert len(result["logs"]) == 2
+    assert result["logs"][0]["message"] == f"START RequestId: {request_id}\n"
+    assert result["logs"][1]["message"] == f"END RequestId: {request_id}\n"
+
+
+def test_get_lambda_logs_with_time_range(deployment, logs):
+    """Test getting Lambda logs with time range"""
+    import time
+
+    log_group = "/aws/lambda/test-function-2"
+    request_id = "test-req-789"
+
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName="2025/11/11/[$LATEST]test456",
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName="2025/11/11/[$LATEST]test456",
+        logEvents=[
+            {"timestamp": now_ms, "message": f"START RequestId: {request_id}\n"},
+            {"timestamp": now_ms + 5000, "message": f"END RequestId: {request_id}\n"},
+        ],
+    )
+
+    result = deployment.get_lambda_logs(
+        log_group,
+        request_id,
+        start_time=now_ms,
+        end_time=now_ms + 10000,
+    )
+
+    assert "logs" in result
+    assert len(result["logs"]) == 2
+
+
+def test_get_batch_logs(deployment, logs):
+    """Test getting Batch logs via Deployment method"""
+    import time
+
+    log_group = "/aws/batch/job"
+    log_stream = "test-job-def/default/task-abc123"
+
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+        logEvents=[
+            {"timestamp": now_ms, "message": "Job starting\n"},
+            {"timestamp": now_ms + 1000, "message": "Processing data\n"},
+            {"timestamp": now_ms + 2000, "message": "Job completed\n"},
+        ],
+    )
+
+    result = deployment.get_batch_logs(log_stream)
+
+    assert "logs" in result
+    assert len(result["logs"]) == 3
+    assert result["logs"][0]["message"] == "Job starting\n"
+    assert result["logs"][2]["message"] == "Job completed\n"
+
+
+def test_get_batch_logs_with_custom_log_group(deployment, logs):
+    """Test getting Batch logs with custom log group"""
+    import time
+
+    log_group = "/aws/batch/custom-group"
+    log_stream = "custom-job/default/task-xyz789"
+
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+        logEvents=[
+            {"timestamp": now_ms, "message": "Custom job log\n"},
+        ],
+    )
+
+    result = deployment.get_batch_logs(log_stream, log_group_name=log_group)
+
+    assert "logs" in result
+    assert len(result["logs"]) == 1
+    assert result["logs"][0]["message"] == "Custom job log\n"
