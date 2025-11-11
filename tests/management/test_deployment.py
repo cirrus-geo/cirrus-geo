@@ -265,3 +265,203 @@ def test_get_execution_events_not_found(deployment, stepfunctions):
         deployment.get_execution_events(test_arn)
 
     assert exc_info.value.response["Error"]["Code"] == "ExecutionDoesNotExist"
+
+
+# Tests for get_workflow_summary
+
+
+def test_get_workflow_summary(deployment, create_records, statedb):
+    """Test getting workflow summary with default options"""
+    summary = deployment.get_workflow_summary("sar-test-panda", "test")
+
+    assert summary["collections"] == "sar-test-panda"
+    assert summary["workflow"] == "test"
+    assert "counts" in summary
+
+    expected_states = [
+        "PROCESSING",
+        "COMPLETED",
+        "FAILED",
+        "INVALID",
+        "ABORTED",
+        "CLAIMED",
+    ]
+    for state in expected_states:
+        assert state in summary["counts"]
+        if state in ["COMPLETED", "FAILED"]:
+            assert summary["counts"][state] == 2
+        else:
+            assert summary["counts"][state] == 0
+
+
+def test_get_workflow_summary_with_since(deployment, create_records, statedb):
+    """Test workflow summary with since filter"""
+    from datetime import timedelta
+
+    summary = deployment.get_workflow_summary(
+        "sar-test-panda",
+        "test",
+        since=timedelta(days=1),
+    )
+
+    assert summary["collections"] == "sar-test-panda"
+    assert summary["workflow"] == "test"
+
+    # With 1 day filter, we should get different counts
+    # Based on fixture: completed items are recent, one failed is old
+    assert summary["counts"]["COMPLETED"] == 2
+    assert summary["counts"]["FAILED"] == 1
+
+
+def test_get_workflow_summary_with_limit(deployment, create_records, statedb):
+    """Test workflow summary with limit option"""
+    summary = deployment.get_workflow_summary(
+        "sar-test-panda",
+        "test",
+        limit=1,
+    )
+
+    assert summary["collections"] == "sar-test-panda"
+    assert summary["workflow"] == "test"
+
+    # With limit=1, counts should be 0, 1, or "1+"
+    for state in summary["counts"]:
+        count = summary["counts"][state]
+        assert count == 0 or count == 1 or count == "1+"
+
+
+# Tests for get_workflow_stats
+
+
+def test_get_workflow_stats(deployment):
+    """Test getting workflow stats structure"""
+    # We can't query timestream db data with moto, so just check the output structure
+    stats = deployment.get_workflow_stats()
+
+    # Verify the expected output structure
+    assert "state_transitions" in stats
+    assert "daily" in stats["state_transitions"]
+    assert "hourly" in stats["state_transitions"]
+    assert "hourly_rolling" in stats["state_transitions"]
+
+    # Each should be a list
+    assert isinstance(stats["state_transitions"]["daily"], list)
+    assert isinstance(stats["state_transitions"]["hourly"], list)
+    assert isinstance(stats["state_transitions"]["hourly_rolling"], list)
+
+
+# Tests for get_workflow_items
+
+
+def test_get_workflow_items(deployment, create_records, statedb):
+    """Test getting workflow items with default options"""
+    result = deployment.get_workflow_items("sar-test-panda", "test")
+
+    assert "items" in result
+    assert isinstance(result["items"], list)
+    assert len(result["items"]) == 4
+
+
+def test_get_workflow_items_with_state_filter(deployment, create_records, statedb):
+    """Test workflow items with state filter"""
+    result = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        state="COMPLETED",
+    )
+
+    assert len(result["items"]) == 2
+    for item in result["items"]:
+        assert item["state"] == "COMPLETED"
+
+
+def test_get_workflow_items_with_since(deployment, create_records, statedb):
+    """Test workflow items with since filter"""
+    from datetime import timedelta
+
+    result = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        since=timedelta(days=1),
+    )
+
+    assert len(result["items"]) == 3
+
+
+def test_get_workflow_items_with_limit(deployment, create_records, statedb):
+    """Test workflow items with limit option"""
+    result = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        limit=2,
+    )
+
+    assert len(result["items"]) == 2
+
+
+def test_get_workflow_items_with_pagination(deployment, create_records, statedb):
+    """Test workflow items pagination with nextkey"""
+    # Get first item (descending order by default) and use its payload_id as nextkey
+    result1 = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        limit=1,
+    )
+    assert len(result1["items"]) == 1
+    payload_id = result1["items"][0]["payload_id"]
+
+    # Make sure we got the expected first item per the fixture
+    assert payload_id == create_records["failed"][1]
+
+    # Get the next page using nextkey
+    result2 = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        nextkey=payload_id,
+        limit=1,
+    )
+
+    assert len(result2["items"]) == 1
+    # Check that the item returned in the page is expected per the fixture
+    assert result2["items"][0]["payload_id"] == create_records["failed"][0]
+
+
+def test_get_workflow_items_with_sort_ascending(deployment, create_records, statedb):
+    """Test workflow items with ascending sort order"""
+    # Default is descending
+    result_desc = deployment.get_workflow_items("sar-test-panda", "test")
+    assert result_desc["items"][0]["payload_id"] == create_records["failed"][1]
+
+    # Test ascending
+    result_asc = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        sort_ascending=True,
+    )
+    assert result_asc["items"][0]["payload_id"] == create_records["completed"][0]
+
+
+def test_get_workflow_items_with_sort_index(deployment, create_records, statedb):
+    """Test workflow items with different sort index"""
+    # The default index is "updated"; test with "state_updated"
+    result = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        sort_index="state_updated",
+    )
+
+    assert "items" in result
+    assert isinstance(result["items"], list)
+
+
+# Tests for get_workflow_item
+
+
+def test_get_workflow_item(deployment, create_records, statedb):
+    """Test getting individual workflow item"""
+    result = deployment.get_workflow_item("sar-test-panda", "test", "completed-0")
+
+    assert "item" in result
+    assert result["item"]["collections"] == "sar-test-panda"
+    assert result["item"]["workflow"] == "test"
+    assert result["item"]["items"] == "completed-0"
