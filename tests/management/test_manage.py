@@ -506,7 +506,7 @@ def test_get_batch_logs(deployment, logs, put_parameters):
         ],
     )
 
-    result = deployment(f"get-batch-logs {log_group} {log_stream}")
+    result = deployment(f"get-batch-logs {log_stream}")
 
     assert result.exit_code == 0
     assert "Batch job started" in result.stdout

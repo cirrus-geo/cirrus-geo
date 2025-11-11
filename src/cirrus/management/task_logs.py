@@ -154,8 +154,8 @@ def get_lambda_logs(
 
 def get_batch_logs(
     session: boto3.Session,
-    log_group_name: str,
     log_stream_name: str,
+    log_group_name: str = "/aws/batch/job",
     limit: int = 20,
     next_token: str | None = None,
 ) -> dict:
