@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 import pytest
 
@@ -416,3 +417,98 @@ def test_get_workflow_item(deployment, create_records, statedb):
     assert output["item"]["collections"] == "sar-test-panda"
     assert output["item"]["workflow"] == "test"
     assert output["item"]["items"] == "completed-0"
+
+
+def test_get_workflow_definition(deployment, workflow, put_parameters):
+    state_machine_arn = workflow["stateMachineArn"]
+    result = deployment("get-workflow-definition test-workflow1")
+
+    assert result.exit_code == 0
+    output = json.loads(result.stdout.strip())
+    assert output["stateMachineArn"] == state_machine_arn
+    assert output["name"] == "test-workflow1"
+    assert "definition" in output
+
+
+def test_get_execution_events(deployment, st_func_execution_arn, put_parameters):
+    result = deployment(f"get-execution-events --arn {st_func_execution_arn}")
+
+    assert result.exit_code == 0
+    output = json.loads(result.stdout.strip())
+    assert len(output["events"]) == 4
+    assert output["events"][0]["type"] == "ExecutionStarted"
+
+
+def test_get_execution_events_with_log_metadata(
+    deployment,
+    st_func_execution_arn,
+    put_parameters,
+):
+    result = deployment(
+        f"get-execution-events --arn {st_func_execution_arn} --with-log-metadata",
+    )
+
+    # our test state machine has no lambda or batch steps, so there is no log metadata
+    # to inject; this just tests that the flag works without error.
+    assert result.exit_code == 0
+    output = json.loads(result.stdout.strip())
+    assert len(output["events"]) == 4
+
+
+def test_get_lambda_logs(deployment, logs, put_parameters):
+    log_group = "/aws/lambda/test-function"
+    request_id = "test-req-123"
+
+    # CloudWatch rejects events older than 14 days
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName="2025/11/10/[$LATEST]abcdef",
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName="2025/11/10/[$LATEST]abcdef",
+        logEvents=[
+            {"timestamp": now_ms, "message": f"START RequestId: {request_id}\n"},
+            {"timestamp": now_ms + 1000, "message": "Test log message\n"},
+            {"timestamp": now_ms + 2000, "message": f"END RequestId: {request_id}\n"},
+        ],
+    )
+
+    result = deployment(f"get-lambda-logs {log_group} {request_id}")
+
+    assert result.exit_code == 0
+    assert f"START RequestId: {request_id}" in result.stdout
+    assert f"END RequestId: {request_id}" in result.stdout
+
+
+def test_get_batch_logs(deployment, logs, put_parameters):
+    log_group = "/aws/batch/job"
+    log_stream = "my-job-def/default/task-12345"
+
+    # CloudWatch rejects events older than 14 days
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+        logEvents=[
+            {"timestamp": now_ms, "message": "Batch job started\n"},
+            {"timestamp": now_ms + 1000, "message": "Processing data\n"},
+            {"timestamp": now_ms + 2000, "message": "Batch job completed\n"},
+        ],
+    )
+
+    result = deployment(f"get-batch-logs {log_group} {log_stream}")
+
+    assert result.exit_code == 0
+    assert "Batch job started" in result.stdout
+    assert "Processing data" in result.stdout
+    assert "Batch job completed" in result.stdout

@@ -235,7 +235,7 @@ class Deployment:
         )
         return sfn.describe_execution(executionArn=execution_arn)
 
-    def get_execution_history(self, execution_arn: str) -> dict:
+    def get_execution_events(self, execution_arn: str) -> dict:
         sfn = get_client("stepfunctions", session=self.session)
         paginator = sfn.get_paginator("get_execution_history")
         page_iterator = paginator.paginate(executionArn=execution_arn)
@@ -246,7 +246,10 @@ class Deployment:
 
         return {"events": all_events}
 
-    def get_state_machine(self, state_machine_arn: str) -> dict:
+    def get_workflow_definition(self, workflow_name: str) -> dict:
+        state_machine_arn = (
+            f"{self.environment['CIRRUS_BASE_WORKFLOW_ARN']}{workflow_name}"
+        )
         sfn = get_client(
             "stepfunctions",
             session=self.session,
@@ -257,7 +260,7 @@ class Deployment:
         self,
         event: str,
         function_name: str,
-        session: boto3.Session = None,
+        session: boto3.Session | None = None,
     ):
         aws_lambda = get_client(
             "lambda",

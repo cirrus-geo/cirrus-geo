@@ -184,31 +184,27 @@ def get_execution_output(
         click.echo(json.dumps(output, indent=4, default=str))
 
 
-@manage.command("get-state-machine")
-@click.option(
-    "--arn",
-    required=True,
-    help="State machine ARN",
-)
+@manage.command("get-workflow-definition")
+@click.argument("workflow-name")
 @pass_deployment
 def get_state_machine(
     deployment: Deployment,
-    arn: str,
+    workflow_name: str,
 ):
-    """Get a state machine's ASL definition"""
-    asl = deployment.get_state_machine(arn)
-    click.echo(json.dumps(asl, indent=4))
+    """Get a workflow's state machine ASL definition using the workflow name"""
+    asl = deployment.get_workflow_definition(workflow_name)
+    click.echo(json.dumps(asl, indent=4, default=str))
 
 
-@manage.command("get-execution-history")
+@manage.command("get-execution-events")
 @execution_arn
 @click.option(
     "--with-log-metadata",
     is_flag=True,
-    help="Inject log metadata into Lambda/Batch task events",
+    help="Inject log metadata into Lambda/Batch task succeed/fail events",
 )
 @pass_deployment
-def get_execution_history(
+def get_execution_events(
     deployment: Deployment,
     arn: str | None,
     payload_id: str | None,
@@ -216,12 +212,12 @@ def get_execution_history(
 ):
     """Get a workflow execution's event history using its ARN or its input payload ID"""
     execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
-    execution_history = deployment.get_execution_history(execution_arn)
+    execution_history = deployment.get_execution_events(execution_arn)
 
     if with_log_metadata:
         execution_history = parse_log_metadata(execution_history)
 
-    click.echo(json.dumps(execution_history, indent=4))
+    click.echo(json.dumps(execution_history, indent=4, default=str))
 
 
 @manage.command("get-lambda-logs")
