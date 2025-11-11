@@ -12,8 +12,6 @@ from boto3 import Session
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.task_logs import (
     format_log_event,
-    get_batch_logs,
-    get_lambda_logs,
     parse_log_metadata,
 )
 from cirrus.management.utils.click import (
@@ -252,8 +250,7 @@ def get_lambda_logs_cmd(
     next_token: str | None = None,
 ):
     """Get CloudWatch logs for a Lambda invocation"""
-    result = get_lambda_logs(
-        deployment.session,
+    result = deployment.get_lambda_logs(
         log_group,
         request_id,
         start_time,
@@ -294,8 +291,7 @@ def get_batch_logs_cmd(
     next_token: str | None = None,
 ):
     """Get CloudWatch logs for a Batch job"""
-    result = get_batch_logs(
-        deployment.session,
+    result = deployment.get_batch_logs(
         log_stream,
         log_group,
         limit=limit,

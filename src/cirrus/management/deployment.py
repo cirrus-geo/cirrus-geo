@@ -28,6 +28,7 @@ from cirrus.management.exceptions import (
     PayloadNotFoundError,
     StatsUnavailableError,
 )
+from cirrus.management.task_logs import get_batch_logs, get_lambda_logs
 
 logger = logging.getLogger(__name__)
 
@@ -476,3 +477,39 @@ class Deployment:
         payload_id = f"{collections}/workflow-{workflow_name}/{itemids}"
         item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
         return {"item": to_current(item)}
+
+    def get_lambda_logs(
+        self,
+        log_group_name: str,
+        request_id: str,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int = 20,
+        next_token: str | None = None,
+    ) -> dict:
+        "Get Lambda logs from CloudWatch"
+        return get_lambda_logs(
+            self.session,
+            log_group_name,
+            request_id,
+            start_time,
+            end_time,
+            limit,
+            next_token,
+        )
+
+    def get_batch_logs(
+        self,
+        log_stream_name: str,
+        log_group_name: str = "/aws/batch/job",
+        limit: int = 20,
+        next_token: str | None = None,
+    ) -> dict:
+        "Get Batch logs from CloudWatch"
+        return get_batch_logs(
+            self.session,
+            log_stream_name,
+            log_group_name,
+            limit,
+            next_token,
+        )
