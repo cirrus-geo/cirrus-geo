@@ -426,7 +426,6 @@ def test_get_batch_logs_success(logs):
     session = boto3.Session()
     result = get_batch_logs(
         session,
-        "/aws/batch/job",
         "my-job-def/default/task-12345",
     )
 
@@ -439,7 +438,6 @@ def test_get_batch_logs_pagination(logs):
     session = boto3.Session()
     result = get_batch_logs(
         session,
-        "/aws/batch/job",
         "my-job-def/default/task-12345",
         limit=10,
     )
@@ -453,7 +451,6 @@ def test_get_batch_logs_not_found(logs):
     session = boto3.Session()
     result = get_batch_logs(
         session,
-        "/aws/batch/job",
         "nonexistent-stream",
     )
 

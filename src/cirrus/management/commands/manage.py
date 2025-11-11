@@ -271,8 +271,12 @@ def get_lambda_logs_cmd(
 
 
 @manage.command("get-batch-logs")
-@click.argument("log-group")
 @click.argument("log-stream")
+@click.option(
+    "--log-group",
+    default="/aws/batch/job",
+    help="CloudWatch log group name (default: /aws/batch/job)",
+)
 @click.option(
     "--limit",
     type=int,
@@ -286,16 +290,16 @@ def get_lambda_logs_cmd(
 @pass_deployment
 def get_batch_logs_cmd(
     deployment: Deployment,
-    log_group: str,
     log_stream: str,
+    log_group: str = "/aws/batch/job",
     limit: int = 20,
     next_token: str | None = None,
 ):
     """Get CloudWatch logs for a Batch job"""
     result = get_batch_logs(
         deployment.session,
-        log_group,
         log_stream,
+        log_group,
         limit=limit,
         next_token=next_token,
     )
