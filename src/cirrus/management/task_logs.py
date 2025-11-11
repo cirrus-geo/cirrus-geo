@@ -77,8 +77,15 @@ def _extract_lambda_metadata(
         if task_completed["type"] == "TaskSucceeded"
         else "taskFailedEventDetails"
     )
-    output = json.loads(task_completed[details_key]["output"])
-    request_id = output["SdkResponseMetadata"]["RequestId"]
+
+    # For successful tasks, the output contains SdkResponseMetadata
+    # For failed tasks, the cause contains the error details with requestId
+    if task_completed["type"] == "TaskSucceeded":
+        output = json.loads(task_completed[details_key]["output"])
+        request_id = output["SdkResponseMetadata"]["RequestId"]
+    else:
+        cause = json.loads(task_completed[details_key]["cause"])
+        request_id = cause["requestId"]
 
     start_time_ms = int(task_scheduled["timestamp"].timestamp() * 1000)
     end_time_ms = int(task_completed["timestamp"].timestamp() * 1000)
@@ -97,7 +104,13 @@ def _extract_batch_metadata(task_completed: dict) -> dict:
         if task_completed["type"] == "TaskSucceeded"
         else "taskFailedEventDetails"
     )
-    output = json.loads(task_completed[details_key]["output"])
+
+    # For successful tasks, the output contains Container.LogStreamName
+    # For failed tasks, the cause contains the batch job details
+    if task_completed["type"] == "TaskSucceeded":
+        output = json.loads(task_completed[details_key]["output"])
+    else:
+        output = json.loads(task_completed[details_key]["cause"])
 
     log_stream = output["Container"]["LogStreamName"]
 
