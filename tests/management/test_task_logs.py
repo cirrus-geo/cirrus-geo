@@ -88,15 +88,15 @@ def lambda_task_failed_history():
                 "taskFailedEventDetails": {
                     "resourceType": "lambda",
                     "resource": "invoke",
-                    "error": "Lambda.Exception",
-                    "cause": "Error executing function",
-                    "output": json.dumps(
+                    "error": "Exception",
+                    "cause": json.dumps(
                         {
-                            "StatusCode": 200,
-                            "FunctionError": "Unhandled",
-                            "SdkResponseMetadata": {
-                                "RequestId": "xyz-789-ghi",
-                            },
+                            "errorMessage": "Forced error for testing purposes",
+                            "errorType": "Exception",
+                            "requestId": "xyz-789-ghi",
+                            "stackTrace": [
+                                '  File "/var/task/handler.py", line 10, in handler\n    raise Exception("error")\n',
+                            ],
                         },
                     ),
                 },
@@ -177,12 +177,13 @@ def batch_task_failed_history():
                 "taskFailedEventDetails": {
                     "resourceType": "batch",
                     "resource": "submitJob",
-                    "error": "Batch.JobFailed",
-                    "cause": "Job failed",
-                    "output": json.dumps(
+                    "error": "States.TaskFailed",
+                    "cause": json.dumps(
                         {
                             "JobId": "job-456",
+                            "Status": "FAILED",
                             "Container": {
+                                "ExitCode": 255,
                                 "LogStreamName": "my-job-def/default/task-67890",
                             },
                         },
@@ -271,8 +272,14 @@ def test_parse_multiple_tasks_with_retries():
                 "timestamp": datetime(2025, 11, 5, 16, 3, 51, tzinfo=UTC),
                 "taskFailedEventDetails": {
                     "resourceType": "lambda",
-                    "output": json.dumps(
-                        {"SdkResponseMetadata": {"RequestId": "req-1"}},
+                    "error": "Exception",
+                    "cause": json.dumps(
+                        {
+                            "errorMessage": "Test error",
+                            "errorType": "Exception",
+                            "requestId": "req-1",
+                            "stackTrace": [],
+                        },
                     ),
                 },
             },
