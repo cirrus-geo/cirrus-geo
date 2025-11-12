@@ -1,5 +1,6 @@
 """Tests for AWS CloudWatch logs utilities"""
 
+import copy
 import json
 
 from datetime import UTC, datetime
@@ -13,12 +14,12 @@ from cirrus.management.task_logs import (
     parse_log_metadata,
 )
 
-# Test fixtures for parse_log_metadata tests
+# Multiple-use test fixture for parse_log_metadata tests
 
 
 @pytest.fixture
-def lambda_task_succeeded_history():
-    """Execution history with Lambda TaskSucceeded event"""
+def lambda_task_succeeded_execution_events():
+    """Execution events with Lambda TaskSucceeded event"""
     return {
         "events": [
             {
@@ -59,10 +60,25 @@ def lambda_task_succeeded_history():
     }
 
 
-@pytest.fixture
-def lambda_task_failed_history():
-    """Execution history with Lambda TaskFailed event"""
-    return {
+# Tests for parse_log_metadata
+
+
+def test_parse_lambda_task_succeeded(lambda_task_succeeded_execution_events):
+    """Test parsing log metadata from Lambda TaskSucceeded event"""
+    result = parse_log_metadata(lambda_task_succeeded_execution_events)
+
+    assert "logMetadata" in result["events"][1]["taskSucceededEventDetails"]
+    metadata = result["events"][1]["taskSucceededEventDetails"]["logMetadata"]
+
+    assert metadata["LogGroup"] == "/aws/lambda/my-function"
+    assert metadata["lambdaRequestId"] == "abc-123-def"
+    assert metadata["StartTimeUnixMs"] == 1762358630000
+    assert metadata["EndTimeUnixMs"] == 1762358632000
+
+
+def test_parse_lambda_task_failed():
+    """Test parsing log metadata from Lambda TaskFailed event"""
+    execution_events = {
         "events": [
             {
                 "id": 1,
@@ -104,11 +120,20 @@ def lambda_task_failed_history():
         ],
     }
 
+    result = parse_log_metadata(execution_events)
 
-@pytest.fixture
-def batch_task_succeeded_history():
-    """Execution history with Batch TaskSucceeded event"""
-    return {
+    assert "logMetadata" in result["events"][1]["taskFailedEventDetails"]
+    metadata = result["events"][1]["taskFailedEventDetails"]["logMetadata"]
+
+    assert metadata["LogGroup"] == "/aws/lambda/my-function"
+    assert metadata["lambdaRequestId"] == "xyz-789-ghi"
+    assert metadata["StartTimeUnixMs"] == 1762358630000
+    assert metadata["EndTimeUnixMs"] == 1762358632000
+
+
+def test_parse_batch_task_succeeded():
+    """Test parsing log metadata from Batch TaskSucceeded event"""
+    execution_events = {
         "events": [
             {
                 "id": 1,
@@ -147,11 +172,18 @@ def batch_task_succeeded_history():
         ],
     }
 
+    result = parse_log_metadata(execution_events)
 
-@pytest.fixture
-def batch_task_failed_history():
-    """Execution history with Batch TaskFailed event"""
-    return {
+    assert "logMetadata" in result["events"][1]["taskSucceededEventDetails"]
+    metadata = result["events"][1]["taskSucceededEventDetails"]["logMetadata"]
+
+    assert metadata["LogGroup"] == "/aws/batch/job"
+    assert metadata["logStreamName"] == "my-job-def/default/task-12345"
+
+
+def test_parse_batch_task_failed():
+    """Test parsing log metadata from Batch TaskFailed event"""
+    execution_events = {
         "events": [
             {
                 "id": 1,
@@ -193,50 +225,7 @@ def batch_task_failed_history():
         ],
     }
 
-
-# Tests for parse_log_metadata
-
-
-def test_parse_lambda_task_succeeded(lambda_task_succeeded_history):
-    """Test parsing log metadata from Lambda TaskSucceeded event"""
-    result = parse_log_metadata(lambda_task_succeeded_history)
-
-    assert "logMetadata" in result["events"][1]["taskSucceededEventDetails"]
-    metadata = result["events"][1]["taskSucceededEventDetails"]["logMetadata"]
-
-    assert metadata["LogGroup"] == "/aws/lambda/my-function"
-    assert metadata["lambdaRequestId"] == "abc-123-def"
-    assert metadata["StartTimeUnixMs"] == 1762358630000
-    assert metadata["EndTimeUnixMs"] == 1762358632000
-
-
-def test_parse_lambda_task_failed(lambda_task_failed_history):
-    """Test parsing log metadata from Lambda TaskFailed event"""
-    result = parse_log_metadata(lambda_task_failed_history)
-
-    assert "logMetadata" in result["events"][1]["taskFailedEventDetails"]
-    metadata = result["events"][1]["taskFailedEventDetails"]["logMetadata"]
-
-    assert metadata["LogGroup"] == "/aws/lambda/my-function"
-    assert metadata["lambdaRequestId"] == "xyz-789-ghi"
-    assert metadata["StartTimeUnixMs"] == 1762358630000
-    assert metadata["EndTimeUnixMs"] == 1762358632000
-
-
-def test_parse_batch_task_succeeded(batch_task_succeeded_history):
-    """Test parsing log metadata from Batch TaskSucceeded event"""
-    result = parse_log_metadata(batch_task_succeeded_history)
-
-    assert "logMetadata" in result["events"][1]["taskSucceededEventDetails"]
-    metadata = result["events"][1]["taskSucceededEventDetails"]["logMetadata"]
-
-    assert metadata["LogGroup"] == "/aws/batch/job"
-    assert metadata["logStreamName"] == "my-job-def/default/task-12345"
-
-
-def test_parse_batch_task_failed(batch_task_failed_history):
-    """Test parsing log metadata from Batch TaskFailed event"""
-    result = parse_log_metadata(batch_task_failed_history)
+    result = parse_log_metadata(execution_events)
 
     assert "logMetadata" in result["events"][1]["taskFailedEventDetails"]
     metadata = result["events"][1]["taskFailedEventDetails"]["logMetadata"]
@@ -247,7 +236,7 @@ def test_parse_batch_task_failed(batch_task_failed_history):
 
 def test_parse_multiple_tasks_with_retries():
     """Test parsing log metadata with multiple tasks including retries"""
-    execution_history = {
+    execution_events = {
         "events": [
             # First Lambda task (attempt 1 - failed)
             {
@@ -314,7 +303,7 @@ def test_parse_multiple_tasks_with_retries():
         ],
     }
 
-    result = parse_log_metadata(execution_history)
+    result = parse_log_metadata(execution_events)
 
     # Both attempts should have metadata
     assert "logMetadata" in result["events"][1]["taskFailedEventDetails"]
@@ -335,7 +324,7 @@ def test_parse_multiple_tasks_with_retries():
 
 def test_parse_skips_non_lambda_batch_tasks():
     """Test that non-Lambda/Batch tasks are skipped"""
-    execution_history = {
+    execution_events = {
         "events": [
             {
                 "id": 1,
@@ -352,69 +341,151 @@ def test_parse_skips_non_lambda_batch_tasks():
         ],
     }
 
-    result = parse_log_metadata(execution_history)
+    result = parse_log_metadata(execution_events)
 
-    # Should return history unchanged (no tasks to process)
+    # Should return execution events unchanged (no tasks to process)
     assert len(result["events"]) == 2
     assert "logMetadata" not in result["events"][0]
     assert "logMetadata" not in result["events"][1]
 
 
-def test_parse_does_not_modify_original(lambda_task_succeeded_history):
-    """Test that parsing doesn't modify the original history"""
-    parse_log_metadata(lambda_task_succeeded_history)
-
-    # Original should be unchanged
-    assert (
-        "logMetadata"
-        not in lambda_task_succeeded_history["events"][1]["taskSucceededEventDetails"]
-    )
+def test_parse_does_not_modify_original(lambda_task_succeeded_execution_events):
+    """Test that parsing doesn't modify the original execution events"""
+    original_copy = copy.deepcopy(lambda_task_succeeded_execution_events)
+    parse_log_metadata(lambda_task_succeeded_execution_events)
+    assert lambda_task_succeeded_execution_events == original_copy
 
 
 # Tests for get_lambda_logs
 
 
-def test_get_lambda_logs_success(logs):
-    """Test successful retrieval of Lambda logs - basic structure test"""
-    session = boto3.Session()
-    result = get_lambda_logs(
-        session,
-        "/aws/lambda/my-function",
-        "abc-123",
-        start_time=1730822630000,
-        end_time=1730822632000,
+def test_get_lambda_logs_basic(logs):
+    """Test successful retrieval of Lambda logs with filter pattern"""
+    import time
+
+    log_group = "/aws/lambda/test-function"
+    request_id = "test-req-123"
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName="2025/11/11/[$LATEST]abcdef123",
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName="2025/11/11/[$LATEST]abcdef123",
+        logEvents=[
+            {"timestamp": now_ms, "message": f"START RequestId: {request_id}\n"},
+            {"timestamp": now_ms + 1000, "message": "Processing request\n"},
+            {"timestamp": now_ms + 2000, "message": f"END RequestId: {request_id}\n"},
+        ],
     )
 
-    # Verify the basic structure is correct
-    assert "logs" in result
-    assert isinstance(result["logs"], list)
-
-
-def test_get_lambda_logs_without_time_range(logs):
-    """Test Lambda logs retrieval without time filtering - basic structure test"""
     session = boto3.Session()
+    result = get_lambda_logs(session, log_group, request_id)
+
+    assert "logs" in result
+    # Filter pattern matches lines with "RequestId: {request_id}", so only START and END
+    assert len(result["logs"]) == 2
+    assert result["logs"][0]["timestamp"] == now_ms
+    assert result["logs"][0]["message"] == f"START RequestId: {request_id}\n"
+    assert result["logs"][1]["timestamp"] == now_ms + 2000
+    assert result["logs"][1]["message"] == f"END RequestId: {request_id}\n"
+
+
+def test_get_lambda_logs_with_time_range(logs):
+    """Test Lambda logs with time range filtering"""
+    import time
+
+    log_group = "/aws/lambda/test-function-time"
+    request_id = "test-req-456"
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName="2025/11/11/[$LATEST]test456",
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName="2025/11/11/[$LATEST]test456",
+        logEvents=[
+            {"timestamp": now_ms, "message": f"START RequestId: {request_id}\n"},
+            {
+                "timestamp": now_ms + 5000,
+                "message": f"MIDDLE RequestId: {request_id}\n",
+            },
+            {"timestamp": now_ms + 10000, "message": f"END RequestId: {request_id}\n"},
+        ],
+    )
+
+    session = boto3.Session()
+
+    # Query with time range that excludes the last event
     result = get_lambda_logs(
         session,
-        "/aws/lambda/my-function",
-        "abc-123",
+        log_group,
+        request_id,
+        start_time=now_ms,
+        end_time=now_ms + 6000,
     )
 
     assert "logs" in result
-    assert isinstance(result["logs"], list)
+    assert len(result["logs"]) == 2  # Should only get START and MIDDLE
+    assert result["logs"][0]["message"] == f"START RequestId: {request_id}\n"
+    assert result["logs"][1]["message"] == f"MIDDLE RequestId: {request_id}\n"
 
 
 def test_get_lambda_logs_pagination(logs):
-    """Test Lambda logs pagination with nextToken - basic structure test"""
-    session = boto3.Session()
-    result = get_lambda_logs(
-        session,
-        "/aws/lambda/my-function",
-        "abc-123",
-        limit=10,
+    """Test Lambda logs pagination with limit and nextToken"""
+    import time
+
+    log_group = "/aws/lambda/test-function-pagination"
+    request_id = "test-req-789"
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName="2025/11/11/[$LATEST]test789",
     )
 
-    assert "logs" in result
-    assert isinstance(result["logs"], list)
+    # Create multiple log events
+    log_events = [
+        {
+            "timestamp": now_ms + i * 1000,
+            "message": f"Log {i} RequestId: {request_id}\n",
+        }
+        for i in range(5)
+    ]
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName="2025/11/11/[$LATEST]test789",
+        logEvents=log_events,
+    )
+
+    session = boto3.Session()
+
+    # Get first page with limit
+    result1 = get_lambda_logs(session, log_group, request_id, limit=2)
+
+    assert "logs" in result1
+    assert len(result1["logs"]) == 2
+    assert result1["logs"][0]["message"] == f"Log 0 RequestId: {request_id}\n"
+
+    # If nextToken is present, get next page
+    if "nextToken" in result1:
+        result2 = get_lambda_logs(
+            session,
+            log_group,
+            request_id,
+            limit=2,
+            next_token=result1["nextToken"],
+        )
+        assert "logs" in result2
+        # Should get different logs than first page
+        assert len(result2["logs"]) <= 3  # Remaining logs
 
 
 def test_get_lambda_logs_not_found(logs):
@@ -428,29 +499,139 @@ def test_get_lambda_logs_not_found(logs):
 # Tests for get_batch_logs
 
 
-def test_get_batch_logs_success(logs):
-    """Test successful retrieval of Batch logs - basic structure test"""
-    session = boto3.Session()
-    result = get_batch_logs(
-        session,
-        "my-job-def/default/task-12345",
+def test_get_batch_logs_basic(logs):
+    """Test successful retrieval of Batch logs"""
+    import time
+
+    log_group = "/aws/batch/job"
+    log_stream = "test-job-def/default/task-abc123"
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+        logEvents=[
+            {"timestamp": now_ms, "message": "Job starting\n"},
+            {"timestamp": now_ms + 1000, "message": "Processing data\n"},
+            {"timestamp": now_ms + 2000, "message": "Job completed\n"},
+        ],
     )
 
+    session = boto3.Session()
+    result = get_batch_logs(session, log_stream)
+
     assert "logs" in result
-    assert isinstance(result["logs"], list)
+    assert len(result["logs"]) == 3
+    assert result["logs"][0]["timestamp"] == now_ms
+    assert result["logs"][0]["message"] == "Job starting\n"
+    assert result["logs"][1]["timestamp"] == now_ms + 1000
+    assert result["logs"][1]["message"] == "Processing data\n"
+    assert result["logs"][2]["timestamp"] == now_ms + 2000
+    assert result["logs"][2]["message"] == "Job completed\n"
+
+
+def test_get_batch_logs_with_custom_log_group(logs):
+    """Test Batch logs with custom log group name"""
+    import time
+
+    log_group = "/aws/batch/custom-group"
+    log_stream = "custom-job/default/task-xyz789"
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+        logEvents=[
+            {"timestamp": now_ms, "message": "Custom job log\n"},
+            {"timestamp": now_ms + 1000, "message": "Custom job completed\n"},
+        ],
+    )
+
+    session = boto3.Session()
+    result = get_batch_logs(session, log_stream, log_group_name=log_group)
+
+    assert "logs" in result
+    assert len(result["logs"]) == 2
+    assert result["logs"][0]["message"] == "Custom job log\n"
+    assert result["logs"][1]["message"] == "Custom job completed\n"
 
 
 def test_get_batch_logs_pagination(logs):
-    """Test Batch logs pagination with nextToken - basic structure test"""
-    session = boto3.Session()
-    result = get_batch_logs(
-        session,
-        "my-job-def/default/task-12345",
-        limit=10,
+    """Test Batch logs pagination with limit and nextToken"""
+    import time
+
+    log_group = "/aws/batch/job"
+    log_stream = "pagination-job/default/task-page123"
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName=log_stream,
     )
 
+    # Create multiple log events
+    log_events = [
+        {"timestamp": now_ms + i * 1000, "message": f"Batch log line {i}\n"}
+        for i in range(5)
+    ]
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+        logEvents=log_events,
+    )
+
+    session = boto3.Session()
+
+    # Get first page with limit
+    result1 = get_batch_logs(session, log_stream, limit=2)
+
+    assert "logs" in result1
+    assert len(result1["logs"]) == 2
+    assert result1["logs"][0]["message"] == "Batch log line 0\n"
+    assert result1["logs"][1]["message"] == "Batch log line 1\n"
+
+    # If nextToken is present, get next page
+    if "nextToken" in result1:
+        result2 = get_batch_logs(
+            session,
+            log_stream,
+            limit=2,
+            next_token=result1["nextToken"],
+        )
+        assert "logs" in result2
+        # Should get different logs than first page
+        if len(result2["logs"]) > 0:
+            assert result2["logs"][0]["message"] == "Batch log line 2\n"
+
+
+def test_get_batch_logs_empty_stream(logs):
+    """Test Batch logs with empty log stream"""
+    log_group = "/aws/batch/job"
+    log_stream = "empty-job/default/task-empty"
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+    )
+
+    session = boto3.Session()
+    result = get_batch_logs(session, log_stream)
+
     assert "logs" in result
-    assert isinstance(result["logs"], list)
+    assert len(result["logs"]) == 0
+    assert "nextToken" not in result
 
 
 def test_get_batch_logs_not_found(logs):

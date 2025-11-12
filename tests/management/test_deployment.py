@@ -1,68 +1,33 @@
 """Tests for Step Functions-related Deployment methods"""
 
-import json
+import time
 
 import pytest
 
 from botocore.exceptions import ClientError
 
 from cirrus.management.deployment import Deployment, NoExecutionsError
+from tests.management.conftest import mock_parameters
 
 # Test fixtures
 
 
 @pytest.fixture
-def deployment_environment(statedb):
-    """Environment configuration for test deployment"""
-    return {
-        "CIRRUS_PAYLOAD_BUCKET": "test-bucket",
-        "CIRRUS_BASE_WORKFLOW_ARN": "arn:aws:states:us-east-1:123456789012:stateMachine:test-",
-        "CIRRUS_PROCESS_QUEUE_URL": "https://sqs.us-east-1.amazonaws.com/123/test",
-        "CIRRUS_STATE_DB": "cirrus-test-state",  # Match the statedb fixture table name
-        "CIRRUS_EVENT_DB_AND_TABLE": "event-db-1|event-table-1",
-        "CIRRUS_PREFIX": "test-prefix",
-    }
-
-
-@pytest.fixture
-def deployment(deployment_environment, statedb):
+def deployment(queue, payloads, data, statedb, workflow, iam_role):
     """Create a Deployment instance with moto-mocked AWS services"""
+    environment = mock_parameters(
+        queue,
+        payloads,
+        data,
+        statedb,
+        workflow,
+        "test-deployment",
+        iam_role,
+    )
     return Deployment(
         name="test-deployment",
-        environment=deployment_environment,
+        environment=environment,
     )
-
-
-@pytest.fixture
-def state_machine_arn(stepfunctions, iam_role):
-    """Create a test state machine and return its ARN"""
-    defn = {
-        "Comment": "Test state machine",
-        "StartAt": "FirstState",
-        "States": {
-            "FirstState": {
-                "Type": "Pass",
-                "End": True,
-            },
-        },
-    }
-    response = stepfunctions.create_state_machine(
-        name="my-state-machine",
-        definition=json.dumps(defn),
-        roleArn=iam_role,
-    )
-    return response["stateMachineArn"]
-
-
-@pytest.fixture
-def execution_arn(stepfunctions, state_machine_arn):
-    """Create a test execution and return its ARN"""
-    response = stepfunctions.start_execution(
-        stateMachineArn=state_machine_arn,
-        name="exec-123",
-        input="{}",
-    )
-    return response["executionArn"]
 
 
 # Tests for get_execution_arn
@@ -77,11 +42,9 @@ def test_get_execution_arn_with_arn(deployment):
 
 def test_get_execution_arn_with_payload_id(deployment, statedb):
     """Test getting execution ARN from payload_id"""
-    # Use proper payload_id format: collection/workflow-name/item1/item2
     test_payload_id = "test-col/workflow-test-wf/item1/item2"
     test_arn = "arn:aws:states:us-east-1:123456789:execution:my-sm:exec-456"
 
-    # Create payload state with executions
     statedb.claim_processing(test_payload_id, execution_arn=test_arn)
     statedb.set_processing(test_payload_id)
 
@@ -91,11 +54,8 @@ def test_get_execution_arn_with_payload_id(deployment, statedb):
 
 def test_get_execution_arn_with_no_executions(deployment, dynamo):
     """Test error when payload_id has executions list but it's empty"""
-    # Use proper payload_id format: collection/workflow-name/item1/item2
     test_payload_id = "test-col/workflow-test-wf/item-no-exec/item2"
 
-    # Manually create a DynamoDB item with empty executions list
-    # This shouldn't happen in practice, but we test the error handling
     dynamo.put_item(
         TableName="cirrus-test-state",
         Item={
@@ -132,128 +92,37 @@ def test_get_execution_arn_prefers_arn(deployment):
     assert result == test_arn
 
 
-# Tests for get_state_machine
+# Tests for get_workflow_definition
 
 
-def test_get_workflow_defintion_success(deployment, stepfunctions, state_machine_arn):
-    """Test successful workflow definition retrieval"""
-    # The test should use the actual workflow name without the prefix
-    # Since the ARN is 'arn:aws:states:us-east-1:123456789012:stateMachine:my-state-machine'
-    # and the base ARN is 'arn:aws:states:us-east-1:123456789012:stateMachine:test-'
-    # we need to find the workflow name that would produce this ARN
+def test_get_workflow_definition_success(deployment, workflow):
+    """Test that get_workflow_definition constructs ARN correctly and returns workflow details"""
+    # The method concatenates CIRRUS_BASE_WORKFLOW_ARN + workflow_name
+    result = deployment.get_workflow_definition("test-workflow1")
 
-    # For this test to work, we need to create a state machine that matches the expected naming pattern
-    # Let's create a new state machine with the prefix expected by get_workflow_definition
-    test_defn = {
-        "Comment": "Test workflow definition",
-        "StartAt": "TestState",
-        "States": {
-            "TestState": {
-                "Type": "Pass",
-                "End": True,
-            },
-        },
-    }
-
-    # Get the IAM role from the existing state machine
-    existing_sm = stepfunctions.describe_state_machine(
-        stateMachineArn=state_machine_arn,
-    )
-    iam_role = existing_sm["roleArn"]
-
-    # Create a state machine with the expected prefix naming
-    test_sm = stepfunctions.create_state_machine(
-        name="test-workflow1",  # This will create ARN ending with test-workflow1
-        definition=json.dumps(test_defn),
-        roleArn=iam_role,
-    )
-
-    # Now test get_workflow_definition with just the workflow name part
-    result = deployment.get_workflow_definition("workflow1")
-
-    assert result["stateMachineArn"] == test_sm["stateMachineArn"]
+    assert result["stateMachineArn"] == workflow["stateMachineArn"]
     assert result["name"] == "test-workflow1"
-    assert result["status"] == "ACTIVE"
-    assert "definition" in result
-    assert "roleArn" in result
-    assert result["type"] == "STANDARD"
 
 
-def test_get_workflow_definition_not_found(deployment, stepfunctions):
-    """Test workflow not found error"""
-    # Use a workflow name that doesn't exist
-    workflow_name = "nonexistent-workflow"
-
+def test_get_workflow_definition_not_found(deployment):
+    """Test that get_workflow_definition raises error for nonexistent workflow"""
     with pytest.raises(ClientError) as exc_info:
-        deployment.get_workflow_definition(workflow_name)
+        deployment.get_workflow_definition("nonexistent-workflow")
 
-    # Moto returns StateMachineDoesNotExist for valid ARN format
     assert exc_info.value.response["Error"]["Code"] == "StateMachineDoesNotExist"
 
 
 # Tests for get_execution_events
 
 
-def test_get_execution_events_single_page(deployment, stepfunctions, execution_arn):
-    """Test execution events retrieval with single page"""
-    result = deployment.get_execution_events(execution_arn)
+def test_get_execution_events_returns_all_events(deployment, st_func_execution_arn):
+    """Test that get_execution_events returns events in expected format"""
+    result = deployment.get_execution_events(st_func_execution_arn)
 
+    # The method returns {"events": [...]}
     assert "events" in result
     assert isinstance(result["events"], list)
     assert len(result["events"]) > 0
-    # Verify basic event structure
-    assert "id" in result["events"][0]
-    assert "type" in result["events"][0]
-    assert "timestamp" in result["events"][0]
-
-
-def test_get_execution_events_multiple_pages(
-    deployment,
-    stepfunctions,
-    state_machine_arn,
-    iam_role,
-):
-    """Test execution events retrieval with pagination"""
-    # Create an execution with multiple events by using a more complex state machine
-    complex_defn = {
-        "StartAt": "State1",
-        "States": {
-            "State1": {"Type": "Pass", "Next": "State2"},
-            "State2": {"Type": "Pass", "Next": "State3"},
-            "State3": {"Type": "Pass", "Next": "State4"},
-            "State4": {"Type": "Pass", "End": True},
-        },
-    }
-
-    # Create a new state machine with complex definition - use iam_role fixture
-    complex_sm = stepfunctions.create_state_machine(
-        name="complex-state-machine",
-        definition=json.dumps(complex_defn),
-        roleArn=iam_role,
-    )
-
-    # Start execution
-    execution = stepfunctions.start_execution(
-        stateMachineArn=complex_sm["stateMachineArn"],
-        name="complex-exec",
-        input="{}",
-    )
-
-    result = deployment.get_execution_events(execution["executionArn"])
-
-    assert "events" in result
-    assert isinstance(result["events"], list)
-    assert len(result["events"]) > 0
-
-
-def test_get_execution_events_empty(deployment, stepfunctions, execution_arn):
-    """Test execution events always has at least ExecutionStarted event"""
-    result = deployment.get_execution_events(execution_arn)
-
-    assert "events" in result
-    assert len(result["events"]) >= 1
-    # First event should be ExecutionStarted
-    assert result["events"][0]["type"] == "ExecutionStarted"
 
 
 def test_get_execution_events_not_found(deployment, stepfunctions):
@@ -467,15 +336,14 @@ def test_get_workflow_item(deployment, create_records, statedb):
     assert result["item"]["items"] == "completed-0"
 
 
-# Tests for get_lambda_logs and get_batch_logs
+# Tests for get_lambda_logs and get_batch_logs (smoke tests for thin wrappers)
 
 
 def test_get_lambda_logs(deployment, logs):
-    """Test getting Lambda logs via Deployment method"""
-    import time
+    """Test that Deployment.get_lambda_logs wrapper works correctly"""
 
     log_group = "/aws/lambda/test-function"
-    request_id = "test-req-456"
+    request_id = "test-req-wrapper"
 
     # CloudWatch rejects events older than 14 days
     now_ms = int(time.time() * 1000)
@@ -483,67 +351,29 @@ def test_get_lambda_logs(deployment, logs):
     logs.create_log_group(logGroupName=log_group)
     logs.create_log_stream(
         logGroupName=log_group,
-        logStreamName="2025/11/11/[$LATEST]test123",
+        logStreamName="2025/11/11/[$LATEST]wrapper",
     )
     logs.put_log_events(
         logGroupName=log_group,
-        logStreamName="2025/11/11/[$LATEST]test123",
+        logStreamName="2025/11/11/[$LATEST]wrapper",
         logEvents=[
             {"timestamp": now_ms, "message": f"START RequestId: {request_id}\n"},
-            {"timestamp": now_ms + 1000, "message": "Processing request\n"},
-            {"timestamp": now_ms + 2000, "message": f"END RequestId: {request_id}\n"},
+            {"timestamp": now_ms + 1000, "message": f"END RequestId: {request_id}\n"},
         ],
     )
 
+    # Test that wrapper correctly passes args to underlying function
     result = deployment.get_lambda_logs(log_group, request_id)
-
-    assert "logs" in result
-    # Filter pattern matches lines with "RequestId: {request_id}", so only START and END
-    assert len(result["logs"]) == 2
-    assert result["logs"][0]["message"] == f"START RequestId: {request_id}\n"
-    assert result["logs"][1]["message"] == f"END RequestId: {request_id}\n"
-
-
-def test_get_lambda_logs_with_time_range(deployment, logs):
-    """Test getting Lambda logs with time range"""
-    import time
-
-    log_group = "/aws/lambda/test-function-2"
-    request_id = "test-req-789"
-
-    now_ms = int(time.time() * 1000)
-
-    logs.create_log_group(logGroupName=log_group)
-    logs.create_log_stream(
-        logGroupName=log_group,
-        logStreamName="2025/11/11/[$LATEST]test456",
-    )
-    logs.put_log_events(
-        logGroupName=log_group,
-        logStreamName="2025/11/11/[$LATEST]test456",
-        logEvents=[
-            {"timestamp": now_ms, "message": f"START RequestId: {request_id}\n"},
-            {"timestamp": now_ms + 5000, "message": f"END RequestId: {request_id}\n"},
-        ],
-    )
-
-    result = deployment.get_lambda_logs(
-        log_group,
-        request_id,
-        start_time=now_ms,
-        end_time=now_ms + 10000,
-    )
 
     assert "logs" in result
     assert len(result["logs"]) == 2
 
 
 def test_get_batch_logs(deployment, logs):
-    """Test getting Batch logs via Deployment method"""
-    import time
+    """Test that Deployment.get_batch_logs wrapper works correctly"""
 
     log_group = "/aws/batch/job"
-    log_stream = "test-job-def/default/task-abc123"
+    log_stream = "test-job-def/default/wrapper-task"
 
     now_ms = int(time.time() * 1000)
 
@@ -556,44 +386,12 @@ def test_get_batch_logs(deployment, logs):
         logGroupName=log_group,
         logStreamName=log_stream,
         logEvents=[
-            {"timestamp": now_ms, "message": "Job starting\n"},
-            {"timestamp": now_ms + 1000, "message": "Processing data\n"},
-            {"timestamp": now_ms + 2000, "message": "Job completed\n"},
+            {"timestamp": now_ms, "message": "Wrapper test\n"},
         ],
     )
 
+    # Test that wrapper correctly passes args to underlying function
     result = deployment.get_batch_logs(log_stream)
 
     assert "logs" in result
-    assert len(result["logs"]) == 3
-    assert result["logs"][0]["message"] == "Job starting\n"
-    assert result["logs"][2]["message"] == "Job completed\n"
-
-
-def test_get_batch_logs_with_custom_log_group(deployment, logs):
-    """Test getting Batch logs with custom log group"""
-    import time
-
-    log_group = "/aws/batch/custom-group"
-    log_stream = "custom-job/default/task-xyz789"
-
-    now_ms = int(time.time() * 1000)
-
-    logs.create_log_group(logGroupName=log_group)
-    logs.create_log_stream(
-        logGroupName=log_group,
-        logStreamName=log_stream,
-    )
-    logs.put_log_events(
-        logGroupName=log_group,
-        logStreamName=log_stream,
-        logEvents=[
-            {"timestamp": now_ms, "message": "Custom job log\n"},
-        ],
-    )
-
-    result = deployment.get_batch_logs(log_stream, log_group_name=log_group)
-
-    assert "logs" in result
     assert len(result["logs"]) == 1
-    assert result["logs"][0]["message"] == "Custom job log\n"
