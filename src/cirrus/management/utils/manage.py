@@ -12,7 +12,6 @@ from click_option_group import (
 
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.utils import parse_since
-from cirrus.management.deployment import Deployment
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +40,6 @@ class SinceType(click.ParamType):
 
 
 SINCE = SinceType()
-
-
-def _get_execution(deployment: Deployment, arn=None, payload_id=None):
-    if payload_id:
-        return deployment.get_execution_by_payload_id(payload_id)
-    return deployment.get_execution(arn)
 
 
 def query_filters(func):

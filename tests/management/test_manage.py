@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 import pytest
 
@@ -79,29 +80,29 @@ def _management_env(_environment, payloads, workflow):
 
 
 @pytest.mark.usefixtures("_management_env")
-def test_manage_get_execution_by_payload_id_twice(
+def test_manage_get_execution_arn_by_payload_id_twice(
     deployment,
     basic_payload_managers_factory,
     wfem,
 ) -> None:
     """Causes two workflow executions of the same payload, and confirms that the second
-    call to get_execution_by_payload_id gets a different executionArn value from the
-    first execution. This confirms that we are getting the most recent execution ARN
+    call to get_execution_arn with payload_id gets a different executionArn value from
+    the first execution. This confirms that we are getting the most recent execution ARN
     from dynamodb, as new ones are simply appended.
     """
     basic_payload_managers1 = basic_payload_managers_factory()
     basic_payload_managers1.process(wfem)
     pid = basic_payload_managers1[0].payload["id"]
-    sfn_exe1 = deployment.get_execution_by_payload_id(pid)
+    exec_arn1 = deployment.get_execution_arn(payload_id=pid)
 
     # alter state to allow a new workflow execution of the same payload
-    wfem.aborted(pid, execution_arn=sfn_exe1["executionArn"])
+    wfem.aborted(pid, execution_arn=exec_arn1)
 
     # Create a new PayloadManagers object so it fetches fresh state
     basic_payload_managers2 = basic_payload_managers_factory()
     basic_payload_managers2.process(wfem)
-    sfn_exe2 = deployment.get_execution_by_payload_id(pid)
-    assert sfn_exe1["executionArn"] != sfn_exe2["executionArn"]
+    exec_arn2 = deployment.get_execution_arn(payload_id=pid)
+    assert exec_arn1 != exec_arn2
 
 
 # using non-stac payloads for simpler testing
@@ -237,182 +238,96 @@ def test_get_payloads(deployment, create_records, statedb, state, parameter, lim
     assert_get_payloads(result, create_records, state, limit)
 
 
-def test_get_workflow_summary(deployment, create_records, statedb):
-    result = deployment("get-workflow-summary sar-test-panda test")
+def test_get_workflow_definition(deployment, workflow, put_parameters):
+    state_machine_arn = workflow["stateMachineArn"]
+    result = deployment("get-workflow-definition test-workflow1")
+
     assert result.exit_code == 0
     output = json.loads(result.stdout.strip())
-
-    assert output["collections"] == "sar-test-panda"
-    assert output["workflow"] == "test"
-    assert "counts" in output
-
-    expected_states = [
-        "PROCESSING",
-        "COMPLETED",
-        "FAILED",
-        "INVALID",
-        "ABORTED",
-        "CLAIMED",
-    ]
-    for state in expected_states:
-        assert state in output["counts"]
-        if state in ["COMPLETED", "FAILED"]:
-            assert output["counts"][state] == 2
-        else:
-            assert output["counts"][state] == 0
+    assert output["stateMachineArn"] == state_machine_arn
+    assert output["name"] == "test-workflow1"
+    assert "definition" in output
 
 
-def test_get_workflow_summary_with_since_option(deployment, create_records, statedb):
-    result = deployment(
-        "get-workflow-summary sar-test-panda test --since 1d",
-    )
+def test_get_execution_events(deployment, st_func_execution_arn, put_parameters):
+    result = deployment(f"get-execution-events --arn {st_func_execution_arn}")
+
     assert result.exit_code == 0
     output = json.loads(result.stdout.strip())
-
-    expected_states = [
-        "PROCESSING",
-        "COMPLETED",
-        "FAILED",
-        "INVALID",
-        "ABORTED",
-        "CLAIMED",
-    ]
-    for state in expected_states:
-        if state == "COMPLETED":
-            assert output["counts"][state] == 2
-        elif state == "FAILED":
-            assert output["counts"][state] == 1
-        else:
-            assert output["counts"][state] == 0
+    assert len(output["events"]) == 4
+    assert output["events"][0]["type"] == "ExecutionStarted"
 
 
-def test_get_workflow_summary_with_limit_option(deployment, create_records, statedb):
-    result = deployment(
-        "get-workflow-summary sar-test-panda test --limit 1",
-    )
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-
-    expected_states = [
-        "PROCESSING",
-        "COMPLETED",
-        "FAILED",
-        "INVALID",
-        "ABORTED",
-        "CLAIMED",
-    ]
-    for state in expected_states:
-        count = output["counts"][state]
-        assert count == 0 or count == 1 or count == "1+"
-
-
-def test_get_workflow_stats(deployment, put_parameters):
-    # we can't query timestream db data with moto, so just check the output structure
-    result = deployment("get-workflow-stats")
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-
-    # Verify the expected output structure
-    assert "state_transitions" in output
-    assert "daily" in output["state_transitions"]
-    assert "hourly" in output["state_transitions"]
-    assert "hourly_rolling" in output["state_transitions"]
-
-    # Each should be a list
-    assert isinstance(output["state_transitions"]["daily"], list)
-    assert isinstance(output["state_transitions"]["hourly"], list)
-    assert isinstance(output["state_transitions"]["hourly_rolling"], list)
-
-
-def test_get_workflow_items(deployment, create_records, statedb):
-    result = deployment("get-workflow-items sar-test-panda test")
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-
-    assert "items" in output
-    assert isinstance(output["items"], list)
-    assert len(output["items"]) == 4
-
-
-def test_get_workflow_items_with_state_filter(deployment, create_records, statedb):
-    result = deployment("get-workflow-items sar-test-panda test --state COMPLETED")
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-
-    assert len(output["items"]) == 2
-    for item in output["items"]:
-        assert item["state"] == "COMPLETED"
-
-
-def test_get_workflow_items_with_since_option(deployment, create_records, statedb):
-    result = deployment("get-workflow-items sar-test-panda test --since 1d")
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-
-    assert len(output["items"]) == 3
-
-
-def test_get_workflow_items_with_limit_option(deployment, create_records, statedb):
-    result = deployment("get-workflow-items sar-test-panda test --limit 2")
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-
-    assert len(output["items"]) == 2
-
-
-def test_get_workflow_items_with_nextkey_option(deployment, create_records, statedb):
-    # Get first item (descending order by default) and use its payload_id as nextkey
-    result = deployment("get-workflow-items sar-test-panda test --limit 1")
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-    payload_id = output["items"][0]["payload_id"]
-
-    # make sure we got the expected first item per the fixture
-    assert payload_id == create_records["failed"][1]
-
-    # Get the next page using nextkey
-    result = deployment(
-        f"get-workflow-items sar-test-panda test --nextkey {payload_id} --limit 1",
-    )
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-
-    # Check that the item returned in the page is expected per the fixture
-    assert output["items"][0]["payload_id"] == create_records["failed"][0]
-
-
-def test_get_workflow_items_with_sort_ascending_option(
+def test_get_execution_events_with_log_metadata(
     deployment,
-    create_records,
-    statedb,
+    st_func_execution_arn,
+    put_parameters,
 ):
-    # default is descending
-    result = deployment("get-workflow-items sar-test-panda test")
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-    assert output["items"][0]["payload_id"] == create_records["failed"][1]
-
-    # test ascending
-    result = deployment("get-workflow-items sar-test-panda test --sort-ascending")
-    assert result.exit_code == 0
-    output = json.loads(result.stdout.strip())
-    assert output["items"][0]["payload_id"] == create_records["completed"][0]
-
-
-def test_get_workflow_items_with_sort_index_option(deployment, create_records, statedb):
-    # The default index is "updated"; the only other sort index is "state_updated"
     result = deployment(
-        "get-workflow-items sar-test-panda test --sort-index state_updated",
+        f"get-execution-events --arn {st_func_execution_arn} --with-log-metadata",
     )
-    assert result.exit_code == 0
 
-
-def test_get_workflow_item(deployment, create_records, statedb):
-    # Use one of the completed items from our test data
-    result = deployment("get-workflow-item sar-test-panda test completed-0")
+    # our test state machine has no lambda or batch steps, so there is no log metadata
+    # to inject; this just tests that the flag works without error.
     assert result.exit_code == 0
     output = json.loads(result.stdout.strip())
+    assert len(output["events"]) == 4
 
-    assert output["item"]["collections"] == "sar-test-panda"
-    assert output["item"]["workflow"] == "test"
-    assert output["item"]["items"] == "completed-0"
+
+def test_get_lambda_logs(deployment, logs, put_parameters):
+    log_group = "/aws/lambda/test-function"
+    request_id = "test-req-123"
+
+    # CloudWatch rejects events older than 14 days
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName="2025/11/10/[$LATEST]abcdef",
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName="2025/11/10/[$LATEST]abcdef",
+        logEvents=[
+            {"timestamp": now_ms, "message": f"START RequestId: {request_id}\n"},
+            {"timestamp": now_ms + 1000, "message": "Test log message\n"},
+            {"timestamp": now_ms + 2000, "message": f"END RequestId: {request_id}\n"},
+        ],
+    )
+
+    result = deployment(f"get-lambda-logs {log_group} {request_id}")
+
+    assert result.exit_code == 0
+    assert f"START RequestId: {request_id}" in result.stdout
+    assert f"END RequestId: {request_id}" in result.stdout
+
+
+def test_get_batch_logs(deployment, logs, put_parameters):
+    log_group = "/aws/batch/job"
+    log_stream = "my-job-def/default/task-12345"
+
+    # CloudWatch rejects events older than 14 days
+    now_ms = int(time.time() * 1000)
+
+    logs.create_log_group(logGroupName=log_group)
+    logs.create_log_stream(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+    )
+    logs.put_log_events(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+        logEvents=[
+            {"timestamp": now_ms, "message": "Batch job started\n"},
+            {"timestamp": now_ms + 1000, "message": "Processing data\n"},
+            {"timestamp": now_ms + 2000, "message": "Batch job completed\n"},
+        ],
+    )
+
+    result = deployment(f"get-batch-logs {log_stream}")
+
+    assert result.exit_code == 0
+    assert "Batch job started" in result.stdout
+    assert "Processing data" in result.stdout
+    assert "Batch job completed" in result.stdout
