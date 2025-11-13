@@ -79,6 +79,11 @@ Parameters:
     Description: Namespace for CloudWatch Logs Metric Filters for Cirrus Workflows
     Default: ''
 
+  BatchLogGroup:
+    Type: String
+    Description: CloudWatch Log Group for AWS Batch job logs
+    Default: '/aws/batch/job'
+
 Conditions:
   UseVpc: !Not [!Equals [!Ref VpcId, '']]
   UseWorkflowMetricLogger: !Not [!Equals [!Ref WorkflowMetricLogGroup, '']]
@@ -354,7 +359,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - logs:GetLogEvents
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/batch/*'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${BatchLogGroup}/*'
 
   # API Lambda
   ApiLambda:
@@ -529,6 +534,7 @@ Resources:
         Variables:
           CIRRUS_LOG_LEVEL: !Ref LogLevel
           CIRRUS_PAYLOAD_BUCKET: !Ref CirrusPayloadBucket
+          CIRRUS_BATCH_LOG_GROUP: !Ref BatchLogGroup
       VpcConfig: !If
         - UseVpc
         - SecurityGroupIds:

@@ -1,6 +1,7 @@
 import json
 import re
 
+from os import getenv
 from typing import Any
 
 import boto3
@@ -11,7 +12,8 @@ from cirrus.lib.payload_manager import PayloadManager
 
 logger = get_task_logger("task.post-batch", payload=())
 
-BATCH_LOG_GROUP = "/aws/batch/job"
+BATCH_LOG_GROUP = getenv("CIRRUS_BATCH_LOG_GROUP", "/aws/batch/job")
+
 LOG_CLIENT = boto3.client("logs")
 DEFAULT_ERROR = "UnknownError"
 ERROR_REGEX = re.compile(r"^(?:([\.\w]+):)?\s*(.*)")
