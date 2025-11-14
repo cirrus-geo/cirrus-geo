@@ -55,6 +55,15 @@ def test_empty_event():
         update_state({}, {})
 
 
+def test_input_details_not_included(event):
+    event["detail"]["inputDetails"]["included"] = False
+    with pytest.raises(
+        Exception,
+        match="Input details not included in EventBridge event",
+    ):
+        update_state(event, {})
+
+
 @pytest.mark.parametrize(
     ("wf_event_enabled", "sfn_state"),
     product((True, False), SfnStatus._member_names_),

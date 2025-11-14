@@ -49,6 +49,13 @@ class Execution:
         try:
             arn = event["detail"]["executionArn"]
 
+            # Check if input details are included before accessing input
+            input_details = event["detail"].get("inputDetails", {})
+            if not input_details.get("included", False):
+                error_msg = "Input details not included in EventBridge event"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
             _input = PayloadManager(
                 CirrusPayload.from_event(
                     json.loads(event["detail"]["input"]),
