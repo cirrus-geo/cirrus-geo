@@ -56,6 +56,7 @@ def test_empty_event():
 
 
 def test_input_details_not_included(event):
+    event["detail"]["input"] = None
     event["detail"]["inputDetails"]["included"] = False
     with pytest.raises(
         Exception,
