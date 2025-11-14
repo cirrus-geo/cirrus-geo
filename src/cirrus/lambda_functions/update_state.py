@@ -50,6 +50,9 @@ class Execution:
             arn = event["detail"]["executionArn"]
 
             # Check if input details are included before accessing input
+            # If the combined escaped input and escaped output sent to
+            # EventBridge exceeds 248 KiB, then the input will be excluded
+            # See: https://docs.aws.amazon.com/step-functions/latest/dg/eventbridge-integration.html#event-detail-execution-status-change-remarks
             input_details = event["detail"].get("inputDetails", {})
             if not input_details.get("included", False):
                 error_msg = "Input details not included in EventBridge event"
