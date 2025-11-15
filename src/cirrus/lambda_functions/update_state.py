@@ -49,6 +49,16 @@ class Execution:
         try:
             arn = event["detail"]["executionArn"]
 
+            # Check if input details are included before accessing input
+            # If the combined escaped input and escaped output sent to
+            # EventBridge exceeds 248 KiB, then the input will be excluded
+            # See: https://docs.aws.amazon.com/step-functions/latest/dg/eventbridge-integration.html#event-detail-execution-status-change-remarks
+            input_details = event["detail"].get("inputDetails", {})
+            if not input_details.get("included", False):
+                error_msg = "Input details not included in EventBridge event"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
             _input = PayloadManager(
                 CirrusPayload.from_event(
                     json.loads(event["detail"]["input"]),
@@ -92,7 +102,8 @@ class Execution:
                 error=error,
             )
         except Exception as e:
-            raise Exception(f"Unknown event: {json.dumps(event)}") from e
+            error_msg = f"Failed to parse event: {e} | Event: {json.dumps(event)}"
+            raise Exception(error_msg) from e
 
 
 def workflow_completed(
