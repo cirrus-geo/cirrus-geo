@@ -102,7 +102,8 @@ class Execution:
                 error=error,
             )
         except Exception as e:
-            raise Exception(f"Failed to parse event: {e} | Event: {json.dumps(event)}") from e
+            error_msg = f"Failed to parse event: {e} | Event: {json.dumps(event)}"
+            raise Exception(error_msg) from e
 
 
 def workflow_completed(
