@@ -9,6 +9,7 @@ import boto3
 import pytest
 
 from cirrus.management.task_logs import (
+    format_log_event,
     get_batch_logs,
     get_lambda_logs,
     parse_log_metadata,
@@ -643,3 +644,30 @@ def test_get_batch_logs_not_found(logs):
     )
 
     assert result == {"logs": []}
+
+
+# Tests for format_log_event
+
+
+def test_format_log_event_basic():
+    """Test basic log event formatting"""
+    log_event = {
+        "timestamp": 1699372800500,  # 2023-11-07 16:00:00.500 UTC
+        "message": "This is a test log message",
+    }
+
+    result = format_log_event(log_event)
+
+    assert result == "[2023-11-07 16:00:00.500000+00:00] This is a test log message"
+
+
+def test_format_log_event_with_trailing_whitespace():
+    """Test log event formatting strips all trailing whitespace"""
+    log_event = {
+        "timestamp": 1699372800000,  # 2023-11-07 16:00:00 UTC
+        "message": "Log message with whitespace   \n\t",
+    }
+
+    result = format_log_event(log_event)
+
+    assert result == "[2023-11-07 16:00:00+00:00] Log message with whitespace"
