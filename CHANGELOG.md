@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- CLI commands and `Deployment` methods for retrieving step function execution history
+  events, workflow state machine definitions, and CloudWatch logs from Lambda and Batch
+  tasks ([#353])
+- `task_logs` module for parsing log metadata from execution event histories ([#353])
+
+### Changed
+
+- `Deployment.get_execution()` now requires an execution ARN; use `get_execution_arn()`
+  to resolve an ARN from a payload ID ([#353])
+
 ## [v1.2.0] - 2025-11-19
 
 ### ⚠️ Deprecations
@@ -1199,6 +1213,7 @@ Initial release
 [#340]: https://github.com/cirrus-geo/cirrus-geo/pull/340
 [#344]: https://github.com/cirrus-geo/cirrus-geo/pull/344
 [#348]: https://github.com/cirrus-geo/cirrus-geo/pull/348
+[#353]: https://github.com/cirrus-geo/cirrus-geo/pull/353
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c

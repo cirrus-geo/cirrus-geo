@@ -28,6 +28,7 @@ from cirrus.management.exceptions import (
     PayloadNotFoundError,
     StatsUnavailableError,
 )
+from cirrus.management.task_logs import get_batch_logs, get_lambda_logs
 
 logger = logging.getLogger(__name__)
 
@@ -212,27 +213,55 @@ class Deployment:
 
         return s3.download_fileobj(bucket, key, output_fileobj)
 
-    def get_execution(self, arn):
+    def get_execution_arn(
+        self,
+        *,
+        arn: str | None = None,
+        payload_id: str | None = None,
+    ) -> str:
+        if arn:
+            return arn
+        if payload_id is None:
+            raise ValueError("Either arn or payload_id must be provided")
+        execs = self.get_payload_state(payload_id).get("executions", [])
+        try:
+            return execs[-1]
+        except IndexError as e:
+            raise NoExecutionsError(payload_id) from e
+
+    def get_execution(self, execution_arn: str) -> dict:
         sfn = get_client(
             "stepfunctions",
             session=self.session,
         )
-        return sfn.describe_execution(executionArn=arn)
+        return sfn.describe_execution(executionArn=execution_arn)
 
-    def get_execution_by_payload_id(self, payload_id):
-        execs = self.get_payload_state(payload_id).get("executions", [])
-        try:
-            exec_arn = execs[-1]
-        except IndexError as e:
-            raise NoExecutionsError(payload_id) from e
+    def get_execution_events(self, execution_arn: str) -> dict:
+        sfn = get_client("stepfunctions", session=self.session)
+        paginator = sfn.get_paginator("get_execution_history")
+        page_iterator = paginator.paginate(executionArn=execution_arn)
 
-        return self.get_execution(exec_arn)
+        all_events = []
+        for page in page_iterator:
+            all_events.extend(page["events"])
+
+        return {"events": all_events}
+
+    def get_workflow_definition(self, workflow_name: str) -> dict:
+        state_machine_arn = (
+            f"{self.environment['CIRRUS_BASE_WORKFLOW_ARN']}{workflow_name}"
+        )
+        sfn = get_client(
+            "stepfunctions",
+            session=self.session,
+        )
+        return sfn.describe_state_machine(stateMachineArn=state_machine_arn)
 
     def invoke_lambda(
         self,
         event: str,
         function_name: str,
-        session: boto3.Session = None,
+        session: boto3.Session | None = None,
     ):
         aws_lambda = get_client(
             "lambda",
@@ -287,7 +316,8 @@ class Deployment:
             state = resp["state_updated"].split("_")[0]
             logger.debug({"state": state})
 
-        execution = self.get_execution_by_payload_id(wf_id)
+        execution_arn = self.get_execution_arn(payload_id=wf_id)
+        execution = self.get_execution(execution_arn)
 
         if state == "COMPLETED":
             return 0, CirrusPayload.from_event(json.loads(execution["output"]))
@@ -447,3 +477,39 @@ class Deployment:
         payload_id = f"{collections}/workflow-{workflow_name}/{itemids}"
         item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
         return {"item": to_current(item)}
+
+    def get_lambda_logs(
+        self,
+        log_group_name: str,
+        request_id: str,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int = 20,
+        next_token: str | None = None,
+    ) -> dict:
+        "Get Lambda logs from CloudWatch"
+        return get_lambda_logs(
+            self.session,
+            log_group_name,
+            request_id,
+            start_time,
+            end_time,
+            limit,
+            next_token,
+        )
+
+    def get_batch_logs(
+        self,
+        log_stream_name: str,
+        log_group_name: str = "/aws/batch/job",
+        limit: int = 20,
+        next_token: str | None = None,
+    ) -> dict:
+        "Get Batch logs from CloudWatch"
+        return get_batch_logs(
+            self.session,
+            log_stream_name,
+            log_group_name,
+            limit,
+            next_token,
+        )

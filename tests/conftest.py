@@ -85,6 +85,12 @@ def lambdas():
 
 
 @pytest.fixture
+def logs():
+    with moto.mock_aws():
+        yield get_client("logs", region=MOCK_REGION)
+
+
+@pytest.fixture
 def dynamo():
     with moto.mock_aws():
         yield get_client("dynamodb", region=MOCK_REGION)
