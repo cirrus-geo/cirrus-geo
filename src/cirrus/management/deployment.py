@@ -228,7 +228,6 @@ class Deployment:
             return execs[-1]
         except IndexError as e:
             raise NoExecutionsError(payload_id) from e
-        
 
     def get_execution(self, execution_arn: str) -> dict:
         sfn = get_client(
