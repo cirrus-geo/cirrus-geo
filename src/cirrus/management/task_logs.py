@@ -6,8 +6,6 @@ from datetime import UTC, datetime
 
 import boto3
 
-from botocore.exceptions import ClientError
-
 logger = logging.getLogger(__name__)
 
 AWS_MAX_LOG_EVENTS = 10000
@@ -146,23 +144,17 @@ def get_lambda_logs(
     if next_token is not None:
         kwargs["nextToken"] = next_token
 
-    logs: dict = {"logs": []}
-    try:
-        response = logs_client.filter_log_events(**kwargs)
-        events = response.get("events", [])
-        for event in events:
-            logs["logs"].append(
-                {"timestamp": event.get("timestamp"), "message": event.get("message")},
-            )
-        if "nextToken" in response:
-            logs["nextToken"] = response["nextToken"]
-        return logs
+    response = logs_client.filter_log_events(**kwargs)
+    events = response.get("events", [])
 
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "ResourceNotFoundException":
-            logger.warning("Log group not found: %s", log_group_name)
-            return {"logs": []}
-        raise
+    logs: dict = {"logs": []}
+    for event in events:
+        logs["logs"].append(
+            {"timestamp": event.get("timestamp"), "message": event.get("message")},
+        )
+    if "nextToken" in response:
+        logs["nextToken"] = response["nextToken"]
+    return logs
 
 
 def get_batch_logs(
@@ -184,32 +176,21 @@ def get_batch_logs(
     if next_token is not None:
         kwargs["nextToken"] = next_token
 
+    response = logs_client.get_log_events(**kwargs)
+    events = response.get("events", [])
+    next_forward_token = response.get("nextForwardToken")
+
     logs: dict = {"logs": []}
-    try:
-        response = logs_client.get_log_events(**kwargs)
-        events = response.get("events", [])
-        next_forward_token = response.get("nextForwardToken")
+    for event in events:
+        logs["logs"].append(
+            {"timestamp": event.get("timestamp"), "message": event.get("message")},
+        )
 
-        for event in events:
-            logs["logs"].append(
-                {"timestamp": event.get("timestamp"), "message": event.get("message")},
-            )
+    # If we're at the end, next_forward_token will be the same as next_token
+    if next_forward_token != next_token and len(events) > 0:
+        logs["nextToken"] = next_forward_token
 
-        # If we're at the end, next_forward_token will be the same as next_token
-        if next_forward_token != next_token and len(events) > 0:
-            logs["nextToken"] = next_forward_token
-
-        return logs
-
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "ResourceNotFoundException":
-            logger.warning(
-                "Log group (%s) or log stream (%s) not found",
-                log_group_name,
-                log_stream_name,
-            )
-            return {"logs": []}
-        raise
+    return logs
 
 
 def format_log_event(log_event: dict) -> str:

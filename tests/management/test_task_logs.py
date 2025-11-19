@@ -491,10 +491,14 @@ def test_get_lambda_logs_pagination(logs):
 
 def test_get_lambda_logs_not_found(logs):
     """Test Lambda logs when log group not found"""
-    session = boto3.Session()
-    result = get_lambda_logs(session, "/aws/lambda/nonexistent", "abc-123")
+    from botocore.exceptions import ClientError
 
-    assert result == {"logs": []}
+    session = boto3.Session()
+
+    with pytest.raises(ClientError) as exc_info:
+        get_lambda_logs(session, "/aws/lambda/nonexistent", "abc-123")
+
+    assert exc_info.value.response["Error"]["Code"] == "ResourceNotFoundException"
 
 
 # Tests for get_batch_logs
@@ -637,13 +641,17 @@ def test_get_batch_logs_empty_stream(logs):
 
 def test_get_batch_logs_not_found(logs):
     """Test Batch logs when log stream not found"""
-    session = boto3.Session()
-    result = get_batch_logs(
-        session,
-        "nonexistent-stream",
-    )
+    from botocore.exceptions import ClientError
 
-    assert result == {"logs": []}
+    session = boto3.Session()
+
+    with pytest.raises(ClientError) as exc_info:
+        get_batch_logs(
+            session,
+            "nonexistent-stream",
+        )
+
+    assert exc_info.value.response["Error"]["Code"] == "ResourceNotFoundException"
 
 
 # Tests for format_log_event
