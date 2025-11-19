@@ -175,6 +175,52 @@ cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w
 </dl>
 </li>
 <li><dl>
+<dt><em>get-workflow-definition:</em></dt><dd><p>Get a workflow’s state machine ASL definition using the workflow name</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-workflow-definition<span class="w"> </span><span class="nb">test</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-execution-events:</em></dt><dd><p>Get a workflow execution’s event history using its ARN or its input payload ID</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution-events<span class="w"> </span>--payload-id<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution-events<span class="w"> </span>--arn<span class="w"> </span>arn:aws:states:us-west-2:000000000011:execution:fd-name-dev-cirrus-project:c123456789-b19292-999
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution-events<span class="w"> </span>--payload-id<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10<span class="w"> </span>--with-log-metadata
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-lambda-logs:</em></dt><dd><p>Get CloudWatch logs for a Lambda invocation</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-lambda-logs<span class="w"> </span>/aws/lambda/my-function<span class="w"> </span>abc123-request-id
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-lambda-logs<span class="w"> </span>/aws/lambda/my-function<span class="w"> </span>abc123-request-id<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span>
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-lambda-logs<span class="w"> </span>/aws/lambda/my-function<span class="w"> </span>abc123-request-id<span class="w"> </span>--start-time<span class="w"> </span><span class="m">1699999999000</span><span class="w"> </span>--end-time<span class="w"> </span><span class="m">1700000099000</span>
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-lambda-logs<span class="w"> </span>/aws/lambda/my-function<span class="w"> </span>abc123-request-id<span class="w"> </span>--next-token<span class="w"> </span><span class="s2">&quot;pagination-token-here&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-batch-logs:</em></dt><dd><p>Get CloudWatch logs for a Batch job</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-batch-logs<span class="w"> </span>my-job-log-stream
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-batch-logs<span class="w"> </span>my-job-log-stream<span class="w"> </span>--log-group<span class="w"> </span>/aws/batch/custom
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-batch-logs<span class="w"> </span>my-job-log-stream<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span><span class="w"> </span>--next-token<span class="w"> </span><span class="s2">&quot;pagination-token-here&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
 <dt><em>get-payload:</em></dt><dd><p>Get a payload from S3 using its payload ID</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-payload<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
 </pre></div>

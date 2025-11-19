@@ -70,6 +70,48 @@ Manage commands
 
         cirrus mgmt name-dev get-execution-output --arn arn:aws:states:us-west-2:000000000011:execution:fd-name-dev-cirrus-project:c123456789-b19292-999
 
+- *get-workflow-definition:*
+    Get a workflow's state machine ASL definition using the workflow name
+
+    .. code-block:: bash
+
+        cirrus mgmt name-dev get-workflow-definition test
+
+- *get-execution-events:*
+    Get a workflow execution's event history using its ARN or its input payload ID
+
+    .. code-block:: bash
+
+        cirrus mgmt name-dev get-execution-events --payload-id sar/workflow-test/example-01_2024-10-31-06-05-10
+
+        cirrus mgmt name-dev get-execution-events --arn arn:aws:states:us-west-2:000000000011:execution:fd-name-dev-cirrus-project:c123456789-b19292-999
+
+        cirrus mgmt name-dev get-execution-events --payload-id sar/workflow-test/example-01_2024-10-31-06-05-10 --with-log-metadata
+
+- *get-lambda-logs:*
+    Get CloudWatch logs for a Lambda invocation
+
+    .. code-block:: bash
+
+        cirrus mgmt name-dev get-lambda-logs /aws/lambda/my-function abc123-request-id
+
+        cirrus mgmt name-dev get-lambda-logs /aws/lambda/my-function abc123-request-id --limit 50
+
+        cirrus mgmt name-dev get-lambda-logs /aws/lambda/my-function abc123-request-id --start-time 1699999999000 --end-time 1700000099000
+
+        cirrus mgmt name-dev get-lambda-logs /aws/lambda/my-function abc123-request-id --next-token "pagination-token-here"
+
+- *get-batch-logs:*
+    Get CloudWatch logs for a Batch job
+
+    .. code-block:: bash
+
+        cirrus mgmt name-dev get-batch-logs my-job-log-stream
+
+        cirrus mgmt name-dev get-batch-logs my-job-log-stream --log-group /aws/batch/custom
+
+        cirrus mgmt name-dev get-batch-logs my-job-log-stream --limit 50 --next-token "pagination-token-here"
+
 - *get-payload:*
     Get a payload from S3 using its payload ID
 
