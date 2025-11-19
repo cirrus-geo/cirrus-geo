@@ -221,13 +221,14 @@ class Deployment:
     ) -> str:
         if arn:
             return arn
-        if payload_id:
-            execs = self.get_payload_state(payload_id).get("executions", [])
-            try:
-                return execs[-1]
-            except IndexError as e:
-                raise NoExecutionsError(payload_id) from e
-        raise ValueError("Either arn or payload_id must be provided")
+        if payload_id is None:
+            raise ValueError("Either arn or payload_id must be provided")
+        execs = self.get_payload_state(payload_id).get("executions", [])
+        try:
+            return execs[-1]
+        except IndexError as e:
+            raise NoExecutionsError(payload_id) from e
+        
 
     def get_execution(self, execution_arn: str) -> dict:
         sfn = get_client(
