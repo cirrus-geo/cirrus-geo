@@ -13,7 +13,11 @@ PAYLOAD_BUCKET = getenv("CIRRUS_PAYLOAD_BUCKET")
 
 def lambda_handler(event, context):
     payload = CirrusPayload.from_event(event)
-    logger = get_task_logger("task.pre-batch", payload=payload)
+    logger = get_task_logger(
+        "task.pre-batch",
+        payload=payload,
+        aws_request_id=context.aws_request_id,
+    )
 
     url = f"s3://{PAYLOAD_BUCKET}/batch/{payload['id']}/{uuid.uuid1()}.json"
     url_out = url.replace(".json", "_out.json")

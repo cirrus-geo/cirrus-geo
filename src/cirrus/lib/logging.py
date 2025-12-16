@@ -60,9 +60,16 @@ class DynamicLoggerAdapter(logging.LoggerAdapter):
         return (msg, kwargs)
 
 
-def get_task_logger(*args, payload, **kwargs):
+def get_task_logger(*args, payload, aws_request_id=None, **kwargs):
     _logger = logging.getLogger(*args, **kwargs)
-    return DynamicLoggerAdapter(_logger, payload, keys=["id", "stac_version"])
+    extra = dict(payload)
+    if aws_request_id is not None:
+        extra["aws_request_id"] = aws_request_id
+    return DynamicLoggerAdapter(
+        _logger,
+        extra,
+        keys=["id", "stac_version", "aws_request_id"],
+    )
 
 
 class defer:  # noqa: N801

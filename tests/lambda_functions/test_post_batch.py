@@ -6,30 +6,30 @@ import pytest
 from cirrus.lambda_functions.post_batch import lambda_handler as post_batch
 
 
-def test_empty_event():
+def test_empty_event(mock_context):
     with pytest.raises(Exception):
-        post_batch({}, {})
+        post_batch({}, mock_context)
 
 
 @moto.mock_aws
-def test_error_handling():
+def test_error_handling(mock_context):
     with pytest.raises(
         Exception,
         match=r"Unable to get error log: Cause is not defined",
     ):
-        post_batch({"error": {}}, {})
+        post_batch({"error": {}}, mock_context)
 
     with pytest.raises(Exception, match=r"Unable to get error log: Attempts is empty"):
-        post_batch({"error": {"Cause": "{}"}}, {})
+        post_batch({"error": {"Cause": "{}"}}, mock_context)
 
     with pytest.raises(Exception, match=r"Unable to get error log: Attempts is empty"):
-        post_batch({"error": {"Cause": json.dumps({"Attempts": []})}}, {})
+        post_batch({"error": {"Cause": json.dumps({"Attempts": []})}}, mock_context)
 
     with pytest.raises(
         Exception,
         match=r"Unable to get error log: Container for last Attempt is missing",
     ):
-        post_batch({"error": {"Cause": json.dumps({"Attempts": [{}]})}}, {})
+        post_batch({"error": {"Cause": json.dumps({"Attempts": [{}]})}}, mock_context)
 
     with pytest.raises(
         Exception,
@@ -37,7 +37,7 @@ def test_error_handling():
     ):
         post_batch(
             {"error": {"Cause": json.dumps({"Attempts": [{"Container": {}}]})}},
-            {},
+            mock_context,
         )
 
     with pytest.raises(
@@ -52,7 +52,7 @@ def test_error_handling():
                     ),
                 },
             },
-            {},
+            mock_context,
         )
 
     with pytest.raises(
@@ -70,7 +70,7 @@ def test_error_handling():
                     ),
                 },
             },
-            {},
+            mock_context,
         )
 
     with pytest.raises(
@@ -105,5 +105,5 @@ def test_error_handling():
                     ),
                 },
             },
-            {},
+            mock_context,
         )

@@ -387,7 +387,7 @@ def test_get_lambda_logs_basic(logs):
     result = get_lambda_logs(session, log_group, request_id)
 
     assert "logs" in result
-    # Filter pattern matches lines with "RequestId: {request_id}", so only START and END
+    # Filter pattern matches lines that contain the request_id value, so only START and END
     assert len(result["logs"]) == 2
     assert result["logs"][0]["timestamp"] == now_ms
     assert result["logs"][0]["message"] == f"START RequestId: {request_id}\n"
