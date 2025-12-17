@@ -97,6 +97,7 @@ def setup_venv(
         platform,
         "--locked",
         "--no-dev",
+        "--no-build",
         "--project",
         str(project_dir),
         "--no-editable",
