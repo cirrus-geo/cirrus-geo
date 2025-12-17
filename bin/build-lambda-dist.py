@@ -79,6 +79,18 @@ def setup_venv(
     project_dir: Path,
 ) -> None:
     """Set up virtual environment and install dependencies."""
+    # First, build the local package as a universal wheel (pure Python)
+    build_cmd = [
+        "uv",
+        "build",
+        "--wheel",
+        "--out-dir",
+        str(project_dir / "dist"),
+    ]
+    print(f"Running: {' '.join(build_cmd)}")
+    subprocess.run(build_cmd, cwd=project_dir, check=True)
+
+    # Create virtual environment
     cmd = [
         "uv",
         "venv",
@@ -90,6 +102,8 @@ def setup_venv(
     print(f"Running: {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
 
+    # Install with --no-build to ensure all dependencies have pre-built wheels
+    # (fails fast if platform-specific wheels are missing)
     cmd = [
         "uv",
         "sync",
