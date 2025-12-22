@@ -17,9 +17,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- `DynamicLoggerAdapter` now named `LambdaLoggerAdapter` ([#361])
+- `DynamicLoggerAdapter` now named `CirrusLoggerAdapter` ([#361])
 - `Deployment.get_execution()` now requires an execution ARN; use `get_execution_arn()`
   to resolve an ARN from a payload ID ([#353])
+
+## Removed
+
+- `cirrus.lib.logging.get_task_logger` function; use `CirrusLoggerAdapter` directly
+  ([#361])
 
 ## [v1.2.0] - 2025-11-19
 
