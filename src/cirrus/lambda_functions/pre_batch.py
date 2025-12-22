@@ -5,11 +5,11 @@ from os import getenv
 from boto3utils import s3
 
 from cirrus.lib.cirrus_payload import CirrusPayload
-from cirrus.lib.logging import get_task_logger
+from cirrus.lib.logging import CirrusLoggerAdapter
 
 PAYLOAD_BUCKET = getenv("CIRRUS_PAYLOAD_BUCKET")
 
-logger = get_task_logger("function.pre-batch")
+logger = CirrusLoggerAdapter("function.pre-batch")
 
 
 def lambda_handler(event, context):

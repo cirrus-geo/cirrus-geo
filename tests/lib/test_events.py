@@ -14,7 +14,7 @@ from cirrus.lib.events import (
     WorkflowMetricLogger,
     WorkflowMetricReader,
 )
-from cirrus.lib.logging import get_task_logger
+from cirrus.lib.logging import CirrusLoggerAdapter
 from cirrus.lib.utils import get_client
 
 
@@ -62,7 +62,7 @@ def test_workflow_metric_logger_disabled(monkeypatch):
 @mock_aws
 def test_workflow_metric_logger_enabled(monkeypatch, caplog):
     monkeypatch.setenv("CIRRUS_WORKFLOW_METRIC_NAMESPACE", "fake-namespace")
-    logger = get_task_logger("cirrus.lib", payload=())
+    logger = CirrusLoggerAdapter("cirrus.lib")
 
     metric_logger = WorkflowMetricReader(logger=logger)
     for record in caplog.records:

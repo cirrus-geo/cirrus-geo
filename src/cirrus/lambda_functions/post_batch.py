@@ -6,7 +6,7 @@ from typing import Any
 import boto3
 
 from cirrus.lib.cirrus_payload import CirrusPayload
-from cirrus.lib.logging import get_task_logger
+from cirrus.lib.logging import CirrusLoggerAdapter
 from cirrus.lib.payload_manager import PayloadManager
 
 BATCH_LOG_GROUP = "/aws/batch/job"
@@ -14,7 +14,7 @@ LOG_CLIENT = boto3.client("logs")
 DEFAULT_ERROR = "UnknownError"
 ERROR_REGEX = re.compile(r"^(?:([\.\w]+):)?\s*(.*)")
 
-logger = get_task_logger("function.post-batch")
+logger = CirrusLoggerAdapter("function.post-batch")
 
 
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
