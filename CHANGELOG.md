@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- `DynamicLoggerAdapter` now named `LambdaLoggerAdapter` ([#361])
 - `Deployment.get_execution()` now requires an execution ARN; use `get_execution_arn()`
   to resolve an ARN from a payload ID ([#353])
 
