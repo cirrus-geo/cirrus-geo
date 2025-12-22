@@ -46,30 +46,41 @@ config = {
 logging.config.dictConfig(config)
 
 
-class DynamicLoggerAdapter(logging.LoggerAdapter):
-    def __init__(self, *args, keys=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.keys = keys
-        if self.logger.parent and self.logger.parent.name in config["loggers"]:
-            # this prevents double-logging in AWS Cloudwatch for cirrus loggers
-            self.logger.parent.propagate = False
-
+class LambdaLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
-        if self.keys is not None:
-            kwargs["extra"] = {k: self.extra[k] for k in self.keys if k in self.extra}
-        return (msg, kwargs)
+        # allow passing an "extra" dict on individual log calls
+        if self.extra is not None:
+            kwargs.setdefault("extra", {}).update(self.extra)
+        return msg, kwargs
+
+    def reset_extra(
+        self,
+        payload=None,
+        aws_request_id=None,
+        **kwargs,
+    ) -> None:
+        if payload_id := payload.get("id") if payload else None:
+            kwargs["id"] = payload_id
+
+        if stac_version := payload.get("stac_version") if payload else None:
+            kwargs["stac_version"] = stac_version
+
+        if aws_request_id:
+            kwargs["aws_request_id"] = aws_request_id
+
+        self.extra = kwargs
 
 
-def get_task_logger(*args, payload, aws_request_id=None, **kwargs):
-    _logger = logging.getLogger(*args, **kwargs)
-    extra = dict(payload)
-    if aws_request_id is not None:
-        extra["aws_request_id"] = aws_request_id
-    return DynamicLoggerAdapter(
-        _logger,
-        extra,
-        keys=["id", "stac_version", "aws_request_id"],
-    )
+def get_task_logger(*args, payload=None, aws_request_id=None, **kwargs):
+    adapter = LambdaLoggerAdapter(logging.getLogger(*args, **kwargs))
+
+    if adapter.logger.parent and adapter.logger.parent.name in config["loggers"]:
+        # this prevents double-logging in AWS Cloudwatch for cirrus loggers
+        adapter.logger.parent.propagate = False
+
+    adapter.reset_extra(payload, aws_request_id, **kwargs)
+
+    return adapter
 
 
 class defer:  # noqa: N801

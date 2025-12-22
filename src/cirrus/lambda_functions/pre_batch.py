@@ -7,14 +7,15 @@ from boto3utils import s3
 from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.logging import get_task_logger
 
-# envvars
 PAYLOAD_BUCKET = getenv("CIRRUS_PAYLOAD_BUCKET")
+
+logger = get_task_logger("function.pre-batch")
 
 
 def lambda_handler(event, context):
     payload = CirrusPayload.from_event(event)
-    logger = get_task_logger(
-        "task.pre-batch",
+
+    logger.reset_extra(
         payload=payload,
         aws_request_id=context.aws_request_id,
     )

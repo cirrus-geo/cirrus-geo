@@ -15,7 +15,7 @@ from cirrus.lib.logging import get_task_logger
 from cirrus.lib.statedb import StateDB, to_current
 from cirrus.lib.utils import parse_since
 
-logger = get_task_logger("function.api", payload=())
+logger = get_task_logger("function.api")
 
 
 def response(

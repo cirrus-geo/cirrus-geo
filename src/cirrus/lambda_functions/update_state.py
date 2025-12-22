@@ -14,12 +14,12 @@ from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start
 
 cold_start()
 
-logger = get_task_logger("function.update-state", payload=())
-
 INVALID_EXCEPTIONS = (
     "cirrus.lib.errors.InvalidInput",
     "stactask.exceptions.InvalidInput",
 )
+
+logger = get_task_logger("function.update-state")
 
 
 @dataclass

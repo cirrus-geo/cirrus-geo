@@ -14,13 +14,11 @@ LOG_CLIENT = boto3.client("logs")
 DEFAULT_ERROR = "UnknownError"
 ERROR_REGEX = re.compile(r"^(?:([\.\w]+):)?\s*(.*)")
 
+logger = get_task_logger("function.post-batch")
+
 
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    logger = get_task_logger(
-        "task.post-batch",
-        payload=(),
-        aws_request_id=context.aws_request_id,
-    )
+    logger.reset_extra(aws_request_id=context.aws_request_id)
 
     if "error" not in event:
         return PayloadManager(CirrusPayload.from_event(event)).get_payload()

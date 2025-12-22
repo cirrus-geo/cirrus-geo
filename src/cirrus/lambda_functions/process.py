@@ -13,7 +13,7 @@ from cirrus.lib.statedb import StateDB
 
 utils.cold_start()
 
-logger = get_task_logger("function.process", payload=())
+logger = get_task_logger("function.process")
 
 
 def is_sqs_message(message):
