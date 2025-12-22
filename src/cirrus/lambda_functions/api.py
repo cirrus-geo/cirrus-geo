@@ -11,11 +11,11 @@ from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, daily, hourly
 from cirrus.lib.events import WorkflowMetric, WorkflowMetricReader
-from cirrus.lib.logging import get_task_logger
+from cirrus.lib.logging import CirrusLoggerAdapter
 from cirrus.lib.statedb import StateDB, to_current
 from cirrus.lib.utils import parse_since
 
-logger = get_task_logger("function.api", payload=())
+logger = CirrusLoggerAdapter("function.api")
 
 
 def response(

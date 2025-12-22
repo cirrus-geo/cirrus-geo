@@ -7,13 +7,13 @@ from cirrus.lib import utils
 from cirrus.lib.enums import WFEventType
 from cirrus.lib.errors import NoUrlError
 from cirrus.lib.events import WorkflowEvent, WorkflowEventManager
-from cirrus.lib.logging import defer, get_task_logger
+from cirrus.lib.logging import CirrusLoggerAdapter, defer
 from cirrus.lib.payload_manager import PayloadManager, PayloadManagers
 from cirrus.lib.statedb import StateDB
 
 utils.cold_start()
 
-logger = get_task_logger("function.process", payload=())
+logger = CirrusLoggerAdapter("function.process")
 
 
 def is_sqs_message(message):

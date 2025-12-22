@@ -2,8 +2,9 @@ import logging
 import logging.config
 
 from os import getenv
+from typing import Any
 
-config = {
+config: dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
@@ -46,23 +47,52 @@ config = {
 logging.config.dictConfig(config)
 
 
-class DynamicLoggerAdapter(logging.LoggerAdapter):
-    def __init__(self, *args, keys=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.keys = keys
-        if self.logger.parent and self.logger.parent.name in config["loggers"]:
+class CirrusLoggerAdapter(logging.LoggerAdapter):
+    def __init__(
+        self,
+        logger_name: str | None = None,
+        payload: dict[str, Any] | None = None,
+        aws_request_id: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(logging.getLogger(logger_name))
+
+        if (
+            self.logger.parent
+            and self.logger.parent.name
+            and self.logger.parent.name in config["loggers"]
+        ):
             # this prevents double-logging in AWS Cloudwatch for cirrus loggers
             self.logger.parent.propagate = False
 
-    def process(self, msg, kwargs):
-        if self.keys is not None:
-            kwargs["extra"] = {k: self.extra[k] for k in self.keys if k in self.extra}
-        return (msg, kwargs)
+        self.reset_extra(payload, aws_request_id, **kwargs)
 
+    def process(
+        self,
+        msg: str,
+        kwargs: Any,
+    ) -> tuple[str, Any]:
+        # allow passing an "extra" dict on individual log calls
+        if self.extra is not None:
+            kwargs["extra"] = {**self.extra, **kwargs.get("extra", {})}
+        return msg, kwargs
 
-def get_task_logger(*args, payload, **kwargs):
-    _logger = logging.getLogger(*args, **kwargs)
-    return DynamicLoggerAdapter(_logger, payload, keys=["id", "stac_version"])
+    def reset_extra(
+        self,
+        payload: dict[str, Any] | None = None,
+        aws_request_id: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if payload_id := payload.get("id") if payload else None:
+            kwargs["id"] = payload_id
+
+        if stac_version := payload.get("stac_version") if payload else None:
+            kwargs["stac_version"] = stac_version
+
+        if aws_request_id:
+            kwargs["aws_request_id"] = aws_request_id
+
+        self.extra = kwargs
 
 
 class defer:  # noqa: N801

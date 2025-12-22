@@ -58,6 +58,41 @@ Lambda tasks use the `AWS Lambda`_ runtime to power executions. Lambda has the
 advantage of quick startup and easy management, but has many restrictions like
 short timeouts and significant resource limits.
 
+.. _lambda-logs:
+
+**Logs**
+
+Lambda functions running in AWS write logs to CloudWatch Logs, with all invocations
+of a given Lambda function writing to the same log group. When Lambda reuses execution
+environments, multiple invocations write to the same log stream, potentially
+interleaving their logs and making it difficult to isolate logs for a specific
+invocation.
+
+Each Lambda invocation has a unique request ID (provided in the Lambda context
+parameter as ``context.aws_request_id``) that can be injected into log messages
+to enable filtering. For example, you can use the AWS CLI to filter logs by
+request ID:
+
+.. code-block:: bash
+
+    aws logs filter-log-events \
+        --log-group-name '/aws/lambda/cirrus-pre-batch' \
+        --filter-pattern '5ebd5f70-6dbe-4ea5-bd81-e5b69a4d0824'
+
+where the ``--filter-pattern`` value is the Lambda request ID.
+
+When Lambda tasks are invoked in Step Functions using the
+``arn:aws:states:::lambda:invoke`` resource pattern (as shown in the
+:doc:`workflow definitions <../workflows/definitions>` documentation), the request
+ID is exposed in the Step Function execution history metadata. The
+``get-execution-events`` management command with the ``--with-log-metadata`` flag
+retrieves this metadata, and the ``get-lambda-logs`` command uses the request ID to
+filter CloudWatch logs for a specific Lambda invocation. See the
+:doc:`CLI commands <../../../cli/04_commands>` documentation for usage examples.
+
+
+
+
 .. _AWS Lambda: https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
 
 
@@ -94,7 +129,7 @@ When to chose either
 * can be run as a Docker image
 
 
-When to chose Lambda
+When to choose Lambda
 ^^^^^^^^^^^^^^^^^^^^
 
 * short runtime, with a maximum of 15 minutes

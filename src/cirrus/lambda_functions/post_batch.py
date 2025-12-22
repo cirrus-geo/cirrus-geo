@@ -6,18 +6,20 @@ from typing import Any
 import boto3
 
 from cirrus.lib.cirrus_payload import CirrusPayload
-from cirrus.lib.logging import get_task_logger
+from cirrus.lib.logging import CirrusLoggerAdapter
 from cirrus.lib.payload_manager import PayloadManager
-
-logger = get_task_logger("task.post-batch", payload=())
 
 BATCH_LOG_GROUP = "/aws/batch/job"
 LOG_CLIENT = boto3.client("logs")
 DEFAULT_ERROR = "UnknownError"
 ERROR_REGEX = re.compile(r"^(?:([\.\w]+):)?\s*(.*)")
 
+logger = CirrusLoggerAdapter("function.post-batch")
+
 
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    logger.reset_extra(aws_request_id=context.aws_request_id)
+
     if "error" not in event:
         return PayloadManager(CirrusPayload.from_event(event)).get_payload()
 
@@ -49,7 +51,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
     error_from_batch = None
     try:
-        error_from_batch = get_error_from_batch(logname)
+        error_from_batch = get_error_from_batch(logger, logname)
     except Exception as e:
         # lambda does not currently support exeception chaining,
         # so we have to log the original exception separately
@@ -80,7 +82,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     )
 
 
-def get_error_from_batch(logname: str) -> tuple[str, str] | None:
+def get_error_from_batch(logger, logname: str) -> tuple[str, str] | None:
     logger.info("Getting error from %s/%s", BATCH_LOG_GROUP, logname)
     logs = LOG_CLIENT.get_log_events(
         logGroupName=BATCH_LOG_GROUP,

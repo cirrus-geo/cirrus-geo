@@ -16,7 +16,7 @@ from botocore.exceptions import ClientError
 from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.events import WorkflowEventManager
-from cirrus.lib.logging import get_task_logger
+from cirrus.lib.logging import CirrusLoggerAdapter
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import (
     SNSMessage,
@@ -68,7 +68,7 @@ class PayloadManager:
         )
         self.payload.validate()
 
-        self.logger = get_task_logger(__name__, payload=self.payload)
+        self.logger = CirrusLoggerAdapter(__name__, payload=self.payload)
         self.state_item = state_item
 
     def next_payloads(self):

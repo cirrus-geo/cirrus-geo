@@ -129,11 +129,9 @@ def get_lambda_logs(
 ) -> dict:
     logs_client = session.client("logs")
 
-    filter_pattern = f'"RequestId: {request_id}"'
-
     kwargs: dict = {
         "logGroupName": log_group_name,
-        "filterPattern": filter_pattern,
+        "filterPattern": request_id,
         "limit": min(max(limit, 1), AWS_MAX_LOG_EVENTS),
     }
 

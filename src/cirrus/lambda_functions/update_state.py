@@ -8,18 +8,18 @@ from typing import Any
 from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEventManager
-from cirrus.lib.logging import get_task_logger
+from cirrus.lib.logging import CirrusLoggerAdapter
 from cirrus.lib.payload_manager import PayloadManager
 from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start
 
 cold_start()
 
-logger = get_task_logger("function.update-state", payload=())
-
 INVALID_EXCEPTIONS = (
     "cirrus.lib.errors.InvalidInput",
     "stactask.exceptions.InvalidInput",
 )
+
+logger = CirrusLoggerAdapter("function.update-state")
 
 
 @dataclass

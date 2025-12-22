@@ -1,6 +1,15 @@
 import os
 
+from unittest.mock import Mock
+
 import pytest
+
+
+@pytest.fixture
+def mock_context():
+    context = Mock()
+    context.aws_request_id = "test-request-id-12345"
+    return context
 
 
 @pytest.fixture(autouse=True)
