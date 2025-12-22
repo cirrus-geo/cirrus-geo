@@ -60,7 +60,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#lambda-vs-batch">Lambda vs Batch</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#when-to-chose-either">When to chose either</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#when-to-chose-lambda">When to chose Lambda</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#when-to-choose-lambda">When to choose Lambda</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#when-to-chose-batch">When to chose Batch</a></li>
 </ul>
 </li>
@@ -169,6 +169,30 @@ these common actions.</p>
 <p>Lambda tasks use the <a class="reference external" href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda</a> runtime to power executions. Lambda has the
 advantage of quick startup and easy management, but has many restrictions like
 short timeouts and significant resource limits.</p>
+<p id="lambda-logs"><strong>Logs</strong></p>
+<p>Lambda functions running in AWS write logs to CloudWatch Logs, with all invocations
+of a given Lambda function writing to the same log group. When Lambda reuses execution
+environments, multiple invocations write to the same log stream, potentially
+interleaving their logs and making it difficult to isolate logs for a specific
+invocation.</p>
+<p>Each Lambda invocation has a unique request ID (provided in the Lambda context
+parameter as <code class="docutils literal notranslate"><span class="pre">context.aws_request_id</span></code>) that can be injected into log messages
+to enable filtering. For example, you can use the AWS CLI to filter logs by
+request ID:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>aws<span class="w"> </span>logs<span class="w"> </span>filter-log-events<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--log-group-name<span class="w"> </span><span class="s1">&#39;/aws/lambda/cirrus-pre-batch&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--filter-pattern<span class="w"> </span><span class="s1">&#39;5ebd5f70-6dbe-4ea5-bd81-e5b69a4d0824&#39;</span>
+</pre></div>
+</div>
+<p>where the <code class="docutils literal notranslate"><span class="pre">--filter-pattern</span></code> value is the Lambda request ID.</p>
+<p>When Lambda tasks are invoked in Step Functions using the
+<code class="docutils literal notranslate"><span class="pre">arn:aws:states:::lambda:invoke</span></code> resource pattern (as shown in the
+<a class="reference internal" href="../workflows/definitions.html"><span class="doc">workflow definitions</span></a> documentation), the request
+ID is exposed in the Step Function execution history metadata. The
+<code class="docutils literal notranslate"><span class="pre">get-execution-events</span></code> management command with the <code class="docutils literal notranslate"><span class="pre">--with-log-metadata</span></code> flag
+retrieves this metadata, and the <code class="docutils literal notranslate"><span class="pre">get-lambda-logs</span></code> command uses the request ID to
+filter CloudWatch logs for a specific Lambda invocation. See the
+<a class="reference internal" href="../../../cli/04_commands.html"><span class="doc">CLI commands</span></a> documentation for usage examples.</p>
 </section>
 <section id="batch-tasks">
 <h3>Batch tasks<a class="headerlink" href="#batch-tasks" title="Link to this heading"></a></h3>
@@ -191,8 +215,8 @@ queue, compute environment, and any other requried resources.</p>
 <li><p>can be run as a Docker image</p></li>
 </ul>
 </section>
-<section id="when-to-chose-lambda">
-<h3>When to chose Lambda<a class="headerlink" href="#when-to-chose-lambda" title="Link to this heading"></a></h3>
+<section id="when-to-choose-lambda">
+<h3>When to choose Lambda<a class="headerlink" href="#when-to-choose-lambda" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>short runtime, with a maximum of 15 minutes</p></li>
 <li><p>single vCPU is acceptable</p></li>

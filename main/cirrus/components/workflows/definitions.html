@@ -171,8 +171,9 @@ minimal Cirrus workflow with a single Lambda task.</p>
 the <code class="docutils literal notranslate"><span class="pre">publish</span></code> task; rather, we use <code class="docutils literal notranslate"><span class="pre">arn:aws:states:::lambda:invoke</span></code> for the
 <code class="docutils literal notranslate"><span class="pre">Resource</span></code> and provide the Lambda function ARN in the <code class="docutils literal notranslate"><span class="pre">FunctionName</span></code> field in the
 <code class="docutils literal notranslate"><span class="pre">Parameters</span></code> object. Using this format produces additional metadata in the step
-function execution history, including the request ID of the Lambda invocation, which is
-can be used for accessing the Lambda logs.</p>
+function execution history, including the request ID of the Lambda invocation, which
+can be used for accessing the Lambda logs. See the <a class="reference internal" href="../tasks/index.html#lambda-logs"><span class="std std-ref">Lambda logs</span></a>
+section for details on filtering logs by request ID.</p>
 <section id="workflow-naming">
 <h3>Workflow naming<a class="headerlink" href="#workflow-naming" title="Link to this heading"></a></h3>
 <p>How a workflow is named is important. Here we can see the name is
