@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting started with Cirrus &mdash; Cirrus  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/js/versions-loader.js?v=38b9fbf7"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Cirrus architecture" href="20_arch.html" />
+    <link rel="prev" title="Welcome to the Cirrus docs!" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Cirrus
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting started with Cirrus</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#what-is-cirrus">What is Cirrus?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-cirrus">Why Cirrus?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#concepts">Concepts</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#stac-based-workflows">STAC-based workflows</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cirrus-components">Cirrus Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#horizontal-and-vertical-scaling">Horizontal and vertical scaling</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#relationship-with-stac-server">Relationship with stac-server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-earth-search-use-case">Example Earth Search use case</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#aws-services-used">AWS services used</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#where-to-go-next">Where to go next?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#infrastructure-engineers">Infrastructure Engineers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#framework-users">Framework Users</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#algorithm-developers">Algorithm Developers</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="30_payload.html">Cirrus Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="60_components.html">Cirrus Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="95_tips_and_tricks.html">Tips and Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="96_deploying.html">Deploying</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/tasks/index.html">Tasks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Cirrus CLI READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli/00_intro.html">CLIrrus Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/01_install.html">Installing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/02_auth.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/03_deployments.html">CLIrrus and Cirrus Deployments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/04_commands.html">Command Examples</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Getting started with Cirrus</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/cirrus/10_intro.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started-with-cirrus">
+<h1>Getting started with Cirrus<a class="headerlink" href="#getting-started-with-cirrus" title="Link to this heading"></a></h1>
+<section id="what-is-cirrus">
+<h2>What is Cirrus?<a class="headerlink" href="#what-is-cirrus" title="Link to this heading"></a></h2>
+<p>Cirrus is a <a class="reference external" href="https://stacspec.org/">STAC</a>-based geospatial processing pipeline platform, built using
+a serverless and scalable architecture deployed on AWS. Cirrus can scale from
+tiny workloads  of tens of items to massive workloads of millions of items in
+both a cost-efficient and performance-efficient manner, regardless if
+processing takes seconds, hours, or longer.</p>
+<p>Cirrus consists of two primary pieces:
+- <code class="docutils literal notranslate"><span class="pre">cirrus</span></code>, a CLI-based project management and deploy tool, and
+- <code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code>, a Python library providing a number of useful
+abstractions solving common needs for users writing their own Cirrus components.</p>
+</section>
+<section id="why-cirrus">
+<h2>Why Cirrus?<a class="headerlink" href="#why-cirrus" title="Link to this heading"></a></h2>
+</section>
+<section id="concepts">
+<h2>Concepts<a class="headerlink" href="#concepts" title="Link to this heading"></a></h2>
+<section id="stac-based-workflows">
+<h3>STAC-based workflows<a class="headerlink" href="#stac-based-workflows" title="Link to this heading"></a></h3>
+<p>A core design aspect of Cirrus is the use of the <a class="reference external" href="https://stacspec.org/">STAC</a> metadata specification
+as a basis for the <a class="reference internal" href="30_payload.html"><span class="doc">Cirrus Payload</span></a> format. In this
+way Cirrus, encourages a highly-interoperable, metadata-first approach for both
+pipeline operators and end users alike.</p>
+<p>Cirrus pipelines are, ideally, STAC-in and STAC-out, ensuring compatibility with
+the full range of tooling and services available in the STAC ecosystem. Though
+opinionated in this respect, Cirrus remains flexible to accommodate varied
+use cases and data sources, such that input format requirements can be relaxed
+as needed for a given workflow.</p>
+</section>
+<section id="cirrus-components">
+<h3>Cirrus Components<a class="headerlink" href="#cirrus-components" title="Link to this heading"></a></h3>
+<p>Cirrus is organized into reusable blocks called <a class="reference internal" href="60_components.html"><span class="doc">Components</span></a>. There are four types of Components:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="components/feeders/index.html"><span class="doc">Feeders</span></a> accept arbitrary input, and
+output a Cirrus Payload which is enqueued for processing. These can
+be used to initiate processing from any source, for example, an SNS topic
+message indicating a new scene is available or an S3 Inventory of existing
+scenes.  Cirrus does not come pre-loaded with feeders, and they must be
+set up by users.</p></li>
+<li><p><a class="reference internal" href="components/tasks/index.html"><span class="doc">Tasks</span></a> are the basic unit of work in a
+Workflow and use a Cirrus Payload for both input and output. This is
+where specific processing, for example, transforming data to data (e.g.
+JPEG200 to COG), data to metadata (e.g., COG to STAC), or metadata to
+metadata (e.g., MTL to STAC).</p></li>
+<li><p><a class="reference internal" href="components/workflows/index.html"><span class="doc">Workflows</span></a> are a composition of one or
+more Tasks implementing a processing pipeline that coordinate transforming a
+given input into one or more output STAC items</p></li>
+<li><p><a class="reference internal" href="components/functions/index.html"><span class="doc">Functions</span></a> provide internal services that
+are used by Tasks, and Workflows, and are less commonly extended by users.</p></li>
+</ul>
+</section>
+<section id="horizontal-and-vertical-scaling">
+<h3>Horizontal and vertical scaling<a class="headerlink" href="#horizontal-and-vertical-scaling" title="Link to this heading"></a></h3>
+<p>Cirrus can scale both horizontally and vertically to match the requirements of
+diverse workloads.</p>
+<p>Cirrus supports scaling workflow execution capacity as-needed without requiring
+expensive capacity reservations to support peak demands. This scaling can
+accommodate anything from highly intermittent one-off executions to massively
+parallel processing across hundreds of thousands of simultaneous workflow
+executions.</p>
+<p>Vertical scaling support allows compute resources to matched to different
+workloads/requirements within a workflow execution. In other words, executions
+are not tied to a specific instance for their duration, but can instead utilize
+optimal instance sizes/types on a per-task basis.</p>
+</section>
+</section>
+<section id="relationship-with-stac-server">
+<h2>Relationship with stac-server<a class="headerlink" href="#relationship-with-stac-server" title="Link to this heading"></a></h2>
+<p>Cirrus Workflows create STAC items, which are stored in S3 for persistence and
+can be published to <a class="reference external" href="https://github.com/stac-utils/stac-server">stac-server</a> (or any other STAC API) for indexing/search.
+In other words, Cirrus generates the data, stac-server makes it
+accessible to end-users through the robust ecosystem of STAC tooling.</p>
+</section>
+<section id="example-earth-search-use-case">
+<h2>Example Earth Search use case<a class="headerlink" href="#example-earth-search-use-case" title="Link to this heading"></a></h2>
+<p>One prominent use case of Cirrus is as the processing pipeline for <a class="reference external" href="https://www.element84.com/earth-search/">Earth Search</a>.</p>
+<ul class="simple">
+<li><p>Landsat scenes are processed via Lambda Functions, triggered notifications from the USGS SNS topic.</p></li>
+<li><p>Sentinel-2 Collection 1 Level-2A scenes are processed via Batch, triggered by notifications from the ESA/Singergize SNS topic.</p></li>
+<li><p>Sentinel-1 GRD scenes are processed via Lambda, triggered by notifications from an SNS topic.</p></li>
+<li><p>NAIP scenes are processed using Lambda, and triggered manually once a year when released</p></li>
+<li><p>Copernicus DEM - Global and European Digital Elevation Model (COP-DEM) was processed with Lambda, and triggered once manually.</p></li>
+</ul>
+<p>While triggering from SNS notifications is best practice, this is not always
+possible, and there are numerous other ways to initiate ingest.  Previously,
+the Landsat collection was populated by running a daily search against the
+LandsatLook API and ingesting any new scenes. Similarly, the older Sentinel-2
+Level-2A collection is populated by receiving SNS messages from an older Cirrus
+pipeline that supported the now-deprecated Earth Search v0 deployment.</p>
+</section>
+<section id="aws-services-used">
+<h2>AWS services used<a class="headerlink" href="#aws-services-used" title="Link to this heading"></a></h2>
+<p>Cirrus is built on top of a number of AWS services that allow its serverless and
+scalable architecture, including:</p>
+<ul class="simple">
+<li><p>Step Functions: workflow implementation</p></li>
+<li><p>Lambda: scalable compute for tasks, and functions</p></li>
+<li><p>Batch, ECS, and EC2 (spot or on-demand): supports longer runtimes and/or custom resource requirements for
+tasks</p></li>
+<li><p>DynamoDB: Payload state-tracking database</p></li>
+<li><p>SQS: message queuing for reliability</p></li>
+<li><p>SNS: messages to multiple subscribers</p></li>
+<li><p>S3: persistent storage for input payloads and generated items and their assets</p></li>
+<li><p>Timestream: event history</p></li>
+<li><p>ECR: image hosting for batch and lambda containers</p></li>
+<li><p>CloudFormation: infrastructure-as-code and deployment automation</p></li>
+<li><p>EventBridge: trigger processing on specific events, like workflow completion</p></li>
+<li><p>IAM: function roles and associated permissions/access policies</p></li>
+</ul>
+</section>
+<section id="where-to-go-next">
+<h2>Where to go next?<a class="headerlink" href="#where-to-go-next" title="Link to this heading"></a></h2>
+<p>New Cirrus users may want to progress through the Cirrus documentation
+following different paths, depending on their role. We’ve broken down a few
+tracks for key Cirrus user types: work through the list of docs for your role
+in the order provided, before branching out to the rest of the docs as
+necessary.</p>
+<section id="infrastructure-engineers">
+<h3>Infrastructure Engineers<a class="headerlink" href="#infrastructure-engineers" title="Link to this heading"></a></h3>
+<p><em>Those that are deploying Cirrus and managing the Cirrus infrastructure.</em></p>
+</section>
+<section id="framework-users">
+<h3>Framework Users<a class="headerlink" href="#framework-users" title="Link to this heading"></a></h3>
+<p><em>Those that are configuring, operating, and monitoring pipeline workflows.</em></p>
+</section>
+<section id="algorithm-developers">
+<h3>Algorithm Developers<a class="headerlink" href="#algorithm-developers" title="Link to this heading"></a></h3>
+<p><em>Those writing code to be run as Cirrus tasks within workflows.</em></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="60_components.html"><span class="doc">Components</span></a></p></li>
+<li><p><a class="reference internal" href="components/tasks/index.html"><span class="doc">Tasks</span></a></p></li>
+<li><p><a class="reference internal" href="30_payload.html"><span class="doc">Cirrus Payload format</span></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code> documentation</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Welcome to the Cirrus docs!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="20_arch.html" class="btn btn-neutral float-right" title="Cirrus architecture" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: v1.3.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

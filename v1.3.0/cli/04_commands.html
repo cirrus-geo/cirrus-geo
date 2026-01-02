@@ -1,0 +1,377 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command Examples &mdash; Cirrus  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/js/versions-loader.js?v=38b9fbf7"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="CLIrrus and Cirrus Deployments" href="03_deployments.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Cirrus
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/30_payload.html">Cirrus Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/60_components.html">Cirrus Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/95_tips_and_tricks.html">Tips and Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/96_deploying.html">Deploying</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/tasks/index.html">Tasks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Cirrus CLI READMEs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="00_intro.html">CLIrrus Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="01_install.html">Installing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02_auth.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03_deployments.html">CLIrrus and Cirrus Deployments</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Command Examples</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Command Examples</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/cli/04_commands.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="command-examples">
+<h1>Command Examples<a class="headerlink" href="#command-examples" title="Link to this heading"></a></h1>
+<p>CLIrrus currently support a number of commands.</p>
+<ul>
+<li><dl>
+<dt><em>list-deployments:</em></dt><dd><p>Return a list of all named cirrus deployments available for interacting
+with by pulling deployments available in AWS parameter store.  Defaults to looking in the region used in AWS SSO login.  Names returned here will be the name strings needed to run commands on a specific deployment.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>list-deployments
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>manage (mgmt):</em></dt><dd><p>A wrapper for commands to interact with a specific named deployment</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>DEPLOYMENT_NAME<span class="w"> </span>COMMAND
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>payload:</em></dt><dd><p>a wrapper for commands for working with payloads.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>payload<span class="w"> </span>COMMAND
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+</ul>
+<section id="manage-commands">
+<h2>Manage commands<a class="headerlink" href="#manage-commands" title="Link to this heading"></a></h2>
+<ul>
+<li><dl>
+<dt><em>call:</em></dt><dd><p>Call a new command with the deployment environment variables loaded</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>call<span class="w"> </span>ls
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>exec:</em></dt><dd><p>Run an executable with the deployment specific environment variables loaded into the local environment</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="s2">&quot;bash&quot;</span><span class="w"> </span><span class="s2">&quot;hello_env_var_world.sh&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-execution:</em></dt><dd><p>Get a workflow execution using its ARN or its payload-id</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution<span class="w"> </span>--payload-id<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution<span class="w"> </span>--arn<span class="w"> </span>arn:aws:states:us-west-2:000000000011:execution:fd-name-dev-cirrus-project:c123456789-b19292-999
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-execution-input:</em></dt><dd><p>Get a workflow execution’s input payload using ARN or payload-id</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution-input<span class="w"> </span>--arn<span class="w"> </span>arn:aws:states:us-west-2:000000000011:execution:fd-name-dev-cirrus-project:c123456789-b19292-999
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution-input<span class="w"> </span>--payload-id<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-execution-output:</em></dt><dd><p>Get a workflow execution’s output payload using payload-id or ARN</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution-output<span class="w"> </span>--payload-id<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution-output<span class="w"> </span>--arn<span class="w"> </span>arn:aws:states:us-west-2:000000000011:execution:fd-name-dev-cirrus-project:c123456789-b19292-999
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-workflow-definition:</em></dt><dd><p>Get a workflow’s state machine ASL definition using the workflow name</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-workflow-definition<span class="w"> </span><span class="nb">test</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-execution-events:</em></dt><dd><p>Get a workflow execution’s event history using its ARN or its input payload ID</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution-events<span class="w"> </span>--payload-id<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution-events<span class="w"> </span>--arn<span class="w"> </span>arn:aws:states:us-west-2:000000000011:execution:fd-name-dev-cirrus-project:c123456789-b19292-999
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-execution-events<span class="w"> </span>--payload-id<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10<span class="w"> </span>--with-log-metadata
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-lambda-logs:</em></dt><dd><p>Get CloudWatch logs for a Lambda invocation</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-lambda-logs<span class="w"> </span>/aws/lambda/my-function<span class="w"> </span>abc123-request-id
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-lambda-logs<span class="w"> </span>/aws/lambda/my-function<span class="w"> </span>abc123-request-id<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span>
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-lambda-logs<span class="w"> </span>/aws/lambda/my-function<span class="w"> </span>abc123-request-id<span class="w"> </span>--start-time<span class="w"> </span><span class="m">1699999999000</span><span class="w"> </span>--end-time<span class="w"> </span><span class="m">1700000099000</span>
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-lambda-logs<span class="w"> </span>/aws/lambda/my-function<span class="w"> </span>abc123-request-id<span class="w"> </span>--next-token<span class="w"> </span><span class="s2">&quot;pagination-token-here&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-batch-logs:</em></dt><dd><p>Get CloudWatch logs for a Batch job</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-batch-logs<span class="w"> </span>my-job-log-stream
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-batch-logs<span class="w"> </span>my-job-log-stream<span class="w"> </span>--log-group<span class="w"> </span>/aws/batch/custom
+
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-batch-logs<span class="w"> </span>my-job-log-stream<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span><span class="w"> </span>--next-token<span class="w"> </span><span class="s2">&quot;pagination-token-here&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-payload:</em></dt><dd><p>Get a payload from S3 using its payload ID</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-payload<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-state:</em></dt><dd><p>Get the stateDB record for a payload ID</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-state<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>invoke-lambda:</em></dt><dd><p>Invoke lambda with event (from stdin) and specifying by name which lambda to invoke</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&lt;payload.json<span class="w"> </span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>invoke-lambda<span class="w"> </span>process
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>list-lambdas</em>:</dt><dd><p>List all lambda functions available in a given deployment</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>list-lambdas
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>process:</em></dt><dd><p>Enqueue a payload (from stdin) for processing</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&lt;payload.json<span class="w"> </span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>process
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>run-workflow:</em></dt><dd><p>Pass a payload (from stdin) off to a deployment, wait for the workflow to finish, and retrieve and return its output payload</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&lt;payload.json<span class="w"> </span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>run-workflow
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>show:</em></dt><dd><p>Show a deployment configuration’s environment variables available in the parameter store</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>show
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>template-payload:</em></dt><dd><p>Template a payload using a deployment’s environment variables and ‘$’ based substitution</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&lt;payload.json<span class="w"> </span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>template-payload<span class="w"> </span>--var<span class="w"> </span>EXAMPLE_VAR<span class="w"> </span>VALUE
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-payloads</em></dt><dd><p>Bulk retrieve payloads as NDJSON.  Can be filtered on fields available in
+StateDB - ‘collections-workflow’, ‘state’, ‘since’, ‘limit’,
+‘error-prefix’.  Output may be piped into additional commands to rerun payloads using ‘rerun’ flag which alters payload to allow rerunning</p>
+<p>piping with xargs to resubmit failed workflows
+.. code-block:: bash</p>
+<blockquote>
+<div><p>cirrus manage name-dev get-payloads –collections-workflow “sar-test_flow” –state “FAILED” –since “10 d” –rerun | xargs -0 -L 1 echo |  cirrus manage name-dev process</p>
+</div></blockquote>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+<section id="payload-commands">
+<h2>Payload commands<a class="headerlink" href="#payload-commands" title="Link to this heading"></a></h2>
+<ul>
+<li><dl>
+<dt><em>get-id:</em></dt><dd><p>Get/generate an ID for a given payload</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&lt;payload.json<span class="w"> </span>cirrus<span class="w"> </span>payload<span class="w"> </span>get-id
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>template:</em></dt><dd><p>Template a payload (from stdin) with user supplied variables with ‘$’ based substitution</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&lt;payload.json<span class="w"> </span>cirrus<span class="w"> </span>payload<span class="w"> </span>template<span class="w"> </span>--var<span class="w"> </span>EXAMPLE_VAR<span class="w"> </span>VALUE
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>validate:</em></dt><dd><p>Validate an input payload (from stdin) is a valid cirrus payload</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&lt;payload.json<span class="w"> </span>cirrus<span class="w"> </span>payload<span class="w"> </span>validate
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="03_deployments.html" class="btn btn-neutral float-left" title="CLIrrus and Cirrus Deployments" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: v1.3.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
