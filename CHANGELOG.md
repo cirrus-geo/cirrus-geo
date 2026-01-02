@@ -7,13 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v1.3.0] - 2026-01-02
+
 ### Added
 
-- Lambda Request ID (`aws_request_id`) to pre- and post-batch Lambda logs ([#361])
-- CLI commands and `Deployment` methods for retrieving step function execution history
-  events, workflow state machine definitions, and CloudWatch logs from Lambda and Batch
-  tasks ([#353])
-- `task_logs` module for parsing log metadata from execution event histories ([#353])
+- Lambda Request ID (`aws_request_id`) to pre- and post-batch Lambda logs
+  ([#361])
+- CLI commands and `Deployment` methods for retrieving step function execution
+  history events, workflow state machine definitions, and CloudWatch logs from
+  Lambda and Batch tasks ([#353])
+- `task_logs` module for parsing log metadata from execution event histories
+  ([#353])
 
 ### Changed
 
@@ -1055,7 +1059,8 @@ cleanup steps.
 
 Initial release
 
-[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.2.0...main
+[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.3.0...main
+[v1.3.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.1.2...v1.2.0
 [v1.1.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.1.0...v1.1.1
