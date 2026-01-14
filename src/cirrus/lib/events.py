@@ -483,7 +483,7 @@ class WorkflowMetricReader:
         """
         delta = parse_since(duration)
         period = int(parse_since(bin_size).total_seconds())
-        if granularity := bin_size[-1] not in "dhms":
+        if (granularity := bin_size[-1]) not in "dhms":
             raise ValueError(f"Unknown temporal granularity suffix ({granularity})")
 
         end_time = datetime.now(UTC)
