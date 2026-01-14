@@ -161,15 +161,6 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
             raise Exception(
                 f"Log group {self.log_group_name} does not exist.",
             ) from e
-        response = self.logs_client.describe_log_streams(
-            logGroupName=self.log_group_name,
-            logStreamNamePrefix=self.log_stream_name,
-        )
-        self.log_stream = (
-            response["logStreams"][0] if len(response["logStreams"]) > 0 else None
-        )
-        if self.log_stream is None:
-            raise Exception("Log stream not found after attempted creation.")
 
     def enabled(self: Self) -> bool:
         return bool(self.log_group_name)
