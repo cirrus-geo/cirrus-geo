@@ -462,11 +462,11 @@ class WorkflowMetricReader:
             formatter=date_formatter(),
         )
 
-    def query_by_bin_and_duration(
+    def relative_params_to_absolutes(
         self,
         bin_size: str,
         duration: str,
-    ) -> list[WorkflowMetric]:
+    ) -> tuple[datetime, datetime, str, int]:
         """
         Query CloudWatch metrics for a given bin size and duration.
         bin_size: e.g. '1d', '1h'
@@ -489,6 +489,18 @@ class WorkflowMetricReader:
             end_time += timedelta(minutes=1)  # include the current minute
 
         start_time = end_time - delta - timedelta(seconds=period)
+
+        return start_time, end_time, granularity, period
+
+    def query_by_bin_and_duration(
+        self,
+        bin_size: str,
+        duration: str,
+    ) -> list[WorkflowMetric]:
+        start_time, end_time, granularity, period = self.relative_params_to_absolutes(
+            bin_size,
+            duration,
+        )
 
         return self.aggregated_by_event_type(
             start_time=start_time,
