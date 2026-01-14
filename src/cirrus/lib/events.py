@@ -509,6 +509,24 @@ class WorkflowMetricReader:
             formatter=date_formatter(granularity=granularity),
         )
 
+    def query_by_bin_duration_and_workflows(
+        self,
+        bin_size: str,
+        duration: str,
+        workflows: list[str],
+    ) -> list[WorkflowMetricSeries]:
+        start_time, end_time, granularity, period = self.relative_params_to_absolutes(
+            bin_size,
+            duration,
+        )
+        return self.aggregated_for_specified_workflows(
+            workflows=workflows,
+            start_time=start_time,
+            end_time=end_time,
+            period=period,
+            formatter=date_formatter(granularity=granularity),
+        )
+
 
 class WorkflowEventManager:
     """A class for managing payload state change events, including:
