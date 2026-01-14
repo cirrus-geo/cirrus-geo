@@ -229,7 +229,6 @@ class WorkflowMetricReader:
         self,
         logger: Logger | None = None,
         metric_namespace: str = "",
-        log_group_name: str = "",
     ):
         """
 
@@ -237,9 +236,6 @@ class WorkflowMetricReader:
            logger (Logger | None): Logger instance to use. If None is provided, the
                 default logger is used.
             metric_namespace (str): Namespace of the CloudWatch metric.
-                If "", then use the CIRRUS_WORKFLOW_METRIC_NAMESPACE from environment.
-
-            log_group_name (str): Log Group associated with the CloudWatch metrics.
                 If "", then use the CIRRUS_WORKFLOW_METRIC_NAMESPACE from environment.
         """
 
