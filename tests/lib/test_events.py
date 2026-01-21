@@ -73,7 +73,7 @@ def test_workflow_metric_logger_enabled(monkeypatch, caplog):
 
 @pytest.mark.skip(reason="moto does not support CloudWatch Log Metric Filters")
 @mock_aws
-def test_workflow_metric_reader_get_statistics():
+def test_workflow_metric_reader_get_metric_data():
     """Test the WorkflowMetricReader by setting up metric filters and logging some
     events.  Then retrieve statistics and verify the results.  This test can only be run
     against real AWS because moto does not fully support CloudWatch Log Metric Filters.
@@ -82,7 +82,7 @@ def test_workflow_metric_reader_get_statistics():
 
         uv run python -c '
         import tests.lib.test_events as te ;
-        te.test_workflow_metric_reader_get_statistics()
+        te.test_workflow_metric_reader_get_metric_data()
         '
 
     Note: this test will create a log group and metric filters, if they do not exist.
@@ -145,13 +145,13 @@ def test_workflow_metric_reader_get_statistics():
 
     reader = WorkflowMetricReader(metric_namespace=metric_namespace)
     assert reader.enabled()
-    stats = reader.query_by_bin_and_duration(duration="15m", bin_size="1m")
+    metric_data = reader.query_by_bin_and_duration(duration="15m", bin_size="1m")
 
-    stats_str = "stats = " + pformat(stats)
-    print(stats_str)
-    assert type(stats) is list
-    assert len(stats) > 0, stats_str
-    assert type(stats[0]) is dict
-    assert len(stats[0]["events"]) == len(WFEventType), stats_str
-    assert stats[-1]["events"]["FAILED"] >= 1.0, stats_str
-    assert stats[-1]["events"]["SUCCEEDED"] >= 1.0, stats_str
+    metric_data_str = "metric_data = " + pformat(metric_data)
+    print(metric_data_str)
+    assert type(metric_data) is list
+    assert len(metric_data) > 0, metric_data_str
+    assert type(metric_data[0]) is dict
+    assert len(metric_data[0]["events"]) == len(WFEventType), metric_data_str
+    assert metric_data[-1]["events"]["FAILED"] >= 1.0, metric_data_str
+    assert metric_data[-1]["events"]["SUCCEEDED"] >= 1.0, metric_data_str
