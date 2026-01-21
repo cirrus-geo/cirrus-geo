@@ -296,7 +296,9 @@ class WorkflowMetricReader:
         for workflow in workflows:
             mdqs = [
                 {
-                    "Id": str(event_type).lower() + "___" + workflow.lower(),
+                    "Id": str(event_type).lower()
+                    + "___"
+                    + workflow.lower().replace("-", "_"),
                     "MetricStat": {
                         "Metric": {
                             "Namespace": self.metric_namespace,
