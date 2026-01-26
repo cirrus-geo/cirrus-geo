@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     in query of specific workflows.
   - `WorkflowMetricReader`: sanitize Metric Data query Id to match constraints
     dictated by CloudWatch.
+  - Move `api`-specific methods from the `WorkflowMetricReader` to the `api`
+    lambda function.
 
 ## [v1.3.0] - 2026-01-02
 

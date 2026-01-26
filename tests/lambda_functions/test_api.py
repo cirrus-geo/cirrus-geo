@@ -1,3 +1,4 @@
+import datetime
 import json
 
 import pytest
@@ -5,7 +6,153 @@ import pytest
 from cirrus.lambda_functions import api
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
+from cirrus.lib.events import WorkflowMetricReader
 from cirrus.lib.utils import parse_since
+
+
+def cw_metric_data_resp(**kwargs):
+    return {
+        "Messages": [],
+        "MetricDataResults": [
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL CLAIMED_PROCESSING",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [19.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL STARTED_PROCESSING",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [19.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL ALREADY_INVALID",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [0.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL ALREADY_PROCESSING",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [12.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL ALREADY_CLAIMED",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [0.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL ALREADY_COMPLETED",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [3.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL DUPLICATE_ID_ENCOUNTERED",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [0.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL FAILED",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [2.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL TIMED_OUT",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [0.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL SUCCEEDED",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [17.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL INVALID",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [0.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL ABORTED",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [0.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL RECORD_EXTRACT_FAILED",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [0.0],
+            },
+            {
+                "Id": "all_workflows_by_event",
+                "Label": "ZFILL NOT_A_PROCESS_PAYLOAD",
+                "StatusCode": "Complete",
+                "Timestamps": [
+                    datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
+                ],
+                "Values": [0.0],
+            },
+        ],
+        "ResponseMetadata": {
+            "HTTPHeaders": {
+                "content-length": "4735",
+                "content-type": "text/xml",
+                "date": "Mon, 26 Jan 2026 16:39:22 GMT",
+                "x-amzn-requestid": "16c80e5b-b1cc-4332-8d10-7ecd1ae67191",
+            },
+            "HTTPStatusCode": 200,
+            "RequestId": "16c80e5b-b1cc-4332-8d10-7ecd1ae67191",
+            "RetryAttempts": 0,
+        },
+    }
 
 
 @pytest.fixture
@@ -95,57 +242,27 @@ class MockEventDB:
         return {"Rows": []}
 
 
-class MockWorkflowMetricReader:
-    def __init__(self, enabled: bool = True):
-        self._enabled = enabled
-
-    def enabled(self):
-        return self._enabled
-
-    def query_by_bin_and_duration(self, x, y):
-        if self.enabled():
-            return [
-                {
-                    "period": "2025-09-29T17:48:00+00:00"
-                    if x == "1h"
-                    else "2025-09-29",
-                    "events": {
-                        "PROCESSING": 0,
-                        "INVALID": 0,
-                        "ABORTED": 0,
-                        "CLAIMED": 0,
-                        "FAILED": 1,
-                        "SUCCEEDED": 1,
-                    },
-                },
-            ]
-        return []
-
-    def query_hour(self, x, y):
-        if self.enabled():
-            return [
-                {
-                    "period": "2025-09-29T17:48:00+00:00",
-                    "events": {
-                        "PROCESSING": 0,
-                        "INVALID": 0,
-                        "ABORTED": 0,
-                        "CLAIMED": 0,
-                        "FAILED": 1,
-                        "SUCCEEDED": 1,
-                    },
-                },
-            ]
-        return []
-
-
 @pytest.mark.parametrize(
     ("eventdb_enabled", "metric_reader_enabled"),
     [(False, False), (True, False), (False, True)],
 )
-def test_api_stats_output(eventdb_enabled, metric_reader_enabled, fixtures):
+def test_api_stats_output(
+    eventdb_enabled,
+    metric_reader_enabled,
+    fixtures,
+    monkeypatch,
+):
+    metric_reader = WorkflowMetricReader(
+        metric_namespace="this_should_work" if metric_reader_enabled else "",
+    )
+    monkeypatch.setattr(
+        metric_reader.cw_client,
+        "get_metric_data",
+        cw_metric_data_resp,
+    )
+
     actual_result = api.get_stats(
-        MockWorkflowMetricReader(enabled=metric_reader_enabled),
+        metric_reader,
         MockEventDB(fixtures, enabled=eventdb_enabled),
     )
     eventdb_result = {
@@ -159,43 +276,64 @@ def test_api_stats_output(eventdb_enabled, metric_reader_enabled, fixtures):
             "hourly_rolling": [],
         },
     }
-    states = [
-        {"state": state, "count": 0, "unique_count": 0}
-        if state not in [StateEnum.FAILED, StateEnum.COMPLETED]
-        else {"state": state, "count": 1, "unique_count": 1}
-        for state in sorted(StateEnum._member_names_)
-    ]
+    states = sorted(
+        [
+            {"state": str(state), "count": 19, "unique_count": 19}
+            for state in [StateEnum.CLAIMED, StateEnum.PROCESSING]
+        ]
+        + [
+            {"state": "COMPLETED", "count": 17, "unique_count": 17},
+            {"state": "FAILED", "count": 2, "unique_count": 2},
+        ]
+        + [
+            {"state": str(state), "count": 0, "unique_count": 0}
+            for state in StateEnum._member_names_
+            if state
+            not in [
+                StateEnum.CLAIMED,
+                StateEnum.PROCESSING,
+                StateEnum.COMPLETED,
+                StateEnum.FAILED,
+            ]
+        ],
+        key=lambda x: x["state"],
+    )
+
     metric_reader_result = {
         "state_transitions": {
             "daily": [
                 {
                     "interval": "day",
-                    "period": "2025-09-29",
+                    "period": "2025-12-27",
                     "states": states,
                 },
             ],
             "hourly": [
                 {
                     "interval": "hour",
-                    "period": "2025-09-29T17:48:00+00:00",
+                    "period": "2025-12-27T16:00:00+00:00",
                     "states": states,
                 },
             ],
             "hourly_rolling": [
                 {
                     "interval": "hour",
-                    "period": "2025-09-29T17:48:00+00:00",
+                    "period": "2025-12-27T16:35:00+00:00",
                     "states": states,
                 },
                 {
                     "interval": "hour",
-                    "period": "2025-09-29T17:48:00+00:00",
+                    "period": "2025-12-27T16:35:00+00:00",
                     "states": states,
                 },
             ],
         },
     }
     if metric_reader_enabled:
+        # NOTE: All 'states' lists are the same single element with the same states.  In
+        #       particular, 'hourly' entries are nonsensical, but the test is only
+        #       mocking the `cw_client.get_metric_data` call, which seems optimal in
+        #       that it test more of the WorkflowMetricReader class code.
         assert (
             sorted(
                 actual_result["state_transitions"]["daily"][0]["states"],

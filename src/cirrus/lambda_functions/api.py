@@ -2,6 +2,7 @@ import json
 import os
 
 from copy import deepcopy
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import urljoin
 
@@ -10,12 +11,103 @@ from boto3utils import s3
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, daily, hourly
-from cirrus.lib.events import WorkflowMetric, WorkflowMetricReader
+from cirrus.lib.events import (
+    WorkflowMetric,
+    WorkflowMetricReader,
+    WorkflowMetricSeries,
+    date_formatter,
+)
 from cirrus.lib.logging import CirrusLoggerAdapter
 from cirrus.lib.statedb import StateDB, to_current
 from cirrus.lib.utils import parse_since
 
 logger = CirrusLoggerAdapter("function.api")
+
+
+def query_hour(
+    metric_reader: WorkflowMetricReader,
+    start: int,
+    end: int,
+) -> list[WorkflowMetric]:
+    """
+    Query CloudWatch metrics for a specific hour range.
+    """
+    now = datetime.now(UTC)
+    end_time = now - timedelta(hours=end)
+    start_time = now - timedelta(hours=start)
+    return metric_reader.aggregated_by_event_type(
+        start_time=start_time,
+        end_time=end_time,
+        period=3600,
+        formatter=date_formatter(),
+    )
+
+
+def relative_params_to_absolutes(
+    bin_size: str,
+    duration: str,
+) -> tuple[datetime, datetime, str, int]:
+    """
+    Query CloudWatch metrics for a given bin size and duration.
+    bin_size: e.g. '1d', '1h'
+    duration: e.g. '30d', '7d'
+    """
+    delta = parse_since(duration)
+    period = int(parse_since(bin_size).total_seconds())
+    if (granularity := bin_size[-1]) not in "dhms":
+        raise ValueError(f"Unknown temporal granularity suffix ({granularity})")
+
+    end_time = datetime.now(UTC)
+    if granularity == "d":
+        end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_time += timedelta(days=1)  # include the current day
+    elif granularity == "h":
+        end_time = end_time.replace(minute=0, second=0, microsecond=0)
+        end_time += timedelta(hours=1)  # include the current hour
+    else:
+        end_time = end_time.replace(second=0, microsecond=0)
+        end_time += timedelta(minutes=1)  # include the current minute
+
+    start_time = end_time - delta - timedelta(seconds=period)
+
+    return start_time, end_time, granularity, period
+
+
+def query_by_bin_and_duration(
+    metric_reader: WorkflowMetricReader,
+    bin_size: str,
+    duration: str,
+) -> list[WorkflowMetric]:
+    start_time, end_time, granularity, period = relative_params_to_absolutes(
+        bin_size,
+        duration,
+    )
+
+    return metric_reader.aggregated_by_event_type(
+        start_time=start_time,
+        end_time=end_time,
+        period=period,
+        formatter=date_formatter(granularity=granularity),
+    )
+
+
+def query_by_bin_duration_and_workflows(
+    metric_reader: WorkflowMetricReader,
+    bin_size: str,
+    duration: str,
+    workflows: list[str],
+) -> list[WorkflowMetricSeries]:
+    start_time, end_time, granularity, period = relative_params_to_absolutes(
+        bin_size,
+        duration,
+    )
+    return metric_reader.aggregated_for_specified_workflows(
+        workflows=workflows,
+        start_time=start_time,
+        end_time=end_time,
+        period=period,
+        formatter=date_formatter(granularity=granularity),
+    )
 
 
 def response(
@@ -126,16 +218,16 @@ def get_stats(
         return {
             "state_transitions": {
                 "daily": filter_for_dashboard(
-                    _metricreader.query_by_bin_and_duration("1d", "60d"),
+                    query_by_bin_and_duration(_metricreader, "1d", "60d"),
                     "day",
                 ),
                 "hourly": filter_for_dashboard(
-                    _metricreader.query_by_bin_and_duration("1h", "36h"),
+                    query_by_bin_and_duration(_metricreader, "1h", "36h"),
                     "hour",
                 ),
                 "hourly_rolling": filter_for_dashboard(
-                    (_metricreader.query_hour(1, 0) or [])
-                    + (_metricreader.query_hour(2, 1) or []),
+                    (query_hour(_metricreader, 1, 0) or [])
+                    + (query_hour(_metricreader, 2, 1) or []),
                     "hour",
                 ),
             },

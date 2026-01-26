@@ -6,7 +6,7 @@ import warnings
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from functools import wraps
 from logging import Logger, getLogger
 from time import time
@@ -22,7 +22,6 @@ from .utils import (
     SNSPublisher,
     execution_url,
     get_client,
-    parse_since,
 )
 
 
@@ -445,89 +444,6 @@ class WorkflowMetricReader:
             retval.append(wfm)
 
         return retval
-
-    def query_hour(
-        self,
-        start: int,
-        end: int,
-    ) -> list[WorkflowMetric]:
-        """
-        Query CloudWatch metrics for a specific hour range.
-        """
-        now = datetime.now(UTC)
-        end_time = now - timedelta(hours=end)
-        start_time = now - timedelta(hours=start)
-        return self.aggregated_by_event_type(
-            start_time=start_time,
-            end_time=end_time,
-            period=3600,
-            formatter=date_formatter(),
-        )
-
-    def relative_params_to_absolutes(
-        self,
-        bin_size: str,
-        duration: str,
-    ) -> tuple[datetime, datetime, str, int]:
-        """
-        Query CloudWatch metrics for a given bin size and duration.
-        bin_size: e.g. '1d', '1h'
-        duration: e.g. '30d', '7d'
-        """
-        delta = parse_since(duration)
-        period = int(parse_since(bin_size).total_seconds())
-        if (granularity := bin_size[-1]) not in "dhms":
-            raise ValueError(f"Unknown temporal granularity suffix ({granularity})")
-
-        end_time = datetime.now(UTC)
-        if granularity == "d":
-            end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_time += timedelta(days=1)  # include the current day
-        elif granularity == "h":
-            end_time = end_time.replace(minute=0, second=0, microsecond=0)
-            end_time += timedelta(hours=1)  # include the current hour
-        else:
-            end_time = end_time.replace(second=0, microsecond=0)
-            end_time += timedelta(minutes=1)  # include the current minute
-
-        start_time = end_time - delta - timedelta(seconds=period)
-
-        return start_time, end_time, granularity, period
-
-    def query_by_bin_and_duration(
-        self,
-        bin_size: str,
-        duration: str,
-    ) -> list[WorkflowMetric]:
-        start_time, end_time, granularity, period = self.relative_params_to_absolutes(
-            bin_size,
-            duration,
-        )
-
-        return self.aggregated_by_event_type(
-            start_time=start_time,
-            end_time=end_time,
-            period=period,
-            formatter=date_formatter(granularity=granularity),
-        )
-
-    def query_by_bin_duration_and_workflows(
-        self,
-        bin_size: str,
-        duration: str,
-        workflows: list[str],
-    ) -> list[WorkflowMetricSeries]:
-        start_time, end_time, granularity, period = self.relative_params_to_absolutes(
-            bin_size,
-            duration,
-        )
-        return self.aggregated_for_specified_workflows(
-            workflows=workflows,
-            start_time=start_time,
-            end_time=end_time,
-            period=period,
-            formatter=date_formatter(granularity=granularity),
-        )
 
 
 class WorkflowEventManager:
