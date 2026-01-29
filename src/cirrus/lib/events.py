@@ -6,7 +6,7 @@ import warnings
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from functools import wraps
 from logging import Logger, getLogger
 from time import time
@@ -22,7 +22,6 @@ from .utils import (
     SNSPublisher,
     execution_url,
     get_client,
-    parse_since,
 )
 
 
@@ -161,15 +160,6 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
             raise Exception(
                 f"Log group {self.log_group_name} does not exist.",
             ) from e
-        response = self.logs_client.describe_log_streams(
-            logGroupName=self.log_group_name,
-            logStreamNamePrefix=self.log_stream_name,
-        )
-        self.log_stream = (
-            response["logStreams"][0] if len(response["logStreams"]) > 0 else None
-        )
-        if self.log_stream is None:
-            raise Exception("Log stream not found after attempted creation.")
 
     def enabled(self: Self) -> bool:
         return bool(self.log_group_name)
@@ -229,7 +219,6 @@ class WorkflowMetricReader:
         self,
         logger: Logger | None = None,
         metric_namespace: str = "",
-        log_group_name: str = "",
     ):
         """
 
@@ -237,9 +226,6 @@ class WorkflowMetricReader:
            logger (Logger | None): Logger instance to use. If None is provided, the
                 default logger is used.
             metric_namespace (str): Namespace of the CloudWatch metric.
-                If "", then use the CIRRUS_WORKFLOW_METRIC_NAMESPACE from environment.
-
-            log_group_name (str): Log Group associated with the CloudWatch metrics.
                 If "", then use the CIRRUS_WORKFLOW_METRIC_NAMESPACE from environment.
         """
 
@@ -309,7 +295,9 @@ class WorkflowMetricReader:
         for workflow in workflows:
             mdqs = [
                 {
-                    "Id": str(event_type).lower() + "___" + workflow.lower(),
+                    "Id": str(event_type).lower()
+                    + "___"
+                    + workflow.lower().replace("-", "_"),
                     "MetricStat": {
                         "Metric": {
                             "Namespace": self.metric_namespace,
@@ -456,59 +444,6 @@ class WorkflowMetricReader:
             retval.append(wfm)
 
         return retval
-
-    def query_hour(
-        self,
-        start: int,
-        end: int,
-    ) -> list[WorkflowMetric]:
-        """
-        Query CloudWatch metrics for a specific hour range.
-        """
-        now = datetime.now(UTC)
-        end_time = now - timedelta(hours=end)
-        start_time = now - timedelta(hours=start)
-        return self.aggregated_by_event_type(
-            start_time=start_time,
-            end_time=end_time,
-            period=3600,
-            formatter=date_formatter(),
-        )
-
-    def query_by_bin_and_duration(
-        self,
-        bin_size: str,
-        duration: str,
-    ) -> list[WorkflowMetric]:
-        """
-        Query CloudWatch metrics for a given bin size and duration.
-        bin_size: e.g. '1d', '1h'
-        duration: e.g. '30d', '7d'
-        """
-        delta = parse_since(duration)
-        period = int(parse_since(bin_size).total_seconds())
-        if granularity := bin_size[-1] not in "dhms":
-            raise ValueError(f"Unknown temporal granularity suffix ({granularity})")
-
-        end_time = datetime.now(UTC)
-        if granularity == "d":
-            end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_time += timedelta(days=1)  # include the current day
-        elif granularity == "h":
-            end_time = end_time.replace(minute=0, second=0, microsecond=0)
-            end_time += timedelta(hours=1)  # include the current hour
-        else:
-            end_time = end_time.replace(second=0, microsecond=0)
-            end_time += timedelta(minutes=1)  # include the current minute
-
-        start_time = end_time - delta - timedelta(seconds=period)
-
-        return self.aggregated_by_event_type(
-            start_time=start_time,
-            end_time=end_time,
-            period=period,
-            formatter=date_formatter(granularity=granularity),
-        )
 
 
 class WorkflowEventManager:

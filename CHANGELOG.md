@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Clean up of Workflow Metric classes ([#364]):
+  - `WorkflowMetricLogger`: as Log Stream creation is synchronous, we don't
+    need to check for the successful creation of the Log Stream.
+  - `WorkflowMetricReader`: remove stale parameter `log_group_name` as it is no
+    longer used.
+  - `WorkflowMetricReader`: refactor relative date and bin handling for reuse
+    in query of specific workflows.
+  - `WorkflowMetricReader`: sanitize Metric Data query Id to match constraints
+    dictated by CloudWatch.
+  - Move `api`-specific methods from the `WorkflowMetricReader` to the `api`
+    lambda function.
+
 ## [v1.3.0] - 2026-01-02
 
 ### Added
@@ -1227,6 +1241,7 @@ Initial release
 [#348]: https://github.com/cirrus-geo/cirrus-geo/pull/348
 [#353]: https://github.com/cirrus-geo/cirrus-geo/pull/353
 [#361]: https://github.com/cirrus-geo/cirrus-geo/pull/361
+[#364]: https://github.com/cirrus-geo/cirrus-geo/pull/364
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
