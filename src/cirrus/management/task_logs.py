@@ -131,7 +131,7 @@ def get_lambda_logs(
 
     kwargs: dict = {
         "logGroupName": log_group_name,
-        "filterPattern": request_id,
+        "filterPattern": f'"{request_id}"',
         "limit": min(max(limit, 1), AWS_MAX_LOG_EVENTS),
     }
 
