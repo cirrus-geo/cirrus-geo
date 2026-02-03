@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [v1.3.2] - 2026-02-03
+
+### Fixed
+
+- Updated Lambda Request ID parameter handling to add quotes when making call
+  to CloudWatch `filter_log_events`. ([#366])
+- Log retrieval functions no longer return erroneous next token when there are
+  no more log events. ([#366])
+
 ## [v1.3.1] - 2026-01-29
 
 ### Changed
@@ -1073,7 +1082,8 @@ cleanup steps.
 
 Initial release
 
-[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.3.1...main
+[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.3.2...main
+[v1.3.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.3.1...v1.3.2
 [v1.3.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.1.2...v1.2.0
@@ -1243,6 +1253,7 @@ Initial release
 [#353]: https://github.com/cirrus-geo/cirrus-geo/pull/353
 [#361]: https://github.com/cirrus-geo/cirrus-geo/pull/361
 [#364]: https://github.com/cirrus-geo/cirrus-geo/pull/364
+[#366]: https://github.com/cirrus-geo/cirrus-geo/pull/364
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c

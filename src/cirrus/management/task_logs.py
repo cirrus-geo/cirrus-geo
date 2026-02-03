@@ -131,7 +131,7 @@ def get_lambda_logs(
 
     kwargs: dict = {
         "logGroupName": log_group_name,
-        "filterPattern": request_id,
+        "filterPattern": f'"{request_id}"',
         "limit": min(max(limit, 1), AWS_MAX_LOG_EVENTS),
     }
 
@@ -142,8 +142,18 @@ def get_lambda_logs(
     if next_token is not None:
         kwargs["nextToken"] = next_token
 
-    response = logs_client.filter_log_events(**kwargs)
-    events = response.get("events", [])
+    events: list = []
+    while True:
+        response = logs_client.filter_log_events(**kwargs)
+        new_events = response.get("events", [])
+        kwargs["limit"] -= len(new_events)
+        events += new_events
+        next_token = response.get("nextToken")
+
+        if next_token is None or kwargs["limit"] < 1:
+            break
+
+        kwargs["nextToken"] = next_token
 
     logs: dict = {"logs": []}
     for event in events:
@@ -174,9 +184,21 @@ def get_batch_logs(
     if next_token is not None:
         kwargs["nextToken"] = next_token
 
-    response = logs_client.get_log_events(**kwargs)
-    events = response.get("events", [])
-    next_forward_token = response.get("nextForwardToken")
+    events: list = []
+    while True:
+        response = logs_client.get_log_events(**kwargs)
+        new_events = response.get("events", [])
+        kwargs["limit"] -= len(new_events)
+        events += new_events
+        next_forward_token = response.get("nextForwardToken")
+
+        if next_forward_token == kwargs.get("nextToken"):
+            next_forward_token = None
+            break
+        if kwargs["limit"] < 1:
+            break
+
+        kwargs["nextToken"] = next_forward_token
 
     logs: dict = {"logs": []}
     for event in events:
@@ -184,8 +206,8 @@ def get_batch_logs(
             {"timestamp": event.get("timestamp"), "message": event.get("message")},
         )
 
-    # If we're at the end, next_forward_token will be the same as next_token
-    if next_forward_token != next_token and len(events) > 0:
+    # If we're at the end, next_forward_token will be None
+    if next_forward_token:
         logs["nextToken"] = next_forward_token
 
     return logs
