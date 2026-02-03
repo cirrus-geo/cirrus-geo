@@ -142,8 +142,18 @@ def get_lambda_logs(
     if next_token is not None:
         kwargs["nextToken"] = next_token
 
-    response = logs_client.filter_log_events(**kwargs)
-    events = response.get("events", [])
+    events: list = []
+    while True:
+        response = logs_client.filter_log_events(**kwargs)
+        new_events = response.get("events", [])
+        kwargs["limit"] -= len(new_events)
+        events += new_events
+        next_token = response.get("nextToken")
+
+        if next_token is None or kwargs["limit"] < 1:
+            break
+
+        kwargs["nextToken"] = next_token
 
     logs: dict = {"logs": []}
     for event in events:
