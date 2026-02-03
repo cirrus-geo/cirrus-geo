@@ -1,0 +1,439 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Batch tasks in workflows &mdash; Cirrus  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/js/versions-loader.js?v=38b9fbf7"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Workflow chaining" href="chaining.html" />
+    <link rel="prev" title="Writing workflow definitions" href="definitions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Cirrus
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../30_payload.html">Cirrus Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../60_components.html">Cirrus Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../tasks/index.html">Tasks</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Workflows</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="definitions.html">Writing workflow definitions</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Batch tasks in workflows</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pre-batch-and-post-batch"><code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">post-batch</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#put-it-all-together-with-a-parallel-block">Put it all together with a <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#batch-retries-vs-step-function-retries">Batch retries vs step function retries</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chaining.html">Workflow chaining</a></li>
+<li class="toctree-l3"><a class="reference internal" href="callbacks.html">Workflow callbacks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../functions/index.html">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../feeders/index.html">Feeders</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../95_tips_and_tricks.html">Tips and Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../96_deploying.html">Deploying</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/tasks/index.html">Tasks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Cirrus CLI READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli/00_intro.html">CLIrrus Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli/01_install.html">Installing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli/02_auth.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli/03_deployments.html">CLIrrus and Cirrus Deployments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli/04_commands.html">Command Examples</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../60_components.html">Cirrus Components</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Workflows</a></li>
+      <li class="breadcrumb-item active">Batch tasks in workflows</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/cirrus/components/workflows/batch.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="batch-tasks-in-workflows">
+<h1>Batch tasks in workflows<a class="headerlink" href="#batch-tasks-in-workflows" title="Link to this heading"></a></h1>
+<p>Using Batch tasks in workflows requires a few additional steps than using
+Lambda tasks.</p>
+<p>Lambdas integrate more directly with Step Functions than Batch, which has
+additional layer of infrastructure in-between. As a result, users must keep a
+few more things in mind when using to Batch tasks.</p>
+<section id="pre-batch-and-post-batch">
+<h2><code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> and <code class="docutils literal notranslate"><span class="pre">post-batch</span></code><a class="headerlink" href="#pre-batch-and-post-batch" title="Link to this heading"></a></h2>
+<p>Because Batch tasks cannot take the input payload natively like Lambda and must
+redirect through S3, Cirrus provides a built-in Lambda task to assist. The
+<code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> task takes an input payload, uploads it to S3, and returns an
+output JSON payload with a <code class="docutils literal notranslate"><span class="pre">url</span></code> key with the S3 payload URL as its value.
+<code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> should always be run immediately proceeding a Batch task for this
+purpose.</p>
+<p>Similarly, Batch does not integrate returned payloads with step functions nearly
+as well as Lambda, so Cirrus has a built-in <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> task to help with,
+well, post-batch operations. Specifically, <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> can pull the Batch
+payload from S3 and return that in the case of a successful Batch execution. In
+the case of a Batch error, <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> will scrape the container logs for an
+exception or other error message, and raise it within the step function. This
+helps “bubble” Batch task errors up to the step function. Errors can then be
+handled within the step function semantics or used to fail the step function
+execution with error context that can ultimately be pushed into the state
+database, increasing error visibility and assisting with troubleshooting.</p>
+<p>Therefore, like <code class="docutils literal notranslate"><span class="pre">pre-batch</span></code>, a <code class="docutils literal notranslate"><span class="pre">post-batch</span></code> step should always immediately
+follow a Batch task step.</p>
+</section>
+<section id="put-it-all-together-with-a-parallel-block">
+<h2>Put it all together with a <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block<a class="headerlink" href="#put-it-all-together-with-a-parallel-block" title="Link to this heading"></a></h2>
+<p>Instead of simply being able to have a single step in a step function for a
+Batch task, we end up with three steps. Because of the way they operate
+together, we can think of the <code class="docutils literal notranslate"><span class="pre">pre-batch</span></code> -&gt; Batch task -&gt; <code class="docutils literal notranslate"><span class="pre">post-batch</span></code>
+triad as a single step from the perspective of error handling and retries. That
+is, if we encounter an error anywhere in that set of three, we either want to
+fail them all or retry them all together.</p>
+<p>Enter the step function <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block. Step functions provide this control
+primative to allow users to define one or more branches in a workflow that can
+execute in parallel. Interestly for us, <code class="docutils literal notranslate"><span class="pre">parallel</span></code> supports both <code class="docutils literal notranslate"><span class="pre">Catch</span></code> and
+<code class="docutils literal notranslate"><span class="pre">Retry</span></code> policies for error handling, which provides us with the control we
+need for Batch.</p>
+<section id="error-handling">
+<h3>Error handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h3>
+<p>It is essential that workflows properly handle errors when using Batch, as
+there are more things that can go wrong than when using Lambda. For example,
+when too many Step Functions are trying to create a new Batch Job, a
+AWSBatchException is thrown. When the EC2 instance that a Batch Job is running
+on is reclaimed, as happens frequently with Spot instances at scale, a retry
+should occur so the Batch Job is attempted again. This is why it is recommended
+to use a Parallel block with retry to wrap the Batch steps.</p>
+<p>It is also critical to ensure that errors are properly passed out of the state
+machine so that they can be accessed by the <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda via the
+EventBridge event.  This is done by properly configuring the fail state to
+contain errors so that stack track information from say a failure in a
+container is passed out to the step function for proper preservation in the
+state database.  The example below demonstrates how the <code class="docutils literal notranslate"><span class="pre">Fail</span></code> state in your
+<code class="docutils literal notranslate"><span class="pre">state-machine.json</span></code> should be configured to pass out errors.  More
+information can be found in AWS documentation for <a class="reference external" href="https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.html">Fail state definition examples</a></p>
+</section>
+<section id="additional-considerations">
+<h3>Additional considerations<a class="headerlink" href="#additional-considerations" title="Link to this heading"></a></h3>
+<p>Batch does not perform well when there are many jobs that run quickly. For
+example, if a task filters out a significant number of payloads quickly, the
+overhead of placing the jobs onto compute resources will dominate the runtime,
+and will result in a slow and inefficient pipeline. A few examples in Earth
+Search are:</p>
+<ul class="simple">
+<li><p><strong>Landsat SNS topic (public-c2-notify-v2)</strong>: Includes many “Real-Time” (RT)
+scenes that are ignored. These result in a runtime of only a few seconds. If
+these were run  with Batch, there would be a few minute overhead for job
+placement (incurring the cost of the EC2 instances for that time) for only a
+few seconds of actual use.</p>
+<ul>
+<li><p>Even without the aforementioned RT scenes, Landsat ingest uses Lambda
+instead of Batch because the task is only performing a metadata-to-metadata
+conversion that takes tens of seconds per scene. The overhead for Batch is
+far greater than the actual runtime, and the task runtime is both low (much
+less than the Lambda maximum of 15 minutes) and consistent.</p></li>
+</ul>
+</li>
+<li><p><strong>Sentinel-2 Collection 1 Level-L2A</strong>: This collection only includes items
+with a “processing baseline” value of 05.00 or higher. All newly-acquired
+scenes have this processing baseline, but when back-processing the catalog,
+about half of the scenes have an older baseline and are immediately ignored.
+This meant that half of the Batch Jobs ran for seconds and half ran for 5-10
+minutes. The batch jobs that ran for seconds caused a signficant increase in
+cost and decrease in throughput. A better solution would have been to have an
+initial Lambda that checked only if the processing baseline was appropriate,
+and only allowed the Batch job to run if so.</p></li>
+</ul>
+<p>Another consideration is with error handing and InvalidInputs. Tasks that raise
+InvalidInput exceptions are indicating that the payload can never be processed
+correctly. A trivial example of this would be a process payload with only an ID
+value and no other information. Contrast that scenario with a valid payload
+that fails because of something that can be corrected, such as a code bug.</p>
+</section>
+<section id="minimal-example">
+<h3>Minimal example<a class="headerlink" href="#minimal-example" title="Link to this heading"></a></h3>
+<p>Let’s see an example of a <code class="docutils literal notranslate"><span class="pre">state-machine.json</span></code> workflow using a <code class="docutils literal notranslate"><span class="pre">Parallel</span></code>
+block to group the set of Batch operations together. Notice how the example
+uses <code class="docutils literal notranslate"><span class="pre">parallel</span></code> with only a single branch defined, but that fits the Batch
+use-case perfectly.</p>
+<div class="highlight-JSON notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;Comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Example workflow using parallel to make a &#39;batch group&#39;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;StartAt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;batch-group&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;States&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;batch-group&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Parallel&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Branches&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;StartAt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pre-batch&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;States&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="nt">&quot;pre-batch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:states:::lambda:invoke&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                                </span><span class="nt">&quot;FunctionName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;!GetAtt pre-batch.Arn&quot;</span><span class="p">,</span>
+<span class="w">                                </span><span class="nt">&quot;Payload.$&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$&quot;</span>
+<span class="w">                            </span><span class="p">},</span>
+<span class="w">                            </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;batch-task&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                </span><span class="p">{</span>
+<span class="w">                                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                        </span><span class="s2">&quot;Lambda.TooManyRequestsException&quot;</span><span class="p">,</span>
+<span class="w">                                        </span><span class="s2">&quot;Lambda.Unknown&quot;</span>
+<span class="w">                                    </span><span class="p">],</span>
+<span class="w">                                    </span><span class="nt">&quot;IntervalSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxDelaySeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;BackoffRate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxAttempts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;JitterStrategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FULL&quot;</span>
+<span class="w">                                </span><span class="p">}</span>
+<span class="w">                            </span><span class="p">]</span>
+<span class="w">                        </span><span class="p">},</span>
+<span class="w">                        </span><span class="nt">&quot;batch-task&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:states:::batch:submitJob.sync&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                                </span><span class="nt">&quot;JobName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;some-batch-job&quot;</span><span class="p">,</span>
+<span class="w">                                </span><span class="nt">&quot;JobQueue&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;#{ExampleJobQueue}&quot;</span><span class="p">,</span>
+<span class="w">                                </span><span class="nt">&quot;JobDefinition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;#{ExampleBatchJob}&quot;</span><span class="p">,</span>
+<span class="w">                                </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                                    </span><span class="nt">&quot;url.$&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.url&quot;</span>
+<span class="w">                                </span><span class="p">}</span>
+<span class="w">                            </span><span class="p">},</span>
+<span class="w">                            </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;post-batch&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                </span><span class="p">{</span>
+<span class="w">                                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                        </span><span class="s2">&quot;Batch.AWSBatchException&quot;</span>
+<span class="w">                                    </span><span class="p">],</span>
+<span class="w">                                    </span><span class="nt">&quot;IntervalSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">600</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxDelaySeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;BackoffRate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxAttempts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;JitterStrategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FULL&quot;</span>
+<span class="w">                                </span><span class="p">}</span>
+<span class="w">                            </span><span class="p">],</span>
+<span class="w">                            </span><span class="nt">&quot;Catch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                </span><span class="p">{</span>
+<span class="w">                                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                        </span><span class="s2">&quot;States.ALL&quot;</span>
+<span class="w">                                    </span><span class="p">],</span>
+<span class="w">                                    </span><span class="nt">&quot;ResultPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error&quot;</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;post-batch&quot;</span>
+<span class="w">                                </span><span class="p">}</span>
+<span class="w">                            </span><span class="p">]</span>
+<span class="w">                        </span><span class="p">},</span>
+<span class="w">                        </span><span class="nt">&quot;post-batch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:states:::lambda:invoke&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                                </span><span class="nt">&quot;FunctionName&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">!Ge</span><span class="kc">t</span><span class="err">A</span><span class="kc">tt</span><span class="w"> </span><span class="err">pos</span><span class="kc">t</span><span class="mi">-</span><span class="err">ba</span><span class="kc">t</span><span class="err">ch.Ar</span><span class="kc">n</span><span class="p">,</span>
+<span class="w">                                </span><span class="nt">&quot;Payload.$&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$&quot;</span>
+<span class="w">                            </span><span class="p">},</span>
+<span class="w">                            </span><span class="nt">&quot;End&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                </span><span class="p">{</span>
+<span class="w">                                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                                        </span><span class="s2">&quot;Lambda.TooManyRequestsException&quot;</span><span class="p">,</span>
+<span class="w">                                        </span><span class="s2">&quot;Lambda.Unknown&quot;</span>
+<span class="w">                                    </span><span class="p">],</span>
+<span class="w">                                    </span><span class="nt">&quot;IntervalSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxDelaySeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;BackoffRate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;MaxAttempts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">                                    </span><span class="nt">&quot;JitterStrategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FULL&quot;</span>
+<span class="w">                                </span><span class="p">}</span>
+<span class="w">                            </span><span class="p">]</span>
+<span class="w">                        </span><span class="p">}</span>
+<span class="w">                    </span><span class="p">}</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;publish&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;OutputPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$[0]&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                        </span><span class="s2">&quot;States.ALL&quot;</span>
+<span class="w">                    </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;MaxAttempts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;IntervalSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1200</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;MaxDelaySeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;BackoffRate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;JitterStrategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FULL&quot;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Catch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                        </span><span class="s2">&quot;States.ALL&quot;</span>
+<span class="w">                    </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;ResultPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;failure&quot;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;publish&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:states:::lambda:invoke&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;FunctionName&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">!Ge</span><span class="kc">t</span><span class="err">A</span><span class="kc">tt</span><span class="w"> </span><span class="err">publish.Ar</span><span class="kc">n</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;Payload.$&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$&quot;</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">            </span><span class="nt">&quot;End&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Retry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                        </span><span class="s2">&quot;Lambda.TooManyRequestsException&quot;</span><span class="p">,</span>
+<span class="w">                        </span><span class="s2">&quot;Lambda.Unknown&quot;</span>
+<span class="w">                    </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;IntervalSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;MaxDelaySeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;BackoffRate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;MaxAttempts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;JitterStrategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FULL&quot;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Catch&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;ErrorEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                        </span><span class="s2">&quot;States.ALL&quot;</span>
+<span class="w">                    </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;ResultPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;Next&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;failure&quot;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;failure&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Error&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error.Error&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Cause&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$.error.Cause&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="batch-retries-vs-step-function-retries">
+<h2>Batch retries vs step function retries<a class="headerlink" href="#batch-retries-vs-step-function-retries" title="Link to this heading"></a></h2>
+<p>Whenever possible, using the step function retry semantics over those provided by
+Batch is preferred. While Batch retries can be used without having to manage the
+additional complexity of the <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block, Batch retries regardless of
+error type, while step function retries allow matching specific error types,
+allowing users more granular control over when to retry or fail.</p>
+<p>Additionally, retrying within the step function shows the retry as a separate
+step than the first. This makes it much more obvious to users investigating
+failures that a retry happened and what the initial error was. Batch retries
+are more or less hidden from the step functions.</p>
+<p>For these reasons, the overhead of the <code class="docutils literal notranslate"><span class="pre">parallel</span></code> block is worth the
+investment.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="definitions.html" class="btn btn-neutral float-left" title="Writing workflow definitions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="chaining.html" class="btn btn-neutral float-right" title="Workflow chaining" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: v1.3.2
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
