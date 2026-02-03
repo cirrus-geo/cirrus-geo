@@ -162,7 +162,7 @@ def get_lambda_logs(
         )
 
     if next_token:
-        logs["nextToken"] = response["nextToken"]
+        logs["nextToken"] = next_token
 
     return logs
 
