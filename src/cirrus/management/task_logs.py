@@ -160,8 +160,10 @@ def get_lambda_logs(
         logs["logs"].append(
             {"timestamp": event.get("timestamp"), "message": event.get("message")},
         )
-    if "nextToken" in response:
-        logs["nextToken"] = response["nextToken"]
+
+    if next_token:
+        logs["nextToken"] = next_token
+
     return logs
 
 
