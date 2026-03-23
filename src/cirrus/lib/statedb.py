@@ -349,7 +349,9 @@ class StateDB:
             "SET "
             "created = if_not_exists(created, :created), "
             "state_updated=:state_updated, updated=:updated, "
-            "executions = list_append(if_not_exists(executions, :empty_list), :exes)"
+            "claimed_at=:updated, "
+            "executions = list_append(if_not_exists(executions, :empty_list), :exes) "
+            "REMOVE last_error, outputs"
         )
         return self.table.update_item(
             Key=key,
@@ -698,6 +700,8 @@ class StateDB:
             item["outputs"] = dbitem["outputs"]
         if "last_error" in dbitem:
             item["last_error"] = dbitem["last_error"]
+        if "claimed_at" in dbitem:
+            item["claimed_at"] = dbitem["claimed_at"]
         return item
 
     @staticmethod

@@ -307,6 +307,7 @@ def test_claim_processing(state_table: StateDB):
     state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("CLAIMED")
+    assert "claimed_at" in dbitem
 
 
 def test_set_processing(state_table: StateDB):
@@ -345,6 +346,19 @@ def test_second_execution(state_table: StateDB):
     dbitem = state_table.get_dbitem(test_item["id"])
     assert len(dbitem["executions"]) == 2
     assert dbitem["executions"][-1] == "arn::test2"
+    assert "last_error" not in dbitem
+    assert "claimed_at" in dbitem
+
+
+def test_claim_clears_outputs(state_table: StateDB):
+    state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
+    state_table.set_processing(test_item["id"])
+    state_table.set_outputs(test_item["id"], outputs=["output-item"])
+    state_table.set_completed(test_item["id"])
+    state_table.claim_processing(test_item["id"], execution_arn="arn::test2")
+    dbitem = state_table.get_dbitem(test_item["id"])
+    assert "outputs" not in dbitem
+    assert "claimed_at" in dbitem
 
 
 def test_set_outputs_(state_table: StateDB):
