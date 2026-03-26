@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 @unique
 class StateEnum(Enum):
     PROCESSING = "PROCESSING"
-    COMPLETED = "COMPLETED"
+    SUCCEEDED = "SUCCEEDED"
     FAILED = "FAILED"
     INVALID = "INVALID"
     ABORTED = "ABORTED"
@@ -85,17 +85,17 @@ def write_timeseries_record(
 state_transitions = {
     StateEnum.PROCESSING: [
         StateEnum.INVALID,
-        StateEnum.COMPLETED,
-        StateEnum.COMPLETED,
-        StateEnum.COMPLETED,
-        StateEnum.COMPLETED,
-        StateEnum.COMPLETED,
-        StateEnum.COMPLETED,
-        StateEnum.COMPLETED,
-        StateEnum.COMPLETED,
-        StateEnum.COMPLETED,
-        StateEnum.COMPLETED,
-        StateEnum.COMPLETED,
+        StateEnum.SUCCEEDED,
+        StateEnum.SUCCEEDED,
+        StateEnum.SUCCEEDED,
+        StateEnum.SUCCEEDED,
+        StateEnum.SUCCEEDED,
+        StateEnum.SUCCEEDED,
+        StateEnum.SUCCEEDED,
+        StateEnum.SUCCEEDED,
+        StateEnum.SUCCEEDED,
+        StateEnum.SUCCEEDED,
+        StateEnum.SUCCEEDED,
         StateEnum.FAILED,
         StateEnum.FAILED,
         StateEnum.ABORTED,
@@ -124,7 +124,7 @@ def generate_item_events(between_val: str):
     timestamp = fake.date_time_between(between_val)
     execution_arn = f"arn:aws:states:us-west-2:1667831315:execution:pvarner-cirrus-dev-fake:{uuid.uuid4()!s}"
 
-    while state not in [StateEnum.COMPLETED, StateEnum.INVALID, StateEnum.TERMINAL]:
+    while state not in [StateEnum.SUCCEEDED, StateEnum.INVALID, StateEnum.TERMINAL]:
         if state is None:
             state = StateEnum.PROCESSING
         else:

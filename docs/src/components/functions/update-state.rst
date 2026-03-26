@@ -31,7 +31,9 @@ Updating the DynamoDB state database is the core functionality of the
 ``update-state`` lambda.
 
 In addition to updating DynamoDB the ``update-state`` lambda also fires
-off events to AWS TimeStream with each state update.
+off events to AWS TimeStream with each state update. On successful
+completion, ``update-state`` archives the output payload to S3 and
+records the output payload URL in the state record.
 
 The ``update-state`` lambda additionally logs any errors that come from
 the StateMachine so they can be captured and anlyzed in the log stream.

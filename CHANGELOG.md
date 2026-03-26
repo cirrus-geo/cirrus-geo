@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [v2.0.0] - unreleased
+
+### ⚠️ Breaking changes
+
+- Payload bucket reorganization
+- Management CLI command `get-payload` renamed `get-input-payload`
+- Management CLI command `get-payloads` renamed `get-input-payloads`
+- StateDB and EventDB switch `COMPLETED` state name to `SUCCEEDED`
+- Workflow event type `ALREADY_COMPLETED` renamed to `ALREADY_SUCCEEDED`
+- Workflow events `payload_url` field renamed to `input_payload_url`
+- Workflow event type `CLAIMED` and some `FAILED` events now do not include a
+  `payload_url` at all (these are emitted prior to the payload upload to S3 so
+  the URL is not actually valid)
+- StateDB.get_dbitem now raises a `PayloadNotFoundError` instead of returning
+  `None` when no item matches the supplied ID
+- [SOME BETTER NOTES ABOUT CHANGED/REMOVED StateDB methods]
+
+### Added
+
+- Management CLI command `get-output-payload` to fetch the output payload for
+  an execution via an input payload ID
+
+### Changed
+
+- Better error messages from `update-state` lambda when payloads are too large
+  and are truncated in the EventBridge event
+
+### Removed
+
+- Management CLI commands previously accepting user vars no longer do
+  (techincally this is a bugfix, as support for user vars was removed in
+  v1.0.0, but the CLI inadvertently continue to advertise support for them)
+
 ## [v1.3.2] - 2026-02-03
 
 ### Fixed
@@ -1082,7 +1115,8 @@ cleanup steps.
 
 Initial release
 
-[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.3.2...main
+[Unreleased]: https://github.com/cirrus-geo/cirrus-geo/compare/v2.0.0...main
+[v2.0.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.3.2...v2.0.0
 [v1.3.2]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.3.1...v1.3.2
 [v1.3.1]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/cirrus-geo/cirrus-geo/compare/v1.2.0...v1.3.0

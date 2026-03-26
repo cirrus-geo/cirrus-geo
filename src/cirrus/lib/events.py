@@ -49,7 +49,8 @@ class WorkflowEvent:
     event_type: WFEventType
     payload_id: str
     isotimestamp: str
-    payload_url: str | None = None
+    input_payload_url: str | None = None
+    output_payload_url: str | None = None
     execution_arn: str | None = None
     error: str | None = None
 
@@ -174,9 +175,9 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
 
         return self.logs_client.put_log_events(**params)
 
-    def add(self: Self, event: WorkflowEvent) -> None:
+    def add(self: Self, item: WorkflowEvent) -> None:
         if self.enabled():
-            super().add(event)
+            super().add(item)
 
     def prepare_batch(self: Self, batch: list[WorkflowEvent]) -> list[dict[str, Any]]:
         timestamp = int(time() * 1000)
@@ -288,7 +289,7 @@ class WorkflowMetricReader:
             formatter = date_formatter()
         cstats: dict[str, dict[datetime, dict[str, int]]] = {
             workflow: defaultdict(
-                lambda: dict.fromkeys([str(e) for e in event_types], 0),
+                lambda: dict.fromkeys([str(e) for e in event_types or []], 0),
             )
             for workflow in workflows
         }
@@ -499,10 +500,10 @@ class WorkflowEventManager:
         if self.event_publisher:
             self.event_publisher.execute()
 
-    def __enter__(self: Self):
+    def __enter__(self: Self) -> Self:
         return self
 
-    def __exit__(self: Self, et, ev, tb):
+    def __exit__(self: Self, et, ev, tb) -> None:
         self.flush()
 
     @classmethod
@@ -548,7 +549,6 @@ class WorkflowEventManager:
         self: Self,
         payload_id: str,
         execution_arn: str,
-        payload_url: str | None = None,
         isotimestamp: str | None = None,
     ) -> str:
         if isotimestamp is None:
@@ -564,7 +564,6 @@ class WorkflowEventManager:
                 event_type=WFEventType.CLAIMED_PROCESSING,
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
-                payload_url=payload_url,
             ),
         )
 
@@ -575,8 +574,8 @@ class WorkflowEventManager:
         payload_id: str,
         execution_arn: str,
         isotimestamp: str | None = None,
-        payload_url: str | None = None,
-    ):
+        input_payload_url: str | None = None,
+    ) -> None:
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
         self.statedb.set_processing(payload_id, isotimestamp)
@@ -591,7 +590,7 @@ class WorkflowEventManager:
                 event_type=WFEventType.STARTED_PROCESSING,
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
-                payload_url=payload_url,
+                input_payload_url=input_payload_url,
                 execution_arn=execution_arn,
             ),
         )
@@ -600,14 +599,15 @@ class WorkflowEventManager:
         self: Self,
         payload_id: str,
         state: StateEnum,
-        payload_url: str | None = None,
+        input_payload_url: str | None = None,
+        output_payload_url: str | None = None,
         message: str = "",
-    ):
+    ) -> None:
         state2event = {
             StateEnum.INVALID: WFEventType.ALREADY_INVALID,
             StateEnum.PROCESSING: WFEventType.ALREADY_PROCESSING,
             StateEnum.CLAIMED: WFEventType.ALREADY_CLAIMED,
-            StateEnum.COMPLETED: WFEventType.ALREADY_COMPLETED,
+            StateEnum.SUCCEEDED: WFEventType.ALREADY_SUCCEEDED,
         }
         self.logger.info(
             "Skipping %s already in %s state%s.",
@@ -620,22 +620,23 @@ class WorkflowEventManager:
                 event_type=state2event[state],
                 payload_id=payload_id,
                 isotimestamp=datetime.now(UTC).isoformat(),
-                payload_url=payload_url,
+                input_payload_url=input_payload_url,
+                output_payload_url=output_payload_url,
             ),
         )
 
     def duplicated(
         self: Self,
         payload_id: str,
-        payload_url: str | None = None,
-    ):
+        input_payload_url: str | None = None,
+    ) -> None:
         self.logger.warning("duplicate payload_id dropped %s", payload_id)
         self.announce(
             WorkflowEvent(
                 event_type=WFEventType.DUPLICATE_ID_ENCOUNTERED,
                 payload_id=payload_id,
                 isotimestamp=self.isotimestamp_now(),
-                payload_url=payload_url,
+                input_payload_url=input_payload_url,
             ),
         )
 
@@ -643,10 +644,10 @@ class WorkflowEventManager:
         self: Self,
         payload_id: str,
         message: str = "",
-        payload_url: str | None = None,
+        input_payload_url: str | None = None,
         execution_arn: str | None = None,
         isotimestamp: str | None = None,
-    ):
+    ) -> None:
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
         self.statedb.set_failed(payload_id, message)
@@ -663,7 +664,7 @@ class WorkflowEventManager:
                 event_type=WFEventType.FAILED,
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
-                payload_url=payload_url,
+                input_payload_url=input_payload_url,
                 error=message,
                 execution_arn=execution_arn,
             ),
@@ -673,10 +674,10 @@ class WorkflowEventManager:
         self: Self,
         payload_id: str,
         message: str = "",
-        payload_url: str | None = None,
+        input_payload_url: str | None = None,
         execution_arn: str | None = None,
         isotimestamp: str | None = None,
-    ):
+    ) -> None:
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
         self.statedb.set_failed(
@@ -696,7 +697,7 @@ class WorkflowEventManager:
                 event_type=WFEventType.TIMED_OUT,
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
-                payload_url=payload_url,
+                input_payload_url=input_payload_url,
                 error=message,
                 execution_arn=execution_arn,
             ),
@@ -706,18 +707,19 @@ class WorkflowEventManager:
         self: Self,
         payload_id: str,
         execution_arn: str,
-        payload_url: str | None = None,
+        input_payload_url: str | None = None,
+        output_payload_url: str | None = None,
         isotimestamp: str | None = None,
-    ):
+    ) -> None:
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
-        self.statedb.set_completed(
+        self.statedb.set_succeeded(
             payload_id,
             isotimestamp=isotimestamp,
         )
         self._write_timeseries_record(
             payload_id,
-            StateEnum.COMPLETED,
+            StateEnum.SUCCEEDED,
             isotimestamp,
             execution_arn,
         )
@@ -726,7 +728,8 @@ class WorkflowEventManager:
                 event_type=WFEventType.SUCCEEDED,
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
-                payload_url=payload_url,
+                input_payload_url=input_payload_url,
+                output_payload_url=output_payload_url,
                 execution_arn=execution_arn,
             ),
         )
@@ -736,9 +739,9 @@ class WorkflowEventManager:
         payload_id: str,
         error: str,
         execution_arn: str,
-        payload_url: str | None = None,
+        input_payload_url: str | None = None,
         isotimestamp: str | None = None,
-    ):
+    ) -> None:
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
         self.statedb.set_invalid(payload_id, error, isotimestamp)
@@ -755,7 +758,7 @@ class WorkflowEventManager:
                 event_type=WFEventType.INVALID,
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
-                payload_url=payload_url,
+                input_payload_url=input_payload_url,
                 error=error,
                 execution_arn=execution_arn,
             ),
@@ -765,9 +768,9 @@ class WorkflowEventManager:
         self: Self,
         payload_id: str,
         execution_arn: str,
-        payload_url: str | None = None,
+        input_payload_url: str | None = None,
         isotimestamp: str | None = None,
-    ):
+    ) -> None:
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
         self.statedb.set_aborted(payload_id)
@@ -783,7 +786,7 @@ class WorkflowEventManager:
                 event_type=WFEventType.ABORTED,
                 payload_id=payload_id,
                 isotimestamp=isotimestamp,
-                payload_url=payload_url,
+                input_payload_url=input_payload_url,
                 execution_arn=execution_arn,
             ),
         )

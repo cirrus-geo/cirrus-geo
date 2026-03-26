@@ -22,7 +22,6 @@ from cirrus.management.utils.click import (
 )
 from cirrus.management.utils.manage import (
     execution_arn,
-    include_user_vars,
     query_filters,
     raw_option,
     rerun_option,
@@ -103,19 +102,35 @@ def run_workflow(
     sys.exit(rc)
 
 
-@manage.command("get-payload")
+@manage.command("get-input-payload")
 @click.argument(
     "payload-id",
 )
 @raw_option
 @pass_deployment
-def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
-    """Get a payload from S3 using its ID"""
+def get_input_payload(deployment: Deployment, payload_id: str, raw: bool = False):
+    """Get an input payload from S3 using its ID"""
 
     if raw:
-        click.echo(deployment.fetch_payload(payload_id))
+        click.echo(deployment.fetch_payload(payload_id, "input"))
     else:
-        json.dump(deployment.fetch_payload(payload_id), sys.stdout, indent=4)
+        json.dump(deployment.fetch_payload(payload_id, "input"), sys.stdout, indent=4)
+        click.echo("")
+
+
+@manage.command("get-output-payload")
+@click.argument(
+    "payload-id",
+)
+@raw_option
+@pass_deployment
+def get_output_payload(deployment: Deployment, payload_id: str, raw: bool = False):
+    """Get an output payload from S3 for an input payload ID"""
+
+    if raw:
+        click.echo(deployment.fetch_payload(payload_id, "output"))
+    else:
+        json.dump(deployment.fetch_payload(payload_id, "output"), sys.stdout, indent=4)
         click.echo("")
 
 
@@ -341,12 +356,10 @@ def invoke_lambda(deployment: Deployment, session: Session, lambda_name: str):
 @manage.command("template-payload")
 @additional_variables
 @silence_templating_errors
-@include_user_vars
 @pass_deployment
 def template_payload(
     deployment: Deployment,
     silence_templating_errors: bool,
-    include_user_vars: bool,
     additional_variables: dict[str, str],
 ):
     """Template a payload using a deployment's vars"""
@@ -355,7 +368,6 @@ def template_payload(
             sys.stdin.read(),
             additional_variables,
             silence_templating_errors,
-            include_user_vars,
         ),
     )
 
@@ -370,14 +382,13 @@ def template_payload(
     "command",
     nargs=-1,
 )
-@include_user_vars
 @pass_deployment
 @click.pass_context
-def _exec(ctx, deployment: Deployment, command: str, include_user_vars: bool):
+def _exec(ctx, deployment: Deployment, command: str):
     """Run an executable with the deployment environment vars loaded"""
     if not command:
         return
-    deployment.exec(command, include_user_vars=include_user_vars)
+    deployment.exec(command)
 
 
 @manage.command(
@@ -390,16 +401,15 @@ def _exec(ctx, deployment: Deployment, command: str, include_user_vars: bool):
     "command",
     nargs=-1,
 )
-@include_user_vars
 @pass_deployment
 @click.pass_context
-def _call(ctx, deployment: Deployment, command: str, include_user_vars: bool):
+def _call(ctx, deployment: Deployment, command: str):
     """Run an executable, in a new process, with the deployment environment
     vars loaded"""
     if not command:
         return
     try:
-        deployment.call(command, include_user_vars=include_user_vars)
+        deployment.call(command)
     except CalledProcessError as cpe:
         sys.exit(cpe.returncode)
 
@@ -419,11 +429,11 @@ def list_lambdas(ctx, deployment: Deployment, session: Session):
     )
 
 
-@manage.command("get-payloads")
+@manage.command("get-input-payloads")
 @rerun_option
 @query_filters
 @pass_deployment
-def get_payloads(
+def get_input_payloads(
     deployment: Deployment,
     collections_workflow: str,
     state: str | None,
@@ -439,7 +449,7 @@ def get_payloads(
     """
 
     # send to stdout as NDJSON for piping
-    for payload in deployment.yield_payloads(
+    for payload in deployment.yield_input_payloads(
         collections_workflow,
         limit,
         {"state": state, "since": since, "error_begins_with": error_prefix},

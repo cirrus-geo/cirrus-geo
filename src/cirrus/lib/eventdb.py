@@ -216,6 +216,8 @@ def results_transform(
     for row in results["Rows"]:
         ts = timestamp_function(row["Data"][0]["ScalarValue"])
         state = row["Data"][1]["ScalarValue"]
+        if state == "COMPLETED":
+            state = StateEnum.SUCCEEDED
         unique_count = int(row["Data"][2]["ScalarValue"])
         total_count = int(row["Data"][3]["ScalarValue"])
         intervals[ts][state] = (unique_count, total_count)

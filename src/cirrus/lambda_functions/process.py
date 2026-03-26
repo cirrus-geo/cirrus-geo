@@ -8,6 +8,7 @@ from cirrus.lib.enums import WFEventType
 from cirrus.lib.errors import NoUrlError
 from cirrus.lib.events import WorkflowEvent, WorkflowEventManager
 from cirrus.lib.logging import CirrusLoggerAdapter, defer
+from cirrus.lib.payload_bucket import PayloadBucket
 from cirrus.lib.payload_manager import PayloadManager, PayloadManagers
 from cirrus.lib.statedb import StateDB
 
@@ -15,13 +16,15 @@ utils.cold_start()
 
 logger = CirrusLoggerAdapter("function.process")
 
+payload_bucket = PayloadBucket()
+
 
 def is_sqs_message(message):
     return message.get("eventSource") == "aws:sqs"
 
 
 @WorkflowEventManager.with_wfem(logger=logger)
-def lambda_handler(event, context, *, wfem: WorkflowEventManager):
+def lambda_handler(event, context, *, wfem: WorkflowEventManager) -> int:
     logger.debug(json.dumps(event))
 
     payload_managers: list[PayloadManager] = []
@@ -37,7 +40,7 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
                     event_type=WFEventType.RECORD_EXTRACT_FAILED,
                     payload_id="unknown",
                     isotimestamp=wfem.isotimestamp_now(),
-                    payload_url=PayloadManager.upload_to_s3(message),
+                    input_payload_url=payload_bucket.upload_invalid_payload(message),
                     error=str(exc),
                 ),
             )
@@ -62,7 +65,7 @@ def lambda_handler(event, context, *, wfem: WorkflowEventManager):
                     event_type=WFEventType.NOT_A_PROCESS_PAYLOAD,
                     payload_id=payload.get("id", "unknown"),
                     isotimestamp=wfem.isotimestamp_now(),
-                    payload_url=PayloadManager.upload_to_s3(payload),
+                    input_payload_url=payload_bucket.upload_invalid_payload(message),
                     error=str(exc),
                 ),
             )

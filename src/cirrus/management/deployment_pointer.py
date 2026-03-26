@@ -5,7 +5,7 @@ import json
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Self
+from typing import Any, Protocol, Self
 
 import boto3
 
@@ -24,6 +24,16 @@ REQUIRED_VARS = {
     "CIRRUS_STATE_DB",
     "CIRRUS_PREFIX",
 }
+
+
+class PointerObject(Protocol):  # pragma: no cover
+    @classmethod
+    def from_string(cls: type[Self], string: str) -> Self: ...
+
+    def fetch(
+        self: Self,
+        session: boto3.Session | None = None,
+    ) -> dict[str, str]: ...
 
 
 class PointerType(StrEnum):
@@ -63,24 +73,31 @@ class Pointer:
 
         return cls(**obj)
 
-    def resolve(self):
+    def resolve(self) -> PointerObject:
         match self._type:
             case PointerType.ParamStore:
-                return ParamStoreDeployment(self.value)
+                return ParamStoreDeployment.from_string(self.value)
             case _ as unknown:
                 raise TypeError(f"Unsupported pointer type '{unknown}'")
 
 
 class ParamStoreDeployment:
-    def __init__(self, deployment_key: str):
+    def __init__(self, deployment_key: str) -> None:
         self.prefix = deployment_key
 
-    def fetch(self, session=boto3.Session) -> dict[str, str]:
+    @classmethod
+    def from_string(cls, string: str) -> Self:
+        return cls(deployment_key=string)
+
+    def fetch(
+        self,
+        session: boto3.Session | None = None,
+    ) -> dict[str, str]:
         """Get all parameters for specific deployment"""
 
         return {
             param["Name"].removeprefix(self.prefix): param["Value"]
-            for param in get_parameters_by_path(self.prefix, session)
+            for param in get_parameters_by_path(self.prefix, session=session)
         }
 
 
@@ -98,7 +115,7 @@ class DeploymentPointer:
         cls,
         parameter: dict[str, Any],
         name: str = "",
-    ) -> DeploymentPointer:
+    ) -> Self:
         return cls(
             name=name,
             pointer=Pointer.from_string(parameter["Value"]),
@@ -110,7 +127,7 @@ class DeploymentPointer:
         deployment_name: str,
         region: str | None = None,
         session: boto3.Session | None = None,
-    ):
+    ) -> Self:
         """Get pointer to deployment in param store.  Pointer is one param"""
         ssm = get_client("ssm", region=region, session=session)
         try:
@@ -125,7 +142,7 @@ class DeploymentPointer:
 
     @staticmethod
     def list_deployments(
-        session: boto3.Session,
+        session: boto3.Session | None = None,
     ) -> Iterator[str]:
         """Retrieve and list names of available deployments in parameter
         store"""
@@ -136,7 +153,7 @@ class DeploymentPointer:
         )
 
     @staticmethod
-    def validate_vars(environment: dict[str, str]):
+    def validate_vars(environment: dict[str, str]) -> dict[str, str]:
         missing = REQUIRED_VARS - set(environment.keys())
         if missing:
             raise MissingParameterError(*missing)
@@ -144,7 +161,7 @@ class DeploymentPointer:
 
     def get_environment(
         self,
-        session: boto3.Session,
+        session: boto3.Session | None = None,
     ) -> dict[str, str]:
         """Get env vars for single named deployment"""
 

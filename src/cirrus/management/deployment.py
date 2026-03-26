@@ -9,23 +9,25 @@ from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from subprocess import check_call
 from time import sleep, time
-from typing import IO, Any
+from typing import IO, Any, Literal
 
 import backoff
 import boto3
 
 from botocore.exceptions import ClientError
 
+from cirrus.exceptions import PayloadNotFoundError
 from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.errors import EventsDisabledError
 from cirrus.lib.eventdb import EventDB, daily, hourly
+from cirrus.lib.payload_bucket import PayloadBucket
 from cirrus.lib.statedb import StateDB, to_current
 from cirrus.lib.utils import assume_role, get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
 from cirrus.management.exceptions import (
     NoExecutionsError,
-    PayloadNotFoundError,
+    NoPayloadUrlError,
     StatsUnavailableError,
 )
 from cirrus.management.task_logs import get_batch_logs, get_lambda_logs
@@ -44,7 +46,7 @@ def now_isoformat() -> str:
 
 
 def _maybe_use_buffer(fileobj: IO) -> IO:
-    return fileobj.buffer if hasattr(fileobj, "buffer") else fileobj
+    return getattr(fileobj, "buffer", fileobj)
 
 
 class Deployment:
@@ -70,6 +72,16 @@ class Deployment:
             self.environment.get("AWS_REGION", session.region_name),
         )
         self.session = session
+
+    @property
+    def statedb(self) -> StateDB:
+        return StateDB(
+            table_name=self.environment["CIRRUS_STATE_DB"],
+            session=self.session,
+            payload_bucket=PayloadBucket(
+                bucket_name=self.environment["CIRRUS_PAYLOAD_BUCKET"],
+            ),
+        )
 
     @staticmethod
     def yield_deployments(
@@ -122,61 +134,61 @@ class Deployment:
                 self._functions += deployment_functions_filter(resp)
         return self._functions
 
-    def exec(self, command, include_user_vars=True, isolated=False):
+    def exec(self, command, isolated=False):
         import os
 
         if isolated:
             env = self.environment.copy()
-            if include_user_vars:
-                env.update(self.user_vars)
             os.execlpe(command[0], *command, env)  # noqa: S606
 
         os.environ.update(self.environment)
         os.execlp(command[0], *command)  # noqa: S606
 
-    def call(self, command, include_user_vars=True, isolated=False):
+    def call(self, command, isolated=False):
         if isolated:
             env = self.environment.copy()
-            if include_user_vars:
-                env.update(self.user_vars)
             check_call(command, env=env)  # noqa: S603
         else:
             os.environ.update(self.environment)
             check_call(command)  # noqa: S603
 
     def get_payload_state(self, payload_id):
-        from cirrus.lib.statedb import StateDB
-
-        statedb = StateDB(
-            table_name=self.environment["CIRRUS_STATE_DB"],
-            session=self.session,
-        )
-
         @backoff.on_predicate(backoff.expo, lambda x: x is None, max_time=60)
         def _get_payload_item_from_statedb(statedb, payload_id):
             return statedb.get_dbitem(payload_id)
 
-        state = _get_payload_item_from_statedb(statedb, payload_id)
+        state = _get_payload_item_from_statedb(self.statedb, payload_id)
 
         if not state:
             raise PayloadNotFoundError(payload_id)
         return state
 
-    def enqueue_payload(self, payload):
-        stream = None
+    def enqueue_payload(self, payload: dict[str, Any] | str | bytes | IO[bytes]):
+        # note this is a little bit weird and some of the conversions are
+        # redundant but it seems pragmatic to convert everything to an
+        # IO[bytes] type to have a consistent flow through the following logic
+        if isinstance(payload, dict):
+            payload = json.dumps(payload)
 
-        if hasattr(payload, "read"):
-            stream = _maybe_use_buffer(payload)
-            # add two to account for EOF and needing to know
-            # if greater than not just equal to max length
-            payload = payload.read(MAX_SQS_MESSAGE_LENGTH + 2)
+        if isinstance(payload, str):
+            payload = payload.encode()
 
-        if len(payload.encode("utf-8")) > MAX_SQS_MESSAGE_LENGTH:
+        if isinstance(payload, bytes):
+            payload = BytesIO(payload)
+
+        stream = _maybe_use_buffer(payload)
+        # add two to account for EOF and needing to know
+        # if greater than not just equal to max length
+        payload_bytes = payload.read(MAX_SQS_MESSAGE_LENGTH + 2)
+
+        if len(payload_bytes) > MAX_SQS_MESSAGE_LENGTH:
             import uuid
+
+            from cirrus.lib.payload_bucket import PREFIX_OVERSIZED
 
             stream.seek(0)
             bucket = self.environment["CIRRUS_PAYLOAD_BUCKET"]
-            key = f"payloads/{uuid.uuid1()}.json"
+            key = f"{PREFIX_OVERSIZED}/{uuid.uuid4()}.json"
             url = f"s3://{bucket}/{key}"
             logger.warning("Message exceeds SQS max length.")
             logger.warning("Uploading to '%s'", url)
@@ -185,7 +197,7 @@ class Deployment:
                 session=self.session,
             )
             s3.upload_fileobj(stream, bucket, key)
-            payload = json.dumps({"url": url})
+            payload_bytes = json.dumps({"url": url}).encode()
 
         sqs = get_client(
             "sqs",
@@ -193,24 +205,28 @@ class Deployment:
         )
         return sqs.send_message(
             QueueUrl=self.environment["CIRRUS_PROCESS_QUEUE_URL"],
-            MessageBody=payload,
+            MessageBody=payload_bytes.decode(),
         )
 
-    def get_payload_by_id(self, payload_id, output_fileobj):
-        from cirrus.lib.statedb import StateDB
-
-        # TODO: error handling
-        bucket, key = StateDB.payload_id_to_bucket_key(
-            payload_id,
-            payload_bucket=self.environment["CIRRUS_PAYLOAD_BUCKET"],
-        )
-        logger.debug("bucket: '%s', key: '%s'", bucket, key)
-
+    def get_payload_by_id(
+        self,
+        payload_id: str,
+        output_fileobj,
+        direction: Literal["input", "output"],
+    ):
         s3 = get_client(
             "s3",
             session=self.session,
         )
 
+        payload_url = self.statedb.get_item(payload_id)[f"{direction}_payload_url"]
+
+        if not payload_url:
+            raise NoPayloadUrlError(payload_id, direction)
+
+        bucket, key = PayloadBucket.parse_url(payload_url)
+
+        logger.debug("bucket: '%s', key: '%s'", bucket, key)
         return s3.download_fileobj(bucket, key, output_fileobj)
 
     def get_execution_arn(
@@ -305,7 +321,7 @@ class Deployment:
         input.validate()
         wf_id = input["id"]
         logger.info("Submitting %s to %s", wf_id, self.name)
-        resp = self.enqueue_payload(json.dumps(input))
+        resp = self.enqueue_payload(input)
         logger.debug(resp)
 
         state = "PROCESSING"
@@ -316,11 +332,8 @@ class Deployment:
             state = resp["state_updated"].split("_")[0]
             logger.debug({"state": state})
 
-        execution_arn = self.get_execution_arn(payload_id=wf_id)
-        execution = self.get_execution(execution_arn)
-
-        if state == "COMPLETED":
-            return 0, CirrusPayload.from_event(json.loads(execution["output"]))
+        if state == "SUCCEEDED":
+            return 0, self.fetch_payload(wf_id, "output") or {}
 
         if state == "PROCESSING":
             return 11, {"last_error": "Unkonwn: cirrus-mgmt polling timeout exceeded"}
@@ -332,7 +345,6 @@ class Deployment:
         payload: str,
         additional_vars: dict[str, str] | None = None,
         silence_templating_errors: bool = False,
-        include_user_vars: bool = True,
     ):
         from .utils.templating import template_payload
 
@@ -345,34 +357,30 @@ class Deployment:
             **(additional_vars or {}),
         )
 
-    def yield_payloads(
+    def yield_input_payloads(
         self,
         collections_workflow: str,
         limit: int | None,
         query_args: dict[str, Any],
         rerun: bool,
     ) -> Iterator[dict]:
-        statedb = StateDB(table_name=self.environment["CIRRUS_STATE_DB"])
-
-        for item in statedb.get_items(
+        for item in self.statedb.get_items(
             collections_workflow=collections_workflow,
             limit=limit,
             **query_args,
         ):
-            payload = self.fetch_payload(item["payload_id"], rerun)
+            payload = self.fetch_payload(item["payload_id"], "input")
             if payload:
-                yield payload
-
-    def fetch_payload(self, payload_id: str, rerun: bool | None = None):
-        with BytesIO() as b:
-            try:
-                self.get_payload_by_id(payload_id, b)
-                b.seek(0)
-                payload = json.load(b)
                 if rerun:
                     payload["process"][0]["replace"] = True
-                return payload
+                yield payload
 
+    def fetch_payload(self, payload_id: str, direction: Literal["input", "output"]):
+        with BytesIO() as b:
+            try:
+                self.get_payload_by_id(payload_id, b, direction)
+                b.seek(0)
+                return json.load(b)
             except ClientError as e:
                 if e.response["Error"]["Code"] == "404":
                     logger.error(
@@ -394,15 +402,11 @@ class Deployment:
         limit: int = 10000,
     ) -> dict[str, Any]:
         "Get item counts by state for a collections/workflow from DynamoDB"
-        statedb = StateDB(
-            table_name=self.environment["CIRRUS_STATE_DB"],
-            session=self.session,
-        )
         collections_workflow = f"{collections}_{workflow_name}"
         logger.debug("Getting summary for %s", collections_workflow)
         counts = {}
         for s in StateEnum:
-            counts[s.value] = statedb.get_counts(
+            counts[s.value] = self.statedb.get_counts(
                 collections_workflow,
                 limit=limit,
                 state=s,
@@ -446,13 +450,9 @@ class Deployment:
         sort_index: str = "updated",
     ) -> dict[str, Any]:
         "Get items for a collections/workflow from DynamoDB"
-        statedb = StateDB(
-            table_name=self.environment["CIRRUS_STATE_DB"],
-            session=self.session,
-        )
         collections_workflow = f"{collections}_{workflow_name}"
         logger.debug("Getting items for %s", collections_workflow)
-        items_page = statedb.get_items_page(
+        items_page = self.statedb.get_items_page(
             collections_workflow=collections_workflow,
             limit=limit,
             nextkey=nextkey,
@@ -470,12 +470,8 @@ class Deployment:
         itemids: str,
     ) -> dict[str, Any]:
         "Get individual item for a collections/workflow from DynamoDB"
-        statedb = StateDB(
-            table_name=self.environment["CIRRUS_STATE_DB"],
-            session=self.session,
-        )
         payload_id = f"{collections}/workflow-{workflow_name}/{itemids}"
-        item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))
+        item = self.statedb.dbitem_to_item(self.statedb.get_dbitem(payload_id))
         return {"item": to_current(item)}
 
     def get_lambda_logs(

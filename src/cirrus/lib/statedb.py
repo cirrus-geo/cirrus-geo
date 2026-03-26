@@ -10,25 +10,19 @@ import boto3
 
 from boto3.dynamodb.conditions import Attr, Key
 
+from cirrus.exceptions import ExecutionNotFoundError, PayloadNotFoundError
+
 from .enums import StateEnum
+from .payload_bucket import PayloadBucket
 from .utils import execution_url, get_resource
 
-# logging
 logger = logging.getLogger(__name__)
-
-
-def get_payload_bucket():
-    return os.getenv("CIRRUS_PAYLOAD_BUCKET")
-
-
-def get_state_db():
-    return os.getenv("CIRRUS_STATE_DB")
 
 
 def to_current(item: dict[str, Any]) -> dict[str, Any]:
     """Compatiblity function for cirrus-dashboard"""
     item["catid"] = item["payload_id"]
-    item["catalog"] = item["payload"]
+    item["catalog"] = item["input_payload_url"]
     return item
 
 
@@ -37,7 +31,7 @@ class ValidStateChange:
     wrapper.
     """
 
-    def __init__(self, f, *largs, **lkwargs):
+    def __init__(self, f, *largs, **lkwargs) -> None:
         def successful_state_change(fn):
             @functools.wraps(fn)
             def wrapper(obj, payload_id, *args, **kwargs):
@@ -53,9 +47,9 @@ class ValidStateChange:
             return wrapper
 
         self.f = successful_state_change(f)
-        functools.update_wrapper(self, f)
+        functools.update_wrapper(successful_state_change, f)
 
-    def __get__(self, obj, cls=None):
+    def __get__(self, obj, cls=None) -> MethodType:
         return MethodType(self.f, obj)
 
 
@@ -71,7 +65,7 @@ def check_response_code(
     response: dict,
     msg_prefix: str = "statedb updated",
     extra: dict | None = None,
-):
+) -> None:
     """Check dynamodb response code, log appropriately, and raise RuntimeError if not
     successful
 
@@ -98,6 +92,7 @@ class StateDB:
         self,
         table_name: str | None = None,
         session: boto3.Session | None = None,
+        payload_bucket: PayloadBucket | None = None,
     ):
         """Initialize a StateDB instance using the Cirrus State DB table
 
@@ -105,7 +100,7 @@ class StateDB:
             table_name (str, optional): The Cirrus StateDB Table name.
                 Defaults to os.getenv('CIRRUS_STATE_DB', None).
         """
-        table_name = table_name if table_name else get_state_db()
+        table_name = table_name if table_name else os.getenv("CIRRUS_STATE_DB")
 
         if not table_name:
             raise ValueError("env var CIRRUS_STATE_DB must be defined")
@@ -114,6 +109,7 @@ class StateDB:
         self.db = get_resource("dynamodb", session)
         self.table_name = table_name
         self.table = self.db.Table(table_name)
+        self.payload_bucket = payload_bucket if payload_bucket else PayloadBucket()
 
     def delete_item(self, payload_id: str):
         key = self.payload_id_to_key(payload_id)
@@ -121,12 +117,12 @@ class StateDB:
         logger.debug("Removed item", extra=key)
         return response
 
-    def delete(self):
+    def delete(self) -> None:
         # delete table (used for testing)
         self.table.delete()
         self.table.wait_until_not_exists()
 
-    def get_dbitem(self, payload_id: str) -> dict:
+    def get_dbitem(self, payload_id: str) -> dict[str, Any]:
         """Get a DynamoDB item
 
         Args:
@@ -141,11 +137,15 @@ class StateDB:
         key = self.payload_id_to_key(payload_id)
         try:
             response = self.table.get_item(Key=key)
-            return response.get("Item", None)
         except Exception as e:
             msg = "Error fetching item"
             logger.exception(msg)
             raise Exception(msg) from e
+
+        try:
+            return response["Item"]
+        except KeyError:
+            raise PayloadNotFoundError(payload_id) from None
 
     def get_dbitems(self, payload_ids: list[str]) -> list[dict]:
         """Get multiple DynamoDB Items
@@ -211,6 +211,23 @@ class StateDB:
             counts = f"{limit}+"
 
         return counts
+
+    def get_item(
+        self: Self,
+        payload_id: str,
+    ) -> dict[str, Any]:
+        """Get a DynamoDB item
+
+        Args:
+            payload_id (str): Payload ID
+
+        Raises:
+            Exception: Error getting item
+
+        Returns:
+            Dict: Item
+        """
+        return self.dbitem_to_item(self.get_dbitem(payload_id))
 
     def get_items_page(
         self: Self,
@@ -299,7 +316,7 @@ class StateDB:
         Args:
             payload_id (str): The Payload ID
         Returns:
-            str: Current state: PROCESSING, COMPLETED, FAILED, INVALID, ABORTED
+            str: Current state: PROCESSING, SUCCEEDED, FAILED, INVALID, ABORTED
         """
         response = self.table.get_item(Key=self.payload_id_to_key(payload_id))
         if "Item" in response:
@@ -349,7 +366,9 @@ class StateDB:
             "SET "
             "created = if_not_exists(created, :created), "
             "state_updated=:state_updated, updated=:updated, "
-            "executions = list_append(if_not_exists(executions, :empty_list), :exes)"
+            "claimed_at=:updated, "
+            "executions = list_append(if_not_exists(executions, :empty_list), :exes) "
+            "REMOVE last_error, outputs"
         )
         return self.table.update_item(
             Key=key,
@@ -439,13 +458,13 @@ class StateDB:
         )
 
     @ValidStateChange
-    def set_completed(
+    def set_succeeded(
         self,
         payload_id: str,
         outputs: list[str] | None = None,
         isotimestamp: str | None = None,
     ) -> dict:
-        """Set this item as COMPLETED
+        """Set this item as SUCCEEDED
 
         Args:
             payload_id (str): The Cirrus Payload
@@ -468,7 +487,7 @@ class StateDB:
         )
         expr_attrs: dict[str, Any] = {
             ":created": now,
-            ":state_updated": f"{StateEnum.COMPLETED}_{now}",
+            ":state_updated": f"{StateEnum.SUCCEEDED}_{now}",
             ":updated": now,
         }
 
@@ -611,7 +630,7 @@ class StateDB:
         Args:
             collections_workflow (str): The complete has to query
             state (Optional[str], optional): State of Items to get. Defaults to None.
-                Valid values: PROCESSING, COMPLETED, FAILED, INVALID, ABORTED.
+                Valid values: PROCESSING, SUCCEEDED, FAILED, INVALID, ABORTED.
             since (Optional[timedelta], optional): Get Items since this amount of time
                 in the past. Defaults to None.
             select (str, optional): DynamoDB Select statement (ALL_ATTRIBUTES, COUNT).
@@ -678,19 +697,45 @@ class StateDB:
         logger.debug(kwargs)
         return self.table.query(**kwargs)
 
-    @classmethod
-    def dbitem_to_item(cls, dbitem: dict) -> dict:
+    @staticmethod
+    def execution_id_from_arn(execution_arn: str) -> str:
+        return execution_arn.rpartition(":")[2]
+
+    def dbitem_to_item(self, dbitem: dict) -> dict:
         state, _ = dbitem["state_updated"].split("_")
         collections, workflow = dbitem["collections_workflow"].rsplit("_", maxsplit=1)
+        executions = dbitem.get("executions", [])
+        execution_id = (
+            self.execution_id_from_arn(
+                executions[-1],
+            )
+            if executions
+            else None
+        )
         item = {
-            "payload_id": cls.key_to_payload_id(dbitem),
+            "payload_id": self.key_to_payload_id(dbitem),
             "collections": collections,
             "workflow": workflow,
             "items": dbitem["itemids"],
             "state": state,
             "created": dbitem["created"],
             "updated": dbitem["updated"],
-            "payload": cls.payload_id_to_url(cls.key_to_payload_id(dbitem)),
+            "input_payload_url": (
+                self.payload_bucket.get_input_payload_url(
+                    self.key_to_payload_id(dbitem),
+                    execution_id=execution_id,
+                )
+                if execution_id
+                else None
+            ),
+            "output_payload_url": (
+                self.payload_bucket.get_output_payload_url(
+                    self.key_to_payload_id(dbitem),
+                    execution_id=execution_id,
+                )
+                if execution_id and state == StateEnum.SUCCEEDED
+                else None
+            ),
         }
         if "executions" in dbitem:
             item["executions"] = [execution_url(e) for e in dbitem["executions"]]
@@ -698,6 +743,8 @@ class StateDB:
             item["outputs"] = dbitem["outputs"]
         if "last_error" in dbitem:
             item["last_error"] = dbitem["last_error"]
+        if "claimed_at" in dbitem:
+            item["claimed_at"] = dbitem["claimed_at"]
         return item
 
     @staticmethod
@@ -730,23 +777,35 @@ class StateDB:
         parts = key["collections_workflow"].rsplit("_", maxsplit=1)
         return f"{parts[0]}/workflow-{parts[1]}/{key['itemids']}"
 
-    @staticmethod
-    def payload_id_to_bucket_key(payload_id, payload_bucket=None):
-        if not payload_bucket:
-            payload_bucket = get_payload_bucket()
-        return (payload_bucket, f"{payload_id}/input.json")
+    def payload_id_most_recent_execution_arn(
+        self,
+        payload_id: str,
+    ) -> str:
+        dbitem = self.get_dbitem(payload_id)
 
-    @classmethod
-    def payload_id_to_url(cls, payload_id, payload_bucket=None):
-        bucket, key = cls.payload_id_to_bucket_key(
-            payload_id,
-            payload_bucket=payload_bucket,
+        if "executions" not in dbitem or not dbitem["executions"]:
+            raise ExecutionNotFoundError(payload_id) from None
+
+        return dbitem["executions"][-1]
+
+    def payload_id_to_input_payload_url(
+        self,
+        payload_id: str,
+    ) -> str:
+        return self.payload_bucket.get_input_payload_url(
+            payload_id=payload_id,
+            execution_id=self.execution_id_from_arn(
+                self.payload_id_most_recent_execution_arn(payload_id),
+            ),
         )
-        return f"s3://{bucket}/{key}"
 
-    @classmethod
-    def payload_key_to_url(cls, key, payload_bucket=None):
-        return cls.payload_id_to_url(
-            cls.key_to_payload_id(key),
-            payload_bucket=payload_bucket,
+    def payload_id_to_output_payload_url(
+        self,
+        payload_id: str,
+    ) -> str:
+        return self.payload_bucket.get_output_payload_url(
+            payload_id=payload_id,
+            execution_id=self.execution_id_from_arn(
+                self.payload_id_most_recent_execution_arn(payload_id),
+            ),
         )

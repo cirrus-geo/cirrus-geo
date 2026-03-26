@@ -1,12 +1,17 @@
 """Tests for Step Functions-related Deployment methods"""
 
+import json
 import time
 
 import pytest
 
 from botocore.exceptions import ClientError
 
-from cirrus.management.deployment import Deployment, NoExecutionsError
+from cirrus.management.deployment import (
+    MAX_SQS_MESSAGE_LENGTH,
+    Deployment,
+    NoExecutionsError,
+)
 from tests.management.conftest import mock_parameters
 
 # Test fixtures
@@ -149,7 +154,7 @@ def test_get_workflow_summary(deployment, create_records, statedb):
 
     expected_states = [
         "PROCESSING",
-        "COMPLETED",
+        "SUCCEEDED",
         "FAILED",
         "INVALID",
         "ABORTED",
@@ -157,7 +162,7 @@ def test_get_workflow_summary(deployment, create_records, statedb):
     ]
     for state in expected_states:
         assert state in summary["counts"]
-        if state in ["COMPLETED", "FAILED"]:
+        if state in ["SUCCEEDED", "FAILED"]:
             assert summary["counts"][state] == 2
         else:
             assert summary["counts"][state] == 0
@@ -178,7 +183,7 @@ def test_get_workflow_summary_with_since(deployment, create_records, statedb):
 
     # With 1 day filter, we should get different counts
     # Based on fixture: completed items are recent, one failed is old
-    assert summary["counts"]["COMPLETED"] == 2
+    assert summary["counts"]["SUCCEEDED"] == 2
     assert summary["counts"]["FAILED"] == 1
 
 
@@ -236,12 +241,12 @@ def test_get_workflow_items_with_state_filter(deployment, create_records, stated
     result = deployment.get_workflow_items(
         "sar-test-panda",
         "test",
-        state="COMPLETED",
+        state="SUCCEEDED",
     )
 
     assert len(result["items"]) == 2
     for item in result["items"]:
-        assert item["state"] == "COMPLETED"
+        assert item["state"] == "SUCCEEDED"
 
 
 def test_get_workflow_items_with_since(deployment, create_records, statedb):
@@ -395,3 +400,28 @@ def test_get_batch_logs(deployment, logs):
 
     assert "logs" in result
     assert len(result["logs"]) == 1
+
+
+# Tests for enqueue_payload with oversized messages
+
+
+def test_enqueue_payload_oversized(deployment, s3, sqs):
+    """Test that oversized payloads are uploaded to S3 and SQS receives a URL reference"""
+    from cirrus.lib.payload_bucket import PREFIX_OVERSIZED, PayloadBucket
+
+    oversized_payload = {"data": "x" * (MAX_SQS_MESSAGE_LENGTH + 100)}
+
+    deployment.enqueue_payload(oversized_payload)
+
+    # Verify the SQS message body contains a URL reference, not the original payload
+    queue_url = deployment.environment["CIRRUS_PROCESS_QUEUE_URL"]
+    messages = sqs.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=1)
+    body = json.loads(messages["Messages"][0]["Body"])
+    assert "url" in body
+    assert PREFIX_OVERSIZED in body["url"]
+
+    # Verify the payload was actually uploaded at that URL
+    bucket, key = PayloadBucket.parse_url(body["url"])
+    resp = s3.get_object(Bucket=bucket, Key=key)
+    uploaded = json.loads(resp["Body"].read())
+    assert uploaded == oversized_payload

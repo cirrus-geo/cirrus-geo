@@ -1,7 +1,6 @@
 import logging
 
 from datetime import timedelta
-from functools import wraps
 
 import click
 
@@ -112,16 +111,3 @@ def rerun_option(func):
         is_flag=True,
         help="Rerun payloads",
     )(func)
-
-
-def include_user_vars(func):
-    @click.option(
-        "--include-user-vars/--exclude-user-vars",
-        default=True,
-        help="Whether or not to load deployment's user vars into environment",
-    )
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    return wrapper

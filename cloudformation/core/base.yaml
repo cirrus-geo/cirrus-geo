@@ -27,6 +27,11 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 10
+            Prefix: cirrus/tmp/
+            Status: Enabled
 
   # DynamoDB State Table
   StateTable:

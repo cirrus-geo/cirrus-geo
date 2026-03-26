@@ -8,6 +8,7 @@ import pytest
 
 from botocore.exceptions import ClientError
 
+from cirrus.exceptions import PayloadNotFoundError
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.statedb import StateDB
 
@@ -53,16 +54,49 @@ def test_key_to_payload_id():
     assert payload_id == test_item["id"]
 
 
-def test_payload_key_to_url():
-    url = StateDB.payload_key_to_url(TESTKEY)
-    assert f"{test_item['id']}/input.json" in url
-
-
-def test_dbitem_to_item():
-    item = StateDB.dbitem_to_item(test_dbitem)
+def test_dbitem_to_item_no_executions(statedb: StateDB) -> None:
+    item = statedb.dbitem_to_item(test_dbitem)
     assert item["payload_id"] == test_item["id"]
     assert item["workflow"] == "wf1"
     assert item["state"] == "QUEUED"
+    assert item["input_payload_url"] is None
+    assert item["output_payload_url"] is None
+
+
+def test_dbitem_to_item_with_executions(statedb: StateDB) -> None:
+    dbitem = {
+        **test_dbitem,
+        "executions": ["arn:aws:states:us-east-1:123456789012:execution:wf:exec-name"],
+    }
+    item = statedb.dbitem_to_item(dbitem)
+    assert item["payload_id"] == test_item["id"]
+    assert item["workflow"] == "wf1"
+    assert item["state"] == "QUEUED"
+    assert (
+        item["input_payload_url"]
+        == f"s3://test/cirrus/executions/{test_item['id']}/exec-name/input.json"
+    )
+    assert item["output_payload_url"] is None
+
+
+def test_dbitem_to_item_with_executions_completed(statedb: StateDB) -> None:
+    dbitem = {
+        **test_dbitem,
+        "executions": ["arn:aws:states:us-east-1:123456789012:execution:wf:exec-name"],
+    }
+    dbitem["state_updated"] = f"SUCCEEDED_{datetime.now(tz=UTC)}"
+    item = statedb.dbitem_to_item(dbitem)
+    assert item["payload_id"] == test_item["id"]
+    assert item["workflow"] == "wf1"
+    assert item["state"] == "SUCCEEDED"
+    assert (
+        item["input_payload_url"]
+        == f"s3://test/cirrus/executions/{test_item['id']}/exec-name/input.json"
+    )
+    assert (
+        item["output_payload_url"]
+        == f"s3://test/cirrus/executions/{test_item['id']}/exec-name/output.json"
+    )
 
 
 @pytest.fixture
@@ -79,8 +113,8 @@ def state_table(statedb: StateDB):
     statedb.set_processing(
         f"{test_item['id']}_processing",
     )
-    statedb.set_completed(
-        f"{test_item['id']}_completed",
+    statedb.set_succeeded(
+        f"{test_item['id']}_succeeded",
         outputs=["item1", "item2"],
     )
     statedb.set_failed(
@@ -175,8 +209,8 @@ def test_get_dbitem(state_table: StateDB):
 
 
 def test_get_dbitem_noitem(state_table: StateDB):
-    dbitem = state_table.get_dbitem("no-collection/workflow-none/fake-id")
-    assert dbitem is None
+    with pytest.raises(PayloadNotFoundError):
+        state_table.get_dbitem("no-collection/workflow-none/fake-id")
 
 
 def test_get_dbitems(state_table: StateDB):
@@ -307,6 +341,7 @@ def test_claim_processing(state_table: StateDB):
     state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["state_updated"].startswith("CLAIMED")
+    assert "claimed_at" in dbitem
 
 
 def test_set_processing(state_table: StateDB):
@@ -345,6 +380,19 @@ def test_second_execution(state_table: StateDB):
     dbitem = state_table.get_dbitem(test_item["id"])
     assert len(dbitem["executions"]) == 2
     assert dbitem["executions"][-1] == "arn::test2"
+    assert "last_error" not in dbitem
+    assert "claimed_at" in dbitem
+
+
+def test_claim_clears_outputs(state_table: StateDB):
+    state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
+    state_table.set_processing(test_item["id"])
+    state_table.set_outputs(test_item["id"], outputs=["output-item"])
+    state_table.set_succeeded(test_item["id"])
+    state_table.claim_processing(test_item["id"], execution_arn="arn::test2")
+    dbitem = state_table.get_dbitem(test_item["id"])
+    assert "outputs" not in dbitem
+    assert "claimed_at" in dbitem
 
 
 def test_set_outputs_(state_table: StateDB):
@@ -354,15 +402,15 @@ def test_set_outputs_(state_table: StateDB):
 
 
 def test_set_outputs_completed(state_table: StateDB):
-    state_table.set_completed(test_item["id"], outputs=["output-item"])
+    state_table.set_succeeded(test_item["id"], outputs=["output-item"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["outputs"][0] == "output-item"
 
 
-def test_set_completed(state_table: StateDB):
-    state_table.set_completed(test_item["id"])
+def test_set_succeeded(state_table: StateDB):
+    state_table.set_succeeded(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
-    assert dbitem["state_updated"].startswith("COMPLETED")
+    assert dbitem["state_updated"].startswith("SUCCEEDED")
 
 
 def test_set_failed(state_table: StateDB):
@@ -372,10 +420,10 @@ def test_set_failed(state_table: StateDB):
     assert dbitem["last_error"] == "test failure"
 
 
-def test_set_completed_with_outputs(state_table: StateDB):
-    state_table.set_completed(test_item["id"], outputs=["output-item2"])
+def test_set_succeeded_with_outputs(state_table: StateDB):
+    state_table.set_succeeded(test_item["id"], outputs=["output-item2"])
     dbitem = state_table.get_dbitem(test_item["id"])
-    assert dbitem["state_updated"].startswith("COMPLETED")
+    assert dbitem["state_updated"].startswith("SUCCEEDED")
     assert dbitem["outputs"][0] == "output-item2"
 
 
@@ -393,6 +441,8 @@ def test_set_aborted(state_table: StateDB):
 
 
 def test_delete_item(state_table: StateDB):
+    state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
+    assert state_table.get_dbitem(test_item["id"])
     state_table.delete_item(test_item["id"])
-    dbitem = state_table.get_dbitem(test_item["id"])
-    assert dbitem is None
+    with pytest.raises(PayloadNotFoundError):
+        state_table.get_dbitem(test_item["id"])
