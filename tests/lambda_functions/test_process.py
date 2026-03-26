@@ -9,6 +9,7 @@ from moto.core.models import DEFAULT_ACCOUNT_ID
 from moto.sns.models import sns_backends
 
 from cirrus.lambda_functions.process import lambda_handler as process
+from cirrus.lib.errors import UndefinedPayloadBucketError
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.payload_manager import PayloadManager, PayloadManagers
 
@@ -123,7 +124,7 @@ def test_no_payload_bucket(
     monkeypatch,
 ):
     monkeypatch.delenv("CIRRUS_PAYLOAD_BUCKET")
-    with pytest.raises(ValueError):
+    with pytest.raises(UndefinedPayloadBucketError):
         _ = process(payload, {})
 
 
@@ -969,20 +970,3 @@ def test_execution_name_idempotence(payload):
         payload["process"][0]["workflow"],
     ).rpartition(":")[2]
     assert first_execution_name == second_execution_name
-
-
-def test_missing_payload_bucket_raises(
-    payload,
-    workflow,
-    statedb,
-    workflow_event_topic,
-    monkeypatch,
-):
-    payload_manager = PayloadManager(**payload)
-    monkeypatch.delenv("CIRRUS_PAYLOAD_BUCKET")
-    wfem = WorkflowEventManager()
-    with pytest.raises(
-        ValueError,
-        match="env var CIRRUS_PAYLOAD_BUCKET must be defined",
-    ):
-        payload_manager._claim(wfem, "blah", None)

@@ -112,12 +112,19 @@ Manage commands
 
         cirrus mgmt name-dev get-batch-logs my-job-log-stream --limit 50 --next-token "pagination-token-here"
 
-- *get-payload:*
-    Get a payload from S3 using its payload ID
+- *get-input-payload:*
+    Get an input payload from S3 using its ID
 
     .. code-block:: bash
 
-        cirrus mgmt name-dev get-payload sar/workflow-test/example-01_2024-10-31-06-05-10
+        cirrus mgmt name-dev get-input-payload sar/workflow-test/example-01_2024-10-31-06-05-10
+
+- *get-output-payload:*
+    Get an output payload from S3 for an input payload ID
+
+    .. code-block:: bash
+
+        cirrus mgmt name-dev get-output-payload sar/workflow-test/example-01_2024-10-31-06-05-10
 
 - *get-state:*
     Get the stateDB record for a payload ID
@@ -168,7 +175,7 @@ Manage commands
 
         <payload.json cirrus mgmt name-dev template-payload --var EXAMPLE_VAR VALUE
 
-- *get-payloads*
+- *get-input-payloads*
     Bulk retrieve payloads as NDJSON.  Can be filtered on fields available in
     StateDB - 'collections-workflow', 'state', 'since', 'limit',
     'error-prefix'.  Output may be piped into additional commands to rerun payloads using 'rerun' flag which alters payload to allow rerunning
@@ -176,7 +183,7 @@ Manage commands
     piping with xargs to resubmit failed workflows
     .. code-block:: bash
 
-        cirrus manage name-dev get-payloads --collections-workflow "sar-test_flow" --state "FAILED" --since "10 d" --rerun | xargs -0 -L 1 echo |  cirrus manage name-dev process
+        cirrus manage name-dev get-input-payloads --collections-workflow "sar-test_flow" --state "FAILED" --since "10 d" --rerun | xargs -0 -L 1 echo |  cirrus manage name-dev process
 
 Payload commands
 ----------------

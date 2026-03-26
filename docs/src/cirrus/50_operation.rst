@@ -41,11 +41,11 @@ One of the most common actions to to re-run failed tasks. For example, it it
 common when running the task to discover code bugs that cause the task to fail,
 fix them, and then want to re-run the task.
 
-This can be done with the ``get-payloads`` CLIrrus command. This command offers
+This can be done with the ``get-input-payloads`` CLIrrus command. This command offers
 a way to retrieve payloads in bulk based on user supplied query parameters.
-The output of ``get-payloads`` can then be passed into the ``process`` command
+The output of ``get-input-payloads`` can then be passed into the ``process`` command
 to rerun the tasks that meet your conditions.  The ``--rerun`` flag can be
-passed to ``get-payloads`` to add the ``.process.replace: true`` parameter.
+passed to ``get-input-payloads`` to add the ``.process.replace: true`` parameter.
 
 Adding this parameter when queuing a payload will result in the payload being
 rerun if the payload is in the following states in the StateDB: ``COMPLETED``,
@@ -54,7 +54,7 @@ rerun if the payload is in the following states in the StateDB: ``COMPLETED``,
 
 like::
 
-  cirrus manage deployment-name get-payloads --collectons-workflow "sar-test_workflow" --state "FAILED" --rerun | xargs -0 -L 1 echo | cirrus manage deployment-name process
+  cirrus manage deployment-name get-input-payloads --collectons-workflow "sar-test_workflow" --state "FAILED" --rerun | xargs -0 -L 1 echo | cirrus manage deployment-name process
 
 Under the hood CLIrrus searches the AWS DynamoDB state database for records
 matching the query parameters.  Using these state database records, the

@@ -1,14 +1,17 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import json
 
 from dataclasses import dataclass
 from os import getenv
-from typing import Any
+from typing import Any, Self
 
 from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import CirrusLoggerAdapter
+from cirrus.lib.payload_bucket import PayloadBucket
 from cirrus.lib.payload_manager import PayloadManager
 from cirrus.lib.utils import SNSPublisher, SQSPublisher, cold_start
 
@@ -21,95 +24,23 @@ INVALID_EXCEPTIONS = (
 
 logger = CirrusLoggerAdapter("function.update-state")
 
-
-@dataclass
-class Execution:
-    arn: str
-    input: PayloadManager
-    url: str
-    output: PayloadManager | None
-    status: SfnStatus
-    error: dict | None
-
-    def update_state(self, wfem) -> None:
-        status_update_map = {
-            SfnStatus.SUCCEEDED: workflow_completed,
-            SfnStatus.FAILED: workflow_failed,
-            SfnStatus.ABORTED: workflow_aborted,
-            SfnStatus.TIMED_OUT: workflow_failed,
-        }
-
-        if self.status not in status_update_map:
-            raise ValueError(f"Status does not support updates: {self.status}")
-
-        status_update_map[self.status](self, wf_event_manager=wfem)
-
-    @classmethod
-    def from_event(cls, event: dict[str, Any]) -> "Execution":
-        try:
-            arn = event["detail"]["executionArn"]
-
-            # Check if input details are included before accessing input
-            # If the combined escaped input and escaped output sent to
-            # EventBridge exceeds 248 KiB, then the input will be excluded
-            # See: https://docs.aws.amazon.com/step-functions/latest/dg/eventbridge-integration.html#event-detail-execution-status-change-remarks
-            input_details = event["detail"].get("inputDetails", {})
-            if not input_details.get("included", False):
-                error_msg = "Input details not included in EventBridge event"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-
-            _input = PayloadManager(
-                CirrusPayload.from_event(
-                    json.loads(event["detail"]["input"]),
-                ),
-            )
-
-            eout = event["detail"].get("output", None)
-            output = (
-                PayloadManager(CirrusPayload.from_event(json.loads(eout)))
-                if eout
-                else None
-            )
-
-            status = event["detail"]["status"]
-            error = None
-
-            if status == SfnStatus.SUCCEEDED:
-                pass
-            elif status == SfnStatus.FAILED:
-                error = get_execution_error(event)
-            elif status == SfnStatus.ABORTED:
-                pass
-            elif status == SfnStatus.TIMED_OUT:
-                error = {
-                    "Error": "TimedOutError",
-                    "Cause": "The step function execution timed out.",
-                }
-            else:
-                logger.warning("Unknown status: %s", status)
-
-            return cls(
-                arn=arn,
-                input=_input,
-                url=(
-                    event["url"]
-                    if "url" in event
-                    else PayloadManager.upload_to_s3(_input.payload)
-                ),
-                output=output,
-                status=status,
-                error=error,
-            )
-        except Exception as e:
-            error_msg = f"Failed to parse event: {e} | Event: {json.dumps(event)}"
-            raise Exception(error_msg) from e
+payload_bucket = PayloadBucket()
 
 
-def workflow_completed(
+def workflow_succeeded(
     execution: Execution,
     wf_event_manager: WorkflowEventManager,
 ) -> None:
+    output_url: str | None = None
+    if not execution.output:
+        logger.warning("Succeeded execution does not have an output payload")
+    else:
+        output_url = payload_bucket.upload_output_payload(
+            execution.output.payload,
+            execution.input.payload["id"],
+            execution.id,
+        )
+
     # I think changing the state should be done before
     # trying the sns publish, but I could see it the other
     # way too. If we have issues here we might want to consider
@@ -117,6 +48,8 @@ def workflow_completed(
     wf_event_manager.succeeded(
         execution.input.payload["id"],
         execution_arn=execution.arn,
+        input_payload_url=execution.input_payload_url,
+        output_payload_url=output_url,
     )
 
     publish_topic_arn = getenv("CIRRUS_PUBLISH_TOPIC_ARN")
@@ -137,7 +70,11 @@ def workflow_aborted(
     execution: Execution,
     wf_event_manager: WorkflowEventManager,
 ) -> None:
-    wf_event_manager.aborted(execution.input.payload["id"], execution_arn=execution.arn)
+    wf_event_manager.aborted(
+        execution.input.payload["id"],
+        execution_arn=execution.arn,
+        input_payload_url=execution.input_payload_url,
+    )
 
 
 def workflow_failed(
@@ -166,18 +103,21 @@ def workflow_failed(
                 execution.input.payload["id"],
                 error,
                 execution_arn=execution.arn,
+                input_payload_url=execution.input_payload_url,
             )
         elif error_type == "TimedOutError":
             wf_event_manager.timed_out(
                 execution.input.payload["id"],
                 error,
                 execution_arn=execution.arn,
+                input_payload_url=execution.input_payload_url,
             )
         else:
             wf_event_manager.failed(
                 execution.input.payload["id"],
                 error,
                 execution_arn=execution.arn,
+                input_payload_url=execution.input_payload_url,
             )
     except Exception:
         logger.exception("Unable to update state")
@@ -192,6 +132,113 @@ def get_execution_error(event: dict) -> dict[str, str]:
         "that capture the error name and error cause."
     )
     return {"Error": error, "Cause": cause}
+
+
+STATUS_UPDATE_MAP = {
+    SfnStatus.SUCCEEDED: workflow_succeeded,
+    SfnStatus.FAILED: workflow_failed,
+    SfnStatus.ABORTED: workflow_aborted,
+    SfnStatus.TIMED_OUT: workflow_failed,
+}
+
+
+@dataclass
+class Execution:
+    arn: str
+    id: str
+    input: PayloadManager
+    output: PayloadManager | None
+    status: SfnStatus
+    error: dict | None
+
+    @property
+    def input_payload_url(self) -> str:
+        return payload_bucket.get_input_payload_url(
+            self.input.payload["id"],
+            self.id,
+        )
+
+    def update_state(self, wfem) -> None:
+        update_fn = STATUS_UPDATE_MAP.get(self.status)
+
+        if not update_fn:
+            raise ValueError(f"Status does not support updates: {self.status}")
+
+        return update_fn(self, wf_event_manager=wfem)
+
+    @classmethod
+    def from_event(cls, event: dict[str, Any]) -> Self:
+        try:
+            arn = event["detail"]["executionArn"]
+            id = event["detail"]["name"]
+            status = event["detail"]["status"]
+
+            # Check if input/output details are included before accessing.
+            # If the combined escaped input and escaped output sent to
+            # EventBridge exceeds 248 KiB, then the input will be excluded,
+            # and if the output is longer than that limit it will also be excluded.
+            # See: https://docs.aws.amazon.com/step-functions/latest/dg/eventbridge-integration.html#event-detail-execution-status-change-remarks
+            input_details: dict[str, Any] = (
+                event["detail"].get("inputDetails", {}) or {}
+            )
+            if not input_details.get("included", False):
+                # TODO: optionally fallback to SFN API
+                error_msg = "Input details not included in EventBridge event"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+            output_details: dict[str, Any] = (
+                event["detail"].get("outputDetails", {}) or {}
+            )
+            if status == SfnStatus.SUCCEEDED and not output_details.get(
+                "included",
+                False,
+            ):
+                # TODO: optionally fallback to SFN API
+                error_msg = "Output details not included in EventBridge event"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+            _input = PayloadManager(
+                CirrusPayload.from_event(
+                    json.loads(event["detail"]["input"]),
+                ),
+            )
+
+            eout = event["detail"].get("output", None)
+            output = (
+                PayloadManager(CirrusPayload.from_event(json.loads(eout)))
+                if eout
+                else None
+            )
+
+            error = None
+
+            if status == SfnStatus.SUCCEEDED:
+                pass
+            elif status == SfnStatus.FAILED:
+                error = get_execution_error(event)
+            elif status == SfnStatus.ABORTED:
+                pass
+            elif status == SfnStatus.TIMED_OUT:
+                error = {
+                    "Error": "TimedOutError",
+                    "Cause": "The step function execution timed out.",
+                }
+            else:
+                logger.warning("Unknown status: %s", status)
+
+            return cls(
+                arn=arn,
+                id=id,
+                input=_input,
+                output=output,
+                status=status,
+                error=error,
+            )
+        except Exception as e:
+            error_msg = f"Failed to parse event: {e} | Event: {json.dumps(event)}"
+            raise Exception(error_msg) from e
 
 
 @WorkflowEventManager.with_wfem(logger=logger)

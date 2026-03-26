@@ -81,7 +81,7 @@ StateDB and Cirrus CLI
 
 Selected Cirrus CLI commands interact with the StateDB.
 
-The ``get-payloads`` command takes in query parameters to retrieve input
+The ``get-input-payloads`` command takes in query parameters to retrieve input
 payloads in bulk, returned as new line delimited JSON.
 
 Input query parameters are used as filters against the StateDB to retrieve
@@ -90,7 +90,7 @@ status that occured in the past week.  These returned StateDB records are used
 to retrieve input payloads from the S3 payload bucket which are returned to the
 user.
 
-More information about the ``get-payloads`` command can be found in the CLI
+More information about the ``get-input-payloads`` command can be found in the CLI
 documentation
 
 Deleting StateDB items
