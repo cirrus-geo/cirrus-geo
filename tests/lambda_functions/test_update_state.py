@@ -173,7 +173,7 @@ def test_success(event, statedb, publish_topic, publish_enabled, monkeypatch):
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
 
     assert len(items) == 1
-    assert items[0]["state_updated"].startswith("COMPLETED")
+    assert items[0]["state_updated"].startswith("SUCCEEDED")
 
     sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
     all_sent_notifications = sns_backend.topics[publish_topic].sent_notifications
@@ -298,7 +298,7 @@ def test_multi_item_publication(
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
 
     assert len(items) == 1
-    assert items[0]["state_updated"].startswith("COMPLETED")
+    assert items[0]["state_updated"].startswith("SUCCEEDED")
 
     sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
     all_sent_notifications = sns_backend.topics[publish_topic].sent_notifications

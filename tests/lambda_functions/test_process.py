@@ -259,8 +259,8 @@ def test_rerun_completed(
     statedb,
     workflow_event_topic,
 ):
-    # create payload state record in COMPLETED state
-    items = statedb.set_completed(payload["id"])
+    # create payload state record in SUCCEEDED state
+    items = statedb.set_succeeded(payload["id"])
 
     result = process(payload, {})
     assert result == 0
@@ -277,8 +277,8 @@ def test_rerun_completed(
     # matches our input payload, and it is INVALID
     items = statedb.get_dbitems(payload_ids=[payload["id"]])
     assert len(items) == 1
-    assert items[0]["state_updated"].startswith("COMPLETED")
-    assert_sns_message_sequence(["ALREADY_COMPLETED"], workflow_event_topic)
+    assert items[0]["state_updated"].startswith("SUCCEEDED")
+    assert_sns_message_sequence(["ALREADY_SUCCEEDED"], workflow_event_topic)
 
 
 def test_rerun_completed_replace(
@@ -290,8 +290,8 @@ def test_rerun_completed_replace(
 ):
     payload["process"][0]["replace"] = True
 
-    # create payload state record in COMPLETED state
-    items = statedb.set_completed(payload["id"])
+    # create payload state record in SUCCEEDED state
+    items = statedb.set_succeeded(payload["id"])
 
     result = process(payload, {})
     assert result == 1

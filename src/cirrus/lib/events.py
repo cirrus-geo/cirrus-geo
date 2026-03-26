@@ -607,7 +607,7 @@ class WorkflowEventManager:
             StateEnum.INVALID: WFEventType.ALREADY_INVALID,
             StateEnum.PROCESSING: WFEventType.ALREADY_PROCESSING,
             StateEnum.CLAIMED: WFEventType.ALREADY_CLAIMED,
-            StateEnum.COMPLETED: WFEventType.ALREADY_COMPLETED,
+            StateEnum.SUCCEEDED: WFEventType.ALREADY_SUCCEEDED,
         }
         self.logger.info(
             "Skipping %s already in %s state%s.",
@@ -713,13 +713,13 @@ class WorkflowEventManager:
     ) -> None:
         if isotimestamp is None:
             isotimestamp = self.isotimestamp_now()
-        self.statedb.set_completed(
+        self.statedb.set_succeeded(
             payload_id,
             isotimestamp=isotimestamp,
         )
         self._write_timeseries_record(
             payload_id,
-            StateEnum.COMPLETED,
+            StateEnum.SUCCEEDED,
             isotimestamp,
             execution_arn,
         )

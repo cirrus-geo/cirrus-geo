@@ -332,7 +332,7 @@ class Deployment:
             state = resp["state_updated"].split("_")[0]
             logger.debug({"state": state})
 
-        if state == "COMPLETED":
+        if state == "SUCCEEDED":
             return 0, self.fetch_payload(wf_id, "output") or {}
 
         if state == "PROCESSING":

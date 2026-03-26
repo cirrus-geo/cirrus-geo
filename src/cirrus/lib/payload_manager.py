@@ -211,7 +211,7 @@ class PayloadManager:
                             self.payload["id"],
                             execution_name,
                         )
-                        if db_state == StateEnum.COMPLETED
+                        if db_state == StateEnum.SUCCEEDED
                         else None
                     )
                     wfem.skipping(
@@ -304,7 +304,7 @@ class PayloadManager:
                         self.payload["id"],
                         execution_name,
                     )
-                    if db_state == StateEnum.COMPLETED
+                    if db_state == StateEnum.SUCCEEDED
                     else None
                 )
                 wfem.skipping(

@@ -48,7 +48,7 @@ to rerun the tasks that meet your conditions.  The ``--rerun`` flag can be
 passed to ``get-input-payloads`` to add the ``.process.replace: true`` parameter.
 
 Adding this parameter when queuing a payload will result in the payload being
-rerun if the payload is in the following states in the StateDB: ``COMPLETED``,
+rerun if the payload is in the following states in the StateDB: ``SUCCEEDED``,
 ``FAILED``, ``ABORTED``, or ``CLAIMED``.  Checks are in place so that a state of
 ``PROCESSING`` will result in the payload being skipped.
 
@@ -73,4 +73,4 @@ The available query parameters are:
 * ``error-prefix`` (string): a string prefix in an error string.  Useful if
   multiple records failed as a result of the same bug.
 * ``state`` (string): the state of the record.  Must be one of the following:
-  ``PROCESSING``, ``COMPLETED``, ``FAILED``, ``INVALID``, ``ABORTED``
+  ``PROCESSING``, ``SUCCEEDED``, ``FAILED``, ``INVALID``, ``ABORTED``

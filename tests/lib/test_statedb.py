@@ -84,11 +84,11 @@ def test_dbitem_to_item_with_executions_completed(statedb: StateDB) -> None:
         **test_dbitem,
         "executions": ["arn:aws:states:us-east-1:123456789012:execution:wf:exec-name"],
     }
-    dbitem["state_updated"] = f"COMPLETED_{datetime.now(tz=UTC)}"
+    dbitem["state_updated"] = f"SUCCEEDED_{datetime.now(tz=UTC)}"
     item = statedb.dbitem_to_item(dbitem)
     assert item["payload_id"] == test_item["id"]
     assert item["workflow"] == "wf1"
-    assert item["state"] == "COMPLETED"
+    assert item["state"] == "SUCCEEDED"
     assert (
         item["input_payload_url"]
         == f"s3://test/cirrus/executions/{test_item['id']}/exec-name/input.json"
@@ -113,8 +113,8 @@ def state_table(statedb: StateDB):
     statedb.set_processing(
         f"{test_item['id']}_processing",
     )
-    statedb.set_completed(
-        f"{test_item['id']}_completed",
+    statedb.set_succeeded(
+        f"{test_item['id']}_succeeded",
         outputs=["item1", "item2"],
     )
     statedb.set_failed(
@@ -388,7 +388,7 @@ def test_claim_clears_outputs(state_table: StateDB):
     state_table.claim_processing(test_item["id"], execution_arn="arn::test1")
     state_table.set_processing(test_item["id"])
     state_table.set_outputs(test_item["id"], outputs=["output-item"])
-    state_table.set_completed(test_item["id"])
+    state_table.set_succeeded(test_item["id"])
     state_table.claim_processing(test_item["id"], execution_arn="arn::test2")
     dbitem = state_table.get_dbitem(test_item["id"])
     assert "outputs" not in dbitem
@@ -402,15 +402,15 @@ def test_set_outputs_(state_table: StateDB):
 
 
 def test_set_outputs_completed(state_table: StateDB):
-    state_table.set_completed(test_item["id"], outputs=["output-item"])
+    state_table.set_succeeded(test_item["id"], outputs=["output-item"])
     dbitem = state_table.get_dbitem(test_item["id"])
     assert dbitem["outputs"][0] == "output-item"
 
 
-def test_set_completed(state_table: StateDB):
-    state_table.set_completed(test_item["id"])
+def test_set_succeeded(state_table: StateDB):
+    state_table.set_succeeded(test_item["id"])
     dbitem = state_table.get_dbitem(test_item["id"])
-    assert dbitem["state_updated"].startswith("COMPLETED")
+    assert dbitem["state_updated"].startswith("SUCCEEDED")
 
 
 def test_set_failed(state_table: StateDB):
@@ -420,10 +420,10 @@ def test_set_failed(state_table: StateDB):
     assert dbitem["last_error"] == "test failure"
 
 
-def test_set_completed_with_outputs(state_table: StateDB):
-    state_table.set_completed(test_item["id"], outputs=["output-item2"])
+def test_set_succeeded_with_outputs(state_table: StateDB):
+    state_table.set_succeeded(test_item["id"], outputs=["output-item2"])
     dbitem = state_table.get_dbitem(test_item["id"])
-    assert dbitem["state_updated"].startswith("COMPLETED")
+    assert dbitem["state_updated"].startswith("SUCCEEDED")
     assert dbitem["outputs"][0] == "output-item2"
 
 

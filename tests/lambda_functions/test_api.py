@@ -61,7 +61,7 @@ def cw_metric_data_resp(**kwargs):
             },
             {
                 "Id": "all_workflows_by_event",
-                "Label": "ZFILL ALREADY_COMPLETED",
+                "Label": "ZFILL ALREADY_SUCCEEDED",
                 "StatusCode": "Complete",
                 "Timestamps": [
                     datetime.datetime(2025, 12, 27, 16, 35, tzinfo=datetime.UTC),
@@ -181,7 +181,7 @@ def test_filter_for_dashboard(metric_data):
     filtered = api.filter_for_dashboard(metric_data, "hour")
     states = [
         {"state": state, "count": 0, "unique_count": 0}
-        if state not in [StateEnum.FAILED, StateEnum.COMPLETED]
+        if state not in [StateEnum.FAILED, StateEnum.SUCCEEDED]
         else {"state": state, "count": 1, "unique_count": 1}
         for state in sorted(StateEnum._member_names_)
     ]
@@ -282,7 +282,7 @@ def test_api_stats_output(
             for state in [StateEnum.CLAIMED, StateEnum.PROCESSING]
         ]
         + [
-            {"state": "COMPLETED", "count": 17, "unique_count": 17},
+            {"state": "SUCCEEDED", "count": 17, "unique_count": 17},
             {"state": "FAILED", "count": 2, "unique_count": 2},
         ]
         + [
@@ -292,7 +292,7 @@ def test_api_stats_output(
             not in [
                 StateEnum.CLAIMED,
                 StateEnum.PROCESSING,
-                StateEnum.COMPLETED,
+                StateEnum.SUCCEEDED,
                 StateEnum.FAILED,
             ]
         ],
@@ -375,7 +375,7 @@ def test_api_collection_summary(statedb):
     statedb.set_processing(
         f"{itemid}_processing",
     )
-    statedb.set_completed(
+    statedb.set_succeeded(
         f"{itemid}_completed",
         outputs=["item1", "item2"],
     )
@@ -406,7 +406,7 @@ def test_api_collection_summary(statedb):
         "counts": {
             "PROCESSING": 1,
             "CLAIMED": 1,
-            "COMPLETED": 1,
+            "SUCCEEDED": 1,
             "FAILED": 2,
             "INVALID": 1,
             "ABORTED": 1,

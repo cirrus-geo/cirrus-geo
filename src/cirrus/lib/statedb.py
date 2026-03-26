@@ -316,7 +316,7 @@ class StateDB:
         Args:
             payload_id (str): The Payload ID
         Returns:
-            str: Current state: PROCESSING, COMPLETED, FAILED, INVALID, ABORTED
+            str: Current state: PROCESSING, SUCCEEDED, FAILED, INVALID, ABORTED
         """
         response = self.table.get_item(Key=self.payload_id_to_key(payload_id))
         if "Item" in response:
@@ -458,13 +458,13 @@ class StateDB:
         )
 
     @ValidStateChange
-    def set_completed(
+    def set_succeeded(
         self,
         payload_id: str,
         outputs: list[str] | None = None,
         isotimestamp: str | None = None,
     ) -> dict:
-        """Set this item as COMPLETED
+        """Set this item as SUCCEEDED
 
         Args:
             payload_id (str): The Cirrus Payload
@@ -487,7 +487,7 @@ class StateDB:
         )
         expr_attrs: dict[str, Any] = {
             ":created": now,
-            ":state_updated": f"{StateEnum.COMPLETED}_{now}",
+            ":state_updated": f"{StateEnum.SUCCEEDED}_{now}",
             ":updated": now,
         }
 
@@ -630,7 +630,7 @@ class StateDB:
         Args:
             collections_workflow (str): The complete has to query
             state (Optional[str], optional): State of Items to get. Defaults to None.
-                Valid values: PROCESSING, COMPLETED, FAILED, INVALID, ABORTED.
+                Valid values: PROCESSING, SUCCEEDED, FAILED, INVALID, ABORTED.
             since (Optional[timedelta], optional): Get Items since this amount of time
                 in the past. Defaults to None.
             select (str, optional): DynamoDB Select statement (ALL_ATTRIBUTES, COUNT).
@@ -733,7 +733,7 @@ class StateDB:
                     self.key_to_payload_id(dbitem),
                     execution_id=execution_id,
                 )
-                if execution_id and state == StateEnum.COMPLETED
+                if execution_id and state == StateEnum.SUCCEEDED
                 else None
             ),
         }

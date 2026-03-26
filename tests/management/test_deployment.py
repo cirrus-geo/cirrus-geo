@@ -154,7 +154,7 @@ def test_get_workflow_summary(deployment, create_records, statedb):
 
     expected_states = [
         "PROCESSING",
-        "COMPLETED",
+        "SUCCEEDED",
         "FAILED",
         "INVALID",
         "ABORTED",
@@ -162,7 +162,7 @@ def test_get_workflow_summary(deployment, create_records, statedb):
     ]
     for state in expected_states:
         assert state in summary["counts"]
-        if state in ["COMPLETED", "FAILED"]:
+        if state in ["SUCCEEDED", "FAILED"]:
             assert summary["counts"][state] == 2
         else:
             assert summary["counts"][state] == 0
@@ -183,7 +183,7 @@ def test_get_workflow_summary_with_since(deployment, create_records, statedb):
 
     # With 1 day filter, we should get different counts
     # Based on fixture: completed items are recent, one failed is old
-    assert summary["counts"]["COMPLETED"] == 2
+    assert summary["counts"]["SUCCEEDED"] == 2
     assert summary["counts"]["FAILED"] == 1
 
 
@@ -241,12 +241,12 @@ def test_get_workflow_items_with_state_filter(deployment, create_records, stated
     result = deployment.get_workflow_items(
         "sar-test-panda",
         "test",
-        state="COMPLETED",
+        state="SUCCEEDED",
     )
 
     assert len(result["items"]) == 2
     for item in result["items"]:
-        assert item["state"] == "COMPLETED"
+        assert item["state"] == "SUCCEEDED"
 
 
 def test_get_workflow_items_with_since(deployment, create_records, statedb):

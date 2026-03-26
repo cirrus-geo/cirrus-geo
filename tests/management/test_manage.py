@@ -221,14 +221,14 @@ def assert_get_payloads(
     [
         pytest.param(
             "completed",
-            "--state 'COMPLETED'",
+            "--state 'SUCCEEDED'",
             None,
-            id="state=COMPLETED flag",
+            id="state=SUCCEEDED flag",
         ),
         pytest.param("failed", "--state 'FAILED'", None, id="state=FAILED flag"),
         pytest.param(
             "completed",
-            "--since '10d' --state 'COMPLETED'",
+            "--since '10d' --state 'SUCCEEDED'",
             None,
             id="since flag",
         ),
@@ -238,7 +238,7 @@ def assert_get_payloads(
             None,
             id="error prefix flag",
         ),
-        pytest.param("completed", "--state 'COMPLETED' --limit 1", 1, id="limit flag"),
+        pytest.param("completed", "--state 'SUCCEEDED' --limit 1", 1, id="limit flag"),
     ],
 )
 def test_get_input_payloads(

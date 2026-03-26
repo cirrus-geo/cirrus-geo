@@ -193,7 +193,7 @@ def create_records(
     # claim_processing to set execution arn needed in tests
     for index, payload_id in enumerate(payload_ids["completed"]):
         statedb.claim_processing(payload_id, st_func_execution_arn)
-        statedb.set_completed(
+        statedb.set_succeeded(
             payload_id,
             [f"item-{id}_completed-{index}"],
         )
