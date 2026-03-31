@@ -283,7 +283,13 @@ def lambda_handler(event, _context):
     # get path parameters
     stage = event.get("requestContext", {}).get("stage", "")
 
-    parts = [p for p in event.get("path", "").split("/") if p != ""]
+    path_value = event.get("path") or event.get("rawPath", "")
+
+    base_path = os.getenv("CIRRUS_API_GATEWAY_BASE_PATH", "")
+    if base_path:
+        path_value = path_value.removeprefix(f"/{base_path}")
+
+    parts = [p for p in path_value.split("/") if p != ""]
     if len(parts) > 0 and parts[0] == stage:
         parts = parts[1:]
     payload_id = "/".join(parts)
