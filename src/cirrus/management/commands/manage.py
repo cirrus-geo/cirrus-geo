@@ -456,3 +456,29 @@ def get_input_payloads(
         rerun,
     ):
         click.echo(json.dumps(payload, default=str))
+
+
+@manage.command("query")
+@query_filters
+@pass_deployment
+def query(
+    deployment: Deployment,
+    collections_workflow: str,
+    state: str | None,
+    since: timedelta | None,
+    error_prefix: str | None,
+    limit: int | None,
+):
+    """
+    Retrieve a filtered set of payloads from S3 via querying the state DB for
+    matching payload IDs
+    Rerun flag alters payloads to enable rerunning payload
+    """
+
+    # send to stdout as NDJSON for piping
+    for record in deployment.query(
+        collections_workflow,
+        limit,
+        {"state": state, "since": since, "error_begins_with": error_prefix},
+    ):
+        click.echo(json.dumps(record, default=str))

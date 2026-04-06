@@ -358,20 +358,32 @@ class Deployment:
     def yield_input_payloads(
         self,
         collections_workflow: str,
-        limit: int | None,
-        query_args: dict[str, Any],
-        rerun: bool,
+        limit: int | None = None,
+        query_args: dict[str, Any] | None = None,
+        rerun: bool = False,
     ) -> Iterator[dict]:
-        for item in self.statedb.get_items(
+        for item in self.query(
             collections_workflow=collections_workflow,
             limit=limit,
-            **query_args,
+            query_args=query_args,
         ):
             payload = self.fetch_payload(item["payload_id"], "input")
             if payload:
                 if rerun:
                     payload["process"][0]["replace"] = True
                 yield payload
+
+    def query(
+        self,
+        collections_workflow: str,
+        limit: int | None = None,
+        query_args: dict[str, Any] | None = None,
+    ) -> Iterator[dict[str, Any]]:
+        yield from self.statedb.get_items(
+            collections_workflow=collections_workflow,
+            limit=limit,
+            **(query_args if query_args is not None else {}),
+        )
 
     def fetch_payload(self, payload_id: str, direction: Literal["input", "output"]):
         with BytesIO() as b:
