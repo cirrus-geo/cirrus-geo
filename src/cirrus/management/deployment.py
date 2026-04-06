@@ -153,15 +153,11 @@ class Deployment:
             check_call(command)  # noqa: S603
 
     def get_payload_state(self, payload_id):
-        @backoff.on_predicate(backoff.expo, lambda x: x is None, max_time=60)
+        @backoff.on_exception(backoff.expo, PayloadNotFoundError, max_time=60)
         def _get_payload_item_from_statedb(statedb, payload_id):
             return statedb.get_dbitem(payload_id)
 
-        state = _get_payload_item_from_statedb(self.statedb, payload_id)
-
-        if not state:
-            raise PayloadNotFoundError(payload_id)
-        return state
+        return _get_payload_item_from_statedb(self.statedb, payload_id)
 
     def enqueue_payload(self, payload: dict[str, Any] | str | bytes | IO[bytes]):
         # note this is a little bit weird and some of the conversions are
