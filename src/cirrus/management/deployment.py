@@ -235,7 +235,9 @@ class Deployment:
             return arn
         if payload_id is None:
             raise ValueError("Either arn or payload_id must be provided")
-        execs = self.get_payload_state(payload_id).get("executions", [])
+        execs = self.statedb.get_dbitem(
+            payload_id,
+        ).get("executions", [])
         try:
             return execs[-1]
         except IndexError as e:
