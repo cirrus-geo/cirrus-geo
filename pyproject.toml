@@ -44,7 +44,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "pytest-mock",
-    "moto>=5",
+    "moto[stepfunctions]>=5",
     "mypy",
     "pip-tools",
     "pre-commit",

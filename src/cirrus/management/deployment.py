@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
@@ -30,6 +31,7 @@ from cirrus.management.exceptions import (
     NoPayloadUrlError,
     StatsUnavailableError,
 )
+from cirrus.management.migration import Migrator
 from cirrus.management.task_logs import get_batch_logs, get_lambda_logs
 
 logger = logging.getLogger(__name__)
@@ -519,3 +521,19 @@ class Deployment:
             limit,
             next_token,
         )
+
+    def migrate(
+        self,
+        dry_run: bool = False,
+        since_days: int = 90,
+        output: IO = sys.stderr,
+    ) -> None:
+        "Migrate state DB and payload bucket to new schema"
+        Migrator(
+            session=self.session,
+            table_name=self.environment["CIRRUS_STATE_DB"],
+            bucket_name=self.environment["CIRRUS_PAYLOAD_BUCKET"],
+            since_days=since_days,
+            dry_run=dry_run,
+            output=output,
+        ).run()

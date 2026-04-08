@@ -6,43 +6,8 @@ import pytest
 
 from click.testing import Result
 
-from cirrus.management.deployment import (
-    Deployment,
-)
-from tests.management.conftest import mock_parameters
-
-MOCK_DEPLOYMENT_NAME = "lion"
 STACK_NAME = "cirrus-test"
 MOCK_CIRRUS_PREFIX = "ts-lion-dev-cirrus"
-
-
-@pytest.fixture
-def manage(invoke):
-    def _manage(cmd, **kwargs):
-        return invoke("manage " + cmd, **kwargs)
-
-    return _manage
-
-
-@pytest.fixture
-def deployment(manage, queue, payloads, data, statedb, workflow, sts, iam_role):
-    def _manage(deployment, cmd):
-        return manage(f"{deployment.name} {cmd}")
-
-    Deployment.__call__ = _manage
-
-    return Deployment(
-        MOCK_DEPLOYMENT_NAME,
-        mock_parameters(
-            queue,
-            payloads,
-            data,
-            statedb,
-            workflow,
-            MOCK_DEPLOYMENT_NAME,
-            iam_role,
-        ),
-    )
 
 
 def test_manage(manage):

@@ -3,6 +3,13 @@ Command Examples
 
 CLIrrus currently support a number of commands.
 
+- *version:*
+    Print the installed Cirrus CLI version.
+
+    .. code-block:: bash
+
+        cirrus version
+
 - *list-deployments:*
     Return a list of all named cirrus deployments available for interacting
     with by pulling deployments available in AWS parameter store.  Defaults to looking in the region used in AWS SSO login.  Names returned here will be the name strings needed to run commands on a specific deployment.
@@ -175,15 +182,54 @@ Manage commands
 
         <payload.json cirrus mgmt name-dev template-payload --var EXAMPLE_VAR VALUE
 
-- *get-input-payloads*
+- *get-input-payloads:*
     Bulk retrieve payloads as NDJSON.  Can be filtered on fields available in
     StateDB - 'collections-workflow', 'state', 'since', 'limit',
-    'error-prefix'.  Output may be piped into additional commands to rerun payloads using 'rerun' flag which alters payload to allow rerunning
+    'error-prefix'.  Output may be piped into additional commands to rerun
+    payloads using the 'rerun' flag which alters the payload to allow
+    rerunning.
 
-    piping with xargs to resubmit failed workflows
+    Piping with xargs to resubmit failed workflows:
+
     .. code-block:: bash
 
-        cirrus manage name-dev get-input-payloads --collections-workflow "sar-test_flow" --state "FAILED" --since "10 d" --rerun | xargs -0 -L 1 echo |  cirrus manage name-dev process
+        cirrus mgmt name-dev get-input-payloads --collections-workflow "sar-test_flow" --state "FAILED" --since "10 d" --rerun | xargs -0 -L 1 echo |  cirrus mgmt name-dev process
+
+- *query:*
+    Query the StateDB for records matching the supplied filters and return
+    the raw StateDB records as NDJSON. Accepts the same filter options as
+    ``get-input-payloads`` (``--collections-workflow``, ``--state``,
+    ``--since``, ``--limit``, ``--error-prefix``) but returns state records
+    directly instead of fetching input payloads from S3. Useful for
+    inspecting StateDB entries or piping into other tools.
+
+    .. code-block:: bash
+
+        cirrus mgmt name-dev query --collections-workflow "sar-test_workflow" --state "FAILED" --since "1 d"
+
+- *migrate:*
+    Migrate a deployment's StateDB and payload bucket from the pre-v2 schema
+    to the v2 schema.  This performs a full DynamoDB table scan and updates
+    each record in place while also copying existing input payloads (and, for
+    recent executions, fetching output payloads from Step Functions history)
+    into the new payload bucket layout.  The operation is idempotent and may
+    be re-run safely.
+
+    Supported options:
+
+    * ``--dry-run``: preview all DynamoDB and S3 changes without writing
+      anything.
+    * ``--since-days INT``: cutoff (in days) for fetching Step Functions
+      outputs for legacy ``COMPLETED`` records.  Defaults to 90, matching
+      the default Step Functions history retention.
+
+    Run this after deploying a v2 release of Cirrus to bring existing state
+    records and payload objects in line with the new schema:
+
+    .. code-block:: bash
+
+        cirrus mgmt name-dev migrate --dry-run
+        cirrus mgmt name-dev migrate
 
 Payload commands
 ----------------

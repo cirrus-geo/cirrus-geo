@@ -209,6 +209,7 @@ def execute_state_machine(stepfunctions, workflow, put_parameters):
     return stepfunctions.start_execution(
         stateMachineArn=state_machine_arn,
         name="test-execution",
+        input='{"hello":"cirrus"}',
     )
 
 

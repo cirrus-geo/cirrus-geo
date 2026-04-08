@@ -468,7 +468,7 @@ def query(
     since: timedelta | None,
     error_prefix: str | None,
     limit: int | None,
-):
+) -> None:
     """
     Retrieve a filtered set of payloads from S3 via querying the state DB for
     matching payload IDs
@@ -482,3 +482,21 @@ def query(
         {"state": state, "since": since, "error_begins_with": error_prefix},
     ):
         click.echo(json.dumps(record, default=str))
+
+
+@manage.command()
+@click.option("--dry-run", is_flag=True, help="Preview changes without writing")
+@click.option(
+    "--since-days",
+    type=int,
+    default=90,
+    help="Cutoff in days for fetching SFN outputs",
+)
+@pass_deployment
+def migrate(deployment: Deployment, dry_run: bool, since_days: int) -> None:
+    """Migrate state DB and payload bucket to cirrus v2 compatible schema"""
+    deployment.migrate(
+        dry_run=dry_run,
+        since_days=since_days,
+        output=click.get_text_stream("stderr"),
+    )

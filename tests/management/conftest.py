@@ -15,7 +15,10 @@ from cirrus.lib.payload_bucket import PayloadBucket
 from cirrus.lib.payload_manager import PayloadManager, PayloadManagers
 from cirrus.lib.statedb import StateDB
 from cirrus.management.cli import cli
+from cirrus.management.deployment import Deployment
 from cirrus.management.deployment_pointer import DEPLOYMENTS_PREFIX
+
+MOCK_DEPLOYMENT_NAME = "lion"
 
 # moto does not mock lambda GetFunctionConfiguration
 # see https://docs.getmoto.org/en/latest/docs/services/patching_other_services.html
@@ -71,6 +74,35 @@ def invoke(cli_runner):
         return cli_runner.invoke(cli, shlex.split(cmd), **kwargs)
 
     return _invoke
+
+
+@pytest.fixture
+def manage(invoke):
+    def _manage(cmd, **kwargs):
+        return invoke("manage " + cmd, **kwargs)
+
+    return _manage
+
+
+@pytest.fixture
+def deployment(manage, queue, payloads, data, statedb, workflow, sts, iam_role):
+    def _manage(deployment, cmd):
+        return manage(f"{deployment.name} {cmd}")
+
+    Deployment.__call__ = _manage
+
+    return Deployment(
+        MOCK_DEPLOYMENT_NAME,
+        mock_parameters(
+            queue,
+            payloads,
+            data,
+            statedb,
+            workflow,
+            MOCK_DEPLOYMENT_NAME,
+            iam_role,
+        ),
+    )
 
 
 @pytest.fixture
