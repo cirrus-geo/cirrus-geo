@@ -22,10 +22,36 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `None` when no item matches the supplied ID
 - [SOME BETTER NOTES ABOUT CHANGED/REMOVED StateDB methods]
 
+#### Migration notes
+
+We've added a new management CLI command `migrate`, which will migrate all
+state database records to the new format while also copying all possible input
+payloads and output payloads in to the new locations in the payloads bucket.
+This tool used a dynamodb table scan to process all records. The operation is
+idempotent, but will do a full scan every run.
+
+Input payloads will not get copied into place if they were URL reference
+payloads. Output payload will only be written for executions within the last 90
+days per the step functions history retention limit.
+
+Run this command after deploying this v2 release to ensure your state database
+and payload organization is consistent with the latest changes. Note that S3
+objects are only ever copied, not moved: clean up of items outside the new
+organization tree is left to the user.
+
+With the new payload bucket organization, only one lifecycle policy is required
+to clean up temp objects (oversized payloads between steps, batch input/output,
+etc.). Set that lifecycle policy on the `/cirrus/tmp/` key prefix.
+
 ### Added
 
+- Cirrus CLI command `version` to see current installed version of the CLI
 - Management CLI command `get-output-payload` to fetch the output payload for
   an execution via an input payload ID
+- Management CLI command `migrate` to migrate from pre-v2 statedb and payload
+  bucket organization to the v2 organization
+- Management CLI command `query` to find all statedb records matching a given
+  query
 
 ### Changed
 
@@ -36,7 +62,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Management CLI commands previously accepting user vars no longer do
   (techincally this is a bugfix, as support for user vars was removed in
-  v1.0.0, but the CLI inadvertently continue to advertise support for them)
+  v1.0.0, but the CLI inadvertently continued to advertise support for them)
 
 ## [v1.3.2] - 2026-02-03
 
