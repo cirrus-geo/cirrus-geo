@@ -328,6 +328,121 @@ def test_get_workflow_items_with_sort_index(deployment, create_records, statedb)
     assert isinstance(result["items"], list)
 
 
+def test_get_workflow_items_with_error_prefix(deployment, create_records, statedb):
+    """Test workflow items filtered by error prefix"""
+    result = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        error_begins_with="failed-error-message",
+    )
+
+    # Both failed records share the "failed-error-message" prefix.
+    assert len(result["items"]) == 2
+    for item in result["items"]:
+        assert item["state"] == "FAILED"
+        assert item["last_error"].startswith("failed-error-message")
+
+    no_match = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        error_begins_with="nonsense-prefix",
+    )
+    assert no_match["items"] == []
+
+
+def test_get_workflow_items_propagates_nextkey(deployment, create_records, statedb):
+    """Test that nextkey is propagated when there are more pages, omitted when not."""
+    # With limit=1 we should get a nextkey because there are 4 items total.
+    page1 = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        limit=1,
+    )
+    assert len(page1["items"]) == 1
+    assert "nextkey" in page1
+    assert isinstance(page1["nextkey"], str)
+
+    # With a limit larger than the number of items, no nextkey expected.
+    full = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        limit=100,
+    )
+    assert len(full["items"]) == 4
+    assert "nextkey" not in full
+
+
+# Tests for yield_workflow_items
+
+
+def test_yield_workflow_items(deployment, create_records, statedb):
+    """Smoke test of the streaming yield_workflow_items API."""
+    items = list(deployment.yield_workflow_items("sar-test-panda", "test"))
+
+    assert len(items) == 4
+    for item in items:
+        # The streaming path must NOT apply to_current(), so the
+        # dashboard-compatibility fields should be absent.
+        assert "catid" not in item
+        assert "catalog" not in item
+        assert "payload_id" in item
+
+
+def test_yield_workflow_items_with_filters(deployment, create_records, statedb):
+    """Verify state, since, and error_begins_with filters work via streaming."""
+    from datetime import timedelta
+
+    # state filter
+    succeeded = list(
+        deployment.yield_workflow_items(
+            "sar-test-panda",
+            "test",
+            state="SUCCEEDED",
+        ),
+    )
+    assert len(succeeded) == 2
+    for item in succeeded:
+        assert item["state"] == "SUCCEEDED"
+
+    # since filter
+    recent = list(
+        deployment.yield_workflow_items(
+            "sar-test-panda",
+            "test",
+            since=timedelta(days=1),
+        ),
+    )
+    assert len(recent) == 3
+
+    # error_begins_with filter
+    failed = list(
+        deployment.yield_workflow_items(
+            "sar-test-panda",
+            "test",
+            error_begins_with="failed-error-message",
+        ),
+    )
+    assert len(failed) == 2
+    for item in failed:
+        assert item["state"] == "FAILED"
+
+
+def test_yield_input_payloads(deployment, create_records, statedb):
+    """Smoke test for yield_input_payloads with the new signature and rerun flag."""
+    payloads = list(
+        deployment.yield_input_payloads(
+            "sar-test-panda",
+            "test",
+            state="SUCCEEDED",
+            rerun=True,
+        ),
+    )
+
+    assert len(payloads) == 2
+    for payload in payloads:
+        assert payload["process"][0]["replace"] is True
+
+
 # Tests for get_workflow_item
 
 

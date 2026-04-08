@@ -285,14 +285,14 @@ class StateDB:
         limit: int | None = None,
         nextkey: str | None = None,
         **kwargs,
-    ) -> dict:
+    ) -> list[dict[str, Any]]:
         """Get items from database
 
         Args:
             limit (int, optional): Maximum number of items to return. Defaults to None.
 
         Returns:
-            Dict: StateDB Items
+            list[dict[str, Any]]: StateDB Items
         """
         resp = self.get_items_page(
             collections_workflow,
@@ -703,7 +703,9 @@ class StateDB:
 
     def dbitem_to_item(self, dbitem: dict) -> dict:
         state, _ = dbitem["state_updated"].split("_")
-        collections, workflow = dbitem["collections_workflow"].rsplit("_", maxsplit=1)
+        collections, workflow = self.split_collections_workflow(
+            dbitem["collections_workflow"],
+        )
         executions = dbitem.get("executions", [])
         execution_id = (
             self.execution_id_from_arn(
@@ -748,7 +750,27 @@ class StateDB:
         return item
 
     @staticmethod
-    def payload_id_to_key(payload_id: str) -> dict:
+    def join_collections_workflow(collections: str, workflow: str) -> str:
+        """Join collections and workflow into the DynamoDB partition key form.
+
+        Workflow names must not contain underscores; see
+        ``split_collections_workflow`` for the inverse operation.
+        """
+        return f"{collections}_{workflow}"
+
+    @staticmethod
+    def split_collections_workflow(collections_workflow: str) -> tuple[str, str]:
+        """Split a ``collections_workflow`` partition key into its parts.
+
+        Splits on the final underscore: everything before is the collections
+        identifier (which may itself contain underscores), everything after is
+        the workflow name (which must not contain underscores).
+        """
+        collections, workflow = collections_workflow.rsplit("_", maxsplit=1)
+        return collections, workflow
+
+    @classmethod
+    def payload_id_to_key(cls, payload_id: str) -> dict:
         """Create DynamoDB Key from Payload ID
 
         Args:
@@ -760,12 +782,15 @@ class StateDB:
         parts1 = payload_id.split("/workflow-")
         parts2 = parts1[1].split("/", maxsplit=1)
         return {
-            "collections_workflow": parts1[0] + f"_{parts2[0]}",
+            "collections_workflow": cls.join_collections_workflow(
+                parts1[0],
+                parts2[0],
+            ),
             "itemids": "" if len(parts2) == 1 else parts2[1],
         }
 
-    @staticmethod
-    def key_to_payload_id(key: dict) -> str:
+    @classmethod
+    def key_to_payload_id(cls, key: dict) -> str:
         """Get Payload ID given a DynamoDB Key
 
         Args:
@@ -774,7 +799,7 @@ class StateDB:
         Returns:
             str: Payload ID
         """
-        parts = key["collections_workflow"].rsplit("_", maxsplit=1)
+        parts = cls.split_collections_workflow(key["collections_workflow"])
         return f"{parts[0]}/workflow-{parts[1]}/{key['itemids']}"
 
     def payload_id_most_recent_execution_arn(

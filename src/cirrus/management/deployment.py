@@ -357,35 +357,64 @@ class Deployment:
             **(additional_vars or {}),
         )
 
+    def yield_workflow_items(
+        self,
+        collections: str,
+        workflow: str,
+        *,
+        state: str | None = None,
+        since: timedelta | None = None,
+        limit: int | None = None,
+        sort_ascending: bool = False,
+        sort_index: str = "updated",
+        error_begins_with: str | None = None,
+    ) -> Iterator[dict[str, Any]]:
+        """Yield raw StateDB items for a collections/workflow partition.
+
+        Streams all matching items across pages. Does not apply ``to_current``;
+        consumers work with raw StateDB items.
+        """
+        yield from self.statedb.get_items(
+            collections_workflow=StateDB.join_collections_workflow(
+                collections,
+                workflow,
+            ),
+            limit=limit,
+            state=state,
+            since=since,
+            sort_ascending=sort_ascending,
+            sort_index=sort_index,
+            error_begins_with=error_begins_with,
+        )
+
     def yield_input_payloads(
         self,
-        collections_workflow: str,
+        collections: str,
+        workflow: str,
+        *,
+        state: str | None = None,
+        since: timedelta | None = None,
         limit: int | None = None,
-        query_args: dict[str, Any] | None = None,
+        sort_ascending: bool = False,
+        sort_index: str = "updated",
+        error_begins_with: str | None = None,
         rerun: bool = False,
     ) -> Iterator[dict]:
-        for item in self.query(
-            collections_workflow=collections_workflow,
+        for item in self.yield_workflow_items(
+            collections,
+            workflow,
+            state=state,
+            since=since,
             limit=limit,
-            query_args=query_args,
+            sort_ascending=sort_ascending,
+            sort_index=sort_index,
+            error_begins_with=error_begins_with,
         ):
             payload = self.fetch_payload(item["payload_id"], "input")
             if payload:
                 if rerun:
                     payload["process"][0]["replace"] = True
                 yield payload
-
-    def query(
-        self,
-        collections_workflow: str,
-        limit: int | None = None,
-        query_args: dict[str, Any] | None = None,
-    ) -> Iterator[dict[str, Any]]:
-        yield from self.statedb.get_items(
-            collections_workflow=collections_workflow,
-            limit=limit,
-            **(query_args if query_args is not None else {}),
-        )
 
     def fetch_payload(self, payload_id: str, direction: Literal["input", "output"]):
         with BytesIO() as b:
@@ -414,7 +443,10 @@ class Deployment:
         limit: int = 10000,
     ) -> dict[str, Any]:
         "Get item counts by state for a collections/workflow from DynamoDB"
-        collections_workflow = f"{collections}_{workflow_name}"
+        collections_workflow = StateDB.join_collections_workflow(
+            collections,
+            workflow_name,
+        )
         logger.debug("Getting summary for %s", collections_workflow)
         counts = {}
         for s in StateEnum:
@@ -453,16 +485,21 @@ class Deployment:
     def get_workflow_items(
         self,
         collections: str,
-        workflow_name: str,
+        workflow: str,
+        *,
         state: str | None = None,
         since: timedelta | None = None,
         limit: int = 10,
         nextkey: str | None = None,
         sort_ascending: bool = False,
         sort_index: str = "updated",
+        error_begins_with: str | None = None,
     ) -> dict[str, Any]:
         "Get items for a collections/workflow from DynamoDB"
-        collections_workflow = f"{collections}_{workflow_name}"
+        collections_workflow = StateDB.join_collections_workflow(
+            collections,
+            workflow,
+        )
         logger.debug("Getting items for %s", collections_workflow)
         items_page = self.statedb.get_items_page(
             collections_workflow=collections_workflow,
@@ -472,8 +509,14 @@ class Deployment:
             since=since,
             sort_ascending=sort_ascending,
             sort_index=sort_index,
+            error_begins_with=error_begins_with,
         )
-        return {"items": [to_current(item) for item in items_page["items"]]}
+        result: dict[str, Any] = {
+            "items": [to_current(item) for item in items_page["items"]],
+        }
+        if "nextkey" in items_page:
+            result["nextkey"] = items_page["nextkey"]
+        return result
 
     def get_workflow_item(
         self,

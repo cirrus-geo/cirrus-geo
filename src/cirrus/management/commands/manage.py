@@ -9,6 +9,7 @@ import click
 
 from boto3 import Session
 
+from cirrus.lib.statedb import StateDB
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.task_logs import (
     format_log_event,
@@ -447,13 +448,17 @@ def get_input_payloads(
     matching payload IDs
     Rerun flag alters payloads to enable rerunning payload
     """
+    collections, workflow = StateDB.split_collections_workflow(collections_workflow)
 
     # send to stdout as NDJSON for piping
     for payload in deployment.yield_input_payloads(
-        collections_workflow,
-        limit,
-        {"state": state, "since": since, "error_begins_with": error_prefix},
-        rerun,
+        collections,
+        workflow,
+        state=state,
+        since=since,
+        error_begins_with=error_prefix,
+        limit=limit,
+        rerun=rerun,
     ):
         click.echo(json.dumps(payload, default=str))
 
@@ -474,12 +479,16 @@ def query(
     matching payload IDs
     Rerun flag alters payloads to enable rerunning payload
     """
+    collections, workflow = StateDB.split_collections_workflow(collections_workflow)
 
     # send to stdout as NDJSON for piping
-    for record in deployment.query(
-        collections_workflow,
-        limit,
-        {"state": state, "since": since, "error_begins_with": error_prefix},
+    for record in deployment.yield_workflow_items(
+        collections,
+        workflow,
+        state=state,
+        since=since,
+        error_begins_with=error_prefix,
+        limit=limit,
     ):
         click.echo(json.dumps(record, default=str))
 

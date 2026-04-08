@@ -54,6 +54,38 @@ def test_key_to_payload_id():
     assert payload_id == test_item["id"]
 
 
+def test_join_collections_workflow():
+    assert StateDB.join_collections_workflow("col", "wf") == "col_wf"
+    assert (
+        StateDB.join_collections_workflow("my_collection_v2", "my-workflow")
+        == "my_collection_v2_my-workflow"
+    )
+
+
+def test_split_collections_workflow_simple():
+    assert StateDB.split_collections_workflow("col_wf") == ("col", "wf")
+
+
+def test_split_collections_workflow_collection_with_underscores():
+    assert StateDB.split_collections_workflow("my_collection_v2_my-workflow") == (
+        "my_collection_v2",
+        "my-workflow",
+    )
+
+
+@pytest.mark.parametrize(
+    ("collections", "workflow"),
+    [
+        ("col", "wf"),
+        ("my_collection_v2", "my-workflow"),
+        ("sentinel-2-l2a", "my-workflow"),
+    ],
+)
+def test_collections_workflow_round_trip(collections: str, workflow: str):
+    joined = StateDB.join_collections_workflow(collections, workflow)
+    assert StateDB.split_collections_workflow(joined) == (collections, workflow)
+
+
 def test_dbitem_to_item_no_executions(statedb: StateDB) -> None:
     item = statedb.dbitem_to_item(test_dbitem)
     assert item["payload_id"] == test_item["id"]
