@@ -11,7 +11,6 @@ import pytest
 
 from click.testing import CliRunner
 
-from cirrus.lib.payload_bucket import PayloadBucket
 from cirrus.lib.payload_manager import PayloadManager, PayloadManagers
 from cirrus.lib.statedb import StateDB
 from cirrus.management.cli import cli
@@ -85,7 +84,7 @@ def manage(invoke):
 
 
 @pytest.fixture
-def deployment(manage, queue, payloads, data, statedb, workflow, sts, iam_role):
+def deployment(manage, queue, payload_bucket, data, statedb, workflow, sts, iam_role):
     def _manage(deployment, cmd):
         return manage(f"{deployment.name} {cmd}")
 
@@ -95,7 +94,7 @@ def deployment(manage, queue, payloads, data, statedb, workflow, sts, iam_role):
         MOCK_DEPLOYMENT_NAME,
         mock_parameters(
             queue,
-            payloads,
+            payload_bucket.bucket_name,
             data,
             statedb,
             workflow,
@@ -144,7 +143,7 @@ def mock_parameters(
 
 
 @pytest.fixture
-def put_parameters(ssm, queue, payloads, data, statedb, workflow, iam_role):
+def put_parameters(ssm, queue, payload_bucket, data, statedb, workflow, iam_role):
     for deployment_name in ["lion", "squirrel-dev"]:
         # put pointer parameters
         deployment_key = f"/deployment/{deployment_name}/"
@@ -161,7 +160,7 @@ def put_parameters(ssm, queue, payloads, data, statedb, workflow, iam_role):
         # put mock deployment parameters
         for param_name, value in mock_parameters(
             queue,
-            payloads,
+            payload_bucket.bucket_name,
             data,
             statedb,
             workflow,
@@ -198,10 +197,9 @@ def create_records(
     s3,
     put_parameters,
     statedb,
-    payloads,
+    payload_bucket,
     st_func_execution_arn,
 ):
-    payload_bucket = PayloadBucket(bucket_name=payloads)
 
     def gen_mock_payload(payload_id: str) -> dict[str, Any]:
         return {

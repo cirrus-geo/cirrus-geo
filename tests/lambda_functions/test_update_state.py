@@ -311,7 +311,7 @@ def test_output_payload_written_on_success(event, statedb, s3):
     event["detail"]["outputDetails"] = {"included": True}
     update_state(event, {})
     bucket, key = PayloadBucket.parse_url(
-        PayloadBucket().get_output_payload_url(
+        PayloadBucket.from_env().get_output_payload_url(
             EVENT_PAYLOAD_ID,
             event["detail"]["name"],
         ),
@@ -327,7 +327,7 @@ def test_no_output_payload_when_output_is_none(event, statedb, s3):
     event["detail"]["outputDetails"] = {"included": True}
     update_state(event, {})
     bucket, key = PayloadBucket.parse_url(
-        PayloadBucket().get_output_payload_url(
+        PayloadBucket.from_env().get_output_payload_url(
             EVENT_PAYLOAD_ID,
             event["detail"]["name"],
         ),

@@ -510,7 +510,7 @@ def test_single_payload_sqs_url(
     payload,
     sqs,
     queue,
-    payloads,
+    payload_bucket,
     s3,
     stepfunctions,
     workflow,
@@ -518,11 +518,13 @@ def test_single_payload_sqs_url(
     workflow_event_topic,
 ):
     with io.BytesIO(json.dumps(payload).encode()) as fileobj:
-        s3.upload_fileobj(fileobj, payloads, "payload.json")
+        s3.upload_fileobj(fileobj, payload_bucket.bucket_name, "payload.json")
 
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
-        MessageBody=json.dumps({"url": f"s3://{payloads}/payload.json"}),
+        MessageBody=json.dumps(
+            {"url": f"s3://{payload_bucket.bucket_name}/payload.json"},
+        ),
     )
     _payload = sqs_to_event(
         sqs.receive_message(

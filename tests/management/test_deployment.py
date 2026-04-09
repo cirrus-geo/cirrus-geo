@@ -18,11 +18,11 @@ from tests.management.conftest import mock_parameters
 
 
 @pytest.fixture
-def deployment(queue, payloads, data, statedb, workflow, iam_role):
+def deployment(queue, payload_bucket, data, statedb, workflow, iam_role):
     """Create a Deployment instance with moto-mocked AWS services"""
     environment = mock_parameters(
         queue,
-        payloads,
+        payload_bucket.bucket_name,
         data,
         statedb,
         workflow,
@@ -522,7 +522,7 @@ def test_get_batch_logs(deployment, logs):
 
 def test_enqueue_payload_oversized(deployment, s3, sqs):
     """Test that oversized payloads are uploaded to S3 and SQS receives a URL reference"""
-    from cirrus.lib.payload_bucket import PREFIX_OVERSIZED, PayloadBucket
+    from cirrus.lib.payload_bucket import PayloadBucket
 
     oversized_payload = {"data": "x" * (MAX_SQS_MESSAGE_LENGTH + 100)}
 
@@ -533,7 +533,7 @@ def test_enqueue_payload_oversized(deployment, s3, sqs):
     messages = sqs.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=1)
     body = json.loads(messages["Messages"][0]["Body"])
     assert "url" in body
-    assert PREFIX_OVERSIZED in body["url"]
+    assert deployment.payload_bucket.prefix_oversized in body["url"]
 
     # Verify the payload was actually uploaded at that URL
     bucket, key = PayloadBucket.parse_url(body["url"])

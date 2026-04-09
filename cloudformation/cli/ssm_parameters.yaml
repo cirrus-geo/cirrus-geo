@@ -34,6 +34,11 @@ Parameters:
     Type: String
     Description: Cirrus log level
 
+  PayloadRootPrefix:
+    Type: String
+    Description: Root prefix for all objects in the payload bucket
+    Default: cirrus
+
 Resources:
   # Parameter to tell the CLI where to find the deployment configuration values
   DeploymentPointer:
@@ -108,6 +113,14 @@ Resources:
       Type: String
       Value: !Sub '${ResourcePrefix}-'
       Description: Prefix for Cirrus resource names
+
+  PayloadRootPrefixParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/deployment/${ResourcePrefix}/CIRRUS_PAYLOAD_ROOT_PREFIX'
+      Type: String
+      Value: !Ref PayloadRootPrefix
+      Description: Root prefix for all objects in the payload bucket
 
   LogLevelParameter:
     Type: AWS::SSM::Parameter

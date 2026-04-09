@@ -25,36 +25,42 @@ requirement.
 
 All Cirrus code that reads or writes payload objects goes through the
 ``cirrus.lib.payload_bucket.PayloadBucket`` class, which resolves the
-bucket name from ``CIRRUS_PAYLOAD_BUCKET`` at runtime. If the variable
-is not set when a payload operation is attempted,
+bucket name from ``CIRRUS_PAYLOAD_BUCKET`` at construction time. If the
+variable is not set when a ``PayloadBucket`` is created,
 ``UndefinedPayloadBucketError`` is raised.
 
+The root prefix under which all payload objects are organized can be
+customized via the optional ``CIRRUS_PAYLOAD_ROOT_PREFIX`` environment
+variable. When not set, it defaults to ``cirrus``. This allows
+deployments that share a payload bucket with other systems to use a
+distinct namespace, avoiding key collisions.
+
 Because Cirrus writes all of its objects under a single top-level
-``cirrus/`` prefix (see :ref:`payload-bucket-layout`), the payload
-bucket can also be shared with other, unrelated content without risk of
-key collisions.
+prefix (see :ref:`payload-bucket-layout`), the payload bucket can also
+be shared with other, unrelated content without risk of key collisions.
 
 .. _payload-bucket-layout:
 
 Key Organization
 ----------------
 
-All objects written by Cirrus live under the top-level ``cirrus/``
-prefix. Within that, keys are split into two distinct namespaces based
-on how long the data is expected to live:
+All objects written by Cirrus live under a configurable top-level
+prefix (default ``cirrus/``, controlled by
+``CIRRUS_PAYLOAD_ROOT_PREFIX``). Within that, keys are split into two
+distinct namespaces based on how long the data is expected to live:
 
-* ``cirrus/tmp/`` — **ephemeral** storage for transient payloads that
-  the system does not need to retain once processing has moved on.
+* ``<root_prefix>/tmp/`` — **ephemeral** storage for transient payloads
+  that the system does not need to retain once processing has moved on.
   Objects under this prefix are expected to be cleaned up by a bucket
   lifecycle rule (see :ref:`payload-bucket-lifecycle`).
-* ``cirrus/executions/`` — **persistent** storage for per-execution
-  input and output payloads that Cirrus uses to link workflow runs to
-  their payload content.
+* ``<root_prefix>/executions/`` — **persistent** storage for
+  per-execution input and output payloads that Cirrus uses to link
+  workflow runs to their payload content.
 
-The full layout is as follows::
+The full layout is as follows (using the default ``cirrus`` prefix)::
 
     s3://<payload-bucket>/
-    └── cirrus/
+    └── cirrus/                               # configurable via CIRRUS_PAYLOAD_ROOT_PREFIX
         ├── tmp/                              # ephemeral
         │   ├── oversized/
         │   │   └── <uuid>.json               # overflow for oversized payloads
@@ -69,19 +75,19 @@ The full layout is as follows::
                     ├── input.json            # payload as received
                     └── output.json           # payload after workflow completed
 
-The prefix constants are defined in ``cirrus.lib.payload_bucket`` and
-are the single source of truth for where each type of object is
-written.
+The prefix values are derived from the configured root prefix and are
+exposed as instance attributes on ``PayloadBucket``. They are the
+single source of truth for where each type of object is written.
 
 .. note::
 
    Because a Cirrus ``payload_id`` has the form
    ``<collections>/workflow-<workflow_name>/<item_ids>`` and contains
-   forward slashes, objects under ``cirrus/executions/`` and
-   ``cirrus/tmp/batch/`` fan out into multiple levels of S3 prefixes.
-   This is intentional: it allows listing all executions for a given
-   collection, workflow, or item grouping with ordinary S3 prefix
-   queries.
+   forward slashes, objects under ``<root_prefix>/executions/`` and
+   ``<root_prefix>/tmp/batch/`` fan out into multiple levels of S3
+   prefixes. This is intentional: it allows listing all executions for
+   a given collection, workflow, or item grouping with ordinary S3
+   prefix queries.
 
 Execution Payloads
 ^^^^^^^^^^^^^^^^^^
@@ -89,12 +95,12 @@ Execution Payloads
 When a workflow execution is claimed by the ``process`` lambda, the
 input payload is written to::
 
-    cirrus/executions/<payload_id>/<execution_id>/input.json
+    <root_prefix>/executions/<payload_id>/<execution_id>/input.json
 
 On successful completion, the ``update-state`` lambda writes the output
 payload to the sibling key::
 
-    cirrus/executions/<payload_id>/<execution_id>/output.json
+    <root_prefix>/executions/<payload_id>/<execution_id>/output.json
 
 The ``<execution_id>`` component is the Step Functions execution name,
 which is deterministically derived from the payload ID and the current
@@ -122,16 +128,16 @@ EventBridge event size limit, ``PayloadManager`` enforces a conservative
 
 When a payload exceeds that limit, its contents are uploaded to::
 
-    cirrus/tmp/oversized/<uuid>.json
+    <root_prefix>/tmp/oversized/<uuid>.json
 
 and replaced in-flight by a small reference object of the form
-``{"url": "s3://.../cirrus/tmp/oversized/<uuid>.json"}``. Downstream
-code in ``cirrus.lib.utils.payload_from_s3`` transparently re-hydrates
-these references when the full payload is needed again.
+``{"url": "s3://.../<root_prefix>/tmp/oversized/<uuid>.json"}``.
+Downstream code in ``cirrus.lib.utils.payload_from_s3`` transparently
+re-hydrates these references when the full payload is needed again.
 
 Because oversized payloads are only used as an overflow mechanism
-during a single execution, they live under ``cirrus/tmp/`` and are
-expected to be cleaned up by the bucket's lifecycle rule.
+during a single execution, they live under ``<root_prefix>/tmp/`` and
+are expected to be cleaned up by the bucket's lifecycle rule.
 
 Batch Payloads
 ^^^^^^^^^^^^^^
@@ -139,7 +145,7 @@ Batch Payloads
 Tasks that are dispatched to AWS Batch cannot receive their payload
 inline, so ``PayloadBucket.upload_batch_payload`` writes the payload to::
 
-    cirrus/tmp/batch/<payload_id>/<uuid>.json
+    <root_prefix>/tmp/batch/<payload_id>/<uuid>.json
 
 The Batch task is then invoked with a reference to this key. This path
 is also ephemeral and cleaned up by the lifecycle rule.
@@ -156,14 +162,14 @@ Invalid Payloads
 When a payload fails validation in a way that Cirrus wants to preserve
 for later inspection, it is uploaded to::
 
-    cirrus/tmp/invalid/<uuid>.json
+    <root_prefix>/tmp/invalid/<uuid>.json
 
 This is intended as short-lived diagnostic storage, not a permanent
-archive of invalid inputs, which is why it lives under ``cirrus/tmp/``.
-If long-term retention of invalid payloads is required for a particular
-deployment, the recommended approach is to ship them out to a separate
-bucket or archive from the handling code rather than to alter the
-lifecycle of ``cirrus/tmp/``.
+archive of invalid inputs, which is why it lives under
+``<root_prefix>/tmp/``. If long-term retention of invalid payloads is
+required for a particular deployment, the recommended approach is to
+ship them out to a separate bucket or archive from the handling code
+rather than to alter the lifecycle of ``<root_prefix>/tmp/``.
 
 .. _payload-bucket-lifecycle:
 
@@ -172,32 +178,33 @@ Lifecycle and Retention
 
 Cirrus assumes a simple retention model for the payload bucket:
 
-* Everything under ``cirrus/tmp/`` is **ephemeral** and should be
+* Everything under ``<root_prefix>/tmp/`` is **ephemeral** and should be
   removed by a bucket lifecycle rule. The reference CloudFormation in
   this repository configures a 10-day expiration on the
-  ``cirrus/tmp/`` prefix, which is a reasonable default that gives
+  ``<root_prefix>/tmp/`` prefix (derived from the configured
+  ``PayloadRootPrefix``), which is a reasonable default that gives
   oversized and batch payloads enough lifetime to survive retries,
   backfills, and manual reprocessing.
-* Everything under ``cirrus/executions/`` is **persistent** and is not
-  expired by any Cirrus-managed rule. These objects are the primary
-  mechanism for reconstructing the history of a workflow run after the
-  fact; losing them will break the ``get-input-payload`` and
+* Everything under ``<root_prefix>/executions/`` is **persistent** and
+  is not expired by any Cirrus-managed rule. These objects are the
+  primary mechanism for reconstructing the history of a workflow run
+  after the fact; losing them will break the ``get-input-payload`` and
   ``get-output-payload`` CLI commands and make post-hoc debugging
   significantly harder.
 
 Operators bringing their own payload bucket should configure a
-lifecycle rule on ``cirrus/tmp/`` that matches this expectation. A
-10-day expiration is a reasonable starting point; shortening it risks
+lifecycle rule on ``<root_prefix>/tmp/`` that matches this expectation.
+A 10-day expiration is a reasonable starting point; shortening it risks
 removing objects that are still in use by in-flight retries, and
-extending it past ``cirrus/tmp/`` into other prefixes will silently
-delete execution history.
+extending it past ``<root_prefix>/tmp/`` into other prefixes will
+silently delete execution history.
 
 Operators who need different retention semantics for execution payloads
 — for example, cost control on very high-throughput deployments — can
-add their own lifecycle rules targeting the ``cirrus/executions/``
-prefix, keeping in mind that any payload whose execution record is
-still referenced from the StateDB will become unreachable through the
-CLI once expired.
+add their own lifecycle rules targeting the
+``<root_prefix>/executions/`` prefix, keeping in mind that any payload
+whose execution record is still referenced from the StateDB will become
+unreachable through the CLI once expired.
 
 Access Patterns
 ---------------
@@ -221,7 +228,7 @@ places:
   looked up in the StateDB.
 
 No Cirrus code writes directly to the bucket without going through
-``PayloadBucket``, and the prefix constants are not intended to be
+``PayloadBucket``, and the prefix attributes are not intended to be
 re-implemented elsewhere. Downstream code that needs to locate a
 payload object by key should import the helpers from
 ``cirrus.lib.payload_bucket`` rather than constructing prefixes by

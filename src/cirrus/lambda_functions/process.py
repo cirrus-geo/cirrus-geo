@@ -16,8 +16,6 @@ utils.cold_start()
 
 logger = CirrusLoggerAdapter("function.process")
 
-payload_bucket = PayloadBucket()
-
 
 def is_sqs_message(message):
     return message.get("eventSource") == "aws:sqs"
@@ -25,6 +23,7 @@ def is_sqs_message(message):
 
 @WorkflowEventManager.with_wfem(logger=logger)
 def lambda_handler(event, context, *, wfem: WorkflowEventManager) -> int:
+    payload_bucket = PayloadBucket.from_env()
     logger.debug(json.dumps(event))
 
     payload_managers: list[PayloadManager] = []

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import os
@@ -75,14 +76,19 @@ class Deployment:
         )
         self.session = session
 
-    @property
+    @functools.cached_property
+    def payload_bucket(self) -> PayloadBucket:
+        return PayloadBucket(
+            bucket_name=self.environment["CIRRUS_PAYLOAD_BUCKET"],
+            root_prefix=self.environment.get("CIRRUS_PAYLOAD_ROOT_PREFIX"),
+        )
+
+    @functools.cached_property
     def statedb(self) -> StateDB:
         return StateDB(
             table_name=self.environment["CIRRUS_STATE_DB"],
             session=self.session,
-            payload_bucket=PayloadBucket(
-                bucket_name=self.environment["CIRRUS_PAYLOAD_BUCKET"],
-            ),
+            payload_bucket=self.payload_bucket,
         )
 
     @staticmethod
@@ -182,19 +188,17 @@ class Deployment:
         if len(payload_bytes) > MAX_SQS_MESSAGE_LENGTH:
             import uuid
 
-            from cirrus.lib.payload_bucket import PREFIX_OVERSIZED
-
             stream.seek(0)
-            bucket = self.environment["CIRRUS_PAYLOAD_BUCKET"]
-            key = f"{PREFIX_OVERSIZED}/{uuid.uuid4()}.json"
-            url = f"s3://{bucket}/{key}"
+            pb = self.payload_bucket
+            key = f"{pb.prefix_oversized}/{uuid.uuid4()}.json"
+            url = f"s3://{pb.bucket_name}/{key}"
             logger.warning("Message exceeds SQS max length.")
             logger.warning("Uploading to '%s'", url)
             s3 = get_client(
                 "s3",
                 session=self.session,
             )
-            s3.upload_fileobj(stream, bucket, key)
+            s3.upload_fileobj(stream, pb.bucket_name, key)
             payload_bytes = json.dumps({"url": url}).encode()
 
         sqs = get_client(
@@ -576,6 +580,7 @@ class Deployment:
             session=self.session,
             table_name=self.environment["CIRRUS_STATE_DB"],
             bucket_name=self.environment["CIRRUS_PAYLOAD_BUCKET"],
+            root_prefix=self.environment.get("CIRRUS_PAYLOAD_ROOT_PREFIX"),
             since_days=since_days,
             dry_run=dry_run,
             output=output,

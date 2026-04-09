@@ -45,6 +45,8 @@ etc.). Set that lifecycle policy on the `/cirrus/tmp/` key prefix.
 
 ### Added
 
+- Payload bucket root prefix is now configurable via the optional
+  `CIRRUS_PAYLOAD_ROOT_PREFIX` environment variable (defaults to `cirrus`)
 - Cirrus CLI command `version` to see current installed version of the CLI
 - Management CLI command `get-output-payload` to fetch the output payload for
   an execution via an input payload ID

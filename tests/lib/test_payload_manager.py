@@ -156,15 +156,12 @@ def test_fail_and_raise(base_payload):
         payload_manager._fail_and_raise()
 
 
-def test_get_payload_oversized(base_payload, payloads, monkeypatch) -> None:
-    # I hate the monkeypatch, but it works for now. We need a better answer to
-    # this need, but saving that for the future.
-    monkeypatch.setenv("CIRRUS_PAYLOAD_BUCKET", payloads)
+def test_get_payload_oversized(base_payload, payload_bucket) -> None:
     # Inflate the payload beyond MAX_PAYLOAD_LENGTH (120KB after double-encoding)
     base_payload["features"][0]["properties"]["padding"] = "x" * 200_000
-    pm = PayloadManager(base_payload)
+    pm = PayloadManager(base_payload, payload_bucket=payload_bucket)
     assert pm.calculate_payload_length() > MAX_PAYLOAD_LENGTH
 
     result = pm.get_payload()
     assert "url" in result
-    assert result["url"].startswith(f"s3://{payloads}/")
+    assert result["url"].startswith(f"s3://{payload_bucket.bucket_name}/")

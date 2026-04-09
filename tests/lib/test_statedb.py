@@ -1,5 +1,3 @@
-import os
-
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -11,8 +9,6 @@ from botocore.exceptions import ClientError
 from cirrus.exceptions import PayloadNotFoundError
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.statedb import StateDB
-
-os.environ["CIRRUS_PAYLOAD_BUCKET"] = "test"
 
 # fixtures
 test_dbitem: dict[str, Any] = {
@@ -96,6 +92,7 @@ def test_dbitem_to_item_no_executions(statedb: StateDB) -> None:
 
 
 def test_dbitem_to_item_with_executions(statedb: StateDB) -> None:
+    bucket = statedb.payload_bucket.bucket_name
     dbitem = {
         **test_dbitem,
         "executions": ["arn:aws:states:us-east-1:123456789012:execution:wf:exec-name"],
@@ -106,12 +103,13 @@ def test_dbitem_to_item_with_executions(statedb: StateDB) -> None:
     assert item["state"] == "QUEUED"
     assert (
         item["input_payload_url"]
-        == f"s3://test/cirrus/executions/{test_item['id']}/exec-name/input.json"
+        == f"s3://{bucket}/cirrus/executions/{test_item['id']}/exec-name/input.json"
     )
     assert item["output_payload_url"] is None
 
 
 def test_dbitem_to_item_with_executions_completed(statedb: StateDB) -> None:
+    bucket = statedb.payload_bucket.bucket_name
     dbitem = {
         **test_dbitem,
         "executions": ["arn:aws:states:us-east-1:123456789012:execution:wf:exec-name"],
@@ -123,11 +121,11 @@ def test_dbitem_to_item_with_executions_completed(statedb: StateDB) -> None:
     assert item["state"] == "SUCCEEDED"
     assert (
         item["input_payload_url"]
-        == f"s3://test/cirrus/executions/{test_item['id']}/exec-name/input.json"
+        == f"s3://{bucket}/cirrus/executions/{test_item['id']}/exec-name/input.json"
     )
     assert (
         item["output_payload_url"]
-        == f"s3://test/cirrus/executions/{test_item['id']}/exec-name/output.json"
+        == f"s3://{bucket}/cirrus/executions/{test_item['id']}/exec-name/output.json"
     )
 
 

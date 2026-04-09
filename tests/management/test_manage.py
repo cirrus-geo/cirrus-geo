@@ -38,10 +38,10 @@ def test_manage_get_execution_by_payload_id(
 
 
 @pytest.fixture
-def _management_env(_environment, payloads, workflow):
+def _management_env(_environment, payload_bucket, workflow):
     state_machine_arn = workflow["stateMachineArn"]
     os.environ["CIRRUS_BASE_WORKFLOW_ARN"] = state_machine_arn[: -len("test-workflow1")]
-    os.environ["CIRRUS_PAYLOAD_BUCKET"] = payloads
+    os.environ["CIRRUS_PAYLOAD_BUCKET"] = payload_bucket.bucket_name
 
 
 @pytest.mark.usefixtures("_management_env")

@@ -27,8 +27,6 @@ from cirrus.lib.utils import (
 
 logger = logging.getLogger(__name__)
 
-payload_bucket = PayloadBucket()
-
 
 # We need to ensure our input and output payload lengths are not more than
 # 248KB combined, otherwise the input will be truncated in EventBridge events
@@ -50,14 +48,16 @@ class PayloadManager:
         *args,
         set_id_if_missing: bool = False,
         state_item: dict | None = None,
+        payload_bucket: PayloadBucket | None = None,
         **kwargs,
     ) -> None:
         """Create a PayloadManager wrapper around a CirrusPayload.
 
-        All positional and keyword arguments (other than set_id_if_missing and
-        state_item) are forwarded directly to CirrusPayload. After construction
-        the payload is validated, a task-scoped logger is created, and (optionally)
-        an existing StateDB item is attached for downstream state handling.
+        All positional and keyword arguments (other than set_id_if_missing,
+        state_item, and payload_bucket) are forwarded directly to CirrusPayload.
+        After construction the payload is validated, a task-scoped logger is
+        created, and (optionally) an existing StateDB item is attached for
+        downstream state handling.
 
         Args:
             *args: Positional arguments passed through to CirrusPayload (typically
@@ -66,6 +66,9 @@ class PayloadManager:
                 incoming payload lacks one.
             state_item (dict | None): Existing StateDB record for this payload, if
                 already persisted.
+            payload_bucket (PayloadBucket | None): PayloadBucket instance to use
+                for S3 operations. If None, one is created from environment
+                variables.
             **kwargs: Additional keyword arguments forwarded to CirrusPayload.
 
         Raises:
@@ -81,6 +84,13 @@ class PayloadManager:
 
         self.logger = CirrusLoggerAdapter(__name__, payload=self.payload)
         self.state_item = state_item
+        self._payload_bucket = payload_bucket
+
+    @property
+    def payload_bucket(self) -> PayloadBucket:
+        if self._payload_bucket is None:
+            self._payload_bucket = PayloadBucket.from_env()
+        return self._payload_bucket
 
     def next_payloads(self):
         if len(self.payload["process"]) <= 1:
@@ -116,7 +126,7 @@ class PayloadManager:
             return dict(self.payload)
 
         try:
-            url = payload_bucket.upload_oversize_payload(self.payload)
+            url = self.payload_bucket.upload_oversize_payload(self.payload)
         except UndefinedPayloadBucketError as e:
             raise RuntimeError(
                 "No payload bucket defined and payload too large: "
@@ -207,7 +217,7 @@ class PayloadManager:
                         )
                 else:
                     output_payload_url = (
-                        payload_bucket.get_output_payload_url(
+                        self.payload_bucket.get_output_payload_url(
                             self.payload["id"],
                             execution_name,
                         )
@@ -253,7 +263,7 @@ class PayloadManager:
 
         try:
             # add input payload to s3
-            url = payload_bucket.upload_input_payload(
+            url = self.payload_bucket.upload_input_payload(
                 self.payload,
                 self.payload["id"],
                 execution_name,
@@ -300,7 +310,7 @@ class PayloadManager:
                     e.response["Item"]["state_updated"]["S"].split("_")[0],
                 )
                 output_payload_url = (
-                    payload_bucket.get_output_payload_url(
+                    self.payload_bucket.get_output_payload_url(
                         self.payload["id"],
                         execution_name,
                     )
@@ -333,9 +343,13 @@ class PayloadManagers:
         payload_managers: list[PayloadManager],
         statedb: StateDB,
         state_items: list[dict] | None = None,
+        payload_bucket: PayloadBucket | None = None,
     ) -> None:
         self.payload_managers = payload_managers
         self.statedb = statedb
+        self.payload_bucket = (
+            payload_bucket if payload_bucket is not None else PayloadBucket.from_env()
+        )
         if state_items and len(state_items) != len(self.payload_managers):
             raise ValueError(
                 "The number of state items does not match the number of payloads: "
@@ -459,7 +473,7 @@ class PayloadManagers:
                 )
                 wfem.duplicated(
                     payload_manager.payload["id"],
-                    input_payload_url=payload_bucket.get_input_payload_url(
+                    input_payload_url=self.payload_bucket.get_input_payload_url(
                         payload_manager.payload["id"],
                         execution_id,
                     ),
@@ -487,7 +501,7 @@ class PayloadManagers:
                 wfem.skipping(
                     payload_id=payload_manager.payload["id"],
                     state=state,
-                    input_payload_url=payload_bucket.get_input_payload_url(
+                    input_payload_url=self.payload_bucket.get_input_payload_url(
                         payload_manager.payload["id"],
                         execution_id,
                     ),

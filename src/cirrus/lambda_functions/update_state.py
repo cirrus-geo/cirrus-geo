@@ -24,8 +24,6 @@ INVALID_EXCEPTIONS = (
 
 logger = CirrusLoggerAdapter("function.update-state")
 
-payload_bucket = PayloadBucket()
-
 
 def workflow_succeeded(
     execution: Execution,
@@ -35,7 +33,7 @@ def workflow_succeeded(
     if not execution.output:
         logger.warning("Succeeded execution does not have an output payload")
     else:
-        output_url = payload_bucket.upload_output_payload(
+        output_url = execution.payload_bucket.upload_output_payload(
             execution.output.payload,
             execution.input.payload["id"],
             execution.id,
@@ -150,10 +148,11 @@ class Execution:
     output: PayloadManager | None
     status: SfnStatus
     error: dict | None
+    payload_bucket: PayloadBucket
 
     @property
     def input_payload_url(self) -> str:
-        return payload_bucket.get_input_payload_url(
+        return self.payload_bucket.get_input_payload_url(
             self.input.payload["id"],
             self.id,
         )
@@ -167,7 +166,7 @@ class Execution:
         return update_fn(self, wf_event_manager=wfem)
 
     @classmethod
-    def from_event(cls, event: dict[str, Any]) -> Self:
+    def from_event(cls, event: dict[str, Any], payload_bucket: PayloadBucket) -> Self:
         try:
             arn = event["detail"]["executionArn"]
             id = event["detail"]["name"]
@@ -203,11 +202,15 @@ class Execution:
                 CirrusPayload.from_event(
                     json.loads(event["detail"]["input"]),
                 ),
+                payload_bucket=payload_bucket,
             )
 
             eout = event["detail"].get("output", None)
             output = (
-                PayloadManager(CirrusPayload.from_event(json.loads(eout)))
+                PayloadManager(
+                    CirrusPayload.from_event(json.loads(eout)),
+                    payload_bucket=payload_bucket,
+                )
                 if eout
                 else None
             )
@@ -235,6 +238,7 @@ class Execution:
                 output=output,
                 status=status,
                 error=error,
+                payload_bucket=payload_bucket,
             )
         except Exception as e:
             error_msg = f"Failed to parse event: {e} | Event: {json.dumps(event)}"
@@ -249,4 +253,7 @@ def lambda_handler(
     wfem: WorkflowEventManager,
 ) -> None:
     logger.debug(event)
-    Execution.from_event(event).update_state(wfem)
+    Execution.from_event(
+        event,
+        PayloadBucket.from_env(),
+    ).update_state(wfem)

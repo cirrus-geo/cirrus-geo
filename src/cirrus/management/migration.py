@@ -152,6 +152,7 @@ class Migrator:
         session: boto3.Session,
         table_name: str,
         bucket_name: str,
+        root_prefix: str | None = None,
         since_days: int = 90,
         dry_run: bool = False,
         output: IO = sys.stderr,
@@ -160,7 +161,7 @@ class Migrator:
         self.table = dynamodb.Table(table_name)  # type: ignore
         self.s3 = get_client("s3", session=session)
         self.sfn = get_client("stepfunctions", session=session)
-        self.payload_bucket = PayloadBucket(bucket_name)
+        self.payload_bucket = PayloadBucket(bucket_name, root_prefix=root_prefix)
         self.bucket_name = bucket_name
         self.cutoff = datetime.now(UTC) - timedelta(days=since_days)
         self.dry_run = dry_run

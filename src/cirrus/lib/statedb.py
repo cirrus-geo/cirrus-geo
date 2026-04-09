@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import logging
 import os
@@ -109,7 +111,9 @@ class StateDB:
         self.db = get_resource("dynamodb", session)
         self.table_name = table_name
         self.table = self.db.Table(table_name)
-        self.payload_bucket = payload_bucket if payload_bucket else PayloadBucket()
+        self.payload_bucket = (
+            payload_bucket if payload_bucket else PayloadBucket.from_env()
+        )
 
     def delete_item(self, payload_id: str):
         key = self.payload_id_to_key(payload_id)

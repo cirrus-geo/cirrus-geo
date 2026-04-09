@@ -4,10 +4,9 @@ from cirrus.lib.payload_bucket import PayloadBucket
 
 logger = CirrusLoggerAdapter("function.pre-batch")
 
-payload_bucket = PayloadBucket()
-
 
 def lambda_handler(event, context):
+    payload_bucket = PayloadBucket.from_env()
     payload = CirrusPayload.from_event(event)
 
     logger.reset_extra(
