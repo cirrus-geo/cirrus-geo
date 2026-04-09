@@ -126,7 +126,7 @@ scalable architecture, including:
 * DynamoDB: Payload state-tracking database
 * SQS: message queuing for reliability
 * SNS: messages to multiple subscribers
-* S3: persistent storage for input payloads and generated items and their assets
+* S3: persistent storage for input/output payloads and generated items and their assets
 * Timestream: event history
 * ECR: image hosting for batch and lambda containers
 * CloudFormation: infrastructure-as-code and deployment automation
