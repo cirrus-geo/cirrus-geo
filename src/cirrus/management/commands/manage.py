@@ -23,14 +23,13 @@ from cirrus.management.utils.click import (
 )
 from cirrus.management.utils.manage import (
     execution_arn,
+    pass_deployment,
     query_filters,
     raw_option,
     rerun_option,
 )
 
 logger = logging.getLogger(__name__)
-
-pass_deployment = click.make_pass_decorator(Deployment)
 
 
 @click.group(
@@ -141,12 +140,10 @@ def get_output_payload(deployment: Deployment, payload_id: str, raw: bool = Fals
 @pass_deployment
 def get_execution(
     deployment: Deployment,
-    arn: str | None,
-    payload_id: str | None,
+    execution_arn: str,
     raw: bool = False,
 ):
     """Get basic workflow execution details using its ARN or its input payload ID"""
-    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
     execution = deployment.get_execution(execution_arn)
 
     if raw:
@@ -161,12 +158,10 @@ def get_execution(
 @pass_deployment
 def get_execution_input(
     deployment: Deployment,
-    arn: str | None,
-    payload_id: str | None,
+    execution_arn: str,
     raw: bool = False,
 ):
     """Get a workflow execution's input payload using its ARN or its input payload ID"""
-    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
     _input = json.loads(deployment.get_execution(execution_arn)["input"])
 
     if raw:
@@ -181,13 +176,11 @@ def get_execution_input(
 @pass_deployment
 def get_execution_output(
     deployment: Deployment,
-    arn: str | None,
-    payload_id: str | None,
+    execution_arn: str,
     raw: bool = False,
 ):
     """Get a workflow execution's output payload using its ARN or its input
     payload ID"""
-    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
     output = json.loads(deployment.get_execution(execution_arn)["output"])
 
     if raw:
@@ -218,12 +211,10 @@ def get_state_machine(
 @pass_deployment
 def get_execution_events(
     deployment: Deployment,
-    arn: str | None,
-    payload_id: str | None,
+    execution_arn: str,
     with_log_metadata: bool = False,
 ):
     """Get a workflow execution's event history using its ARN or its input payload ID"""
-    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
     execution_history = deployment.get_execution_events(execution_arn)
 
     if with_log_metadata:

@@ -7,10 +7,10 @@ import pytest
 
 from botocore.exceptions import ClientError
 
+from cirrus.exceptions import ExecutionNotFoundError
 from cirrus.management.deployment import (
     MAX_SQS_MESSAGE_LENGTH,
     Deployment,
-    NoExecutionsError,
 )
 from tests.management.conftest import mock_parameters
 
@@ -36,13 +36,6 @@ def deployment(queue, payload_bucket, data, statedb, workflow, iam_role):
 
 
 # Tests for get_execution_arn
-
-
-def test_get_execution_arn_with_arn(deployment):
-    """Test getting execution ARN when ARN is provided directly"""
-    test_arn = "arn:aws:states:us-east-1:123456789:execution:my-sm:exec-123"
-    result = deployment.get_execution_arn(arn=test_arn)
-    assert result == test_arn
 
 
 def test_get_execution_arn_with_payload_id(deployment, statedb):
@@ -71,30 +64,8 @@ def test_get_execution_arn_with_no_executions(deployment, dynamo):
         },
     )
 
-    with pytest.raises(NoExecutionsError):
+    with pytest.raises(ExecutionNotFoundError):
         deployment.get_execution_arn(payload_id=test_payload_id)
-
-
-def test_get_execution_arn_with_neither(deployment):
-    """Test error when neither arn nor payload_id provided"""
-    with pytest.raises(
-        ValueError,
-        match="Either arn or payload_id must be provided",
-    ):
-        deployment.get_execution_arn()
-
-
-def test_get_execution_arn_prefers_arn(deployment):
-    """Test that arn takes precedence when both are provided"""
-    test_arn = "arn:aws:states:us-east-1:123456789:execution:my-sm:exec-123"
-    test_payload_id = "test-payload-456"
-
-    result = deployment.get_execution_arn(
-        arn=test_arn,
-        payload_id=test_payload_id,
-    )
-
-    assert result == test_arn
 
 
 # Tests for get_workflow_definition

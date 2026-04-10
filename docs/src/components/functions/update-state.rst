@@ -30,15 +30,15 @@ StateDB Updates
 Updating the DynamoDB state database is the core functionality of the
 ``update-state`` lambda.
 
-In addition to updating DynamoDB the ``update-state`` lambda also fires
-off events to AWS TimeStream with each state update. On successful
-completion, ``update-state`` archives the output payload to S3 and
-records the output payload URL in the state record.
+In addition to updating DynamoDB on each state update, the ``update-state``
+lambda logs events to the events timeseries database (AWS TimeStream or
+CloudWatch). On workflow success ``update-state`` also archives the output
+payload to S3.
 
 The ``update-state`` lambda additionally logs any errors that come from
 the StateMachine so they can be captured and anlyzed in the log stream.
 
-``update-state`` can send messages to configured SNS topics to provide
-notifications to users or downstream services when events and/or output
-items are produced. It may also be used to facilitate workflow chaining
-by requeuing payloads in the ``process`` queue.
+``update-state`` will send workflow event messages to configured SNS topics to
+provide notifications to users or downstream services when events and/or output
+items are produced. It may also be used to facilitate workflow chaining by
+requeuing payloads in the ``process`` queue.

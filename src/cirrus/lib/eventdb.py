@@ -78,7 +78,9 @@ class EventDB:
             "Time": event_time_ms,
             "MeasureValueType": "VARCHAR",
             "MeasureName": "execution_state",
-            "MeasureValue": state.value,
+            "MeasureValue": (
+                state.value if state != StateEnum.SUCCEEDED else "COMPLETED"
+            ),
         }
 
         try:

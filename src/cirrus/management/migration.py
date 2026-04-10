@@ -220,18 +220,10 @@ class Migrator:
 
         # copy input payload BEFORE updating record so a partial
         # failure leaves claimed_at unset and a re-run can finish
-        if rec.executions:
-            self.copy_input_payload(rec)
+        self.copy_input_payload(rec)
 
-        # fetch SFN output for legacy COMPLETED+recent records
-        # SUCCEEDED outputs do not need to be migrated
-        if (
-            rec.original_state == "COMPLETED"
-            and rec.executions
-            and rec.updated_dt is not None
-            and rec.updated_dt >= self.cutoff
-        ):
-            self.fetch_sfn_output(rec)
+        # fetch SFN output for legacy COMPLETED+recent records and upload to S3
+        self.copy_output_payload(rec)
 
         # statedb update last and marks that migration is complete
         self.update_db_record(rec)
@@ -307,8 +299,16 @@ class Migrator:
                     new_key,
                 )
 
-    def fetch_sfn_output(self, rec: MigrationRecord) -> None:
+    def copy_output_payload(self, rec: MigrationRecord) -> None:
         """Step C: S3 output payload from SFN."""
+        if not (
+            # SUCCEEDED outputs do not need to be migrated
+            rec.original_state == "COMPLETED"
+            and rec.updated_dt is not None
+            and rec.updated_dt >= self.cutoff
+        ):
+            return
+
         if not (rec.last_execution_arn and rec.execution_id):
             return
 

@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+import functools
 import logging
 
+from collections.abc import Callable
 from datetime import timedelta
 
 import click
@@ -11,8 +15,11 @@ from click_option_group import (
 
 from cirrus.lib.enums import StateEnum
 from cirrus.lib.utils import parse_since
+from cirrus.management.deployment import Deployment
 
 logger = logging.getLogger(__name__)
+
+pass_deployment = click.make_pass_decorator(Deployment)
 
 
 class SinceType(click.ParamType):
@@ -78,22 +85,37 @@ def query_filters(func):
     return func  # noqa: RET504
 
 
-def execution_arn(func):
+def execution_arn(func: Callable) -> Callable:
+    @pass_deployment
+    @functools.wraps(func)
+    def wrapper(
+        deployment: Deployment,
+        arn: str | None = None,
+        payload_id: str | None = None,
+        **kwargs,
+    ):
+        if not arn:
+            if payload_id is None:
+                raise click.UsageError(
+                    "One of '--arn' or '--payload-id' is required.",
+                )
+            arn = deployment.get_execution_arn(payload_id)
+        return func(execution_arn=arn, **kwargs)
+
     # reverse order because not using decorators
-    func = optgroup.option(
+    wrapper = optgroup.option(
         "--payload-id",
         help="payload ID (resolves to latest execution ARN)",
-    )(func)
-    func = optgroup.option(
+    )(wrapper)
+    wrapper = optgroup.option(
         "--arn",
         help="Execution ARN",
-    )(func)
-    func = optgroup.group(
+    )(wrapper)
+    return optgroup.group(
         "Identifier",
         cls=RequiredMutuallyExclusiveOptionGroup,
         help="Identifer type and value to get execution",
-    )(func)
-    return func  # noqa: RET504
+    )(wrapper)
 
 
 def raw_option(func):

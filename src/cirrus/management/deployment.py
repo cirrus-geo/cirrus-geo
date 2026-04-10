@@ -28,7 +28,6 @@ from cirrus.lib.statedb import StateDB, to_current
 from cirrus.lib.utils import assume_role, get_client
 from cirrus.management.deployment_pointer import DeploymentPointer
 from cirrus.management.exceptions import (
-    NoExecutionsError,
     NoPayloadUrlError,
     StatsUnavailableError,
 )
@@ -233,21 +232,9 @@ class Deployment:
 
     def get_execution_arn(
         self,
-        *,
-        arn: str | None = None,
-        payload_id: str | None = None,
+        payload_id: str,
     ) -> str:
-        if arn:
-            return arn
-        if payload_id is None:
-            raise ValueError("Either arn or payload_id must be provided")
-        execs = self.statedb.get_dbitem(
-            payload_id,
-        ).get("executions", [])
-        try:
-            return execs[-1]
-        except IndexError as e:
-            raise NoExecutionsError(payload_id) from e
+        return self.statedb.payload_id_most_recent_execution_arn(payload_id)
 
     def get_execution(self, execution_arn: str) -> dict:
         sfn = get_client(
@@ -447,7 +434,7 @@ class Deployment:
         limit: int = 10000,
     ) -> dict[str, Any]:
         "Get item counts by state for a collections/workflow from DynamoDB"
-        collections_workflow = StateDB.join_collections_workflow(
+        collections_workflow = self.statedb.join_collections_workflow(
             collections,
             workflow_name,
         )

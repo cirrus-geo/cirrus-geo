@@ -17,12 +17,6 @@ class DeploymentNotFoundError(CirrusError):
         super().__init__(msg, *args, **kwargs)
 
 
-class NoExecutionsError(CirrusError):
-    def __init__(self, payload_id, *args, **kwargs):
-        msg = f"Payload has no executions: {payload_id}"
-        super().__init__(msg, *args, **kwargs)
-
-
 class MissingParameterError(CirrusError):
     def __init__(self, missing: str, *extra_missing: str, **kwargs):
         msg = f"A required environment variable(s) was not found: {

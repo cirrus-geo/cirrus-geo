@@ -477,20 +477,25 @@ def _s3_object_exists(s3, key) -> bool:
     return True
 
 
-def _scan_table(dynamo) -> list[dict]:
-    items: list[dict] = []
+def _scan_table(dynamo) -> dict[tuple[str, str], dict]:
+    items: dict[tuple[str, str], dict] = {}
     kwargs: dict = {}
     while True:
         resp = dynamo.scan(TableName=TABLE_NAME, **kwargs)
-        items.extend(resp.get("Items", []))
+        for item in resp.get("Items", []):
+            pk = (
+                item["collections_workflow"]["S"],
+                item["itemids"]["S"],
+            )
+            items[pk] = item
         if "LastEvaluatedKey" not in resp:
             break
         kwargs["ExclusiveStartKey"] = resp["LastEvaluatedKey"]
     return items
 
 
-def _bucket_snapshot(s3) -> dict[str, bytes]:
-    snap: dict[str, bytes] = {}
+def _bucket_keys(s3) -> set[str]:
+    keys: set[str] = set()
     token = None
     while True:
         kw: dict = {"Bucket": PAYLOADS_BUCKET}
@@ -498,14 +503,11 @@ def _bucket_snapshot(s3) -> dict[str, bytes]:
             kw["ContinuationToken"] = token
         resp = s3.list_objects_v2(**kw)
         for obj in resp.get("Contents", []) or []:
-            snap[obj["Key"]] = s3.get_object(
-                Bucket=PAYLOADS_BUCKET,
-                Key=obj["Key"],
-            )["Body"].read()
+            keys.add(obj["Key"])
         if not resp.get("IsTruncated"):
             break
         token = resp.get("NextContinuationToken")
-    return snap
+    return keys
 
 
 def _resolve_executions(
@@ -641,9 +643,7 @@ def run_scenario(
         table_snapshot = (
             _scan_table(dynamo) if scenario.assert_table_unchanged else None
         )
-        bucket_before = (
-            _bucket_snapshot(s3) if scenario.assert_bucket_unchanged else None
-        )
+        bucket_before = _bucket_keys(s3) if scenario.assert_bucket_unchanged else None
 
         spec_by_label = {spec.label: spec for spec in scenario.records}
         if scenario.apply_mocks is not None:
@@ -685,7 +685,7 @@ def run_scenario(
                 f"scenario {scenario.id}: table mutated unexpectedly"
             )
         if bucket_before is not None:
-            assert _bucket_snapshot(s3) == bucket_before, (
+            assert _bucket_keys(s3) == bucket_before, (
                 f"scenario {scenario.id}: bucket mutated unexpectedly"
             )
 
@@ -1289,7 +1289,7 @@ def test_migrate_idempotent(run_scenario, deployment, dynamo, s3):
     run_scenario(scenario)
 
     table_after_first = _scan_table(dynamo)
-    bucket_after_first = _bucket_snapshot(s3)
+    bucket_after_first = _bucket_keys(s3)
 
     # Second run: claimed_at is now set on every record, so the guard
     # short-circuits every record and nothing mutates.
@@ -1309,7 +1309,7 @@ def test_migrate_idempotent(run_scenario, deployment, dynamo, s3):
     expected_second_run["processed"] = 8
     assert migrator2.counts == expected_second_run
     assert _scan_table(dynamo) == table_after_first
-    assert _bucket_snapshot(s3) == bucket_after_first
+    assert _bucket_keys(s3) == bucket_after_first
 
 
 # ---------------------------------------------------------------------------

@@ -19,7 +19,8 @@ Unless otherwise listed, the changes for this release were part of PR [#396].
   payloads) are stored under `{root_prefix}/tmp/`.
 - Management CLI command `get-payload` renamed `get-input-payload`
 - Management CLI command `get-payloads` renamed `get-input-payloads`
-- StateDB and EventDB switch `COMPLETED` state name to `SUCCEEDED`
+- StateDB and EventDB, and thus the API responses, switch `COMPLETED` state
+  name to `SUCCEEDED`
 - Workflow event type `ALREADY_COMPLETED` renamed to `ALREADY_SUCCEEDED`
 - Workflow events `payload_url` field renamed to `input_payload_url`; a new
   `output_payload_url` field is included on `SUCCEEDED` and `ALREADY_SUCCEEDED`
@@ -46,8 +47,12 @@ If using cirrus as a library, be aware of the following:
   methods instead
 - `PayloadNotFoundError` moved from `cirrus.management.exceptions` to
   `cirrus.exceptions`
+- `NoExecutionsError` removed from `cirrus.management.exceptions`; replaced by
+  `ExecutionNotFoundError` in `cirrus.exceptions`
 - `Deployment.yield_payloads()` removed; replaced by
   `Deployment.yield_workflow_items()` and `Deployment.yield_input_payloads()`
+- `Deployment.get_execution_arn()` no longer accepts an `arn` keyword argument;
+  it now takes only `payload_id` as a positional parameter
 - `Deployment.fetch_payload()` signature changed: `rerun` parameter replaced
   with `direction` parameter (`"input"` or `"output"`)
 - CloudFormation templates now include a new `PayloadRootPrefix` parameter
@@ -111,6 +116,11 @@ etc.). Set that lifecycle policy on the `/{root_prefix}/tmp/` key prefix, where
   ([#358])
 - `PayloadManager.MAX_PAYLOAD_LENGTH` reduced from 250 KB to 120 KB to
   help prevent input/output truncation in EventBridge events
+- `Deployment.get_workflow_items()` now supports `error_begins_with` filtering
+- `Deployment.get_workflow_items()` now correctly forwards the `nextkey`
+  pagination token from StateDB in its return value
+- `Deployment.enqueue_payload()` now explicitly accepts `dict`, `str`, `bytes`,
+  or `IO[bytes]` payloads with consistent handling across all types
 
 ### Removed
 
