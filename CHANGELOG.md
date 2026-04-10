@@ -7,32 +7,64 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v2.0.0] - unreleased
 
+Unless otherwise listed, the changes for this release were part of PR [#396].
+
 ### ⚠️ Breaking changes
 
-- Payload bucket reorganization
+- Payload bucket reorganization: all payload S3 keys are now organized under a
+  configurable root prefix (default `cirrus`). Input and output payloads are
+  stored per-execution at
+  `{root_prefix}/executions/{payload_id}/{execution_id}/input.json` and
+  `output.json`. Temporary objects (oversized payloads, batch I/O, invalid
+  payloads) are stored under `{root_prefix}/tmp/`.
 - Management CLI command `get-payload` renamed `get-input-payload`
 - Management CLI command `get-payloads` renamed `get-input-payloads`
 - StateDB and EventDB switch `COMPLETED` state name to `SUCCEEDED`
 - Workflow event type `ALREADY_COMPLETED` renamed to `ALREADY_SUCCEEDED`
-- Workflow events `payload_url` field renamed to `input_payload_url`
+- Workflow events `payload_url` field renamed to `input_payload_url`; a new
+  `output_payload_url` field is included on `SUCCEEDED` and `ALREADY_SUCCEEDED`
+  events
 - Workflow event type `CLAIMED` and some `FAILED` events now do not include a
   `payload_url` at all (these are emitted prior to the payload upload to S3 so
   the URL is not actually valid)
-- StateDB.get_dbitem now raises a `PayloadNotFoundError` instead of returning
-  `None` when no item matches the supplied ID
-- [SOME BETTER NOTES ABOUT CHANGED/REMOVED StateDB methods]
+
+If using cirrus as a library, be aware of the following:
+
+- `StateDB.get_dbitem()` now raises a `PayloadNotFoundError` instead of
+  returning `None` when no item matches the supplied ID
+- `StateDB.set_completed()` renamed to `set_succeeded()`
+- `StateDB.dbitem_to_item()` changed from a classmethod to an instance method
+- `StateDB.payload_id_to_url()` and `StateDB.payload_key_to_url()` removed; use
+  `StateDB.payload_id_to_input_payload_url()` or
+  `StateDB.payload_id_to_output_payload_url()` instead
+- `StateDB.payload_id_to_bucket_key()` removed
+- Standalone functions `get_payload_bucket()` and `get_state_db()` removed from
+  `cirrus.lib.statedb`
+- `StateDB` item representation changed: `catalog` field renamed to
+  `input_payload_url`; new `output_payload_url` and `claimed_at` fields added
+- `PayloadManager.upload_to_s3()` static method removed; use `PayloadBucket`
+  methods instead
+- `PayloadNotFoundError` moved from `cirrus.management.exceptions` to
+  `cirrus.exceptions`
+- `Deployment.yield_payloads()` removed; replaced by
+  `Deployment.yield_workflow_items()` and `Deployment.yield_input_payloads()`
+- `Deployment.fetch_payload()` signature changed: `rerun` parameter replaced
+  with `direction` parameter (`"input"` or `"output"`)
+- CloudFormation templates now include a new `PayloadRootPrefix` parameter
+  (defaults to `cirrus`); the payload bucket has a lifecycle rule to expire
+  objects under `{root_prefix}/tmp/` after 10 days
 
 #### Migration notes
 
 We've added a new management CLI command `migrate`, which will migrate all
 state database records to the new format while also copying all possible input
-payloads and output payloads in to the new locations in the payloads bucket.
-This tool used a dynamodb table scan to process all records. The operation is
+payloads and output payloads into the new locations in the payloads bucket.
+This tool uses a DynamoDB table scan to process all records. The operation is
 idempotent, but will do a full scan every run.
 
 Input payloads will not get copied into place if they were URL reference
-payloads. Output payload will only be written for executions within the last 90
-days per the step functions history retention limit.
+payloads. Output payloads will only be written for executions within the last
+90 days per the step functions history retention limit.
 
 Run this command after deploying this v2 release to ensure your state database
 and payload organization is consistent with the latest changes. Note that S3
@@ -41,12 +73,18 @@ organization tree is left to the user.
 
 With the new payload bucket organization, only one lifecycle policy is required
 to clean up temp objects (oversized payloads between steps, batch input/output,
-etc.). Set that lifecycle policy on the `/cirrus/tmp/` key prefix.
+etc.). Set that lifecycle policy on the `/{root_prefix}/tmp/` key prefix, where
+`{root_prefix}` is the value of `CIRRUS_PAYLOAD_ROOT_PREFIX` (default
+`cirrus`).
 
 ### Added
 
+- New `PayloadBucket` class (`cirrus.lib.payload_bucket`) centralizing all S3
+  payload interactions
 - Payload bucket root prefix is now configurable via the optional
   `CIRRUS_PAYLOAD_ROOT_PREFIX` environment variable (defaults to `cirrus`)
+- `update-state` lambda now uploads output payloads to S3 on successful
+  workflow execution
 - Cirrus CLI command `version` to see current installed version of the CLI
 - Management CLI command `get-output-payload` to fetch the output payload for
   an execution via an input payload ID
@@ -54,16 +92,30 @@ etc.). Set that lifecycle policy on the `/cirrus/tmp/` key prefix.
   bucket organization to the v2 organization
 - Management CLI command `query` to find all statedb records matching a given
   query
+- New StateDB methods: `get_item()`, `payload_id_most_recent_execution_arn()`,
+  `payload_id_to_input_payload_url()`, `payload_id_to_output_payload_url()`,
+  `execution_id_from_arn()`, `join_collections_workflow()`,
+  `split_collections_workflow()`
+- New exceptions: `ExecutionNotFoundError` and `PayloadNotFoundError` in
+  `cirrus.exceptions`; `NoPayloadUrlError` in
+  `cirrus.management.exceptions`; `UndefinedPayloadBucketError` in
+  `cirrus.lib.errors`
 
 ### Changed
 
-- Better error messages from `update-state` lambda when payloads are too large
-  and are truncated in the EventBridge event
+- Claiming a record (`set_processing()`) now resets `last_error` and `outputs`
+  fields and sets a `claimed_at` timestamp
+- `update-state` lambda now validates that EventBridge includes
+  `inputDetails`/`outputDetails` in the event; now a more informative error is
+  raised an if large payloads cause EventBridge to truncate the event details
+  ([#358])
+- `PayloadManager.MAX_PAYLOAD_LENGTH` reduced from 250 KB to 120 KB to
+  help prevent input/output truncation in EventBridge events
 
 ### Removed
 
 - Management CLI commands previously accepting user vars no longer do
-  (techincally this is a bugfix, as support for user vars was removed in
+  (technically this is a bugfix, as support for user vars was removed in
   v1.0.0, but the CLI inadvertently continued to advertise support for them)
 
 ## [v1.3.2] - 2026-02-03
@@ -1313,9 +1365,11 @@ Initial release
 [#344]: https://github.com/cirrus-geo/cirrus-geo/pull/344
 [#348]: https://github.com/cirrus-geo/cirrus-geo/pull/348
 [#353]: https://github.com/cirrus-geo/cirrus-geo/pull/353
+[#358]: https://github.com/cirrus-geo/cirrus-geo/pull/358
 [#361]: https://github.com/cirrus-geo/cirrus-geo/pull/361
 [#364]: https://github.com/cirrus-geo/cirrus-geo/pull/364
-[#366]: https://github.com/cirrus-geo/cirrus-geo/pull/364
+[#366]: https://github.com/cirrus-geo/cirrus-geo/pull/366
+[#396]: https://github.com/cirrus-geo/cirrus-geo/pull/396
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
