@@ -1,0 +1,19 @@
+stateDiagram-v2
+    [*] --> STATELESS : "New payload received"
+    STATELESS --> CLAIMED : "Payload conforms\nto schema\n - \nemit CLAIMED_PROCESSING"
+    STATELESS --> [*] : "Malformed payload,\nunprocessable\n - \nemit FAILED_TO_EXTRACT\n or NOT_A_PROCESS_PAYLOAD"
+
+    CLAIMED --> PROCESSING : Step function\nexecution starts\n-\nemit STARTED_PROCESSING
+    CLAIMED --> FAILED : State machine doesn't\nexist or other\nterminal error\n - \nemit FAILED
+
+    PROCESSING --> COMPLETED : Workflow succeeds\n - \nemit SUCCEEDED
+    PROCESSING --> FAILED : Workflow fails\n with error\n - \nemit FAILED
+    PROCESSING --> INVALID : Workflow fails\nwith invalid \ninput error\n - \nemit INVALID
+    PROCESSING --> ABORTED : Workflow manually\n aborted\n - \nemit ABORTED
+    PROCESSING --> TIMED_OUT : Workflow execution\n times out\n - \nemit TIMED_OUT
+
+    COMPLETED --> [*]
+    FAILED --> [*]
+    INVALID --> [*]
+    ABORTED --> [*]
+    TIMED_OUT --> [*]
