@@ -8,19 +8,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>State Database &mdash; Cirrus  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/js/versions-loader.js?v=38b9fbf7"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Pipeline Monitoring" href="80_monitoring.html" />
+    <link rel="next" title="Payload Bucket" href="75_payload_bucket.html" />
     <link rel="prev" title="Cloudformation Support" href="65_cloudformation.html" /> 
 </head>
 
@@ -61,6 +61,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#deleting-statedb-items">Deleting StateDB items</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="75_payload_bucket.html">Payload Bucket</a></li>
 <li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="95_tips_and_tricks.html">Tips and Tricks</a></li>
@@ -179,14 +180,14 @@ updated</p></li>
 <section id="statedb-and-cirrus-cli">
 <h2>StateDB and Cirrus CLI<a class="headerlink" href="#statedb-and-cirrus-cli" title="Link to this heading"></a></h2>
 <p>Selected Cirrus CLI commands interact with the StateDB.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">get-payloads</span></code> command takes in query parameters to retrieve input
+<p>The <code class="docutils literal notranslate"><span class="pre">get-input-payloads</span></code> command takes in query parameters to retrieve input
 payloads in bulk, returned as new line delimited JSON.</p>
 <p>Input query parameters are used as filters against the StateDB to retrieve
 records matching certain criteria, like entires with a <code class="docutils literal notranslate"><span class="pre">FAILED</span></code> workflow
 status that occured in the past week.  These returned StateDB records are used
 to retrieve input payloads from the S3 payload bucket which are returned to the
 user.</p>
-<p>More information about the <code class="docutils literal notranslate"><span class="pre">get-payloads</span></code> command can be found in the CLI
+<p>More information about the <code class="docutils literal notranslate"><span class="pre">get-input-payloads</span></code> command can be found in the CLI
 documentation</p>
 </section>
 <section id="deleting-statedb-items">
@@ -202,7 +203,7 @@ method can be used to delete a state record based on its <code class="docutils l
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="65_cloudformation.html" class="btn btn-neutral float-left" title="Cloudformation Support" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="80_monitoring.html" class="btn btn-neutral float-right" title="Pipeline Monitoring" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="75_payload_bucket.html" class="btn btn-neutral float-right" title="Payload Bucket" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

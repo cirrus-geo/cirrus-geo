@@ -8,14 +8,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Command Examples &mdash; Cirrus  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/js/versions-loader.js?v=38b9fbf7"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -52,6 +52,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../cirrus/60_components.html">Cirrus Components</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../cirrus/65_cloudformation.html">Cloudformation Support</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../cirrus/70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cirrus/75_payload_bucket.html">Payload Bucket</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../cirrus/80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../cirrus/90_examples.html">Cirrus Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../cirrus/95_tips_and_tricks.html">Tips and Tricks</a></li>
@@ -99,6 +100,14 @@
 <h1>Command Examples<a class="headerlink" href="#command-examples" title="Link to this heading"></a></h1>
 <p>CLIrrus currently support a number of commands.</p>
 <ul>
+<li><dl>
+<dt><em>version:</em></dt><dd><p>Print the installed Cirrus CLI version.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>version
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
 <li><dl>
 <dt><em>list-deployments:</em></dt><dd><p>Return a list of all named cirrus deployments available for interacting
 with by pulling deployments available in AWS parameter store.  Defaults to looking in the region used in AWS SSO login.  Names returned here will be the name strings needed to run commands on a specific deployment.</p>
@@ -221,8 +230,16 @@ cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w
 </dl>
 </li>
 <li><dl>
-<dt><em>get-payload:</em></dt><dd><p>Get a payload from S3 using its payload ID</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-payload<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
+<dt><em>get-input-payload:</em></dt><dd><p>Get an input payload from S3 using its ID</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-input-payload<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>get-output-payload:</em></dt><dd><p>Get an output payload from S3 for an input payload ID</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-output-payload<span class="w"> </span>sar/workflow-test/example-01_2024-10-31-06-05-10
 </pre></div>
 </div>
 </dd>
@@ -285,14 +302,52 @@ cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w
 </dl>
 </li>
 <li><dl>
-<dt><em>get-payloads</em></dt><dd><p>Bulk retrieve payloads as NDJSON.  Can be filtered on fields available in
+<dt><em>get-input-payloads:</em></dt><dd><p>Bulk retrieve payloads as NDJSON.  Can be filtered on fields available in
 StateDB - ‘collections-workflow’, ‘state’, ‘since’, ‘limit’,
-‘error-prefix’.  Output may be piped into additional commands to rerun payloads using ‘rerun’ flag which alters payload to allow rerunning</p>
-<p>piping with xargs to resubmit failed workflows
-.. code-block:: bash</p>
-<blockquote>
-<div><p>cirrus manage name-dev get-payloads –collections-workflow “sar-test_flow” –state “FAILED” –since “10 d” –rerun | xargs -0 -L 1 echo |  cirrus manage name-dev process</p>
-</div></blockquote>
+‘error-prefix’.  Output may be piped into additional commands to rerun
+payloads using the ‘rerun’ flag which alters the payload to allow
+rerunning.</p>
+<p>Piping with xargs to resubmit failed workflows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>get-input-payloads<span class="w"> </span>--collections-workflow<span class="w"> </span><span class="s2">&quot;sar-test_flow&quot;</span><span class="w"> </span>--state<span class="w"> </span><span class="s2">&quot;FAILED&quot;</span><span class="w"> </span>--since<span class="w"> </span><span class="s2">&quot;10 d&quot;</span><span class="w"> </span>--rerun<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-0<span class="w"> </span>-L<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="p">|</span><span class="w">  </span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>process
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>query:</em></dt><dd><p>Query the StateDB for records matching the supplied filters and return
+the raw StateDB records as NDJSON. Accepts the same filter options as
+<code class="docutils literal notranslate"><span class="pre">get-input-payloads</span></code> (<code class="docutils literal notranslate"><span class="pre">--collections-workflow</span></code>, <code class="docutils literal notranslate"><span class="pre">--state</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--since</span></code>, <code class="docutils literal notranslate"><span class="pre">--limit</span></code>, <code class="docutils literal notranslate"><span class="pre">--error-prefix</span></code>) but returns state records
+directly instead of fetching input payloads from S3. Useful for
+inspecting StateDB entries or piping into other tools.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>query<span class="w"> </span>--collections-workflow<span class="w"> </span><span class="s2">&quot;sar-test_workflow&quot;</span><span class="w"> </span>--state<span class="w"> </span><span class="s2">&quot;FAILED&quot;</span><span class="w"> </span>--since<span class="w"> </span><span class="s2">&quot;1 d&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><em>migrate:</em></dt><dd><p>Migrate a deployment’s StateDB and payload bucket from the pre-v2 schema
+to the v2 schema.  This performs a full DynamoDB table scan and updates
+each record in place while also copying existing input payloads (and, for
+recent executions, fetching output payloads from Step Functions history)
+into the new payload bucket layout.  The operation is idempotent and may
+be re-run safely.</p>
+<p>Supported options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--dry-run</span></code>: preview all DynamoDB and S3 changes without writing
+anything.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--since-days</span> <span class="pre">INT</span></code>: cutoff (in days) for fetching Step Functions
+outputs for legacy <code class="docutils literal notranslate"><span class="pre">COMPLETED</span></code> records.  Defaults to 90, matching
+the default Step Functions history retention.</p></li>
+</ul>
+<p>Run this after deploying a v2 release of Cirrus to bring existing state
+records and payload objects in line with the new schema:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>migrate<span class="w"> </span>--dry-run
+cirrus<span class="w"> </span>mgmt<span class="w"> </span>name-dev<span class="w"> </span>migrate
+</pre></div>
+</div>
 </dd>
 </dl>
 </li>

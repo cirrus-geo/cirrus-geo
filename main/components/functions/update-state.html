@@ -8,14 +8,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>update-state &mdash; Cirrus  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/js/versions-loader.js?v=38b9fbf7"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/60_components.html">Cirrus Components</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/65_cloudformation.html">Cloudformation Support</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cirrus/75_payload_bucket.html">Payload Bucket</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/90_examples.html">Cirrus Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cirrus/95_tips_and_tricks.html">Tips and Tricks</a></li>
@@ -129,14 +130,16 @@ configuration did not allow sufficient time for a task to complete.</p></li>
 <h2>StateDB Updates<a class="headerlink" href="#statedb-updates" title="Link to this heading"></a></h2>
 <p>Updating the DynamoDB state database is the core functionality of the
 <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda.</p>
-<p>In addition to updating DynamoDB the <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda also fires
-off events to AWS TimeStream with each state update.</p>
+<p>In addition to updating DynamoDB on each state update, the <code class="docutils literal notranslate"><span class="pre">update-state</span></code>
+lambda logs events to the events timeseries database (AWS TimeStream or
+CloudWatch). On workflow success <code class="docutils literal notranslate"><span class="pre">update-state</span></code> also archives the output
+payload to S3.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda additionally logs any errors that come from
 the StateMachine so they can be captured and anlyzed in the log stream.</p>
-<p><code class="docutils literal notranslate"><span class="pre">update-state</span></code> can send messages to configured SNS topics to provide
-notifications to users or downstream services when events and/or output
-items are produced. It may also be used to facilitate workflow chaining
-by requeuing payloads in the <code class="docutils literal notranslate"><span class="pre">process</span></code> queue.</p>
+<p><code class="docutils literal notranslate"><span class="pre">update-state</span></code> will send workflow event messages to configured SNS topics to
+provide notifications to users or downstream services when events and/or output
+items are produced. It may also be used to facilitate workflow chaining by
+requeuing payloads in the <code class="docutils literal notranslate"><span class="pre">process</span></code> queue.</p>
 </section>
 </section>
 

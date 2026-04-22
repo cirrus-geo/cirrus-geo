@@ -8,14 +8,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Basic Operation &mdash; Cirrus  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/js/versions-loader.js?v=38b9fbf7"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -69,6 +69,7 @@
 <li class="toctree-l1"><a class="reference internal" href="60_components.html">Cirrus Components</a></li>
 <li class="toctree-l1"><a class="reference internal" href="65_cloudformation.html">Cloudformation Support</a></li>
 <li class="toctree-l1"><a class="reference internal" href="70_statedb.html">State Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="75_payload_bucket.html">Payload Bucket</a></li>
 <li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
 <li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="95_tips_and_tricks.html">Tips and Tricks</a></li>
@@ -152,17 +153,17 @@
 <p>One of the most common actions to to re-run failed tasks. For example, it it
 common when running the task to discover code bugs that cause the task to fail,
 fix them, and then want to re-run the task.</p>
-<p>This can be done with the <code class="docutils literal notranslate"><span class="pre">get-payloads</span></code> CLIrrus command. This command offers
+<p>This can be done with the <code class="docutils literal notranslate"><span class="pre">get-input-payloads</span></code> CLIrrus command. This command offers
 a way to retrieve payloads in bulk based on user supplied query parameters.
-The output of <code class="docutils literal notranslate"><span class="pre">get-payloads</span></code> can then be passed into the <code class="docutils literal notranslate"><span class="pre">process</span></code> command
+The output of <code class="docutils literal notranslate"><span class="pre">get-input-payloads</span></code> can then be passed into the <code class="docutils literal notranslate"><span class="pre">process</span></code> command
 to rerun the tasks that meet your conditions.  The <code class="docutils literal notranslate"><span class="pre">--rerun</span></code> flag can be
-passed to <code class="docutils literal notranslate"><span class="pre">get-payloads</span></code> to add the <code class="docutils literal notranslate"><span class="pre">.process.replace:</span> <span class="pre">true</span></code> parameter.</p>
+passed to <code class="docutils literal notranslate"><span class="pre">get-input-payloads</span></code> to add the <code class="docutils literal notranslate"><span class="pre">.process.replace:</span> <span class="pre">true</span></code> parameter.</p>
 <p>Adding this parameter when queuing a payload will result in the payload being
-rerun if the payload is in the following states in the StateDB: <code class="docutils literal notranslate"><span class="pre">COMPLETED</span></code>,
+rerun if the payload is in the following states in the StateDB: <code class="docutils literal notranslate"><span class="pre">SUCCEEDED</span></code>,
 <code class="docutils literal notranslate"><span class="pre">FAILED</span></code>, <code class="docutils literal notranslate"><span class="pre">ABORTED</span></code>, or <code class="docutils literal notranslate"><span class="pre">CLAIMED</span></code>.  Checks are in place so that a state of
 <code class="docutils literal notranslate"><span class="pre">PROCESSING</span></code> will result in the payload being skipped.</p>
 <p>like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cirrus</span> <span class="n">manage</span> <span class="n">deployment</span><span class="o">-</span><span class="n">name</span> <span class="n">get</span><span class="o">-</span><span class="n">payloads</span> <span class="o">--</span><span class="n">collectons</span><span class="o">-</span><span class="n">workflow</span> <span class="s2">&quot;sar-test_workflow&quot;</span> <span class="o">--</span><span class="n">state</span> <span class="s2">&quot;FAILED&quot;</span> <span class="o">--</span><span class="n">rerun</span> <span class="o">|</span> <span class="n">xargs</span> <span class="o">-</span><span class="mi">0</span> <span class="o">-</span><span class="n">L</span> <span class="mi">1</span> <span class="n">echo</span> <span class="o">|</span> <span class="n">cirrus</span> <span class="n">manage</span> <span class="n">deployment</span><span class="o">-</span><span class="n">name</span> <span class="n">process</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cirrus</span> <span class="n">manage</span> <span class="n">deployment</span><span class="o">-</span><span class="n">name</span> <span class="n">get</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="n">payloads</span> <span class="o">--</span><span class="n">collectons</span><span class="o">-</span><span class="n">workflow</span> <span class="s2">&quot;sar-test_workflow&quot;</span> <span class="o">--</span><span class="n">state</span> <span class="s2">&quot;FAILED&quot;</span> <span class="o">--</span><span class="n">rerun</span> <span class="o">|</span> <span class="n">xargs</span> <span class="o">-</span><span class="mi">0</span> <span class="o">-</span><span class="n">L</span> <span class="mi">1</span> <span class="n">echo</span> <span class="o">|</span> <span class="n">cirrus</span> <span class="n">manage</span> <span class="n">deployment</span><span class="o">-</span><span class="n">name</span> <span class="n">process</span>
 </pre></div>
 </div>
 <p>Under the hood CLIrrus searches the AWS DynamoDB state database for records
@@ -181,7 +182,7 @@ state database within that time period.  e.g. “10 h” looks back 10 hours.</p
 <li><p><code class="docutils literal notranslate"><span class="pre">error-prefix</span></code> (string): a string prefix in an error string.  Useful if
 multiple records failed as a result of the same bug.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">state</span></code> (string): the state of the record.  Must be one of the following:
-<code class="docutils literal notranslate"><span class="pre">PROCESSING</span></code>, <code class="docutils literal notranslate"><span class="pre">COMPLETED</span></code>, <code class="docutils literal notranslate"><span class="pre">FAILED</span></code>, <code class="docutils literal notranslate"><span class="pre">INVALID</span></code>, <code class="docutils literal notranslate"><span class="pre">ABORTED</span></code></p></li>
+<code class="docutils literal notranslate"><span class="pre">PROCESSING</span></code>, <code class="docutils literal notranslate"><span class="pre">SUCCEEDED</span></code>, <code class="docutils literal notranslate"><span class="pre">FAILED</span></code>, <code class="docutils literal notranslate"><span class="pre">INVALID</span></code>, <code class="docutils literal notranslate"><span class="pre">ABORTED</span></code></p></li>
 </ul>
 </section>
 </section>

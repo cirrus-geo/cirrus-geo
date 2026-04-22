@@ -1,0 +1,375 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payload Bucket &mdash; Cirrus  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/js/versions-loader.js?v=38b9fbf7"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Pipeline Monitoring" href="80_monitoring.html" />
+    <link rel="prev" title="State Database" href="70_statedb.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Cirrus
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Cirrus documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="10_intro.html">Getting started with Cirrus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="20_arch.html">Cirrus architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="30_payload.html">Cirrus Payload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="40_config-deploy.html">Configuration and Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="50_operation.html">Basic Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="60_components.html">Cirrus Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="65_cloudformation.html">Cloudformation Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="70_statedb.html">State Database</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Payload Bucket</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#key-organization">Key Organization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#execution-payloads">Execution Payloads</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#oversized-payloads">Oversized Payloads</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#batch-payloads">Batch Payloads</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#invalid-payloads">Invalid Payloads</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#lifecycle-and-retention">Lifecycle and Retention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#access-patterns">Access Patterns</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="80_monitoring.html">Pipeline Monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="90_examples.html">Cirrus Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="95_tips_and_tricks.html">Tips and Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="96_deploying.html">Deploying</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Component READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../components/functions/index.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/tasks/index.html">Tasks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Cirrus CLI READMEs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli/00_intro.html">CLIrrus Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/01_install.html">Installing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/02_auth.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/03_deployments.html">CLIrrus and Cirrus Deployments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli/04_commands.html">Command Examples</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Payload Bucket</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/cirrus/75_payload_bucket.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="payload-bucket">
+<h1>Payload Bucket<a class="headerlink" href="#payload-bucket" title="Link to this heading"></a></h1>
+<p>The Cirrus payload bucket is an S3 bucket used to store workflow payloads
+that are either too large to pass inline through AWS service limits or
+that need to be persisted for state tracking, debugging, and retrieval
+after a workflow has finished executing.</p>
+<p>Together with the <a class="reference internal" href="70_statedb.html"><span class="doc">StateDB</span></a>, the payload bucket forms
+the record of a Cirrus deployment’s work: where the StateDB tracks
+<em>that</em> an execution happened and <em>what state</em> it’s in, the payload
+bucket stores the actual JSON payload content associated with each
+execution.</p>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<p>Cirrus does not manage the payload bucket itself. The bucket is supplied
+to Cirrus code through the <code class="docutils literal notranslate"><span class="pre">CIRRUS_PAYLOAD_BUCKET</span></code> environment
+variable, and any S3 bucket that the running code has permission to read
+from and write to can serve as the payload bucket. A bucket provisioned
+alongside Cirrus (for example, via the reference CloudFormation in this
+repository) is one common way to satisfy this, but it is not a
+requirement.</p>
+<p>All Cirrus code that reads or writes payload objects goes through the
+<code class="docutils literal notranslate"><span class="pre">cirrus.lib.payload_bucket.PayloadBucket</span></code> class, which resolves the
+bucket name from <code class="docutils literal notranslate"><span class="pre">CIRRUS_PAYLOAD_BUCKET</span></code> at construction time. If the
+variable is not set when a <code class="docutils literal notranslate"><span class="pre">PayloadBucket</span></code> is created,
+<code class="docutils literal notranslate"><span class="pre">UndefinedPayloadBucketError</span></code> is raised.</p>
+<p>The root prefix under which all payload objects are organized can be
+customized via the optional <code class="docutils literal notranslate"><span class="pre">CIRRUS_PAYLOAD_ROOT_PREFIX</span></code> environment
+variable. When not set, it defaults to <code class="docutils literal notranslate"><span class="pre">cirrus</span></code>. This allows
+deployments that share a payload bucket with other systems to use a
+distinct namespace, avoiding key collisions.</p>
+<p>Because Cirrus writes all of its objects under a single top-level
+prefix (see <a class="reference internal" href="#payload-bucket-layout"><span class="std std-ref">Key Organization</span></a>), the payload bucket can also
+be shared with other, unrelated content without risk of key collisions.</p>
+</section>
+<section id="key-organization">
+<span id="payload-bucket-layout"></span><h2>Key Organization<a class="headerlink" href="#key-organization" title="Link to this heading"></a></h2>
+<p>All objects written by Cirrus live under a configurable top-level
+prefix (default <code class="docutils literal notranslate"><span class="pre">cirrus/</span></code>, controlled by
+<code class="docutils literal notranslate"><span class="pre">CIRRUS_PAYLOAD_ROOT_PREFIX</span></code>). Within that, keys are split into two
+distinct namespaces based on how long the data is expected to live:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/tmp/</span></code> — <strong>ephemeral</strong> storage for transient payloads
+that the system does not need to retain once processing has moved on.
+Objects under this prefix are expected to be cleaned up by a bucket
+lifecycle rule (see <a class="reference internal" href="#payload-bucket-lifecycle"><span class="std std-ref">Lifecycle and Retention</span></a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/executions/</span></code> — <strong>persistent</strong> storage for
+per-execution input and output payloads that Cirrus uses to link
+workflow runs to their payload content.</p></li>
+</ul>
+<p>The full layout is as follows (using the default <code class="docutils literal notranslate"><span class="pre">cirrus</span></code> prefix):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>s3://&lt;payload-bucket&gt;/
+└── cirrus/                               # configurable via CIRRUS_PAYLOAD_ROOT_PREFIX
+    ├── tmp/                              # ephemeral
+    │   ├── oversized/
+    │   │   └── &lt;uuid&gt;.json               # overflow for oversized payloads
+    │   ├── batch/
+    │   │   └── &lt;payload_id&gt;/
+    │   │       └── &lt;uuid&gt;.json           # payloads handed to batch tasks
+    │   └── invalid/
+    │       └── &lt;uuid&gt;.json               # payloads that failed validation
+    └── executions/                       # persistent
+        └── &lt;payload_id&gt;/
+            └── &lt;execution_id&gt;/
+                ├── input.json            # payload as received
+                └── output.json           # payload after workflow completed
+</pre></div>
+</div>
+<p>The prefix values are derived from the configured root prefix and are
+exposed as instance attributes on <code class="docutils literal notranslate"><span class="pre">PayloadBucket</span></code>. They are the
+single source of truth for where each type of object is written.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Because a Cirrus <code class="docutils literal notranslate"><span class="pre">payload_id</span></code> has the form
+<code class="docutils literal notranslate"><span class="pre">&lt;collections&gt;/workflow-&lt;workflow_name&gt;/&lt;item_ids&gt;</span></code> and contains
+forward slashes, objects under <code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/executions/</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/tmp/batch/</span></code> fan out into multiple levels of S3
+prefixes. This is intentional: it allows listing all executions for
+a given collection, workflow, or item grouping with ordinary S3
+prefix queries.</p>
+</div>
+<section id="execution-payloads">
+<h3>Execution Payloads<a class="headerlink" href="#execution-payloads" title="Link to this heading"></a></h3>
+<p>When a workflow execution is claimed by the <code class="docutils literal notranslate"><span class="pre">process</span></code> lambda, the
+input payload is written to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">root_prefix</span><span class="o">&gt;/</span><span class="n">executions</span><span class="o">/&lt;</span><span class="n">payload_id</span><span class="o">&gt;/&lt;</span><span class="n">execution_id</span><span class="o">&gt;/</span><span class="nb">input</span><span class="o">.</span><span class="n">json</span>
+</pre></div>
+</div>
+<p>On successful completion, the <code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda writes the output
+payload to the sibling key:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">root_prefix</span><span class="o">&gt;/</span><span class="n">executions</span><span class="o">/&lt;</span><span class="n">payload_id</span><span class="o">&gt;/&lt;</span><span class="n">execution_id</span><span class="o">&gt;/</span><span class="n">output</span><span class="o">.</span><span class="n">json</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;execution_id&gt;</span></code> component is the Step Functions execution name,
+which is deterministically derived from the payload ID and the current
+list of executions in the StateDB record (see
+<code class="docutils literal notranslate"><span class="pre">PayloadManagers.gen_execution_arn</span></code>). Because a single <code class="docutils literal notranslate"><span class="pre">payload_id</span></code>
+may be re-run — for example on <code class="docutils literal notranslate"><span class="pre">FAILED</span></code> or <code class="docutils literal notranslate"><span class="pre">ABORTED</span></code> states, or with
+<code class="docutils literal notranslate"><span class="pre">replace=True</span></code> — multiple <code class="docutils literal notranslate"><span class="pre">&lt;execution_id&gt;</span></code> children may exist under
+the same <code class="docutils literal notranslate"><span class="pre">payload_id</span></code> prefix, one per attempt.</p>
+<p>This layout is what makes the payload bucket and the StateDB addressable
+together: given a StateDB record, its <code class="docutils literal notranslate"><span class="pre">payload_id</span></code> plus the relevant
+entry from its <code class="docutils literal notranslate"><span class="pre">executions</span></code> list uniquely identify the corresponding
+<code class="docutils literal notranslate"><span class="pre">input.json</span></code> and <code class="docutils literal notranslate"><span class="pre">output.json</span></code> in the bucket. The management CLI’s
+<code class="docutils literal notranslate"><span class="pre">get-input-payload</span></code> and <code class="docutils literal notranslate"><span class="pre">get-output-payload</span></code> commands rely on
+exactly this correspondence.</p>
+</section>
+<section id="oversized-payloads">
+<h3>Oversized Payloads<a class="headerlink" href="#oversized-payloads" title="Link to this heading"></a></h3>
+<p>Cirrus passes payloads between lambdas and Step Functions as JSON, but
+AWS EventBridge embeds the Step Functions input and output as escaped
+strings inside its own event envelope. To stay safely below the
+EventBridge event size limit, <code class="docutils literal notranslate"><span class="pre">PayloadManager</span></code> enforces a conservative
+<code class="docutils literal notranslate"><span class="pre">MAX_PAYLOAD_LENGTH</span></code> (120 KB) on the JSON-escaped payload length.</p>
+<p>When a payload exceeds that limit, its contents are uploaded to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">root_prefix</span><span class="o">&gt;/</span><span class="n">tmp</span><span class="o">/</span><span class="n">oversized</span><span class="o">/&lt;</span><span class="n">uuid</span><span class="o">&gt;.</span><span class="n">json</span>
+</pre></div>
+</div>
+<p>and replaced in-flight by a small reference object of the form
+<code class="docutils literal notranslate"><span class="pre">{&quot;url&quot;:</span> <span class="pre">&quot;s3://.../&lt;root_prefix&gt;/tmp/oversized/&lt;uuid&gt;.json&quot;}</span></code>.
+Downstream code in <code class="docutils literal notranslate"><span class="pre">cirrus.lib.utils.payload_from_s3</span></code> transparently
+re-hydrates these references when the full payload is needed again.</p>
+<p>Because oversized payloads are only used as an overflow mechanism
+during a single execution, they live under <code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/tmp/</span></code> and
+are expected to be cleaned up by the bucket’s lifecycle rule.</p>
+</section>
+<section id="batch-payloads">
+<h3>Batch Payloads<a class="headerlink" href="#batch-payloads" title="Link to this heading"></a></h3>
+<p>Tasks that are dispatched to AWS Batch cannot receive their payload
+inline, so <code class="docutils literal notranslate"><span class="pre">PayloadBucket.upload_batch_payload</span></code> writes the payload to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">root_prefix</span><span class="o">&gt;/</span><span class="n">tmp</span><span class="o">/</span><span class="n">batch</span><span class="o">/&lt;</span><span class="n">payload_id</span><span class="o">&gt;/&lt;</span><span class="n">uuid</span><span class="o">&gt;.</span><span class="n">json</span>
+</pre></div>
+</div>
+<p>The Batch task is then invoked with a reference to this key. This path
+is also ephemeral and cleaned up by the lifecycle rule.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The key format <code class="docutils literal notranslate"><span class="pre">&lt;payload_id&gt;/&lt;uuid&gt;.json</span></code> (rather than simply
+<code class="docutils literal notranslate"><span class="pre">&lt;uuid&gt;/input.json</span></code>) is retained for backwards compatibility with
+earlier versions of <code class="docutils literal notranslate"><span class="pre">cirrus-lib</span></code>.</p>
+</div>
+</section>
+<section id="invalid-payloads">
+<h3>Invalid Payloads<a class="headerlink" href="#invalid-payloads" title="Link to this heading"></a></h3>
+<p>When a payload fails validation in a way that Cirrus wants to preserve
+for later inspection, it is uploaded to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">root_prefix</span><span class="o">&gt;/</span><span class="n">tmp</span><span class="o">/</span><span class="n">invalid</span><span class="o">/&lt;</span><span class="n">uuid</span><span class="o">&gt;.</span><span class="n">json</span>
+</pre></div>
+</div>
+<p>This is intended as short-lived diagnostic storage, not a permanent
+archive of invalid inputs, which is why it lives under
+<code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/tmp/</span></code>. If long-term retention of invalid payloads is
+required for a particular deployment, the recommended approach is to
+ship them out to a separate bucket or archive from the handling code
+rather than to alter the lifecycle of <code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/tmp/</span></code>.</p>
+</section>
+</section>
+<section id="lifecycle-and-retention">
+<span id="payload-bucket-lifecycle"></span><h2>Lifecycle and Retention<a class="headerlink" href="#lifecycle-and-retention" title="Link to this heading"></a></h2>
+<p>Cirrus assumes a simple retention model for the payload bucket:</p>
+<ul class="simple">
+<li><p>Everything under <code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/tmp/</span></code> is <strong>ephemeral</strong> and should be
+removed by a bucket lifecycle rule. The reference CloudFormation in
+this repository configures a 10-day expiration on the
+<code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/tmp/</span></code> prefix (derived from the configured
+<code class="docutils literal notranslate"><span class="pre">PayloadRootPrefix</span></code>), which is a reasonable default that gives
+oversized and batch payloads enough lifetime to survive retries,
+backfills, and manual reprocessing.</p></li>
+<li><p>Everything under <code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/executions/</span></code> is <strong>persistent</strong> and
+is not expired by any Cirrus-managed rule. These objects are the
+primary mechanism for reconstructing the history of a workflow run
+after the fact; losing them will break the <code class="docutils literal notranslate"><span class="pre">get-input-payload</span></code> and
+<code class="docutils literal notranslate"><span class="pre">get-output-payload</span></code> CLI commands and make post-hoc debugging
+significantly harder.</p></li>
+</ul>
+<p>Operators bringing their own payload bucket should configure a
+lifecycle rule on <code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/tmp/</span></code> that matches this expectation.
+A 10-day expiration is a reasonable starting point; shortening it risks
+removing objects that are still in use by in-flight retries, and
+extending it past <code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/tmp/</span></code> into other prefixes will
+silently delete execution history.</p>
+<p>Operators who need different retention semantics for execution payloads
+— for example, cost control on very high-throughput deployments — can
+add their own lifecycle rules targeting the
+<code class="docutils literal notranslate"><span class="pre">&lt;root_prefix&gt;/executions/</span></code> prefix, keeping in mind that any payload
+whose execution record is still referenced from the StateDB will become
+unreachable through the CLI once expired.</p>
+</section>
+<section id="access-patterns">
+<h2>Access Patterns<a class="headerlink" href="#access-patterns" title="Link to this heading"></a></h2>
+<p>The payload bucket is accessed in a small number of well-defined
+places:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">process</span></code> lambda — uploads execution input payloads via
+<code class="docutils literal notranslate"><span class="pre">PayloadBucket.upload_input_payload</span></code>, and uploads oversized
+payloads via <code class="docutils literal notranslate"><span class="pre">PayloadBucket.upload_oversize_payload</span></code> before
+invoking Step Functions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">update-state</span></code> lambda — uploads execution output payloads via
+<code class="docutils literal notranslate"><span class="pre">PayloadBucket.upload_output_payload</span></code> on successful completion.</p></li>
+<li><p>Task code — reads oversized payloads via
+<code class="docutils literal notranslate"><span class="pre">cirrus.lib.utils.payload_from_s3</span></code> and, for batch tasks, fetches
+payload content from the batch prefix.</p></li>
+<li><p><a class="reference internal" href="../cli/04_commands.html"><span class="doc">Management CLI</span></a> — reads execution input
+and output payloads via <code class="docutils literal notranslate"><span class="pre">PayloadBucket.get_input_payload_url</span></code> and
+<code class="docutils literal notranslate"><span class="pre">PayloadBucket.get_output_payload_url</span></code>, which reconstruct the
+deterministic S3 URL from a <code class="docutils literal notranslate"><span class="pre">payload_id</span></code> and <code class="docutils literal notranslate"><span class="pre">execution_id</span></code> pair
+looked up in the StateDB.</p></li>
+</ul>
+<p>No Cirrus code writes directly to the bucket without going through
+<code class="docutils literal notranslate"><span class="pre">PayloadBucket</span></code>, and the prefix attributes are not intended to be
+re-implemented elsewhere. Downstream code that needs to locate a
+payload object by key should import the helpers from
+<code class="docutils literal notranslate"><span class="pre">cirrus.lib.payload_bucket</span></code> rather than constructing prefixes by
+hand, so that any future reorganization of the layout remains a
+single-file change.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="70_statedb.html" class="btn btn-neutral float-left" title="State Database" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="80_monitoring.html" class="btn btn-neutral float-right" title="Pipeline Monitoring" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022 - 2024, Element 84.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div
+  class="rst-versions"
+  data-toggle="rst-versions"
+  role="note"
+  aria-label="Versions"
+>
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    v: main
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl id="versions-list">
+      <dt>Versions</dt>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
