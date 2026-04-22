@@ -130,7 +130,7 @@ When to chose either
 
 
 When to choose Lambda
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 * short runtime, with a maximum of 15 minutes
 * single vCPU is acceptable
@@ -179,7 +179,7 @@ When to chose Batch
     .. _cirrus-task-image: https://github.com/cirrus-geo/cirrus-task-images
 
 Docker Image
----------------
+------------
 
 It is generally recommended to use a Docker image for tasks unless the task is only
 intended to run in Lambda and has few dependencies, which is rarely the case with
