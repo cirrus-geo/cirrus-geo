@@ -1,8 +1,9 @@
 import json
+import os
 import shlex
 
 from datetime import UTC, datetime, timedelta
-from io import BytesIO
+from typing import Any
 from unittest.mock import patch
 
 import botocore.client
@@ -11,14 +12,33 @@ import pytest
 from click.testing import CliRunner
 
 from cirrus.lib.payload_manager import PayloadManager, PayloadManagers
+from cirrus.lib.statedb import StateDB
 from cirrus.management.cli import cli
+from cirrus.management.deployment import Deployment
 from cirrus.management.deployment_pointer import DEPLOYMENTS_PREFIX
+
+MOCK_DEPLOYMENT_NAME = "lion"
 
 # moto does not mock lambda GetFunctionConfiguration
 # see https://docs.getmoto.org/en/latest/docs/services/patching_other_services.html
 orig = botocore.client.BaseClient._make_api_call
 
 LAMBDA_ENV_VARS = {"var": "value"}
+
+
+@pytest.fixture(autouse=True)
+def _isolated_env(_environment):
+    os.environ.clear()
+    os.environ.update(
+        {
+            "AWS_ACCESS_KEY_ID": "testing",
+            "AWS_SECRET_ACCESS_KEY": "testing",
+            "AWS_SECURITY_TOKEN": "testing",
+            "AWS_SESSION_TOKEN": "testing",
+            "AWS_DEFAULT_REGION": "us-east-1",
+            "AWS_REGION": "us-east-1",
+        },
+    )
 
 
 @pytest.fixture
@@ -53,6 +73,35 @@ def invoke(cli_runner):
         return cli_runner.invoke(cli, shlex.split(cmd), **kwargs)
 
     return _invoke
+
+
+@pytest.fixture
+def manage(invoke):
+    def _manage(cmd, **kwargs):
+        return invoke("manage " + cmd, **kwargs)
+
+    return _manage
+
+
+@pytest.fixture
+def deployment(manage, queue, payload_bucket, data, statedb, workflow, sts, iam_role):
+    def _manage(deployment, cmd):
+        return manage(f"{deployment.name} {cmd}")
+
+    Deployment.__call__ = _manage
+
+    return Deployment(
+        MOCK_DEPLOYMENT_NAME,
+        mock_parameters(
+            queue,
+            payload_bucket.bucket_name,
+            data,
+            statedb,
+            workflow,
+            MOCK_DEPLOYMENT_NAME,
+            iam_role,
+        ),
+    )
 
 
 @pytest.fixture
@@ -94,7 +143,7 @@ def mock_parameters(
 
 
 @pytest.fixture
-def put_parameters(ssm, queue, payloads, data, statedb, workflow, iam_role):
+def put_parameters(ssm, queue, payload_bucket, data, statedb, workflow, iam_role):
     for deployment_name in ["lion", "squirrel-dev"]:
         # put pointer parameters
         deployment_key = f"/deployment/{deployment_name}/"
@@ -111,7 +160,7 @@ def put_parameters(ssm, queue, payloads, data, statedb, workflow, iam_role):
         # put mock deployment parameters
         for param_name, value in mock_parameters(
             queue,
-            payloads,
+            payload_bucket.bucket_name,
             data,
             statedb,
             workflow,
@@ -148,19 +197,16 @@ def create_records(
     s3,
     put_parameters,
     statedb,
-    payloads,
+    payload_bucket,
     st_func_execution_arn,
 ):
-    def upload_mock_payload(bucket_name: str, payload_id: str):
-        payload = {
+
+    def gen_mock_payload(payload_id: str) -> dict[str, Any]:
+        return {
             "payload_id": payload_id,
             "process": [{"workflow": "test"}],
             "properties": {"a": "property"},
         }
-        with BytesIO() as f:
-            f.write(json.dumps(payload, indent=4).encode("utf-8"))
-            f.seek(0)
-            s3.upload_fileobj(f, bucket_name, f"{payload_id}/input.json")
 
     payload_ids = {
         "completed": [
@@ -175,24 +221,35 @@ def create_records(
 
     # add to mock statedb first then to mock payload bucket
     # claim_processing to set execution arn needed in tests
-    for index, id in enumerate(payload_ids["completed"]):
-        (
-            statedb.claim_processing(
-                id,
-                st_func_execution_arn,
-            ),
-        )
-        statedb.set_completed(
-            id,
+    for index, payload_id in enumerate(payload_ids["completed"]):
+        statedb.claim_processing(payload_id, st_func_execution_arn)
+        statedb.set_succeeded(
+            payload_id,
             [f"item-{id}_completed-{index}"],
         )
-        upload_mock_payload(payloads, id)
-    for index, id in enumerate(payload_ids["failed"]):
+        payload = gen_mock_payload(payload_id)
+        payload_bucket.upload_input_payload(
+            payload,
+            payload_id,
+            StateDB.execution_id_from_arn(st_func_execution_arn),
+        )
+        payload_bucket.upload_output_payload(
+            payload,
+            payload_id,
+            StateDB.execution_id_from_arn(st_func_execution_arn),
+        )
+    for index, payload_id in enumerate(payload_ids["failed"]):
+        statedb.claim_processing(payload_id, st_func_execution_arn)
         statedb.set_failed(
-            id,
+            payload_id,
             f"failed-error-message-{index}",
             (datetime.now(UTC) + timedelta(days=index)).isoformat(),
         )
-        upload_mock_payload(payloads, id)
+        payload = gen_mock_payload(payload_id)
+        payload_bucket.upload_input_payload(
+            payload,
+            payload_id,
+            StateDB.execution_id_from_arn(st_func_execution_arn),
+        )
 
     return payload_ids

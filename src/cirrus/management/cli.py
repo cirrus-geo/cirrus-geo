@@ -8,7 +8,7 @@ import boto3
 import botocore.exceptions
 import click
 
-from cirrus import exceptions
+from cirrus import __version__, exceptions
 from cirrus.management.utils import click as utils_click
 from cirrus.management.utils import logging
 
@@ -69,6 +69,11 @@ class MainGroup(utils_click.AliasedShortMatchGroup):
 @logging.verbosity()
 def cli(ctx, verbose, profile: str | None = None, region: str | None = None) -> None:
     ctx.obj = boto3.Session(profile_name=profile, region_name=region)
+
+
+@cli.command(help="Cirrus CLI version")
+def version() -> None:
+    click.echo(__version__)
 
 
 cli.add_command(list_deployments)

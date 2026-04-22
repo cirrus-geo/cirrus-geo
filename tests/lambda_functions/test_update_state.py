@@ -5,6 +5,7 @@ from itertools import product
 
 import pytest
 
+from botocore.exceptions import ClientError
 from moto.core.models import DEFAULT_ACCOUNT_ID
 from moto.sns.models import sns_backends
 
@@ -12,6 +13,7 @@ from cirrus.lambda_functions.update_state import get_execution_error
 from cirrus.lambda_functions.update_state import lambda_handler as update_state
 from cirrus.lib.enums import SfnStatus
 from cirrus.lib.events import WorkflowEvent
+from cirrus.lib.payload_bucket import PayloadBucket
 
 EVENT_PAYLOAD_ID = "test-collection/workflow-test-workflow/test-id"
 
@@ -37,7 +39,7 @@ def event():
             "executionArn": "arn:aws:states:us-east-1:123456789012:execution:test-workflow1:ef3ace61-4231-4488-9f55-17956ede0de7",  # noqa: E501
             "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:test-workflow1",  # noqa: E501
             "name": "ef3ace61-4231-4488-9f55-17956ede0de7",
-            "status": "SUCCEEDED",
+            "status": "FAILED",
             "startDate": 1667953034792,
             "stopDate": 1667953037547,
             "input": '{"id": "'
@@ -50,17 +52,49 @@ def event():
     }
 
 
-def test_empty_event():
+def test_empty_event() -> None:
     with pytest.raises(Exception):
         update_state({}, {})
 
 
-def test_input_details_not_included(event):
+def test_input_details_not_included(event) -> None:
     event["detail"]["input"] = None
     event["detail"]["inputDetails"]["included"] = False
     with pytest.raises(
         Exception,
         match="Input details not included in EventBridge event",
+    ):
+        update_state(event, {})
+
+
+def test_input_details_missing_from_event(event) -> None:
+    event["detail"]["input"] = None
+    del event["detail"]["inputDetails"]
+    with pytest.raises(
+        Exception,
+        match="Input details not included in EventBridge event",
+    ):
+        update_state(event, {})
+
+
+def test_output_details_not_included(event) -> None:
+    event["detail"]["status"] = SfnStatus.SUCCEEDED
+    event["detail"]["output"] = None
+    event["detail"]["outputDetails"] = {"included": False}
+    with pytest.raises(
+        Exception,
+        match="Output details not included in EventBridge event",
+    ):
+        update_state(event, {})
+
+
+def test_output_details_not_specified(event) -> None:
+    event["detail"]["status"] = SfnStatus.SUCCEEDED
+    event["detail"]["output"] = None
+    event["detail"]["outputDetails"] = None
+    with pytest.raises(
+        Exception,
+        match="Output details not included in EventBridge event",
     ):
         update_state(event, {})
 
@@ -95,6 +129,11 @@ def test_workflow_event_notification(
         monkeypatch.delenv("CIRRUS_WORKFLOW_EVENT_TOPIC_ARN", raising=False)
 
     event["detail"]["status"] = sfn_state
+
+    if sfn_state == SfnStatus.SUCCEEDED:
+        event["detail"]["output"] = event["detail"]["input"]
+        event["detail"]["outputDetails"] = {"included": True}
+
     update_state(event, {})
 
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
@@ -127,12 +166,14 @@ def test_success(event, statedb, publish_topic, publish_enabled, monkeypatch):
 
     # Event needs an output payload to publish, so just use the input payload
     event["detail"]["output"] = event["detail"]["input"]
+    event["detail"]["outputDetails"] = {"included": True}
+    event["detail"]["status"] = SfnStatus.SUCCEEDED
 
     update_state(event, {})
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
 
     assert len(items) == 1
-    assert items[0]["state_updated"].startswith("COMPLETED")
+    assert items[0]["state_updated"].startswith("SUCCEEDED")
 
     sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
     all_sent_notifications = sns_backend.topics[publish_topic].sent_notifications
@@ -250,16 +291,51 @@ def test_multi_item_publication(
     assert len(payload["features"]) == 1
     payload["features"] = payload["features"] * 11
     event["detail"]["output"] = json.dumps(payload)
+    event["detail"]["outputDetails"] = {"included": True}
+    event["detail"]["status"] = SfnStatus.SUCCEEDED
 
     update_state(event, {})
     items = statedb.get_dbitems(payload_ids=[EVENT_PAYLOAD_ID])
 
     assert len(items) == 1
-    assert items[0]["state_updated"].startswith("COMPLETED")
+    assert items[0]["state_updated"].startswith("SUCCEEDED")
 
     sns_backend = sns_backends[DEFAULT_ACCOUNT_ID]["us-east-1"]
     all_sent_notifications = sns_backend.topics[publish_topic].sent_notifications
     assert len(all_sent_notifications) == expected_msg_count
+
+
+def test_output_payload_written_on_success(event, statedb, s3):
+    event["detail"]["status"] = SfnStatus.SUCCEEDED
+    event["detail"]["output"] = event["detail"]["input"]
+    event["detail"]["outputDetails"] = {"included": True}
+    update_state(event, {})
+    bucket, key = PayloadBucket.parse_url(
+        PayloadBucket.from_env().get_output_payload_url(
+            EVENT_PAYLOAD_ID,
+            event["detail"]["name"],
+        ),
+    )
+    resp = s3.get_object(Bucket=bucket, Key=key)
+    output = json.loads(resp["Body"].read())
+    assert output["id"] == EVENT_PAYLOAD_ID
+
+
+def test_no_output_payload_when_output_is_none(event, statedb, s3):
+    event["detail"]["status"] = SfnStatus.SUCCEEDED
+    event["detail"]["output"] = None
+    event["detail"]["outputDetails"] = {"included": True}
+    update_state(event, {})
+    bucket, key = PayloadBucket.parse_url(
+        PayloadBucket.from_env().get_output_payload_url(
+            EVENT_PAYLOAD_ID,
+            event["detail"]["name"],
+        ),
+    )
+
+    with pytest.raises(ClientError) as exc_info:
+        s3.get_object(Bucket=bucket, Key=key)
+    assert exc_info.value.response["Error"]["Code"] == "NoSuchKey"
 
 
 # TODO: test URL input

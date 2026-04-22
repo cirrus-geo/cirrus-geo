@@ -64,6 +64,11 @@ Parameters:
       - 'true'
       - 'false'
 
+  PayloadRootPrefix:
+    Type: String
+    Description: Root prefix for all objects in the payload bucket
+    Default: cirrus
+
 Conditions:
   CreateVpc: !Equals [!Ref EnableVpc, 'true']
   CreateWorkflowMetrics: !Equals [!Ref EnableWorkflowMetrics, 'true']
@@ -76,6 +81,7 @@ Resources:
       TemplateURL: core/base.yaml
       Parameters:
         ResourcePrefix: !Ref ResourcePrefix
+        PayloadRootPrefix: !Ref PayloadRootPrefix
       Tags:
         - Key: Component
           Value: Base
@@ -143,6 +149,7 @@ Resources:
         LambdaArch: !Ref LambdaArch
         WorkflowMetricLogGroup: !If [CreateWorkflowMetrics, !GetAtt MetricsStack.Outputs.CirrusWorkflowEventLogGroup, '']
         WorkflowMetricNamespace: !If [CreateWorkflowMetrics, !GetAtt MetricsStack.Outputs.CirrusWorkflowMetricNamespace, '']
+        PayloadRootPrefix: !Ref PayloadRootPrefix
       Tags:
         - Key: Component
           Value: Functions
@@ -182,6 +189,7 @@ Resources:
         PublishTopicArn: !GetAtt BaseStack.Outputs.PublishTopicArn
         WorkflowEventTopicArn: !GetAtt BaseStack.Outputs.WorkflowEventTopicArn
         LogLevel: !Ref LogLevel
+        PayloadRootPrefix: !Ref PayloadRootPrefix
       Tags:
         - Key: Component
           Value: CLI

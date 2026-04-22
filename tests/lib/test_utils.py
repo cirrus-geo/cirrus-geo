@@ -59,9 +59,9 @@ def test_extract_event_records(event):
     assert extracted == expected
 
 
-def test_payload_from_s3(boto3utils_s3, payloads):
+def test_payload_from_s3(boto3utils_s3, payload_bucket):
     item = {"id": "some-id"}
-    record = {"url": "s3://payloads/item.json"}
+    record = {"url": f"s3://{payload_bucket.bucket_name}/item.json"}
     boto3utils_s3.upload_json(item, record["url"])
     record = utils.payload_from_s3(record)
     assert record == item

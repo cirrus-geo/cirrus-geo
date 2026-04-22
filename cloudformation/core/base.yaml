@@ -6,6 +6,11 @@ Parameters:
     Type: String
     Description: Prefix for all resource names
 
+  PayloadRootPrefix:
+    Type: String
+    Description: Root prefix for all objects in the payload bucket
+    Default: cirrus
+
 Resources:
   # S3 Buckets
   CirrusDataBucket:
@@ -27,6 +32,11 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 10
+            Prefix: !Sub '${PayloadRootPrefix}/tmp/'
+            Status: Enabled
 
   # DynamoDB State Table
   StateTable:

@@ -9,6 +9,7 @@ from moto.core.models import DEFAULT_ACCOUNT_ID
 from moto.sns.models import sns_backends
 
 from cirrus.lambda_functions.process import lambda_handler as process
+from cirrus.lib.errors import UndefinedPayloadBucketError
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.payload_manager import PayloadManager, PayloadManagers
 
@@ -123,7 +124,7 @@ def test_no_payload_bucket(
     monkeypatch,
 ):
     monkeypatch.delenv("CIRRUS_PAYLOAD_BUCKET")
-    with pytest.raises(ValueError):
+    with pytest.raises(UndefinedPayloadBucketError):
         _ = process(payload, {})
 
 
@@ -258,8 +259,8 @@ def test_rerun_completed(
     statedb,
     workflow_event_topic,
 ):
-    # create payload state record in COMPLETED state
-    items = statedb.set_completed(payload["id"])
+    # create payload state record in SUCCEEDED state
+    items = statedb.set_succeeded(payload["id"])
 
     result = process(payload, {})
     assert result == 0
@@ -276,8 +277,8 @@ def test_rerun_completed(
     # matches our input payload, and it is INVALID
     items = statedb.get_dbitems(payload_ids=[payload["id"]])
     assert len(items) == 1
-    assert items[0]["state_updated"].startswith("COMPLETED")
-    assert_sns_message_sequence(["ALREADY_COMPLETED"], workflow_event_topic)
+    assert items[0]["state_updated"].startswith("SUCCEEDED")
+    assert_sns_message_sequence(["ALREADY_SUCCEEDED"], workflow_event_topic)
 
 
 def test_rerun_completed_replace(
@@ -289,8 +290,8 @@ def test_rerun_completed_replace(
 ):
     payload["process"][0]["replace"] = True
 
-    # create payload state record in COMPLETED state
-    items = statedb.set_completed(payload["id"])
+    # create payload state record in SUCCEEDED state
+    items = statedb.set_succeeded(payload["id"])
 
     result = process(payload, {})
     assert result == 1
@@ -509,7 +510,7 @@ def test_single_payload_sqs_url(
     payload,
     sqs,
     queue,
-    payloads,
+    payload_bucket,
     s3,
     stepfunctions,
     workflow,
@@ -517,11 +518,13 @@ def test_single_payload_sqs_url(
     workflow_event_topic,
 ):
     with io.BytesIO(json.dumps(payload).encode()) as fileobj:
-        s3.upload_fileobj(fileobj, payloads, "payload.json")
+        s3.upload_fileobj(fileobj, payload_bucket.bucket_name, "payload.json")
 
     sqs.send_message(
         QueueUrl=queue["QueueUrl"],
-        MessageBody=json.dumps({"url": f"s3://{payloads}/payload.json"}),
+        MessageBody=json.dumps(
+            {"url": f"s3://{payload_bucket.bucket_name}/payload.json"},
+        ),
     )
     _payload = sqs_to_event(
         sqs.receive_message(
@@ -969,20 +972,3 @@ def test_execution_name_idempotence(payload):
         payload["process"][0]["workflow"],
     ).rpartition(":")[2]
     assert first_execution_name == second_execution_name
-
-
-def test_missing_payload_bucket_raises(
-    payload,
-    workflow,
-    statedb,
-    workflow_event_topic,
-    monkeypatch,
-):
-    payload_manager = PayloadManager(**payload)
-    monkeypatch.delenv("CIRRUS_PAYLOAD_BUCKET")
-    wfem = WorkflowEventManager()
-    with pytest.raises(
-        ValueError,
-        match="env var CIRRUS_PAYLOAD_BUCKET must be defined",
-    ):
-        payload_manager._claim(wfem, "blah", None)

@@ -13,6 +13,7 @@ from click.testing import CliRunner
 
 from cirrus.lib.eventdb import EventDB
 from cirrus.lib.events import WorkflowEventManager
+from cirrus.lib.payload_bucket import PayloadBucket
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import get_client
 
@@ -125,17 +126,20 @@ def eventdb(timestream_write_client) -> EventDB:
 
 
 @pytest.fixture
-def statedb(dynamo, statedb_schema, eventdb) -> StateDB:
+def statedb(dynamo, statedb_schema, eventdb, payload_bucket) -> StateDB:
     dynamo.create_table(**statedb_schema)
     table_name = statedb_schema["TableName"]
-    return StateDB(table_name=table_name)
+    return StateDB(
+        table_name=table_name,
+        payload_bucket=payload_bucket,
+    )
 
 
 @pytest.fixture
-def payloads(s3):
+def payload_bucket(s3) -> PayloadBucket:
     name = "payloads"
     s3.create_bucket(Bucket=name)
-    return name
+    return PayloadBucket(name)
 
 
 @pytest.fixture
@@ -209,6 +213,7 @@ def execute_state_machine(stepfunctions, workflow, put_parameters):
     return stepfunctions.start_execution(
         stateMachineArn=state_machine_arn,
         name="test-execution",
+        input='{"hello":"cirrus"}',
     )
 
 

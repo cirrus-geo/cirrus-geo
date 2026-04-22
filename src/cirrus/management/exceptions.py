@@ -1,3 +1,5 @@
+from typing import Literal
+
 from cirrus.exceptions import CirrusError
 
 
@@ -15,18 +17,6 @@ class DeploymentNotFoundError(CirrusError):
         super().__init__(msg, *args, **kwargs)
 
 
-class PayloadNotFoundError(CirrusError):
-    def __init__(self, payload_id, *args, **kwargs):
-        msg = f"Payload not found: {payload_id}"
-        super().__init__(msg, *args, **kwargs)
-
-
-class NoExecutionsError(CirrusError):
-    def __init__(self, payload_id, *args, **kwargs):
-        msg = f"Payload has no executions: {payload_id}"
-        super().__init__(msg, *args, **kwargs)
-
-
 class MissingParameterError(CirrusError):
     def __init__(self, missing: str, *extra_missing: str, **kwargs):
         msg = f"A required environment variable(s) was not found: {
@@ -38,4 +28,16 @@ class MissingParameterError(CirrusError):
 class StatsUnavailableError(CirrusError):
     def __init__(self, *args, **kwargs):
         msg = "Stats not available because timeseries database is not configured"
+        super().__init__(msg, *args, **kwargs)
+
+
+class NoPayloadUrlError(CirrusError):
+    def __init__(
+        self,
+        payload_id: str,
+        direction: Literal["input", "output"],
+        *args,
+        **kwargs,
+    ) -> None:
+        msg = f"Could not resolve url for {direction} payload: {payload_id}"
         super().__init__(msg, *args, **kwargs)

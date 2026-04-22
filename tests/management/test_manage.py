@@ -6,43 +6,8 @@ import pytest
 
 from click.testing import Result
 
-from cirrus.management.deployment import (
-    Deployment,
-)
-from tests.management.conftest import mock_parameters
-
-MOCK_DEPLOYMENT_NAME = "lion"
 STACK_NAME = "cirrus-test"
 MOCK_CIRRUS_PREFIX = "ts-lion-dev-cirrus"
-
-
-@pytest.fixture
-def manage(invoke):
-    def _manage(cmd, **kwargs):
-        return invoke("manage " + cmd, **kwargs)
-
-    return _manage
-
-
-@pytest.fixture
-def deployment(manage, queue, payloads, data, statedb, workflow, sts, iam_role):
-    def _manage(deployment, cmd):
-        return manage(f"{deployment.name} {cmd}")
-
-    Deployment.__call__ = _manage
-
-    return Deployment(
-        MOCK_DEPLOYMENT_NAME,
-        mock_parameters(
-            queue,
-            payloads,
-            data,
-            statedb,
-            workflow,
-            MOCK_DEPLOYMENT_NAME,
-            iam_role,
-        ),
-    )
 
 
 def test_manage(manage):
@@ -73,10 +38,10 @@ def test_manage_get_execution_by_payload_id(
 
 
 @pytest.fixture
-def _management_env(_environment, payloads, workflow):
+def _management_env(_environment, payload_bucket, workflow):
     state_machine_arn = workflow["stateMachineArn"]
     os.environ["CIRRUS_BASE_WORKFLOW_ARN"] = state_machine_arn[: -len("test-workflow1")]
-    os.environ["CIRRUS_PAYLOAD_BUCKET"] = payloads
+    os.environ["CIRRUS_PAYLOAD_BUCKET"] = payload_bucket.bucket_name
 
 
 @pytest.mark.usefixtures("_management_env")
@@ -106,12 +71,22 @@ def test_manage_get_execution_arn_by_payload_id_twice(
 
 
 # using non-stac payloads for simpler testing
-def test_get_payload(
+def test_get_input_payload(
     deployment,
     create_records,
 ):
     for payload_id in create_records["completed"]:
-        result = deployment(f"get-payload {payload_id}")
+        result = deployment(f"get-input-payload {payload_id}")
+        assert result.exit_code == 0
+        assert json.loads(result.stdout.strip())["payload_id"] == payload_id
+
+
+def test_get_output_payload(
+    deployment,
+    create_records,
+):
+    for payload_id in create_records["completed"]:
+        result = deployment(f"get-output-payload {payload_id}")
         assert result.exit_code == 0
         assert json.loads(result.stdout.strip())["payload_id"] == payload_id
 
@@ -193,7 +168,7 @@ def assert_get_payloads(
     limit: int | None,
 ):
     assert result.exit_code == 0
-    output = result.stdout.strip().split("\n")
+    output = [s for s in result.stdout.strip().split("\n") if s]
 
     expected_record_count = len(create_records[state])
     if limit:
@@ -211,14 +186,14 @@ def assert_get_payloads(
     [
         pytest.param(
             "completed",
-            "--state 'COMPLETED'",
+            "--state 'SUCCEEDED'",
             None,
-            id="state=COMPLETED flag",
+            id="state=SUCCEEDED flag",
         ),
         pytest.param("failed", "--state 'FAILED'", None, id="state=FAILED flag"),
         pytest.param(
             "completed",
-            "--since '10d' --state 'COMPLETED'",
+            "--since '10d' --state 'SUCCEEDED'",
             None,
             id="since flag",
         ),
@@ -228,12 +203,19 @@ def assert_get_payloads(
             None,
             id="error prefix flag",
         ),
-        pytest.param("completed", "--state 'COMPLETED' --limit 1", 1, id="limit flag"),
+        pytest.param("completed", "--state 'SUCCEEDED' --limit 1", 1, id="limit flag"),
     ],
 )
-def test_get_payloads(deployment, create_records, statedb, state, parameter, limit):
+def test_get_input_payloads(
+    deployment,
+    create_records,
+    statedb,
+    state,
+    parameter,
+    limit,
+):
     result = deployment(
-        f"get-payloads --collections-workflow 'sar-test-panda_test' {parameter} --rerun",
+        f"get-input-payloads --collections-workflow 'sar-test-panda_test' {parameter} --rerun",
     )
     assert_get_payloads(result, create_records, state, limit)
 

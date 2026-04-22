@@ -9,7 +9,7 @@
         "count": 3
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 1,
         "count": 1
       },
@@ -45,7 +45,7 @@
         "count": 5
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 1,
         "count": 1
       },
@@ -81,7 +81,7 @@
         "count": 8
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 4,
         "count": 4
       },
@@ -117,7 +117,7 @@
         "count": 5
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 3,
         "count": 3
       },
@@ -153,7 +153,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 2,
         "count": 2
       },
@@ -189,7 +189,7 @@
         "count": 8
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 0,
         "count": 0
       },
@@ -225,7 +225,7 @@
         "count": 8
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 5,
         "count": 5
       },
@@ -261,7 +261,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 4,
         "count": 4
       },
@@ -297,7 +297,7 @@
         "count": 8
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 2,
         "count": 2
       },
@@ -333,7 +333,7 @@
         "count": 4
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 5,
         "count": 5
       },
@@ -369,7 +369,7 @@
         "count": 8
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 2,
         "count": 2
       },
@@ -405,7 +405,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 1,
         "count": 1
       },
@@ -441,7 +441,7 @@
         "count": 1
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 2,
         "count": 2
       },
@@ -477,7 +477,7 @@
         "count": 6
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 5,
         "count": 5
       },
@@ -513,7 +513,7 @@
         "count": 8
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 2,
         "count": 2
       },
@@ -549,7 +549,7 @@
         "count": 3
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 2,
         "count": 2
       },
@@ -585,7 +585,7 @@
         "count": 6
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 6,
         "count": 6
       },
@@ -621,7 +621,7 @@
         "count": 6
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 5,
         "count": 5
       },
@@ -657,7 +657,7 @@
         "count": 6
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 4,
         "count": 4
       },
@@ -693,7 +693,7 @@
         "count": 8
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 3,
         "count": 3
       },
@@ -729,7 +729,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 4,
         "count": 4
       },
@@ -765,7 +765,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 1,
         "count": 1
       },
@@ -801,7 +801,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 7,
         "count": 7
       },
@@ -837,7 +837,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 5,
         "count": 5
       },
@@ -873,7 +873,7 @@
         "count": 9
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 8,
         "count": 8
       },
@@ -909,7 +909,7 @@
         "count": 5
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 7,
         "count": 7
       },
@@ -945,7 +945,7 @@
         "count": 9
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 4,
         "count": 4
       },
@@ -981,7 +981,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 8,
         "count": 8
       },
@@ -1017,7 +1017,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 9,
         "count": 9
       },
@@ -1053,7 +1053,7 @@
         "count": 6
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 7,
         "count": 7
       },
@@ -1089,7 +1089,7 @@
         "count": 9
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 7,
         "count": 7
       },
@@ -1125,7 +1125,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 10,
         "count": 10
       },
@@ -1161,7 +1161,7 @@
         "count": 7
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 13,
         "count": 13
       },
@@ -1197,7 +1197,7 @@
         "count": 12
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 9,
         "count": 9
       },
@@ -1233,7 +1233,7 @@
         "count": 14
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 12,
         "count": 12
       },
@@ -1269,7 +1269,7 @@
         "count": 38
       },
       {
-        "state": "COMPLETED",
+        "state": "SUCCEEDED",
         "unique_count": 60,
         "count": 60
       },

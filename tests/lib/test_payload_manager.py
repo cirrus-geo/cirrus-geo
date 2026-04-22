@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from cirrus.lib.payload_manager import PayloadManager
+from cirrus.lib.payload_manager import MAX_PAYLOAD_LENGTH, PayloadManager
 from cirrus.lib.utils import build_item_sns_attributes, recursive_compare
 
 fixtures = Path(__file__).parent.joinpath("fixtures")
@@ -141,7 +141,27 @@ def test_items_to_sns_messages(base_payload):
     assert messages == expected
 
 
+def test_calculate_payload_length(base_payload) -> None:
+    pm = PayloadManager(base_payload)
+    single_encoded_length = len(json.dumps(pm.payload))
+    double_encoded_length = pm.calculate_payload_length()
+    # Double encoding adds escaping overhead (escaped quotes, etc.),
+    # plus the outer quotes and the byte-string repr, so it must be larger.
+    assert double_encoded_length > single_encoded_length
+
+
 def test_fail_and_raise(base_payload):
     payload_manager = PayloadManager(base_payload)
     with pytest.raises(Exception):
         payload_manager._fail_and_raise()
+
+
+def test_get_payload_oversized(base_payload, payload_bucket) -> None:
+    # Inflate the payload beyond MAX_PAYLOAD_LENGTH (120KB after double-encoding)
+    base_payload["features"][0]["properties"]["padding"] = "x" * 200_000
+    pm = PayloadManager(base_payload, payload_bucket=payload_bucket)
+    assert pm.calculate_payload_length() > MAX_PAYLOAD_LENGTH
+
+    result = pm.get_payload()
+    assert "url" in result
+    assert result["url"].startswith(f"s3://{payload_bucket.bucket_name}/")

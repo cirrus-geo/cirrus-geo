@@ -1,23 +1,28 @@
 """Tests for Step Functions-related Deployment methods"""
 
+import json
 import time
 
 import pytest
 
 from botocore.exceptions import ClientError
 
-from cirrus.management.deployment import Deployment, NoExecutionsError
+from cirrus.exceptions import ExecutionNotFoundError
+from cirrus.management.deployment import (
+    MAX_SQS_MESSAGE_LENGTH,
+    Deployment,
+)
 from tests.management.conftest import mock_parameters
 
 # Test fixtures
 
 
 @pytest.fixture
-def deployment(queue, payloads, data, statedb, workflow, iam_role):
+def deployment(queue, payload_bucket, data, statedb, workflow, iam_role):
     """Create a Deployment instance with moto-mocked AWS services"""
     environment = mock_parameters(
         queue,
-        payloads,
+        payload_bucket.bucket_name,
         data,
         statedb,
         workflow,
@@ -31,13 +36,6 @@ def deployment(queue, payloads, data, statedb, workflow, iam_role):
 
 
 # Tests for get_execution_arn
-
-
-def test_get_execution_arn_with_arn(deployment):
-    """Test getting execution ARN when ARN is provided directly"""
-    test_arn = "arn:aws:states:us-east-1:123456789:execution:my-sm:exec-123"
-    result = deployment.get_execution_arn(arn=test_arn)
-    assert result == test_arn
 
 
 def test_get_execution_arn_with_payload_id(deployment, statedb):
@@ -66,30 +64,8 @@ def test_get_execution_arn_with_no_executions(deployment, dynamo):
         },
     )
 
-    with pytest.raises(NoExecutionsError):
+    with pytest.raises(ExecutionNotFoundError):
         deployment.get_execution_arn(payload_id=test_payload_id)
-
-
-def test_get_execution_arn_with_neither(deployment):
-    """Test error when neither arn nor payload_id provided"""
-    with pytest.raises(
-        ValueError,
-        match="Either arn or payload_id must be provided",
-    ):
-        deployment.get_execution_arn()
-
-
-def test_get_execution_arn_prefers_arn(deployment):
-    """Test that arn takes precedence when both are provided"""
-    test_arn = "arn:aws:states:us-east-1:123456789:execution:my-sm:exec-123"
-    test_payload_id = "test-payload-456"
-
-    result = deployment.get_execution_arn(
-        arn=test_arn,
-        payload_id=test_payload_id,
-    )
-
-    assert result == test_arn
 
 
 # Tests for get_workflow_definition
@@ -149,7 +125,7 @@ def test_get_workflow_summary(deployment, create_records, statedb):
 
     expected_states = [
         "PROCESSING",
-        "COMPLETED",
+        "SUCCEEDED",
         "FAILED",
         "INVALID",
         "ABORTED",
@@ -157,7 +133,7 @@ def test_get_workflow_summary(deployment, create_records, statedb):
     ]
     for state in expected_states:
         assert state in summary["counts"]
-        if state in ["COMPLETED", "FAILED"]:
+        if state in ["SUCCEEDED", "FAILED"]:
             assert summary["counts"][state] == 2
         else:
             assert summary["counts"][state] == 0
@@ -178,7 +154,7 @@ def test_get_workflow_summary_with_since(deployment, create_records, statedb):
 
     # With 1 day filter, we should get different counts
     # Based on fixture: completed items are recent, one failed is old
-    assert summary["counts"]["COMPLETED"] == 2
+    assert summary["counts"]["SUCCEEDED"] == 2
     assert summary["counts"]["FAILED"] == 1
 
 
@@ -236,12 +212,12 @@ def test_get_workflow_items_with_state_filter(deployment, create_records, stated
     result = deployment.get_workflow_items(
         "sar-test-panda",
         "test",
-        state="COMPLETED",
+        state="SUCCEEDED",
     )
 
     assert len(result["items"]) == 2
     for item in result["items"]:
-        assert item["state"] == "COMPLETED"
+        assert item["state"] == "SUCCEEDED"
 
 
 def test_get_workflow_items_with_since(deployment, create_records, statedb):
@@ -323,6 +299,121 @@ def test_get_workflow_items_with_sort_index(deployment, create_records, statedb)
     assert isinstance(result["items"], list)
 
 
+def test_get_workflow_items_with_error_prefix(deployment, create_records, statedb):
+    """Test workflow items filtered by error prefix"""
+    result = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        error_begins_with="failed-error-message",
+    )
+
+    # Both failed records share the "failed-error-message" prefix.
+    assert len(result["items"]) == 2
+    for item in result["items"]:
+        assert item["state"] == "FAILED"
+        assert item["last_error"].startswith("failed-error-message")
+
+    no_match = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        error_begins_with="nonsense-prefix",
+    )
+    assert no_match["items"] == []
+
+
+def test_get_workflow_items_propagates_nextkey(deployment, create_records, statedb):
+    """Test that nextkey is propagated when there are more pages, omitted when not."""
+    # With limit=1 we should get a nextkey because there are 4 items total.
+    page1 = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        limit=1,
+    )
+    assert len(page1["items"]) == 1
+    assert "nextkey" in page1
+    assert isinstance(page1["nextkey"], str)
+
+    # With a limit larger than the number of items, no nextkey expected.
+    full = deployment.get_workflow_items(
+        "sar-test-panda",
+        "test",
+        limit=100,
+    )
+    assert len(full["items"]) == 4
+    assert "nextkey" not in full
+
+
+# Tests for yield_workflow_items
+
+
+def test_yield_workflow_items(deployment, create_records, statedb):
+    """Smoke test of the streaming yield_workflow_items API."""
+    items = list(deployment.yield_workflow_items("sar-test-panda", "test"))
+
+    assert len(items) == 4
+    for item in items:
+        # The streaming path must NOT apply to_current(), so the
+        # dashboard-compatibility fields should be absent.
+        assert "catid" not in item
+        assert "catalog" not in item
+        assert "payload_id" in item
+
+
+def test_yield_workflow_items_with_filters(deployment, create_records, statedb):
+    """Verify state, since, and error_begins_with filters work via streaming."""
+    from datetime import timedelta
+
+    # state filter
+    succeeded = list(
+        deployment.yield_workflow_items(
+            "sar-test-panda",
+            "test",
+            state="SUCCEEDED",
+        ),
+    )
+    assert len(succeeded) == 2
+    for item in succeeded:
+        assert item["state"] == "SUCCEEDED"
+
+    # since filter
+    recent = list(
+        deployment.yield_workflow_items(
+            "sar-test-panda",
+            "test",
+            since=timedelta(days=1),
+        ),
+    )
+    assert len(recent) == 3
+
+    # error_begins_with filter
+    failed = list(
+        deployment.yield_workflow_items(
+            "sar-test-panda",
+            "test",
+            error_begins_with="failed-error-message",
+        ),
+    )
+    assert len(failed) == 2
+    for item in failed:
+        assert item["state"] == "FAILED"
+
+
+def test_yield_input_payloads(deployment, create_records, statedb):
+    """Smoke test for yield_input_payloads with the new signature and rerun flag."""
+    payloads = list(
+        deployment.yield_input_payloads(
+            "sar-test-panda",
+            "test",
+            state="SUCCEEDED",
+            rerun=True,
+        ),
+    )
+
+    assert len(payloads) == 2
+    for payload in payloads:
+        assert payload["process"][0]["replace"] is True
+
+
 # Tests for get_workflow_item
 
 
@@ -395,3 +486,28 @@ def test_get_batch_logs(deployment, logs):
 
     assert "logs" in result
     assert len(result["logs"]) == 1
+
+
+# Tests for enqueue_payload with oversized messages
+
+
+def test_enqueue_payload_oversized(deployment, s3, sqs):
+    """Test that oversized payloads are uploaded to S3 and SQS receives a URL reference"""
+    from cirrus.lib.payload_bucket import PayloadBucket
+
+    oversized_payload = {"data": "x" * (MAX_SQS_MESSAGE_LENGTH + 100)}
+
+    deployment.enqueue_payload(oversized_payload)
+
+    # Verify the SQS message body contains a URL reference, not the original payload
+    queue_url = deployment.environment["CIRRUS_PROCESS_QUEUE_URL"]
+    messages = sqs.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=1)
+    body = json.loads(messages["Messages"][0]["Body"])
+    assert "url" in body
+    assert deployment.payload_bucket.prefix_oversized in body["url"]
+
+    # Verify the payload was actually uploaded at that URL
+    bucket, key = PayloadBucket.parse_url(body["url"])
+    resp = s3.get_object(Bucket=bucket, Key=key)
+    uploaded = json.loads(resp["Body"].read())
+    assert uploaded == oversized_payload

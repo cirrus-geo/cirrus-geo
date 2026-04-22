@@ -9,6 +9,7 @@ import click
 
 from boto3 import Session
 
+from cirrus.lib.statedb import StateDB
 from cirrus.management.deployment import WORKFLOW_POLL_INTERVAL, Deployment
 from cirrus.management.task_logs import (
     format_log_event,
@@ -22,15 +23,13 @@ from cirrus.management.utils.click import (
 )
 from cirrus.management.utils.manage import (
     execution_arn,
-    include_user_vars,
+    pass_deployment,
     query_filters,
     raw_option,
     rerun_option,
 )
 
 logger = logging.getLogger(__name__)
-
-pass_deployment = click.make_pass_decorator(Deployment)
 
 
 @click.group(
@@ -103,19 +102,35 @@ def run_workflow(
     sys.exit(rc)
 
 
-@manage.command("get-payload")
+@manage.command("get-input-payload")
 @click.argument(
     "payload-id",
 )
 @raw_option
 @pass_deployment
-def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
-    """Get a payload from S3 using its ID"""
+def get_input_payload(deployment: Deployment, payload_id: str, raw: bool = False):
+    """Get an input payload from S3 using its ID"""
 
     if raw:
-        click.echo(deployment.fetch_payload(payload_id))
+        click.echo(deployment.fetch_payload(payload_id, "input"))
     else:
-        json.dump(deployment.fetch_payload(payload_id), sys.stdout, indent=4)
+        json.dump(deployment.fetch_payload(payload_id, "input"), sys.stdout, indent=4)
+        click.echo("")
+
+
+@manage.command("get-output-payload")
+@click.argument(
+    "payload-id",
+)
+@raw_option
+@pass_deployment
+def get_output_payload(deployment: Deployment, payload_id: str, raw: bool = False):
+    """Get an output payload from S3 for an input payload ID"""
+
+    if raw:
+        click.echo(deployment.fetch_payload(payload_id, "output"))
+    else:
+        json.dump(deployment.fetch_payload(payload_id, "output"), sys.stdout, indent=4)
         click.echo("")
 
 
@@ -125,12 +140,10 @@ def get_payload(deployment: Deployment, payload_id: str, raw: bool = False):
 @pass_deployment
 def get_execution(
     deployment: Deployment,
-    arn: str | None,
-    payload_id: str | None,
+    execution_arn: str,
     raw: bool = False,
 ):
     """Get basic workflow execution details using its ARN or its input payload ID"""
-    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
     execution = deployment.get_execution(execution_arn)
 
     if raw:
@@ -145,12 +158,10 @@ def get_execution(
 @pass_deployment
 def get_execution_input(
     deployment: Deployment,
-    arn: str | None,
-    payload_id: str | None,
+    execution_arn: str,
     raw: bool = False,
 ):
     """Get a workflow execution's input payload using its ARN or its input payload ID"""
-    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
     _input = json.loads(deployment.get_execution(execution_arn)["input"])
 
     if raw:
@@ -165,13 +176,11 @@ def get_execution_input(
 @pass_deployment
 def get_execution_output(
     deployment: Deployment,
-    arn: str | None,
-    payload_id: str | None,
+    execution_arn: str,
     raw: bool = False,
 ):
     """Get a workflow execution's output payload using its ARN or its input
     payload ID"""
-    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
     output = json.loads(deployment.get_execution(execution_arn)["output"])
 
     if raw:
@@ -202,12 +211,10 @@ def get_state_machine(
 @pass_deployment
 def get_execution_events(
     deployment: Deployment,
-    arn: str | None,
-    payload_id: str | None,
+    execution_arn: str,
     with_log_metadata: bool = False,
 ):
     """Get a workflow execution's event history using its ARN or its input payload ID"""
-    execution_arn = deployment.get_execution_arn(arn=arn, payload_id=payload_id)
     execution_history = deployment.get_execution_events(execution_arn)
 
     if with_log_metadata:
@@ -341,12 +348,10 @@ def invoke_lambda(deployment: Deployment, session: Session, lambda_name: str):
 @manage.command("template-payload")
 @additional_variables
 @silence_templating_errors
-@include_user_vars
 @pass_deployment
 def template_payload(
     deployment: Deployment,
     silence_templating_errors: bool,
-    include_user_vars: bool,
     additional_variables: dict[str, str],
 ):
     """Template a payload using a deployment's vars"""
@@ -355,7 +360,6 @@ def template_payload(
             sys.stdin.read(),
             additional_variables,
             silence_templating_errors,
-            include_user_vars,
         ),
     )
 
@@ -370,14 +374,13 @@ def template_payload(
     "command",
     nargs=-1,
 )
-@include_user_vars
 @pass_deployment
 @click.pass_context
-def _exec(ctx, deployment: Deployment, command: str, include_user_vars: bool):
+def _exec(ctx, deployment: Deployment, command: str):
     """Run an executable with the deployment environment vars loaded"""
     if not command:
         return
-    deployment.exec(command, include_user_vars=include_user_vars)
+    deployment.exec(command)
 
 
 @manage.command(
@@ -390,16 +393,15 @@ def _exec(ctx, deployment: Deployment, command: str, include_user_vars: bool):
     "command",
     nargs=-1,
 )
-@include_user_vars
 @pass_deployment
 @click.pass_context
-def _call(ctx, deployment: Deployment, command: str, include_user_vars: bool):
+def _call(ctx, deployment: Deployment, command: str):
     """Run an executable, in a new process, with the deployment environment
     vars loaded"""
     if not command:
         return
     try:
-        deployment.call(command, include_user_vars=include_user_vars)
+        deployment.call(command)
     except CalledProcessError as cpe:
         sys.exit(cpe.returncode)
 
@@ -419,11 +421,11 @@ def list_lambdas(ctx, deployment: Deployment, session: Session):
     )
 
 
-@manage.command("get-payloads")
+@manage.command("get-input-payloads")
 @rerun_option
 @query_filters
 @pass_deployment
-def get_payloads(
+def get_input_payloads(
     deployment: Deployment,
     collections_workflow: str,
     state: str | None,
@@ -437,12 +439,64 @@ def get_payloads(
     matching payload IDs
     Rerun flag alters payloads to enable rerunning payload
     """
+    collections, workflow = StateDB.split_collections_workflow(collections_workflow)
 
     # send to stdout as NDJSON for piping
-    for payload in deployment.yield_payloads(
-        collections_workflow,
-        limit,
-        {"state": state, "since": since, "error_begins_with": error_prefix},
-        rerun,
+    for payload in deployment.yield_input_payloads(
+        collections,
+        workflow,
+        state=state,
+        since=since,
+        error_begins_with=error_prefix,
+        limit=limit,
+        rerun=rerun,
     ):
         click.echo(json.dumps(payload, default=str))
+
+
+@manage.command("query")
+@query_filters
+@pass_deployment
+def query(
+    deployment: Deployment,
+    collections_workflow: str,
+    state: str | None,
+    since: timedelta | None,
+    error_prefix: str | None,
+    limit: int | None,
+) -> None:
+    """
+    Retrieve a filtered set of payloads from S3 via querying the state DB for
+    matching payload IDs
+    Rerun flag alters payloads to enable rerunning payload
+    """
+    collections, workflow = StateDB.split_collections_workflow(collections_workflow)
+
+    # send to stdout as NDJSON for piping
+    for record in deployment.yield_workflow_items(
+        collections,
+        workflow,
+        state=state,
+        since=since,
+        error_begins_with=error_prefix,
+        limit=limit,
+    ):
+        click.echo(json.dumps(record, default=str))
+
+
+@manage.command()
+@click.option("--dry-run", is_flag=True, help="Preview changes without writing")
+@click.option(
+    "--since-days",
+    type=int,
+    default=90,
+    help="Cutoff in days for fetching SFN outputs",
+)
+@pass_deployment
+def migrate(deployment: Deployment, dry_run: bool, since_days: int) -> None:
+    """Migrate state DB and payload bucket to cirrus v2 compatible schema"""
+    deployment.migrate(
+        dry_run=dry_run,
+        since_days=since_days,
+        output=click.get_text_stream("stderr"),
+    )

@@ -6,17 +6,18 @@ import os
 import uuid
 
 from copy import deepcopy
-from typing import Self
+from typing import NoReturn, Self
 
 import jsonpath_ng.ext as jsonpath
 
-from boto3utils import s3
 from botocore.exceptions import ClientError
 
 from cirrus.lib.cirrus_payload import CirrusPayload
 from cirrus.lib.enums import StateEnum
+from cirrus.lib.errors import UndefinedPayloadBucketError
 from cirrus.lib.events import WorkflowEventManager
 from cirrus.lib.logging import CirrusLoggerAdapter
+from cirrus.lib.payload_bucket import PayloadBucket
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import (
     SNSMessage,
@@ -26,7 +27,15 @@ from cirrus.lib.utils import (
 
 logger = logging.getLogger(__name__)
 
-MAX_PAYLOAD_LENGTH = 250000
+
+# We need to ensure our input and output payload lengths are not more than
+# 248KB combined, otherwise the input will be truncated in EventBridge events
+# and update-state will fail. Note that the length here needs to consider JSON
+# escaping, not just the byte length of the jsonified payload, as EventBridge
+# embeds the input and output payloads as strings within the event JSON object.
+# To be safe, we use a 120KB limit here, which is maybe a bit conservative, but
+# ensures we have some headroom.
+MAX_PAYLOAD_LENGTH = 120000
 
 
 class TerminalError(Exception):
@@ -39,14 +48,16 @@ class PayloadManager:
         *args,
         set_id_if_missing: bool = False,
         state_item: dict | None = None,
+        payload_bucket: PayloadBucket | None = None,
         **kwargs,
-    ):
+    ) -> None:
         """Create a PayloadManager wrapper around a CirrusPayload.
 
-        All positional and keyword arguments (other than set_id_if_missing and
-        state_item) are forwarded directly to CirrusPayload. After construction
-        the payload is validated, a task-scoped logger is created, and (optionally)
-        an existing StateDB item is attached for downstream state handling.
+        All positional and keyword arguments (other than set_id_if_missing,
+        state_item, and payload_bucket) are forwarded directly to CirrusPayload.
+        After construction the payload is validated, a task-scoped logger is
+        created, and (optionally) an existing StateDB item is attached for
+        downstream state handling.
 
         Args:
             *args: Positional arguments passed through to CirrusPayload (typically
@@ -55,6 +66,9 @@ class PayloadManager:
                 incoming payload lacks one.
             state_item (dict | None): Existing StateDB record for this payload, if
                 already persisted.
+            payload_bucket (PayloadBucket | None): PayloadBucket instance to use
+                for S3 operations. If None, one is created from environment
+                variables.
             **kwargs: Additional keyword arguments forwarded to CirrusPayload.
 
         Raises:
@@ -70,6 +84,13 @@ class PayloadManager:
 
         self.logger = CirrusLoggerAdapter(__name__, payload=self.payload)
         self.state_item = state_item
+        self._payload_bucket = payload_bucket
+
+    @property
+    def payload_bucket(self) -> PayloadBucket:
+        if self._payload_bucket is None:
+            self._payload_bucket = PayloadBucket.from_env()
+        return self._payload_bucket
 
     def next_payloads(self):
         if len(self.payload["process"]) <= 1:
@@ -91,17 +112,8 @@ class PayloadManager:
                 new["features"] = [match.value for match in jsonfilter.find(new)]
             yield new
 
-    @staticmethod
-    def upload_to_s3(payload: dict, bucket: str | None = None) -> str:
-        """Helper function to upload a dict (not necessarily a payload) to s3"""
-        # url-payloads do not need to be re-uploaded
-        if "url" in payload:
-            return payload["url"]
-        if bucket is None:
-            bucket = os.environ["CIRRUS_PAYLOAD_BUCKET"]
-        url = f"s3://{bucket}/payloads/{uuid.uuid1()}.json"
-        s3().upload_json(payload, url)
-        return url
+    def calculate_payload_length(self) -> int:
+        return len(json.dumps(json.dumps(self.payload)).encode())
 
     def get_payload(self) -> dict:
         """Get original payload for this PayloadManager
@@ -109,19 +121,19 @@ class PayloadManager:
         Returns:
             Dict: Input payload
         """
-        payload_length = len(json.dumps(self.payload).encode())
+        payload_length = self.calculate_payload_length()
         if payload_length <= MAX_PAYLOAD_LENGTH:
             return dict(self.payload)
 
-        payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
-        if not payload_bucket:
+        try:
+            url = self.payload_bucket.upload_oversize_payload(self.payload)
+        except UndefinedPayloadBucketError as e:
             raise RuntimeError(
                 "No payload bucket defined and payload too large: "
                 f"length {payload_length} (max {MAX_PAYLOAD_LENGTH}). "
                 "To enable uploads oversized payloads define `CIRRUS_PAYLOAD_BUCKET`.",
-            )
+            ) from e
 
-        url = self.upload_to_s3(self.payload, payload_bucket)
         return {"url": url}
 
     def items_to_sns_messages(self: Self) -> list[SNSMessage]:
@@ -134,7 +146,7 @@ class PayloadManager:
             for item in self.payload.items_as_dicts
         ]
 
-    def _fail_and_raise(self, wfem, e, url):
+    def _fail_and_raise(self, wfem, e, url: str | None = None) -> NoReturn:
         """
         This function is to handle exceptions that we don't know why they
         happened. We'll be conservative, log+raise. Not raise a terminal failure, so it
@@ -143,7 +155,7 @@ class PayloadManager:
         """
         msg = f"failed starting workflow ({e})"
         self.logger.exception(msg)
-        wfem.failed(self.payload.get("id", "missing"), msg, payload_url=url)
+        wfem.failed(self.payload.get("id", "missing"), msg, input_payload_url=url)
         raise
 
     def _claim(
@@ -151,21 +163,15 @@ class PayloadManager:
         wfem: WorkflowEventManager,
         execution_arn: str,
         previous_state: StateEnum,
-    ) -> tuple[str, str, str]:
+    ) -> tuple[str, str]:
         """Claim this PayloadManager's payload, and return
-        (state_machine_arn, execution_name, url)
+        (state_machine_arn, execution_name)
         to be used for uploading and invoking the state machine"""
-
-        payload_bucket = os.getenv("CIRRUS_PAYLOAD_BUCKET", None)
-
-        if not payload_bucket:
-            raise ValueError("env var CIRRUS_PAYLOAD_BUCKET must be defined")
 
         (
             state_machine_arn,
             execution_name,
         ) = PayloadManagers.get_state_machine_arn_and_execution_name(execution_arn)
-        url = f"s3://{payload_bucket}/{self.payload['id']}/input.json"
 
         # claim workflow
         try:
@@ -173,7 +179,6 @@ class PayloadManager:
             # -> overwrites states other than PROCESSING and CLAIMED
             wfem.claim_processing(
                 self.payload["id"],
-                payload_url=url,
                 execution_arn=execution_arn,
             )
         except ClientError as e:
@@ -211,17 +216,28 @@ class PayloadManager:
                             db_exec,
                         )
                 else:
+                    output_payload_url = (
+                        self.payload_bucket.get_output_payload_url(
+                            self.payload["id"],
+                            execution_name,
+                        )
+                        if db_state == StateEnum.SUCCEEDED
+                        else None
+                    )
                     wfem.skipping(
                         self.payload["id"],
                         state=db_state,
-                        payload_url=url,
+                        # We haven't uploaded the input payload yet, so that url is not
+                        # helpful. We could upload the payload, but that makes skips
+                        # expensive.
+                        output_payload_url=output_payload_url,
                         message=f"state before claim attempt was {previous_state}",
                     )
-                    return "", "", ""
+                    return "", ""
             else:
                 # unknown ClientError
-                self._fail_and_raise(wfem, e, url)
-        return state_machine_arn, execution_name, url
+                self._fail_and_raise(wfem, e)
+        return state_machine_arn, execution_name
 
     def __call__(
         self,
@@ -235,7 +251,7 @@ class PayloadManager:
             str: Payload ID
         """
 
-        state_machine_arn, execution_name, url = self._claim(
+        state_machine_arn, execution_name = self._claim(
             wfem,
             execution_arn,
             previous_state,
@@ -247,9 +263,15 @@ class PayloadManager:
 
         try:
             # add input payload to s3
-            s3().upload_json(self.payload, url)
+            url = self.payload_bucket.upload_input_payload(
+                self.payload,
+                self.payload["id"],
+                execution_name,
+            )
         except Exception as e:  # noqa: BLE001
-            self._fail_and_raise(wfem, e, url)
+            # We could upload the payload here as errored,
+            # but if the upload call failed then why try again?
+            self._fail_and_raise(wfem, e)
 
         # invoke step function
         self.logger.debug("Running Step Function %s", execution_arn)
@@ -267,7 +289,7 @@ class PayloadManager:
                 # so we can handle it specifically, to keep the payload
                 # falling through to the DLQ and alerting.
                 logger.error(e)
-                wfem.failed(self.payload["id"], str(e), payload_url=url)
+                wfem.failed(self.payload["id"], str(e), input_payload_url=url)
                 raise TerminalError() from e
             if e.response["Error"]["Code"] != "ExecutionAlreadyExists":
                 self._fail_and_raise(wfem, e, url)
@@ -277,7 +299,7 @@ class PayloadManager:
             wfem.started_processing(
                 self.payload["id"],
                 execution_arn=execution_arn,
-                payload_url=url,
+                input_payload_url=url,
             )
         except ClientError as e:
             if (
@@ -287,10 +309,19 @@ class PayloadManager:
                 db_state = StateEnum(
                     e.response["Item"]["state_updated"]["S"].split("_")[0],
                 )
+                output_payload_url = (
+                    self.payload_bucket.get_output_payload_url(
+                        self.payload["id"],
+                        execution_name,
+                    )
+                    if db_state == StateEnum.SUCCEEDED
+                    else None
+                )
                 wfem.skipping(
                     self.payload["id"],
                     state=db_state,
-                    payload_url=url,
+                    input_payload_url=url,
+                    output_payload_url=output_payload_url,
                     message=(
                         "started stepfunction, but could not set processing "
                         if started_sfn
@@ -312,9 +343,13 @@ class PayloadManagers:
         payload_managers: list[PayloadManager],
         statedb: StateDB,
         state_items: list[dict] | None = None,
+        payload_bucket: PayloadBucket | None = None,
     ) -> None:
         self.payload_managers = payload_managers
         self.statedb = statedb
+        self.payload_bucket = (
+            payload_bucket if payload_bucket is not None else PayloadBucket.from_env()
+        )
         if state_items and len(state_items) != len(self.payload_managers):
             raise ValueError(
                 "The number of state items does not match the number of payloads: "
@@ -425,6 +460,7 @@ class PayloadManagers:
 
             # check existing state for Item, if any
             state, exec_arn = states[payload_manager.payload["id"]]
+            execution_id = exec_arn.rpartition(":")[2]
 
             if (
                 payload_manager.payload["id"] in payload_ids["started"]
@@ -437,8 +473,9 @@ class PayloadManagers:
                 )
                 wfem.duplicated(
                     payload_manager.payload["id"],
-                    payload_url=StateDB.payload_id_to_url(
+                    input_payload_url=self.payload_bucket.get_input_payload_url(
                         payload_manager.payload["id"],
+                        execution_id,
                     ),
                 )
                 payload_ids["dropped"].append(payload_manager.payload["id"])
@@ -464,8 +501,9 @@ class PayloadManagers:
                 wfem.skipping(
                     payload_id=payload_manager.payload["id"],
                     state=state,
-                    payload_url=StateDB.payload_id_to_url(
+                    input_payload_url=self.payload_bucket.get_input_payload_url(
                         payload_manager.payload["id"],
+                        execution_id,
                     ),
                 )
                 payload_ids["skipped"].append(payload_manager.payload["id"])

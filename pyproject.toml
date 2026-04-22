@@ -44,7 +44,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "pytest-mock",
-    "moto>=5",
+    "moto[stepfunctions]>=5",
     "mypy",
     "pip-tools",
     "pre-commit",
@@ -144,3 +144,6 @@ extensions.front-matter.enabled = true
 [tool.mypy]
 ignore_missing_imports = true
 scripts_are_modules = true
+
+[tool.uv]
+exclude-newer = "7 days"

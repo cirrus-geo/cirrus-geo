@@ -179,9 +179,8 @@ def filter_for_dashboard(
 
     def events_to_states(events: dict[str, int]) -> list[dict[str, Any]]:
         # this function passes through all WFEventTypes, but updates the names for
-        # COMPLETED and CLAIMED_PROCESSING to be SUCCEEDED and CLAIMED, respectively
+        # CLAIMED_PROCESSING and STARTED_PROCESSING to be CLAIMED and PROCESSING
         state_map = {
-            "SUCCEEDED": "COMPLETED",
             "CLAIMED_PROCESSING": "CLAIMED",
             "STARTED_PROCESSING": "PROCESSING",
         }

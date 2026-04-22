@@ -8,7 +8,8 @@ from cirrus.management.deployment_pointer import (
     Pointer,
 )
 from cirrus.management.exceptions import MissingParameterError
-from tests.management.test_manage import MOCK_DEPLOYMENT_NAME
+
+from .conftest import MOCK_DEPLOYMENT_NAME
 
 VALID_ENV = {
     "CIRRUS_PAYLOAD_BUCKET": "bucket",
