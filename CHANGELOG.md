@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v2.0.0] - 2026-04-22
 
-Unless otherwise listed, the changes for this release were part of PR [#396].
+Unless otherwise listed, the changes for this release were part of PR [#369].
 
 ### ⚠️ Breaking changes
 
@@ -1381,7 +1381,7 @@ Initial release
 [#361]: https://github.com/cirrus-geo/cirrus-geo/pull/361
 [#364]: https://github.com/cirrus-geo/cirrus-geo/pull/364
 [#366]: https://github.com/cirrus-geo/cirrus-geo/pull/366
-[#396]: https://github.com/cirrus-geo/cirrus-geo/pull/396
+[#369]: https://github.com/cirrus-geo/cirrus-geo/pull/369
 [f25acd4]: https://github.com/cirrus-geo/cirrus-geo/commit/f25acd4f43e2d8e766ff8b2c3c5a54606b1746f2
 [85464f5]: https://github.com/cirrus-geo/cirrus-geo/commit/85464f5a7cb3ef82bc93f6f1314e98b4af6ff6c1
 [1b89611]: https://github.com/cirrus-geo/cirrus-geo/commit/1b89611125e2fa852554951343731d1682dd3c4c
