@@ -1,18 +1,19 @@
 stateDiagram-v2
-    [*] --> STATELESS : "New payload received"
-    STATELESS --> CLAIMED : "Payload conforms\nto schema\n - \nemit CLAIMED_PROCESSING"
-    STATELESS --> [*] : "Malformed payload,\nunprocessable\n - \nemit FAILED_TO_EXTRACT\n or NOT_A_PROCESS_PAYLOAD"
+    [*] --> STATELESS : New payload received
+    STATELESS --> CLAIMED : Payload conforms to schema - emit CLAIMED_PROCESSING
+    STATELESS  --> [*] : Malformed payload or unprocessable - emit FAILED_TO_EXTRACT or NOT_A_PROCESS_PAYLOAD
+    STATELESS --> [*] : already in process or processed - emit ALREADY_*
+    CLAIMED --> PROCESSING : Step function execution starts - emit STARTED_PROCESSING
+    CLAIMED --> FAILED : State machine doesn't exist or other terminal error - emit FAILED
+    CLAIMED --> [*] : Race condition encountered - emit ALREADY_COMPLETED or ALREADY_PROCESSING
 
-    CLAIMED --> PROCESSING : Step function\nexecution starts\n-\nemit STARTED_PROCESSING
-    CLAIMED --> FAILED : State machine doesn't\nexist or other\nterminal error\n - \nemit FAILED
+    PROCESSING --> SUCCEEDED : Workflow succeeds - emit SUCCEEDED
+    PROCESSING --> FAILED : Workflow fails with error - emit FAILED
+    PROCESSING --> INVALID : Workflow fails with invalid input error - emit INVALID
+    PROCESSING --> ABORTED : Workflow manually aborted - emit ABORTED
+    PROCESSING --> TIMED_OUT : Workflow execution times out - emit TIMED_OUT
 
-    PROCESSING --> COMPLETED : Workflow succeeds\n - \nemit SUCCEEDED
-    PROCESSING --> FAILED : Workflow fails\n with error\n - \nemit FAILED
-    PROCESSING --> INVALID : Workflow fails\nwith invalid \ninput error\n - \nemit INVALID
-    PROCESSING --> ABORTED : Workflow manually\n aborted\n - \nemit ABORTED
-    PROCESSING --> TIMED_OUT : Workflow execution\n times out\n - \nemit TIMED_OUT
-
-    COMPLETED --> [*]
+    SUCCEEDED --> [*]
     FAILED --> [*]
     INVALID --> [*]
     ABORTED --> [*]
