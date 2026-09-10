@@ -342,7 +342,7 @@ def lambda_handler(event, _context):
             state,
             since_str,
         )
-        items = statedb.get_items_page(
+        page = statedb.get_items_page(
             key["collections_workflow"],
             state=state,
             since=since,
@@ -351,9 +351,10 @@ def lambda_handler(event, _context):
             sort_ascending=sort_ascending,
             sort_index=sort_index,
         )
-        return response(
-            {"items": [to_current(item) for item in items["items"]]},
-        )
+        body = {"items": [to_current(item) for item in page["items"]]}
+        if "nextkey" in page:
+            body["nextkey"] = page["nextkey"]
+        return response(body)
 
     # get individual item
     item = statedb.dbitem_to_item(statedb.get_dbitem(payload_id))

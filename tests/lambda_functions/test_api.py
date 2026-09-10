@@ -413,3 +413,36 @@ def test_api_collection_summary(statedb):
         },
     }
     assert result == expected
+
+
+def items_event(query_params):
+    return {
+        "path": "/test-collection/workflow-test-workflow/items",
+        "requestContext": {"stage": ""},
+        "queryStringParameters": query_params,
+    }
+
+
+def test_api_items_returns_nextkey_for_partial_page(statedb):
+    itemid = "test-collection/workflow-test-workflow/badbeefa11da7"
+    statedb.set_succeeded(f"{itemid}_a", outputs=["item1"])
+    statedb.set_succeeded(f"{itemid}_b", outputs=["item2"])
+
+    resp = api.lambda_handler(items_event({"limit": "1"}), {})
+    body = json.loads(resp["body"])
+
+    assert len(body["items"]) == 1
+    assert "nextkey" in body
+    assert isinstance(body["nextkey"], str)
+
+
+def test_api_items_omits_nextkey_for_full_page(statedb):
+    itemid = "test-collection/workflow-test-workflow/badbeefa11da7"
+    statedb.set_succeeded(f"{itemid}_a", outputs=["item1"])
+    statedb.set_succeeded(f"{itemid}_b", outputs=["item2"])
+
+    resp = api.lambda_handler(items_event({"limit": "100"}), {})
+    body = json.loads(resp["body"])
+
+    assert len(body["items"]) == 2
+    assert "nextkey" not in body
