@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- The api `items` endpoint now includes the `nextkey` token when more results are available.
+
 ## [v2.0.0] - 2026-04-22
 
 Unless otherwise listed, the changes for this release were part of PR [#369].
