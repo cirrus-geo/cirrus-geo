@@ -11,10 +11,30 @@ managers and handlers. The ``API`` lambda exists outside of the standard cirrus
 workflow as laid out in the architecture diagram in :doc:``cirrus_overview
 <../../cirrus/10_intro.rst>``
 
+Supported event formats
+-----------------------
+
+The handler supports both Lambda event payload formats:
+
+- **Payload format 1.0** — path read from ``event.path``
+- **Payload format 2.0** — path read from ``event.rawPath``
+
+When deployed with a route prefix (e.g. ``/cirrus``), set the
+``CIRRUS_API_GATEWAY_BASE_PATH`` environment variable to the prefix (without leading
+slash) so it is stripped before routing::
+
+    CIRRUS_API_GATEWAY_BASE_PATH=cirrus
+
+See `Lambda integration payload format versions
+<https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html>`_
+for details on the differences between format 1.0 and 2.0. Lambda Function
+URLs use `payload format version 2.0
+<https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html#urls-payloads>`_.
+
 Trigger
 -------
 
-Triggered by sending valid HTTTP requests.
+Triggered by sending valid HTTP requests.
 
 Query parameters can be included in HTTP requests to control the behavior of
 the response. A query param not in the following list will have no effect.
