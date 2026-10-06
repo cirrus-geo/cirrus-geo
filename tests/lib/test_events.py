@@ -52,6 +52,45 @@ def test_workflow_metric_logger_and_and_send(monkeypatch):
 
 
 @mock_aws
+def test_workflow_metric_logger_reuses_stream(monkeypatch):
+    log_group_name = "reuse-stream-test"
+    monkeypatch.setenv("CIRRUS_WORKFLOW_LOG_GROUP", log_group_name)
+    logs_client = get_client("logs")
+    logs_client.create_log_group(logGroupName=log_group_name)
+
+    first = WorkflowMetricLogger(log_group_name=log_group_name)
+    second = WorkflowMetricLogger(log_group_name=log_group_name)
+
+    assert first.log_stream_name == second.log_stream_name
+    streams = logs_client.describe_log_streams(logGroupName=log_group_name)
+    assert len(streams["logStreams"]) == 1
+
+
+@mock_aws
+def test_workflow_metric_logger_recreates_stale_stream(monkeypatch):
+    log_group_name = "stale-stream-test"
+    monkeypatch.setenv("CIRRUS_WORKFLOW_LOG_GROUP", log_group_name)
+    logs_client = get_client("logs")
+    logs_client.create_log_group(logGroupName=log_group_name)
+
+    metric_logger = WorkflowMetricLogger(log_group_name=log_group_name, batch_size=1)
+    stale_stream = metric_logger.log_stream_name
+    logs_client.delete_log_stream(
+        logGroupName=log_group_name,
+        logStreamName=stale_stream,
+    )
+
+    metric_logger.add(make_event())
+
+    assert metric_logger.log_stream_name != stale_stream
+    events = logs_client.get_log_events(
+        logGroupName=log_group_name,
+        logStreamName=metric_logger.log_stream_name,
+    )
+    assert len(events["events"]) == 1
+
+
+@mock_aws
 def test_workflow_metric_logger_disabled(monkeypatch):
     monkeypatch.delenv("CIRRUS_WORKFLOW_METRIC_NAMESPACE", raising=False)
 

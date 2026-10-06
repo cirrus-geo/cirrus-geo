@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- `WorkflowMetricLogger` reuses one log stream per execution environment and
+  batches events (default `batch_size` of 10), cutting `CreateLogStream` and
+  `PutLogEvents` calls and limiting CloudWatch Logs throttling.
 - The api `items` endpoint now includes the `nextkey` token when more results are available.
 
 ## [v2.0.0] - 2026-04-22
