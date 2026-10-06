@@ -12,12 +12,19 @@ import pytest
 from click.testing import CliRunner
 
 from cirrus.lib.eventdb import EventDB
-from cirrus.lib.events import WorkflowEventManager
+from cirrus.lib.events import WorkflowEventManager, get_metric_log_stream
 from cirrus.lib.payload_bucket import PayloadBucket
 from cirrus.lib.statedb import StateDB
 from cirrus.lib.utils import get_client
 
 MOCK_REGION = "us-east-1"
+
+
+@pytest.fixture(autouse=True)
+def _clear_metric_log_stream_cache():
+    get_metric_log_stream.cache_clear()
+    yield
+    get_metric_log_stream.cache_clear()
 
 
 def set_fake_creds():

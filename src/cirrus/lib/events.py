@@ -7,7 +7,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from functools import wraps
+from functools import cache, wraps
 from logging import Logger, getLogger
 from time import time
 from typing import Any, Self, TypedDict
@@ -112,19 +112,42 @@ class WorkflowEvent:
         return attrs
 
 
+@cache
+def get_metric_log_stream(log_group_name: str) -> str:
+    """Create (once per execution environment) and return a log stream name for
+    workflow metrics.
+
+    The CreateLogStream API quota is account/region-wide, so creating a stream per
+    invocation throttles quickly under concurrency. Caching means one stream per
+    process, shared across invocations: `PutLogEvents` no longer requires a sequence
+    token, so concurrent writes to a single stream are safe.
+    """
+    logs_client = get_client("logs")
+    log_stream_name = f"workflow-metrics-{uuid.uuid4()}"
+    try:
+        logs_client.create_log_stream(
+            logGroupName=log_group_name,
+            logStreamName=log_stream_name,
+        )
+    except logs_client.exceptions.ResourceNotFoundException as e:
+        raise Exception(f"Log group {log_group_name} does not exist.") from e
+
+    return log_stream_name
+
+
 class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
     """A class for surfacing workflow state changes to Cloudwatch
     Logs, and retrieving metrics from Cloudwatch Metrics.
 
-    This defaults to a batch_size of 1, to make all logs immediate.  This is because we
-    can't guard against a lambda timing out an execution, and preventing us from
-    sending the last batch of messages on exit."""
+    This defaults to a batch_size of 10 to limit PutLogEvents calls.  Buffered events
+    are sent by `flush()` on exit, but can be lost if a lambda is killed (timeout, OOM)
+    before then; pass batch_size=1 to make all logs immediate."""
 
     def __init__(
         self: Self,
         logger: Logger | None = None,
         log_group_name: str = "",
-        batch_size: int = 1,
+        batch_size: int = 10,
     ):
         # TODO: Reconsider the batch_size if we get to making our
         #       event-emitting lambda handlers async, so we don't lose messages.
@@ -143,37 +166,27 @@ class WorkflowMetricLogger(BatchHandler[WorkflowEvent]):
             )
             return
         self.logs_client = get_client("logs")
-        # Generate a UUID-based log stream name
-        self.log_stream_name = f"workflow-metrics-{uuid.uuid4()}"
-        # Create log stream if it does not exist
-        self.logger.debug(
-            "Creating log stream %s, in log group %s",
-            self.log_stream_name,
-            self.log_group_name,
-        )
-        try:
-            self.logs_client.create_log_stream(
-                logGroupName=self.log_group_name,
-                logStreamName=self.log_stream_name,
-            )
-            self.logger.info("Created new log stream: %s", self.log_stream_name)
-        except self.logs_client.exceptions.ResourceNotFoundException as e:
-            raise Exception(
-                f"Log group {self.log_group_name} does not exist.",
-            ) from e
+        self.log_stream_name = get_metric_log_stream(self.log_group_name)
 
     def enabled(self: Self) -> bool:
         return bool(self.log_group_name)
 
     def _send(self: Self, batch: list[WorkflowEvent]) -> dict[str, Any]:
-        # build log events
-        params = {
-            "logGroupName": self.log_group_name,
-            "logStreamName": self.log_stream_name,
-            "logEvents": self.prepare_batch(batch),
-        }
+        log_events = self.prepare_batch(batch)
+        try:
+            return self._put(log_events)
+        except self.logs_client.exceptions.ResourceNotFoundException:
+            # cached stream is gone (e.g. log group recreated); make a new one once
+            get_metric_log_stream.cache_clear()
+            self.log_stream_name = get_metric_log_stream(self.log_group_name)
+            return self._put(log_events)
 
-        return self.logs_client.put_log_events(**params)
+    def _put(self: Self, log_events: list[dict[str, Any]]) -> dict[str, Any]:
+        return self.logs_client.put_log_events(
+            logGroupName=self.log_group_name,
+            logStreamName=self.log_stream_name,
+            logEvents=log_events,
+        )
 
     def add(self: Self, item: WorkflowEvent) -> None:
         if self.enabled():
@@ -497,8 +510,11 @@ class WorkflowEventManager:
 
     def flush(self: Self):
         """Ensure any messages remaining in the batch buffer are sent."""
-        if self.event_publisher:
-            self.event_publisher.execute()
+        try:
+            if self.event_publisher:
+                self.event_publisher.execute()
+        finally:
+            self.metric_logger.execute()
 
     def __enter__(self: Self) -> Self:
         return self
